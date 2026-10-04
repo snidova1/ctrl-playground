@@ -1,6 +1,6 @@
 "use client";
 import { useEffect,useState,useMemo } from "react";
-import Link from "next/link";
+import Link from "@/components/navigation";
 import { useSearchParams } from "next/navigation";
 import { useResource } from "@/lib/use-resource";
 import { mutate,ApiError } from "@/lib/api-client";

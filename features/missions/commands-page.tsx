@@ -1,6 +1,6 @@
 "use client";
 import { useMemo,useState,lazy,Suspense } from "react";
-import Link from "next/link";
+import Link from "@/components/navigation";
 import { useResource } from "@/lib/use-resource";
 import type { Account,Mission } from "@/domain/types";
 import { PageHead,ErrorState,MachineLoading,DemoBand,StageTag } from "@/components/states";

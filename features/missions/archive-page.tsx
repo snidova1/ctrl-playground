@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/navigation";
 import type {Mission} from "@/domain/types";
 import {useResource} from "@/lib/use-resource";
 import {PageHead,MachineLoading,ErrorState,StageTag} from "@/components/states";

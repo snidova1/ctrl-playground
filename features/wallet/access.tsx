@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/navigation";
 import { mutate,ApiError } from "@/lib/api-client";
 import { ErrorState } from "@/components/states";
 export function DemoAccess(){const [busy,setBusy]=useState(false),[error,setError]=useState<ApiError|null>(null);async function enter(){setBusy(true);try{await mutate("auth/demo",{});}catch(e){setError(e as ApiError);}finally{setBusy(false);}}

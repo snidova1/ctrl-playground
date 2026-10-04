@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "@/components/navigation";
 import { useState } from "react";
 import {useResource} from "@/lib/use-resource";
 import type {Mission,Receipt,MissionEvent,Artifact} from "@/domain/types";

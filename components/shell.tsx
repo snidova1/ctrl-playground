@@ -1,6 +1,6 @@
 "use client";
 import {WebMCP} from "./webmcp";
-import Link from "next/link";
+import Link from "@/components/navigation";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";

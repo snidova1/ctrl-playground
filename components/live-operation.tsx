@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "@/components/navigation";
 import {useResource} from "@/lib/use-resource";
 import type{Mission}from"@/domain/types";
 import {StageTag}from"./states";

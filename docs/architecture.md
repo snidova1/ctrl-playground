@@ -27,3 +27,5 @@ Execution providers are injectable by interface. The supplied live provider is O
 Heavy renderers are lazy-loaded. The atrium and command arena use Three.js CSS3D scenes, which retain spatial interaction without a WebGL context. Dead Web and Agent Orbit have R3F scenes and meaningful non-WebGL alternatives. Internet Weather uses 2D canvas. All important controls have DOM equivalents.
 
 The visual references are Lusion's object-led composition, Musée's curatorial presentation, and Igloo's quiet object/environment relationship. No reference assets or proprietary source code are copied. Shared type, neutral materials and restrained vermilion keep separate worlds part of one product.
+
+Navigation uses semantic native anchors and full document loads. The hosted framework's compiled RSC link transport failed at runtime despite a successful build. Native navigation keeps all product routes accessible without that client transport and works before hydration. Personal job completion uses the same browser navigation boundary. The supervised preview can test the exact built Worker using an ignored `.sites-runtime/preview-built-worker` marker.

@@ -23,3 +23,9 @@ The automated Playwright suite is supplied, but its Chromium download failed in 
 The preview's external Orbio reads showed a deliberate unavailable state. Official endpoints and documentation were researched separately; runtime values are fetched dynamically and are not presented as stale live economics. Paid inference, token balances, real locks and burn cannot be verified without the corresponding credentials/contracts.
 
 Mock mode executes real persistence/event/artifact/receipt code using simulated provider results. It is a runnable MVP, not an audited launch-ready token protocol. Before public funded use, complete contract review, worker monitoring, moderation, stale-lease and paid-settlement reconciliation, backups and live device testing documented in the security/deployment guides.
+
+## Navigation regression repair
+
+Compiled Worker UI testing reproduced a hosted RSC link transport exception that prevented navigation. Product links now use native anchors; private job creation uses full document navigation after the API commits. The homepage browser renderer mounts after hydration to avoid a server Suspense recovery warning. Added a browser regression journey that clicks the visible controls instead of only opening routes directly.
+
+Manual testing of the compiled Worker verified Commands entry, proposal submission, support allocation, worker completion, receipt entry, Lab drawers, private task creation and completion, mobile menu opening, Worlds navigation and world entry at 390 pixels. The 44 unit/API tests, strict type checking, lint and standard Next.js production build passed after the navigation change. Browser automation remains supplied but unexecuted for the environment limitation above.
