@@ -1,0 +1,9 @@
+import type { ModelProvider,SearchProvider,ToolProvider } from "./types";
+import { deadWeb,agents,weather } from "@/features/worlds/data";
+export class MockProvider implements ModelProvider,SearchProvider,ToolProvider {
+ name="CTRL / demonstration provider";
+ async models(){return [{id:"ctrl-mock-v1",name:"CTRL demonstration model"}];}
+ async search(command:string){const lower=command.toLowerCase();const data=/agent|autonom/.test(lower)?agents.slice(0,5).map(a=>({title:a.name,url:"https://www.orbio.so/launchpad",snippet:a.description})):/weather|mood|internet activity/.test(lower)?weather.filter((_,i)=>i%5===0).map(w=>({title:`Signal sample at ${w.hour}:00 UTC`,url:"https://www.orbio.so",snippet:`Synthetic attention ${w.attention}; friction ${w.friction}; curiosity ${w.curiosity}.`})) : deadWeb.slice(0,5).map(d=>({title:d.name,url:d.url.replace("http:","https:"),snippet:d.description}));return {data,cost:.0055,usageId:null,settled:true};}
+ async generate(command:string,context:string){return {data:`# ${command}\n\nThis is a demonstration artifact produced by CTRL's mock provider. No live research or model inference was performed.\n\n## Findings\n\n${context}\n\n## Method\n\nThe machine classified this command, reserved a bounded allowance, selected a permitted tool, assembled these illustrative records and wrote a verified receipt.\n\n## Limits\n\nSources are included as navigation references. Availability and factual currency have not been verified by this demonstration run. Replace the mock provider with the Orbio gateway to execute live research.`,cost:.012,usageId:null,settled:true,model:"ctrl-mock-v1"};}
+ async transform(input:string){const parsed:unknown=JSON.parse(input);const rows=Array.isArray(parsed)?parsed:[parsed];const keys=[...new Set(rows.flatMap(row=>typeof row==="object"&&row!==null?Object.keys(row):[]))];return {data:JSON.stringify({rows:rows.length,fields:keys,records:rows},null,2),cost:0,usageId:null,settled:true};}
+}

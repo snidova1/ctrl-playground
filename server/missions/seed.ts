@@ -1,0 +1,16 @@
+import { exec,one,batch,statement } from "@/db";
+import { settings } from "@/server/env";
+import { worlds } from "@/features/worlds/data";
+import { generateReceipt } from "@/server/receipts/generate";
+import { hash } from "@/server/receipts/hash";
+import { ArtifactPublisher } from "@/server/providers/publisher";
+import type { Mission,Artifact } from "@/domain/types";
+export async function ensureDemoSeed(){if(settings().mode!=="mock")return;await exec("INSERT OR IGNORE INTO users(id,wallet,demo,created_at,reputation) VALUES('institution',NULL,1,'2026-10-01T00:00:00.000Z',0)");
+ const cmds=["Find five websites that should not still exist.","Create a weather report for a place with no sky.","Map a small census of autonomous agents."];
+ for(let i=0;i<3;i++){const w=worlds[i];const found=await one<{id:string}>("SELECT id FROM missions WHERE id=?",w.missionId);if(found)continue;const at=`2026-10-0${i+1}T09:00:00.000Z`;const result=`# ${cmds[i]}\n\nA curated demonstration of the CTRL world framework.\n\n## Artifact\n\n${w.title} is an interactive ${w.metadata.technique.toLowerCase()} with ${w.metadata.objects}.\n\n## Provenance\n\n${w.dataSource}. This is a seeded exhibition record, not an executed live mission.\n\n## Verification\n\nThe report bytes are stored with a SHA-256 digest. The receipt is not anchored onchain.`;
+ const m:Mission={id:w.missionId,command:cmds[i],ownerId:"institution",creator:"CTRL EXHIBITION",createdAt:at,startedAt:at,finishedAt:at,status:"COMPLETE",kind:"research",visibility:"public",support:0,control:0,burn:0,budget:0,consumed:0,feasibility:"READY",result,error:null,worldSlug:w.slug,demo:true};const id=`seed-artifact-${i}`,key=`exhibition/${id}.md`;const a:Artifact={id,missionId:m.id,type:"report",title:w.title,storageKey:key,mime:"text/markdown",createdAt:at,visibility:"public",sha256:await hash(result),preview:result.slice(0,200)};await new ArtifactPublisher().publish(key,result,a.mime);const receipt=await generateReceipt(m,[],[a],"mock",[]);
+ await batch([statement("INSERT OR IGNORE INTO missions(id,command,owner_id,creator,created_at,started_at,finished_at,status,kind,visibility,support,control,budget,result,world_slug,demo) VALUES(?,?,?,?,?,?,?,'COMPLETE','research','public',0,0,0,?,?,1)",m.id,m.command,m.ownerId,m.creator,at,at,at,result,w.slug),statement("INSERT OR IGNORE INTO artifacts(id,mission_id,type,title,storage_key,mime,created_at,visibility,sha256,preview) VALUES(?,?,?,?,?,?,?,?,?,?)",a.id,m.id,a.type,a.title,key,a.mime,at,a.visibility,a.sha256,a.preview),statement("INSERT OR IGNORE INTO mission_receipts(mission_id,payload,hash,created_at) VALUES(?,?,?,?)",m.id,JSON.stringify(receipt),receipt.verification.hash,at)]);
+ }
+ const open=["Find one internet argument where both sides are technically correct.","Map strange objects people sell at 3 AM.","Build a webpage that disappears after one hundred visitors.","Find ten abandoned communities that are somehow still online.","Make a field guide to websites with only one useful button."];
+ for(let i=0;i<open.length;i++)await exec("INSERT OR IGNORE INTO missions(id,command,owner_id,creator,created_at,status,kind,visibility,budget,support,control,demo) VALUES(?,?, 'institution','CTRL EXHIBITION',?,'OPEN',?,'public',0.08,0,0,1)",`CTRL-DEMO${i+1}`,open[i],`2026-10-04T0${i+1}:00:00.000Z`,i===2?"build":"research");
+}

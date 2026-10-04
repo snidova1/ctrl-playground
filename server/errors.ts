@@ -1,0 +1,2 @@
+export class AppError extends Error {constructor(public code:string, public status=400,public detail=code.replaceAll("_"," ")){super(detail);}}
+export function safeError(error:unknown):{code:string;detail:string;status:number}{if(error instanceof AppError)return {code:error.code,detail:error.detail,status:error.status};console.error("CTRL request failed",error instanceof Error?error.message:"Unknown failure");return {code:"MACHINE_UNAVAILABLE",detail:"This operation could not be completed. Your input has been preserved.",status:503};}

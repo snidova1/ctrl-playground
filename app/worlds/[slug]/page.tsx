@@ -1,0 +1,4 @@
+import type {Metadata}from"next";import WorldPage from "@/features/worlds/world-page";import {worlds}from"@/features/worlds/data";import {one}from"@/db";import type{WorldManifest}from"@/domain/types";
+export const dynamic="force-dynamic";
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const base=worlds.find(w=>w.slug===slug);let world=base;if(!base){const row=await one<{manifest:string}>("SELECT manifest FROM worlds WHERE slug=?",slug);if(row)world=JSON.parse(row.manifest) as WorldManifest;}return {title:world?.title??"World unavailable",description:world?.subtitle??"CTRL interactive world.",openGraph:{title:world?.title??"CTRL World",description:world?.subtitle??"Public machine artifact"}};}
+export default async function Page({params}:{params:Promise<{slug:string}>}){return <WorldPage slug={(await params).slug}/>;}

@@ -1,0 +1,3 @@
+"use client";
+import {useEffect,useState}from"react";
+export function useWebGL(){const [available,setAvailable]=useState<boolean|null>(null);useEffect(()=>{const canvas=document.createElement("canvas");let context:WebGL2RenderingContext|WebGLRenderingContext|null=null;try{context=canvas.getContext("webgl2")??canvas.getContext("webgl");}catch{/* Device has no graphics context. */}const supported=!!context;if(context)context.getExtension("WEBGL_lose_context")?.loseContext();const handle=requestAnimationFrame(()=>setAvailable(supported));return()=>cancelAnimationFrame(handle);},[]);return available;}

@@ -1,0 +1,8 @@
+"use client";
+import {lazy,Suspense} from "react";
+import Link from "next/link";
+import {useResource} from "@/lib/use-resource";
+import type {WorldManifest} from "@/domain/types";
+import {MachineLoading,ErrorState,DemoBand} from "@/components/states";
+const DeadWeb=lazy(()=>import("./dead-web")),InternetWeather=lazy(()=>import("./internet-weather")),AgentOrbit=lazy(()=>import("./agent-orbit"));
+export default function WorldPage({slug}:{slug:string}){const {data,error,loading,refresh}=useResource<{manifest:WorldManifest;data?:unknown}>(`worlds/${slug}`);const world=data?.manifest;return <div className="world-page">{error?<div className="page"><ErrorState error={error} retry={refresh}/></div>:loading?<MachineLoading title="LOADING WORLD / DATA / GEOMETRY"/>:world&&<><div className="world-mast"><Link href="/worlds">WORLDS</Link><span>{world.index} / {world.renderer.toUpperCase()}</span><Link href={`/archive/${world.missionId}`}>MISSION RECEIPT <span>↗</span></Link></div><Suspense fallback={<MachineLoading title={`PREPARING ${world.title}`}/>}>{world.renderer==="dead-web"?<DeadWeb title={world.title}/>:world.renderer==="internet-weather"?<InternetWeather title={world.title}/>:<AgentOrbit title={world.title}/>}</Suspense><div className="world-provenance"><div><span className="eyebrow">DATA / PROVENANCE</span><p>{world.dataSource}</p></div><div><span className="eyebrow">MANIFEST</span><p>{world.metadata.technique} / {world.mobile.toUpperCase()} ON MOBILE</p></div><Link className="button button-small" href={`/api/worlds/${world.slug}`}>VIEW MANIFEST</Link></div>{world.demo&&<div className="world-demo"><DemoBand>EXHIBITION DATA / This world demonstrates the renderer and its interactions. It does not claim live sampling.</DemoBand></div>}</>}</div>;}

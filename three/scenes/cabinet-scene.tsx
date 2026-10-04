@@ -1,0 +1,28 @@
+"use client";
+import {useEffect,useRef} from "react";
+import {Group,PerspectiveCamera,Scene} from "three";
+import {CSS3DObject,CSS3DRenderer} from "three/addons/renderers/CSS3DRenderer.js";
+export type CabinetMode="commands"|"worlds"|"archive"|"machine";
+export interface Block {size:[number,number,number];position:[number,number,number];rotation?:number;color:string;ink?:string;label?:string;sub?:string;screen?:boolean;}
+function block(spec:Block){const group=new Group();group.position.set(...spec.position);group.rotation.y=spec.rotation??0;const [w,h,d]=spec.size;
+ const sides:[number,number,number,number,number,number,number,number][]=[[w,h,0,0,d/2,0,0,1],[w,h,0,0,-d/2,0,Math.PI,.5],[d,h,w/2,0,0,0,Math.PI/2,.72],[d,h,-w/2,0,0,0,-Math.PI/2,.56],[w,d,0,h/2,0,-Math.PI/2,0,1.14],[w,d,0,-h/2,0,Math.PI/2,0,.4]];
+ sides.forEach(([width,height,x,y,z,rx,ry,light],i)=>{const face=document.createElement("div");face.className="cabinet-face";face.style.width=`${width}px`;face.style.height=`${height}px`;face.style.background=spec.color;face.style.color=spec.ink??"#20211e";face.style.filter=`brightness(${light})`;if(i===0&&spec.label){face.classList.add(spec.screen?"cabinet-screen":"cabinet-inscription");const label=document.createElement("strong");label.textContent=spec.label;const sub=document.createElement("span");sub.textContent=spec.sub??"CTRL / PUBLIC RECORD";face.appendChild(sub);face.appendChild(label);}
+ const object=new CSS3DObject(face);object.position.set(x,y,z);object.rotation.set(rx,ry,0);group.add(object);});return group;}
+export {block as cabinetBlock};
+function build(mode:CabinetMode,amount:number){const root=new Group();if(mode==="commands"){
+ const positions:[[number,number,number],number][]=[[[-160,-75,55],-.32],[[0,0,0],.08],[[165,-30,-85],.34]];
+ positions.forEach(([position,rotation],i)=>{const height=i===1?155+Math.min(amount,12)*4:130+i*25;root.add(block({size:[130,height,130],position:[position[0],position[1],position[2]],rotation,color:i===1?"#ec4e2e":"#c7c6b9",label:i===1?String(amount).padStart(2,"0"):"CTRL",sub:i===1?"COMMANDS / OPEN":"DIRECTION / PUBLIC"}));root.add(block({size:[148,22,148],position:[position[0],position[1]+height/2+25,position[2]],rotation,color:"#e4e3d7"}));});
+ }else if(mode==="worlds"){
+ root.add(block({size:[200,135,140],position:[-155,0,40],rotation:-.27,color:"#b7bea5",label:"STILL\nHERE_",sub:"001 / THE DEAD WEB",screen:true}));root.add(block({size:[215,24,150],position:[-155,-90,40],rotation:-.27,color:"#999f88"}));
+ for(let i=0;i<7;i++)root.add(block({size:[145+i*7,16,150-i*8],position:[100,-50+i*25,-45],rotation:.16+i*.14,color:i%2?"#d7e2e6":"#99afb7",label:i===6?"24H":undefined,sub:"002 / WEATHER"}));
+ }else if(mode==="archive"){
+ const count=Math.max(4,Math.min(amount,14));for(let i=0;i<count;i++)root.add(block({size:[260,14,195],position:[0,-110+i*25,0],rotation:(i%3-1)*.08,color:i===count-1?"#ec4e2e":"#dedccc",label:i===count-1?String(amount).padStart(3,"0"):undefined,sub:"SEALED / RECEIPTS"}));
+ }else {
+ root.add(block({size:[215,260,155],position:[0,0,0],rotation:.15,color:"#aaa997",label:"CTRL",sub:"MODEL / WEB / PUBLISHER"}));for(let i=0;i<4;i++)root.add(block({size:[245,12,178],position:[0,25+i*25,0],rotation:.15,color:"#dedccd"}));root.add(block({size:[115,85,120],position:[160,-82,80],rotation:-.3,color:"#ec4e2e",label:"ON",sub:"PUBLIC / MACHINE"}));
+ }root.add(block({size:[540,20,345],position:[0,-200,0],color:"#77786c"}));return root;}
+export default function CabinetScene({mode,amount=0}:{mode:CabinetMode;amount?:number}){const host=useRef<HTMLDivElement>(null);
+ useEffect(()=>{if(!host.current)return;const element=host.current,scene=new Scene(),camera=new PerspectiveCamera(36,1,1,4000),renderer=new CSS3DRenderer();renderer.domElement.className="cabinet-renderer";element.appendChild(renderer.domElement);const sculpture=build(mode,amount);scene.add(sculpture);let width=1,height=1,target=.0,angle=.0,frame=0,drag:number|null=null,visible=true;const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+ const resize=()=>{width=element.clientWidth;height=element.clientHeight;renderer.setSize(width,height);camera.aspect=width/height;camera.position.set(680,480,width<600?1200:980);camera.lookAt(0,-35,0);camera.updateProjectionMatrix();renderer.render(scene,camera);};const observer=new ResizeObserver(resize);observer.observe(element);
+ const down=(e:PointerEvent)=>{drag=e.clientX;element.setPointerCapture(e.pointerId);element.classList.add("is-dragging");};const move=(e:PointerEvent)=>{if(drag!==null){target+=(e.clientX-drag)*.005;drag=e.clientX;}else target=(e.clientX/width-.5)*.22;};const up=()=>{drag=null;element.classList.remove("is-dragging");};const visibility=()=>{visible=!document.hidden;};document.addEventListener("visibilitychange",visibility);element.addEventListener("pointerdown",down);element.addEventListener("pointermove",move);element.addEventListener("pointerup",up);element.addEventListener("pointercancel",up);
+ const render=()=>{frame=requestAnimationFrame(render);if(!visible)return;angle=reduced?target:angle+(target-angle)*.06;sculpture.rotation.y=angle;renderer.render(scene,camera);};resize();render();return()=>{cancelAnimationFrame(frame);observer.disconnect();document.removeEventListener("visibilitychange",visibility);element.removeEventListener("pointerdown",down);element.removeEventListener("pointermove",move);element.removeEventListener("pointerup",up);element.removeEventListener("pointercancel",up);renderer.domElement.remove();scene.clear();};
+ },[mode,amount]);return <div ref={host} className="cabinet-stage" aria-hidden="true"/>;}
