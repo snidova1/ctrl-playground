@@ -29,7 +29,7 @@ OPENAI_COMPATIBLE fields are reserved; no live adapter selection is implemented 
 
 ## Separate worker
 
-Run `worker/run.ts` on a long-running Node/container service with `APP_ORIGIN` and `WORKER_SECRET` matching the API. `pnpm worker` polls the tick endpoint, awaits completion and stops cleanly on termination. One worker is sufficient for MVP throughput. Production private jobs persist in the queue and await that service. Browser requests do not start long paid work with a 30-second background deadline.
+Run `worker/run.ts` on a long-running Node/container service with `APP_ORIGIN` and `WORKER_SECRET` matching the API. `pnpm worker` polls the tick endpoint, awaits completion and stops cleanly on termination. One worker is sufficient for MVP throughput. Production private jobs persist in the queue and await that service. For an owner-private Sites origin, also configure `SITE_ACCESS_TOKEN` with an authorized Sites dispatch token; the worker sends it only to the configured origin. `pnpm worker --once` services at most one queue tick. The hosting release configures Orbio and worker authentication but does not provision a persistent external worker automatically. Browser requests do not start long paid work with a 30-second background deadline.
 
 Inspect interrupted leases/provider settlement before recovery; do not blindly rerun paid calls. Manual REVIEW commands require a reviewed administrative workflow before enabling execution. Add alerting and retention/cleanup before sustained traffic.
 

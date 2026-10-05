@@ -1,3 +1,4 @@
+import { settings } from "@/server/env";
 import { policy } from "@/config/policy";
 import { statement,exec,one } from "@/db";
 import { account } from "@/server/wallet/account";
@@ -28,4 +29,4 @@ export async function supportMission(user:Identity,id:string,data:unknown){const
   statement("UPDATE missions SET support=(SELECT COALESCE(SUM(amount),0) FROM mission_support WHERE mission_id=?),control=control+? WHERE id=? AND EXISTS(SELECT 1 FROM control_allocations WHERE id=?)",id,input.amount,id,input.operationId),
  ],{sql:"EXISTS(SELECT 1 FROM missions WHERE id=? AND status='OPEN')",values:[id]});return getMission(id);
 }
-export async function selectNext(){const row=await one<{id:string}>("SELECT id FROM missions WHERE visibility='public' AND status='OPEN' AND feasibility='READY' ORDER BY support DESC,created_at ASC LIMIT 1");if(!row)throw new AppError("QUEUE_EMPTY",404);const r=await exec("UPDATE missions SET status='QUEUED' WHERE id=? AND status='OPEN' AND NOT EXISTS(SELECT 1 FROM missions WHERE visibility='public' AND status NOT IN ('OPEN','REVIEW','COMPLETE','FAILED'))",row.id);if(!r.meta.changes)throw new AppError("SELECTION_CHANGED",409);await event(row.id,"mission.accepted","QUEUED","Highest-supported feasible command selected.");return row.id;}
+export async function selectNext(){const row=await one<{id:string}>("SELECT id FROM missions WHERE visibility='public' AND status='OPEN' AND feasibility='READY' AND (?=1 OR demo=0) ORDER BY support DESC,created_at ASC LIMIT 1",Number(settings().mode==="mock"));if(!row)throw new AppError("QUEUE_EMPTY",404);const r=await exec("UPDATE missions SET status='QUEUED' WHERE id=? AND status='OPEN' AND NOT EXISTS(SELECT 1 FROM missions WHERE visibility='public' AND status NOT IN ('OPEN','REVIEW','COMPLETE','FAILED') AND (?=1 OR demo=0))",row.id,Number(settings().mode==="mock"));if(!r.meta.changes)throw new AppError("SELECTION_CHANGED",409);await event(row.id,"mission.accepted","QUEUED","Highest-supported feasible command selected.");return row.id;}

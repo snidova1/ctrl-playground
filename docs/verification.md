@@ -41,3 +41,7 @@ The funded signer held 0.01 test ETH before deployment. Deployed CTRLTestToken o
 The live API integration test passed (71 seconds): real signer challenge, non-demo session, on-chain holder balance, ARCHITECT access, command submission and 25 CONTROL support allocation. The isolated local database contains these test commands; no production user data was modified. Seven unit/API suites passed (46 tests). Local EVM tests passed deployment, supply, claim/repeated-claim rejection, transfers, allowance and mainnet deployment rejection. Browser wallet signing and faucet confirmation remain user-controlled and were not automated with an injected private key.
 
 The official RPC returned 405 in this environment; the configured publicnode endpoint successfully handled deployment and live reads. Lock and burn contracts remain unconfigured, and inference remains in mock mode. This integration does not constitute an Orbio token launch.
+
+## Paid Orbio integration — 2026-10-05
+
+An explicit one-mission live test passed using the production provider, actual web search and `openai/gpt-6-luna`. Report storage, artifact hash and permanent receipt were verified. Settled mission cost: US$0.00634955 (US$0.03 ceiling). A separate 3-result authentication probe cost 0.0033 CREDIT. No launch transaction, lock or burn was performed. See orbio-integration.md for provenance and the opt-in test command.
