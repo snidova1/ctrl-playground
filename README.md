@@ -40,7 +40,7 @@ The API, durable mission/support records, authenticated private access, queue, e
 
 Default mock mode simulates holder balance, holding time, lock state, provider outputs and compute consumption. The three exhibition datasets are labelled curated/synthetic. They are not claims of current internet activity. Public demo missions start with zero support. Mock world generation registers a new world URL using curated data; it does not claim to autonomously invent renderer code.
 
-Orbio inference/search require server credentials and an exact current model ID. No CTRL token or locking/burn contract has been deployed by this project. Live locking and burn return an intentional unavailable state; normal usage does not burn tokens. Contract wallet authentication, arbitrary code execution, automatic website deployment, external posting and image generation are not enabled. Build jobs produce a self-contained HTML field guide assembled safely from their output; they are not unrestricted software workers.
+Orbio inference/search require server credentials and an exact current model ID. A disposable tCTRL test token is deployed on Robinhood Chain Testnet (46630); see docs/testnet.md and deployments/robinhood-testnet.json. No production CTRL or locking/burn contract is deployed. Live locking and burn return an intentional unavailable state; normal usage does not burn tokens. Contract wallet authentication, arbitrary code execution, automatic website deployment, external posting and image generation are not enabled. Build jobs produce a self-contained HTML field guide assembled safely from their output; they are not unrestricted software workers.
 
 ## Architecture
 
@@ -67,3 +67,7 @@ Unit/API tests cover CONTROL, tiers, validation, SSRF URL policy, provider settl
 Use durable D1 and R2 bindings, apply the included Drizzle SQL migration, set `CTRL_MODE=production`, `APP_ORIGIN`, genuine token/RPC configuration, Orbio key/model and a strong worker secret. Run the separate authenticated queue worker; production API submissions do not start long paid jobs in request background tasks. Do not deploy the Node development SQLite adapter to Vercel's ephemeral filesystem. A PostgreSQL/Supabase port can implement the same repository interfaces but is not shipped here.
 
 Read [deployment](docs/deployment.md), [architecture](docs/architecture.md), [Orbio integration](docs/orbio-integration.md), [mission engine](docs/mission-engine.md), [token utility](docs/token-utility.md), [world system](docs/world-system.md), and [security](docs/security.md).
+
+## Robinhood testnet integration
+
+The default network is now Robinhood Chain Testnet (46630). Connect a browser wallet on `/account`, claim 64,000 tCTRL once, and sign the session challenge. Holder access reads the real ERC-20 balance. AI execution remains explicitly mocked until an inference provider is configured. See [the testnet runbook](docs/testnet.md) for deployment, verification and signer isolation.

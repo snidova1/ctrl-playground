@@ -1,3 +1,6 @@
+import {deployment} from "@/config/deployment";
+import {networkFor} from "@/config/network";
+import {isAddress} from "viem";
 import { z,ZodError } from "zod";
 import { identity,requireIdentity,demoSession,logout,nonce,authenticate,rateLimit } from "./wallet/auth";
 import { account } from "./wallet/account";
@@ -23,6 +26,7 @@ export async function handleApi(request:Request,path:string[]):Promise<Response>
  const p=path.join("/");const method=request.method;
  if(method==="POST"&&p==="engine/tick"){const secret=settings().workerSecret;if(!secret||request.headers.get("authorization")!==`Bearer ${secret}`)throw new AppError("WORKER_AUTH_REQUIRED",401);await rateLimit("worker",12);const id=await tickQueue();return json({missionId:id});}
  if(method!=="GET"){verifyOrigin(request);const u=await identity(request);await rateLimit(`write:${u?.id??request.headers.get("cf-connecting-ip")??"anonymous"}`,20);}
+ if(method==="GET"&&p==="network"){const s=settings();const chain=networkFor(s.chainId);return json({chainId:chain.id,name:chain.name,testnet:!!chain.testnet,token:isAddress(s.token)?s.token:null,explorer:chain.blockExplorers.default.url,faucetEnabled:chain.id===46630&&isAddress(s.token)&&s.token.toLowerCase()===deployment.token?.toLowerCase()});}
  if(method==="GET"&&p==="health")return json({status:"ok",mode:settings().mode,version:"1.0.0"});
  if(method==="GET"&&p==="account")return json(await account(await identity(request)));
  if(method==="POST"&&p==="auth/demo")return json({ok:true},200,{"Set-Cookie":await demoSession(request)});

@@ -33,3 +33,11 @@ Manual testing of the compiled Worker verified Commands entry, proposal submissi
 ## Fullscreen exhibition redesign — 2026-10-05
 
 Replaced the dashboard-style entrance with a fullscreen interactive installation, distinct CRT archaeology, atmospheric contour and orbital worlds. Manual preview checks covered exhibit selection, native world entry, CRT record selection and notes, weather hour/layer updates, and the mobile menu at 390 and 320 pixels. The menu manages focus and makes the underlying scene inert. The software renderer preserves spatial objects when WebGL is unavailable.
+
+## Robinhood testnet — 2026-10-05
+
+The funded signer held 0.01 test ETH before deployment. Deployed CTRLTestToken on chain 46630, confirmed its receipt at block 129198978 and matched deployed bytecode to the compiled artifact. Independent live verification confirmed 64,000 tCTRL and a valid signature. Public deployment and verification records are in `deployments/`.
+
+The live API integration test passed (71 seconds): real signer challenge, non-demo session, on-chain holder balance, ARCHITECT access, command submission and 25 CONTROL support allocation. The isolated local database contains these test commands; no production user data was modified. Seven unit/API suites passed (46 tests). Local EVM tests passed deployment, supply, claim/repeated-claim rejection, transfers, allowance and mainnet deployment rejection. Browser wallet signing and faucet confirmation remain user-controlled and were not automated with an injected private key.
+
+The official RPC returned 405 in this environment; the configured publicnode endpoint successfully handled deployment and live reads. Lock and burn contracts remain unconfigured, and inference remains in mock mode. This integration does not constitute an Orbio token launch.

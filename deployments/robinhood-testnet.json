@@ -1,0 +1,11 @@
+{
+  "chainId": 46630,
+  "token": "0x6310796e59427b81845c5aa734e3f237504e9eb2",
+  "transactionHash": "0x8c41aa319c57c478aea02df223dc7796af2b6ee8e9abbe7a7a3573ba71b7adbc",
+  "block": "129198978",
+  "deployer": "0xAceeFC1e4c5B8d43047Da4F3781a2793E69a5913",
+  "compiler": "0.8.30+commit.73712a01.Emscripten.clang",
+  "codeHash": "0x5ee434f6920604f7645857370c9fd45f059982330e759f409071a556e6cc3517",
+  "gasUsed": "589748",
+  "testnetOnly": true
+}

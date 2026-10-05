@@ -25,7 +25,7 @@ Demo deployment needs no paid credentials. It uses `CTRL_MODE=mock` (default), r
 | `WORKER_SECRET` | At least 32 unpredictable characters for worker authentication |
 | `DEMO_AUTH_ENABLED` | Optional development demo; always refused in production |
 
-OPENAI_COMPATIBLE fields are reserved; no live adapter selection is implemented for them. Missing Orbio credentials fail gracefully rather than fabricating work. No deployment script accepts token launch agreements or performs wallet transactions.
+OPENAI_COMPATIBLE fields are reserved; no live adapter selection is implemented for them. Missing Orbio credentials fail gracefully rather than fabricating work. The website deployment does not accept token launch agreements. A separate testnet-only CLI can deploy the disposable integration token; it refuses other chain IDs and enforces a gas budget. See testnet.md.
 
 ## Separate worker
 

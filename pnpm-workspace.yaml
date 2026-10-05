@@ -5,10 +5,12 @@ trustLockfile: false
 strictDepBuilds: true
 allowBuilds:
   '@reown/appkit': false
+  bufferutil: false
   esbuild: true
   fsevents: true
   sharp: true
   unrs-resolver: true
+  utf-8-validate: false
   workerd: true
 storeDir: ${SITES_PNPM_SHARED_STORE:-.sites-runtime/pnpm-store}
 cacheDir: ${SITES_PNPM_SHARED_STORE:-.sites-runtime/pnpm-store}/policy-cache
