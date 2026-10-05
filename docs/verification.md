@@ -45,3 +45,9 @@ The official RPC returned 405 in this environment; the configured publicnode end
 ## Paid Orbio integration — 2026-10-05
 
 An explicit one-mission live test passed using the production provider, actual web search and `openai/gpt-6-luna`. Report storage, artifact hash and permanent receipt were verified. Settled mission cost: US$0.00634955 (US$0.03 ceiling). A separate 3-result authentication probe cost 0.0033 CREDIT. No launch transaction, lock or burn was performed. See orbio-integration.md for provenance and the opt-in test command.
+
+### Hosted live verification
+
+The deployed production runtime authenticated the funded testnet signer and read 64,000 tCTRL / ARCHITECT without a demo credential. Private job `CTRL-36E43962` executed through the authenticated tick endpoint and completed using Orbio search plus `openai/gpt-6-luna`. Settled cost: US$0.0059985. Receipt SHA-256: `4fc6b58dbd5335851d008672988b1347b202cc9cf76a46d1f9a5cf474383b0a0`. The receipt remains private to its wallet; it is not a public archive entry.
+
+An earlier hosting-only transport failure was fixed by using manual redirect handling and explicitly refusing 3xx responses; the Cloudflare runtime did not accept the previous redirect mode. The gateway balance read confirmed no charge for that failed attempt. Fifty routine tests, strict typecheck, lint and the hosted build passed after the correction. The standard Next.js build passed in the preceding release. The worker was invoked for this bounded verification only; no persistent 24/7 worker has been provisioned.
