@@ -18,7 +18,7 @@ Dead Web terminal selection updated provenance, Internet Weather's hour/signal c
 
 ## Honest limits
 
-The automated Playwright suite is supplied, but its Chromium download failed in this environment; those tests are not reported as passing. The remote QA browser has no usable WebGL context. CSS3D, Canvas and SVG fallbacks were visually inspected; full R3F scenes, actual WalletConnect mobile pairing, real-device GPU timing and Core Web Vitals need follow-up in a suitable browser.
+The automated Playwright suite is supplied, but its Chromium download failed in this environment; those tests are not reported as passing. The remote QA browser has no usable WebGL context. Canvas software-rendered Three.js geometry and weather contours were visually inspected; hardware WebGL scenes, actual WalletConnect mobile pairing, real-device GPU timing and Core Web Vitals need follow-up in a suitable browser.
 
 The preview's external Orbio reads showed a deliberate unavailable state. Official endpoints and documentation were researched separately; runtime values are fetched dynamically and are not presented as stale live economics. Paid inference, token balances, real locks and burn cannot be verified without the corresponding credentials/contracts.
 
@@ -29,3 +29,7 @@ Mock mode executes real persistence/event/artifact/receipt code using simulated 
 Compiled Worker UI testing reproduced a hosted RSC link transport exception that prevented navigation. Product links now use native anchors; private job creation uses full document navigation after the API commits. The homepage browser renderer mounts after hydration to avoid a server Suspense recovery warning. Added a browser regression journey that clicks the visible controls instead of only opening routes directly.
 
 Manual testing of the compiled Worker verified Commands entry, proposal submission, support allocation, worker completion, receipt entry, Lab drawers, private task creation and completion, mobile menu opening, Worlds navigation and world entry at 390 pixels. The 44 unit/API tests, strict type checking, lint and standard Next.js production build passed after the navigation change. Browser automation remains supplied but unexecuted for the environment limitation above.
+
+## Fullscreen exhibition redesign — 2026-10-05
+
+Replaced the dashboard-style entrance with a fullscreen interactive installation, distinct CRT archaeology, atmospheric contour and orbital worlds. Manual preview checks covered exhibit selection, native world entry, CRT record selection and notes, weather hour/layer updates, and the mobile menu at 390 and 320 pixels. The menu manages focus and makes the underlying scene inert. The software renderer preserves spatial objects when WebGL is unavailable.

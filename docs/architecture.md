@@ -24,7 +24,7 @@ The UI does not determine entitlement. Server reads resolve wallet balances and 
 
 Execution providers are injectable by interface. The supplied live provider is Orbio and the demo provider is explicit mock. Publishing is independently backed by R2. Generic OpenAI-compatible provider selection is an extension point, not a configured third live provider.
 
-Heavy renderers are lazy-loaded. The atrium and command arena use Three.js CSS3D scenes, which retain spatial interaction without a WebGL context. Dead Web and Agent Orbit have R3F scenes and meaningful non-WebGL alternatives. Internet Weather uses 2D canvas. All important controls have DOM equivalents.
+Heavy renderers are lazy-loaded. The fullscreen exhibition and command arena use native Three.js geometry with WebGL rendering and a projected Canvas2D geometry fallback. Dead Web and Agent Orbit share lifecycle, pointer and quality infrastructure while using distinct scene modules. Internet Weather uses 2D canvas. All important controls have DOM equivalents.
 
 The visual references are Lusion's object-led composition, Musée's curatorial presentation, and Igloo's quiet object/environment relationship. No reference assets or proprietary source code are copied. Shared type, neutral materials and restrained vermilion keep separate worlds part of one product.
 

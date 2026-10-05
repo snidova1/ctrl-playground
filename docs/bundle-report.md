@@ -4,17 +4,17 @@ Generated from the verified hosted build. These are individual emitted chunks, *
 
 | Chunk | Raw KiB | Gzip KiB |
 | --- | ---: | ---: |
-| three.module-8Mkra73Z.js | 679.2 | 170.9 |
-| systems-CKiGKf2G.js | 196.1 | 61.4 |
-| index-DJfz7k0A.js | 194.2 | 55.7 |
-| framework-C1AChYg_.js | 189.1 | 59.0 |
-| wallet-connect-Beh_fZlO.js | 94.1 | 28.0 |
-| shell-j0n8b37G.js | 58.3 | 13.8 |
-| utils-DeozKa6e.js | 34.3 | 11.3 |
-| dialog-BNXU_69R.js | 32.7 | 11.1 |
-| internet-weather-BMS5Wv0L.js | 27.6 | 9.6 |
-| account-page-1prAVdQZ.js | 7.8 | 2.8 |
-| cabinet-scene-DyyiVVeK.js | 7.4 | 3.1 |
-| commands-page-BA9L2qC4.js | 7.2 | 2.6 |
+| exhibit-scene-D3z6uWcB.js | 493.8 | 124.0 |
+| index-0NhZcSnZ.js | 194.3 | 55.7 |
+| framework-D_rUT4EX.js | 185.7 | 57.7 |
+| wallet-connect-BvTY7E-M.js | 94.1 | 28.0 |
+| dialog-D1zhuHBC.js | 66.9 | 21.7 |
+| shell-p_D8lkuK.js | 59.2 | 14.1 |
+| account-page-BreljAo7.js | 7.8 | 2.9 |
+| commands-page-Dg_CQMr7.js | 7.2 | 2.7 |
+| world-page-DOyZtTgB.js | 6.2 | 2.4 |
+| machine-page-Dx1TjHoD.js | 6.2 | 2.1 |
+| receipt-page-C6U2RczO.js | 5.6 | 1.9 |
+| lab-page-nOo8Be22.js | 5.5 | 2.3 |
 
-41 JavaScript chunks emitted. Browser LCP, CLS, interaction delay, real-device frame time and WebGL memory still require measurements in a GPU-capable browser on representative hardware. The preview browser verified CSS3D/Canvas/SVG fallbacks, not GPU performance.
+34 JavaScript chunks emitted. Browser LCP, CLS, interaction delay, real-device frame time and WebGL memory still require measurements in a GPU-capable browser on representative hardware. The preview browser verified CSS3D/Canvas/SVG fallbacks, not GPU performance.
