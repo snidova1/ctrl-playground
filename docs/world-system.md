@@ -23,3 +23,9 @@ Progress is stored **on the current device**, not onchain or in a shared simulat
 World manifests and mission references live in D1; recipe/report artifacts live in R2. The world write and mission completion are one database batch. Every generated world fetch checks its mission visibility; private worlds require the owning session. Recipe fields cannot add scripts, remote asset URLs or new renderers. Downloaded artifacts have a sandbox CSP. Publishing a world does not execute untrusted source code.
 
 To add mechanics, register a new schema-approved kit, implement its scene and DOM actions, test state restoration and disposal, and document mobile and reduced-motion behavior.
+
+## Immersive archive expedition
+
+Dead-web manifests now open a full-viewport first-person archive (`features/worlds/archive`). The hall contains shelves, terminals, overhead lighting, drifting paper and an animated exit gate. Visitors walk with WASD or touch buttons, turn by dragging (arrow keys also turn), and restore nearby terminals with E or the context action. The guide button physically walks to the next unconnected terminal; it does not teleport. Terminal collision and hall boundaries constrain movement. All terminals restored opens the gate. Field records appear only when requested; the main view remains the world.
+
+Archive connection progress is stored on the device. Return to entrance resets position but preserves progress. Index and receipts remain available as semantic DOM controls. Reduced motion disables ambient motion; the pause button pauses environmental animation. This is one authored expedition, not a claim of unconstrained AI world generation. The other two mechanics kits retain their previous presentation in this iteration.
