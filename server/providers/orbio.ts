@@ -2,7 +2,7 @@ import { z } from "zod";
 import { AppError } from "@/server/errors";
 import type { ModelProvider,SearchProvider,ComputeBalanceProvider } from "./types";
 import type { ProviderResult,SearchResult,OrbioTerms } from "@/domain/types";
-export const termsSchema=z.object({live:z.boolean(),chainId:z.number().int(),vault:z.string(),pairToken:z.string(),launchFeeWei:z.string(),economics:z.string(),feeBps:z.number().int(),conversionBps:z.number().int(),creditBps:z.number().int(),gatewayBps:z.number().int(),maxCreatorTaxBps:z.number().int(),cliffSeconds:z.number().int(),paused:z.boolean()});
+export const termsSchema=z.object({live:z.boolean(),chainId:z.number().int(),vault:z.string(),pairToken:z.string(),launchFeeWei:z.string(),economics:z.string(),feeBps:z.number().int(),conversionBps:z.number().int(),creditBps:z.number().int(),gatewayBps:z.number().int(),maxCreatorTaxBps:z.number().int(),cliffSeconds:z.number().int(),paused:z.boolean(),pairApproved:z.boolean().optional(),launchConfigId:z.string().optional()});
 const modelCatalogue=z.object({data:z.array(z.object({id:z.string(),name:z.string().optional(),pricing:z.object({prompt:z.string(),completion:z.string()}).passthrough().optional()}))});
 const completionSchema=z.object({id:z.string().optional(),model:z.string().optional(),choices:z.array(z.object({message:z.object({content:z.string().nullable()})})),usage:z.object({prompt_tokens:z.number().optional(),completion_tokens:z.number().optional(),cost:z.number().optional()}).passthrough().optional()});
 const toolSchema=z.object({id:z.string().optional(),cost:z.object({credit:z.string().nullable().optional(),status:z.string().optional()}).optional(),result:z.unknown()});

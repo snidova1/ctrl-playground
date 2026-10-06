@@ -1,6 +1,6 @@
 # Production bundle inventory
 
-Generated from the verified hosted build. These are individual emitted chunks, **not initial page transfer totals**. Worlds and wallet connectors are lazy imported. Gzip is calculated locally; actual serving compression may differ.
+Historical inventory from the earlier hosted build, before the full-screen weather/orbit update. Chunk filenames and sizes below are not the current release inventory. These are individual emitted chunks, **not initial page transfer totals**. Worlds and wallet connectors are lazy imported. Gzip is calculated locally; actual serving compression may differ.
 
 | Chunk | Raw KiB | Gzip KiB |
 | --- | ---: | ---: |

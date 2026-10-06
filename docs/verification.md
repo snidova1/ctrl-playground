@@ -59,3 +59,12 @@ The entrance now contains three lazy-loaded spatial modules with native selectio
 52 unit/API tests passed during preparation, including concurrent daily resource reservation, settled-release and unknown-liability boundaries. The local mobile preview was inspected at a 390×844 iframe viewport. Explicit demo access, public proposal/support, mission progress, personal JSON transformation and private receipt hash verification were exercised through the visible UI. The local preview initially lacked the new compute-reservation migration; it was applied, and a fresh private transformation completed with a verified receipt. Production packaging includes the generated migration and Drizzle metadata.
 
 The delivered film is an actual 30-second 1920×1080 H.264/AAC render at 24 fps, with an original synthesized score. Twelve X posts were checked below the 280-character limit. No posts were published.
+
+## 2026-10-06 release continuation
+
+- Routine domain/API suite: 60 tests passed across 11 files, including new launch registration/heartbeat and interrupted lease tests.
+- Paid opt-in Orbio execution: CTRL-0B0EC9BE, settled US$0.006127425 within a US$0.03 cap; actual receipt hash recorded in orbio-integration.md.
+- Real signed testnet holder test repeated successfully: balance, tier, authentication, proposal and support. This does not verify mainnet CTRL.
+- Full-screen Internet Weather and Agent Orbit inspected at desktop and 390 × 844 layouts through the managed preview. Hour control, pause and agent approach work. Preview browser used the software renderer for Orbit; GPU frame time/memory remain unmeasured.
+- New launch UI shows missing connections rather than a false ready verdict; missing provider credentials degrade explicitly.
+- Smart-contract audit, arbitrary world generation, PMF, listing completion and unattended worker hosting are not established by these checks.

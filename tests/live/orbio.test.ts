@@ -6,7 +6,7 @@ import {getMission,missionArtifacts} from '@/server/missions/repository';
 import type {Receipt} from '@/domain/types';
 it('executes a real bounded Orbio mission and verifies its artifact and receipt',async()=>{
  const id=`CTRL-${crypto.randomUUID().slice(0,8).toUpperCase()}`,owner=crypto.randomUUID(),now=new Date().toISOString();
- await exec('INSERT INTO users(id,wallet,demo,created_at) VALUES(?,?,0,?)',owner,'0xAceeFC1e4c5B8d43047Da4F3781a2793E69a5913',now);
+ await exec('INSERT INTO users(id,wallet,demo,created_at) VALUES(?,?,0,?)',owner,`0x${crypto.randomUUID().replaceAll('-','').padEnd(40,'0')}`,now);
  await exec("INSERT INTO missions(id,command,owner_id,creator,created_at,status,kind,visibility,budget,feasibility,control,demo) VALUES(?,?,?,?,?,'QUEUED','research','public',0.03,'READY',0,0)",id,'Find three single-purpose websites that still exist. Explain what each does, cite the returned sources, and distinguish search evidence from direct website verification.',owner,'INTEGRATION TEST',now);
  await runMission(id);
  const mission=await getMission(id);expect(mission?.status,mission?.error??'execution').toBe('COMPLETE');

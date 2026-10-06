@@ -21,7 +21,7 @@ Authenticated balances preserve exact decimal strings rather than fabricating a 
 
 Agent detail retrieval is exposed by the adapter when an agent ID exists. No official holder/trade/volume endpoints were discovered for this MVP; those metrics are not invented. Harvest/reward explanations in documentation are not presented as independently verified live dashboard measurements.
 
-Required live configuration: `ORBIO_API_KEY`, `ORBIO_MODEL` from the current catalogue, optional `ORBIO_AGENT_ID`, a funded gateway account, and current accepted launch terms handled through Orbio's own workflow. This project has not launched a token or accepted agreements for the user.
+Required live configuration: `ORBIO_API_KEY`, `ORBIO_MODEL` from the current catalogue, `ORBIO_AGENT_ID` for verified launch readiness, a funded gateway account, and current accepted launch terms handled through Orbio's own workflow. This project has not launched a token or accepted agreements for the user.
 
 ## Authenticated verification — 2026-10-05
 
@@ -30,3 +30,11 @@ The user-provided key was stored as a server-side hosting secret. `/api/v1/key` 
 The adapter accepts either the official origin or its `/api/v1` base URL and normalizes it once. Catalogue routers with negative price sentinels are refused because their worst-case cost is unknown. Live queue selection excludes demonstration missions so seeded commands cannot spend real balance. Paid integration tests are opt-in: `CTRL_ORBIO_SECRET_FILE=/absolute/private/runtime.json pnpm exec vitest run --config vitest.orbio.config.ts`. The private JSON contains a `key` property, remains outside source, and is never packaged. The test runs one paid mission; do not include it in routine CI.
 
 A subsequent hosted integration test also completed: `CTRL-36E43962`, real signed testnet holder session, private job, live Orbio model/search, R2 artifact and D1 receipt, settled US$0.0059985. See verification.md. The transport uses `redirect:manual` plus explicit 3xx refusal for Cloudflare compatibility, so bearer credentials are never forwarded on redirects.
+
+## Launch preflight verification — 2026-10-06
+
+Current public terms returned chain 4663, pair approval true, launch fee 500000000000000 wei, zero cliff and an unpaused launchpad. The active creator-fee routing was 50% stake, 30% CREDIT, 10% gateway and 10% treasury (computed from feeBps/conversionBps/creditBps/gatewayBps). These percentages apply to collected creator fees, not trading volume. The interface fetches the active terms; these observations are not future guarantees. Marketing pages containing 95% stake / 5% fee or ten-day cliff disagree with this response. Runtime prioritizes current API terms.
+
+Agent detail responses are flat objects. Launch readiness checks a valid registration's token against the configured mainnet CTRL token, as well as its launch transaction and owner/agent wallet shape. A third-party agent ID cannot satisfy readiness for a different token. No CTRL agent ID or mainnet contract is configured yet.
+
+A repeat bounded engine verification completed mission CTRL-0B0EC9BE, settled US$0.006127425 within a US$0.03 cap. Receipt SHA-256: 69447428c1a1513ddbdde94a96a211d622f4a79736b1a1eaa0d44478255e3735. This is a local engine verification, not a launch or hosted archive record. The actual signed testnet holder integration also passed again.

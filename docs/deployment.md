@@ -17,10 +17,10 @@ Demo deployment needs no paid credentials. It uses `CTRL_MODE=mock` (default), r
 | `ORBIO_API_KEY` | Secret gateway credential |
 | `ORBIO_MODEL` | Exact currently discoverable text model |
 | `ORBIO_BASE_URL` | Trusted official origin; defaults to current API host |
-| `ORBIO_AGENT_ID` | Optional future agent-specific resource inspection |
+| `ORBIO_AGENT_ID` | Required for launch readiness; registration must match CTRL mainnet token |
 | `CTRL_TOKEN_ADDRESS` | Genuine reviewed token deployment; blank until deployed |
 | `CTRL_RPC_URL`, `CTRL_CHAIN_ID` | Server chain reads; target Robinhood Chain 4663 |
-| `CTRL_LOCK_ADDRESS` | Reserved reviewed lock deployment; live adapter remains to be connected |
+| `CTRL_LOCK_ADDRESS` | Reserved flexible allocation deployment; disabled until reviewed, with release at any time |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Public pairing ID, supplied at build time |
 | `CTRL_DAILY_COMPUTE_USD` | Total daily reservation ceiling; defaults to US$1; unsettled calls retain their reservation |
 | `CTRL_PUBLIC_RELEASE` | Explicit release flag; defaults false; does not change hosting access |
@@ -33,7 +33,7 @@ OPENAI_COMPATIBLE fields are reserved; no live adapter selection is implemented 
 
 Run `worker/run.ts` on a long-running Node/container service with `APP_ORIGIN` and `WORKER_SECRET` matching the API. `pnpm worker` polls the tick endpoint, awaits completion and stops cleanly on termination. One worker is sufficient for MVP throughput. Production private jobs persist in the queue. The authenticated Work page can dispatch a queued job through `POST /api/missions/:id/execute`, which awaits the bounded run in the request. Closing the connection can interrupt execution; this does not replace an unattended worker. For an owner-private Sites origin, also configure `SITE_ACCESS_TOKEN` with an authorized Sites dispatch token; the worker sends it only to the configured origin. `pnpm worker --once` services at most one queue tick. The hosting release configures Orbio and worker authentication but does not provision a persistent external worker automatically. Paid work is never put in a 30-second request background task. Keep the Work page open for on-demand runs. For continuous operation, deploy the supplied container with `docker compose -f worker/compose.yaml up -d --build`, after setting the environment variables above. The container needs no Orbio credential: only the backend does.
 
-Inspect interrupted leases/provider settlement before recovery; do not blindly rerun paid calls. Manual REVIEW commands require a reviewed administrative workflow before enabling execution. Add alerting and retention/cleanup before sustained traffic.
+Expired execution leases are quarantined after a two-minute grace period. Their compute reservations remain held and receipts record unresolved settlement. Inspect provider usage before recovery; do not blindly rerun paid calls. Worker health is recorded only after a successful queue tick. Manual REVIEW commands require a reviewed administrative workflow before enabling execution. Add alerting and retention/cleanup before sustained traffic.
 
 ## Standard Next.js deployment
 
@@ -45,4 +45,4 @@ Run unit/API tests, strict typecheck, lint, both builds, desktop/mobile route ch
 
 ## Launch status
 
-`/launch` exposes current resource, model, mainnet, worker heartbeat, terms and release checks. It is an operational checklist, not proof of a launchpad listing. A real mainnet token and launchpad record must be created and verified separately. Switch both server and wallet configuration to chain 4663 only with the genuine deployment. The current hosting audience is public; token release remains gated separately. Setting `CTRL_PUBLIC_RELEASE=true` does not itself grant public access. Lock/burn integrations remain disabled until specified, deployed and reviewed.
+`/launch` exposes current resource, model, mainnet, worker heartbeat, terms and release checks. It is an operational checklist, not proof of a launchpad listing. A real mainnet token and launchpad record must be created and verified separately. Switch both server and wallet configuration to chain 4663 only with the genuine deployment. The current hosting audience is public; token release remains gated separately. Setting `CTRL_PUBLIC_RELEASE=true` does not itself grant public access. Burn is excluded. Flexible allocation remains disabled until its contract is deployed and reviewed; holding utility does not require allocation.

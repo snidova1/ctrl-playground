@@ -1,0 +1,19 @@
+'use client';
+import {useEffect,useRef} from 'react';
+import {weather} from '../data';
+export default function WeatherField({hour,wind,selected,paused}:{hour:number;wind:number;selected:number;paused:boolean}){
+ const host=useRef<HTMLDivElement>(null),values=useRef({hour,wind,selected,paused});
+ useEffect(()=>{values.current={hour,wind,selected,paused};},[hour,wind,selected,paused]);
+ useEffect(()=>{const el=host.current!,canvas=document.createElement('canvas'),context=canvas.getContext('2d');if(!context)return;const ctx=context;el.appendChild(canvas);let width=1,height=1,raf=0,last=0,time=0;const pointer={x:.5,y:.5,down:false};const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const resize=()=>{width=el.clientWidth;height=el.clientHeight;const dpr=Math.min(devicePixelRatio,1.5);canvas.width=width*dpr;canvas.height=height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);};const observer=new ResizeObserver(resize);observer.observe(el);resize();
+ const move=(e:PointerEvent)=>{const b=el.getBoundingClientRect();pointer.x=(e.clientX-b.left)/width;pointer.y=(e.clientY-b.top)/height;};const down=(e:PointerEvent)=>{pointer.down=true;el.setPointerCapture(e.pointerId);move(e);};const up=()=>{pointer.down=false;};el.addEventListener('pointermove',move);el.addEventListener('pointerdown',down);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
+ function frame(now:number){raf=requestAnimationFrame(frame);if(document.hidden){last=now;return;}if(now-last<32)return;const dt=Math.min(.1,(now-last)/1000);last=now;const v=values.current;if(!v.paused&&!reduced)time+=dt;const sample=weather[v.hour];const signal=[sample.curiosity,sample.attention,sample.friction,sample.velocity,(sample.attention+sample.curiosity)/2,(sample.velocity+sample.curiosity)/2][v.selected%6]/100;const day=Math.max(0,Math.sin((v.hour-6)/12*Math.PI));const sky=ctx.createLinearGradient(0,0,0,height);sky.addColorStop(0,`hsl(${210+signal*25} 24% ${12+day*25}%)`);sky.addColorStop(.58,`hsl(${28+signal*25} 35% ${45+day*30}%)`);sky.addColorStop(1,'#101f29');ctx.fillStyle=sky;ctx.fillRect(0,0,width,height);
+ // A continuous depth field: the selected signal sets wave height; friction changes roughness.
+ const horizon=height*.36,rows=width<600?42:64,cols=width<600?65:110;const speed=.1+v.wind/120;const rough=sample.friction/100;
+ for(let row=0;row<rows;row++){const depth=row/(rows-1),scale=depth*depth;ctx.beginPath();for(let col=0;col<=cols;col++){const x=col/cols*width;const worldX=(col/cols-.5)*(9+depth*35)+pointer.x*2;const worldZ=(1-depth)*20;const swell=Math.sin(worldX*.35+worldZ*.42+time*speed)*(20+signal*70)+Math.sin(worldX*1.15-worldZ*.6+time*speed*1.7)*rough*25;const ripple=pointer.down?Math.sin(Math.hypot(col/cols-pointer.x,depth-pointer.y)*30-time*5)*Math.exp(-Math.abs(col/cols-pointer.x)*5)*45:0;const y=horizon+scale*(height-horizon)+swell*(.08+scale*.9)+ripple*scale;if(col===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.strokeStyle=`hsla(${165+signal*70} ${24+signal*20}% ${65-depth*35}% / ${.2+depth*.65})`;ctx.lineWidth=.5+depth;ctx.stroke();}
+ // Cloud strata track friction and attention, not decorative particles.
+ for(let layer=0;layer<4;layer++){ctx.beginPath();for(let x=0;x<=width;x+=8){const y=height*(.15+layer*.045)+Math.sin(x/width*7+time*speed*.22+layer)*18*rough+Math.sin(x/width*19-layer)*7; if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.strokeStyle=`rgba(241,218,187,${.06+sample.attention/1200})`;ctx.lineWidth=9+layer*4;ctx.stroke();}
+ }
+ raf=requestAnimationFrame(frame);return()=>{cancelAnimationFrame(raf);observer.disconnect();el.removeEventListener('pointermove',move);el.removeEventListener('pointerdown',down);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);canvas.remove();};
+ },[]);return <div className="field-canvas" ref={host} aria-hidden="true"/>;
+}

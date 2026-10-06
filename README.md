@@ -76,3 +76,9 @@ Read [deployment](docs/deployment.md), [architecture](docs/architecture.md), [Or
 ## Robinhood testnet integration
 
 The default network is now Robinhood Chain Testnet (46630). Connect a browser wallet on `/account`, claim 64,000 tCTRL once, and sign the session challenge. Holder access reads the real ERC-20 balance. The hosted instance now uses live Orbio inference/search with a server-side key. Local development defaults to mock. Live jobs can execute on demand from the authenticated Work page; an external queue worker is needed for continuous unattended execution. See [the testnet runbook](docs/testnet.md) for deployment, verification and signer isolation.
+
+## Current release boundary
+
+Live Orbio model/search and real signed Robinhood testnet holder flows have been verified. Three world experiences are available: a first-person archive, an interactive signal field and a navigable orbital census. The data in the initial worlds is explicitly illustrative; generated worlds use bounded authored kits.
+
+Mainnet launch still requires the owner-signed Orbio transaction, the actual CTRL token address and agent ID, and a persistent external queue service. `/launch` fails closed until its separate checks pass. Worker health is written after successful ticks; expired executions are quarantined without retrying unresolved paid calls. Burn is excluded and optional flexible allocation is not yet live. Follow [the release runbook](docs/launch-runbook.md) for listing copy, configuration, operations and accurate announcement drafts.

@@ -20,3 +20,11 @@ Production launch work: reviewed token/lock contracts, indexing for holding hist
 
 ## World runtime boundary
 World recipes are strict-schema data, never executable code. Only three registered procedural kits are accepted. Generated private-world reads use mission ownership checks. Local progress is device-only and has no effect on server permissions or CONTROL. Burn and fixed locks are removed; live flexible allocation fails closed until a reviewed contract exists.
+
+## Queue interruption and release checks
+
+An expired mission lease is quarantined after a two-minute grace period. A possibly billed invocation is never automatically retried; unknown settlement retains its reservation. Terminal missions missing a receipt are repaired by the worker. Expired auth challenges, sessions and rate-limit windows are cleaned during worker ticks. Heartbeats are written only after successful ticks, and future or stale timestamps cannot satisfy release readiness.
+
+Launch readiness validates mainnet ERC-20 reads and a token-matching Orbio registration. A funded API key or arbitrary deployed contract cannot satisfy the full release checklist. Optional allocation is disabled; burn has been removed.
+
+Dependency maintenance pins Next.js 16.3.6 and patched transitive packages in the lockfile. The seven-day package maturity policy remains enabled. One exact security patch, source-map-js@1.2.2 (GHSA-68fv-2mgg-jv7q), has a documented maturity exception; this is not a wildcard or global bypass. A dependency audit is an advisory check, not a penetration test or smart-contract audit.
