@@ -1,21 +1,15 @@
-# Token utility and operator policy
+# Token utility / policy v2
 
-CTRL is an access layer. CONTROL is participation capacity, not transferable money. Public observers need no wallet. Normal proposals, support and personal jobs leave CTRL in the holder's wallet.
+CTRL is the access token. CONTROL is a non-transferable daily participation allowance. It is not a tradable token or a substitute for Orbio compute resources. No burn action exists.
 
-`config/policy.ts` contains illustrative thresholds and allowances. The current model weights the square root of balance, bounded holding-time and reputation modifiers, a proportional locked-balance modifier, and an overall daily cap. Allocations consume that UTC day's allowance; they are not burned tokens or purchasable fake AI credits. Policy version is explicit; changing economic assumptions does not require changing UI components.
+`config/policy.ts` owns editable thresholds, daily limits, and square-root balance weighting with bounded time/reputation modifiers. Live holding duration is not inferred from snapshots. Illustrative access classes remain OBSERVER, OPERATOR, PILOT, ARCHITECT and DIRECTOR, with thresholds 0 / 1,000 / 10,000 / 50,000 / 200,000 CTRL.
 
-| Tier | Example minimum CTRL | Capability |
-| --- | ---: | --- |
-| OBSERVER | 0 | Public browsing |
-| OPERATOR | 1,000 | Propose and support |
-| PILOT | 10,000 | Limited research and transformations |
-| ARCHITECT | 50,000 | Small builds, more jobs |
-| DIRECTOR | 200,000 | Larger budgets and parallel allowances |
+## Flexible allocation
 
-These are configuration defaults, not promises of final economics. Lock tiers of 30/90/180 days use example multipliers 1.15/1.4/1.8. The multiplier applies proportionally to the amount locked, and expired locks have no effect. There is no APY or passive yield. The live lock/burn contract boundary is typed but undeployed. Demo lock actions are clearly simulated, cannot be renewed while active and never send transactions.
+The optional allocation specification has no fixed duration. An operator can allocate, change or release the amount whenever desired. The sample multiplier is `1 + 0.25 × allocated / held`, capped at 1.25. Releasing immediately lowers capacity; it does not erase spent CONTROL or duplicate daily allowance. There is no APY or yield promise.
 
-EOA wallet signatures authenticate a server session. The token adapter reads ERC-20 `balanceOf`/`decimals` on the configured chain. Without a real address the live balance is unavailable and the holder remains an observer. Live holding duration is zero until an independently verified historical/indexing source is wired; session age is not misrepresented as holding duration.
+Demo allocation is implemented at `POST /api/account/allocation` and is explicitly simulated. It never moves tokens. Live allocation fails closed until a reviewed contract and adapter are deployed. `AllocationAdapter` specifies read, allocate and release operations without inventing an address or ABI.
 
-Reputation is non-transferable. Proposed/completed signals are currently persisted. Accepted/useful/failed/moderated weights are extensible configuration but require validated signal producers before use. Reputation modifiers are bounded. Moderation, Sybil resistance and meaningful output evaluation remain production policy work.
+Legacy database column names `lock_amount`, `lock_days`, and `lock_until` remain for compatibility. New writes always use zero days and null expiry. The account's legacy `lock` response carries the flexible allocation amount; the UI does not offer fixed locks. Legacy lock and burn routes return HTTP 410. Historical receipt fields remain readable so existing hashes stay verifiable.
 
-Daily job quotas, parallelism, CONTROL and spending caps are checked server-side. There is no guarantee of financial value, no whale-proof claim and no finalized token economics. Orbio launch economics remain dynamically sourced from active protocol terms.
+Participation unlocks proposals, support, bounded private jobs and build capabilities. Current thresholds are a configurable prototype, not finalized token economics or evidence of market demand.

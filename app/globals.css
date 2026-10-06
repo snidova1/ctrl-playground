@@ -1,3 +1,4 @@
+@import '../features/worlds/living.css';
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "../features/atrium/atrium.css";

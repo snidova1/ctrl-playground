@@ -17,3 +17,6 @@ Search content is untrusted source material, never executable instructions. Reac
 Paid call settlement is explicit. Running/settlement-pending calls are not blindly retried. Unsettled charges reserve allowance; provider request caps/pricing preflight and budget limits constrain known work. Receipts prove integrity of stored bytes, not factual truth or on-chain inclusion.
 
 Production launch work: reviewed token/lock contracts, indexing for holding history, verified moderation signal producers, monitoring, stale-lease reconciliation, session/rate-window cleanup, backups, billing reconciliation, wallet-device testing and a security review of live provider credentials. No contract audit is claimed.
+
+## World runtime boundary
+World recipes are strict-schema data, never executable code. Only three registered procedural kits are accepted. Generated private-world reads use mission ownership checks. Local progress is device-only and has no effect on server permissions or CONTROL. Burn and fixed locks are removed; live flexible allocation fails closed until a reviewed contract exists.

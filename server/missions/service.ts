@@ -1,3 +1,4 @@
+import {recipeFromCommand} from "@/domain/world";
 import { settings } from "@/server/env";
 import { policy } from "@/config/policy";
 import { statement,exec,one } from "@/db";
@@ -7,13 +8,13 @@ import { missionInput,supportInput,classifyCommand,estimateResources } from "@/s
 import { AppError } from "@/server/errors";
 import { getMission,event } from "./repository";
 export async function submitMission(user:Identity,data:unknown,privateJob=false){
- const input=missionInput.parse(data);const a=await account(user);const tier=policy.tiers.find(t=>t.name===a.tier)!;
+ const input=missionInput.parse(data);let recipeReview=false;if(input.kind==="build"&&input.input){try{const recipe=recipeFromCommand(input.command,"dead-web",input.input);recipeReview=classifyCommand(recipe.title+" "+recipe.brief+" "+recipe.objects.join(" "))==="REVIEW";}catch(e){if(e instanceof AppError)throw e;throw new AppError("INVALID_WORLD_RECIPE",422,"Provide a valid world recipe with 3–9 named objects.");}}const a=await account(user);const tier=policy.tiers.find(t=>t.name===a.tier)!;
  if(privateJob&&(!tier.capabilities.some(cap=>cap===input.kind)))throw new AppError("CAPABILITY_LOCKED",403,"Your credential does not open this capability.");
  if(!privateJob&&!tier.proposals)throw new AppError("OPERATOR_TIER_REQUIRED",403);
  const period=new Date().toISOString().slice(0,10);const count=await one<{total:number}>("SELECT COUNT(*) AS total FROM missions WHERE owner_id=? AND visibility=? AND created_at>=?",user.id,privateJob?"private":"public",period);
  if((count?.total??0)>=(privateJob?tier.jobs:tier.proposals))throw new AppError("DAILY_JOB_LIMIT",422);
  if(privateJob){const running=await one<{total:number}>("SELECT COUNT(*) AS total FROM missions WHERE owner_id=? AND visibility='private' AND status NOT IN ('COMPLETE','FAILED','REVIEW')",user.id);if((running?.total??0)>=tier.parallel)throw new AppError("PARALLEL_JOB_LIMIT",422);}
- const feasible=classifyCommand(input.command);if(input.kind==="transform"){try{JSON.parse(input.input??"");}catch{throw new AppError("INVALID_JSON_INPUT",422,"Provide valid JSON for a data transformation.");}}
+ const feasible=recipeReview?"REVIEW":classifyCommand(input.command);if(input.kind==="transform"){try{JSON.parse(input.input??"");}catch{throw new AppError("INVALID_JSON_INPUT",422,"Provide valid JSON for a data transformation.");}}
  const prior=await one<{mission_id:string;user_id:string;action:string}>("SELECT mission_id,user_id,action FROM control_allocations WHERE id=?",input.operationId);if(prior){if(prior.user_id!==user.id||prior.action!==(privateJob?"job":"proposal"))throw new AppError("OPERATION_ID_CONFLICT",409);return getMission(prior.mission_id);}
  const id=`CTRL-${crypto.randomUUID().slice(0,8).toUpperCase()}`;const cost=privateJob?policy.lab[`${input.kind}Cost` as "researchCost"|"buildCost"|"transformCost"]:policy.mission.proposalCost;
  const now=new Date().toISOString();const state=feasible==="REVIEW"?"REVIEW":privateJob?"QUEUED":"OPEN";const budget=Math.min(estimateResources(input.kind).budgetUsd,privateJob?tier.jobBudget:policy.mission.budgetUsd);

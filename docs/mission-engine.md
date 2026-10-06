@@ -43,3 +43,6 @@ Operational recovery: inspect expired leases and provider usage, seal the interr
 `POST /api/missions/:id/execute` requires a signed-in eligible holder and the usual private-job ownership check. It awaits execution within the request; a database lease prevents duplicate dispatch. The Work UI dispatches queued work once per page session. Continuous servicing is the separate worker’s responsibility. No automatic retry of uncertain paid calls is enabled.
 
 Before paid tools run, the engine atomically reserves the mission ceiling in `compute_reservations`. The daily sum includes actual settled cost or the full reserved ceiling for unknown settlement. This prevents concurrent jobs from overcommitting the configured daily cap. Local transformations reserve zero. Paid transport/accepted-call uncertainty marks receipts unsettled and keeps the reservation. Reservations use UTC daily periods.
+
+## Playable build artifacts
+Build jobs validate a bounded world recipe before acceptance. The worker produces recipe/report JSON and atomically registers its world manifest with mission completion. Public builds enter selection; private builds remain owner-only. See world-system.md.

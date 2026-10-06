@@ -8,8 +8,8 @@ export function controlCapacity(balance: number, heldDays=0, reputation=0, lock:
   if (!Number.isFinite(balance) || balance<=0) return 0;
   const time = 1 + Math.min(Math.max(heldDays,0) / rules.timeDays,1)*(rules.timeMax-1);
   const rep = 1 + Math.min(Math.max(reputation,0)/rules.reputationScale,1)*(rules.reputationMax-1);
-  const tier = policy.locks.find(t=>t.days===lock.days);
-  const lockWeight = tier && lock.unlocksAt && new Date(lock.unlocksAt).getTime()>Date.now() ? 1+(tier.multiplier-1)*Math.min(lock.amount/balance,1) : 1;
+  const allocated = Number.isFinite(lock.amount) ? Math.min(Math.max(lock.amount,0)/balance,1) : 0;
+  const lockWeight = 1+(policy.allocation.maximumMultiplier-1)*allocated;
   return Math.min(rules.dailyCap,Math.floor(Math.sqrt(balance)*rules.scale*time*rep*lockWeight));
 }
 export function reputationScore(signals: Partial<Record<keyof typeof policy.reputation,number>>): number {
