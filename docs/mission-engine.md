@@ -37,3 +37,9 @@ Receipts are immutable. The retry endpoint refuses to mutate an old failed execu
 Research produces a report; transformations parse JSON locally; small builds package an HTML field guide from their findings without executing generated code. Mock public world generation creates a new manifest/URL backed by the curated demonstration dataset. Autonomous renderer generation and unrestricted website deployment are intentionally outside the shipped executor.
 
 Operational recovery: inspect expired leases and provider usage, seal the interrupted mission as failed, then submit a new command. The current worker does not automatically replay expired paid work. Schedule reconciliation/cleanup and monitoring before enabling sustained production traffic.
+
+## On-demand execution and daily reservations
+
+`POST /api/missions/:id/execute` requires a signed-in eligible holder and the usual private-job ownership check. It awaits execution within the request; a database lease prevents duplicate dispatch. The Work UI dispatches queued work once per page session. Continuous servicing is the separate worker’s responsibility. No automatic retry of uncertain paid calls is enabled.
+
+Before paid tools run, the engine atomically reserves the mission ceiling in `compute_reservations`. The daily sum includes actual settled cost or the full reserved ceiling for unknown settlement. This prevents concurrent jobs from overcommitting the configured daily cap. Local transformations reserve zero. Paid transport/accepted-call uncertainty marks receipts unsettled and keeps the reservation. Reservations use UTC daily periods.

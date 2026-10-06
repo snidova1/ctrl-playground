@@ -6,7 +6,7 @@ const srgb=(value:number)=>Math.round(255*Math.min(1,Math.max(0,value<=.0031308?
 export function paintSculpture(ctx:CanvasRenderingContext2D,root:Group,camera:Camera,width:number,height:number,background:string){
  ctx.fillStyle=background;ctx.fillRect(0,0,width,height);
  const center=width<650?width*.5:width*.59;
- const glow=ctx.createRadialGradient(center,height*.4,20,center,height*.4,width*.85);glow.addColorStop(0,'#ffffff30');glow.addColorStop(1,'#1b22150a');ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
+ const glow=ctx.createRadialGradient(center,height*.4,20,center,height*.4,width*.85);glow.addColorStop(0,background==='#161816'?'#ffffff00':'#ffffff30');glow.addColorStop(1,'#1b221500');ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
  ctx.save();ctx.translate(center,height*.77);ctx.scale(1,.14);const shadow=ctx.createRadialGradient(0,0,0,0,0,width*.27);shadow.addColorStop(0,'#19221c25');shadow.addColorStop(.5,'#19221c12');shadow.addColorStop(1,'#19221c00');ctx.fillStyle=shadow;ctx.fillRect(-width*.4,-width*.4,width*.8,width*.8);ctx.restore();
  root.updateMatrixWorld(true);camera.updateMatrixWorld(true);const faces:Face[]=[];
  root.traverseVisible(object=>{

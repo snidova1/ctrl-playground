@@ -1,3 +1,4 @@
+import {launchStatus} from "./launch/status";
 import {deployment} from "@/config/deployment";
 import {networkFor} from "@/config/network";
 import {isAddress} from "viem";
@@ -24,9 +25,11 @@ function verifyOrigin(request:Request){const origin=request.headers.get("origin"
 async function permittedMission(request:Request,id:string){const mission=await getMission(id);if(!mission)throw new AppError("MISSION_NOT_FOUND",404);if(mission.visibility==="private"&&(await requireIdentity(request)).id!==mission.ownerId)throw new AppError("MISSION_NOT_FOUND",404);return mission;}
 export async function handleApi(request:Request,path:string[]):Promise<Response>{try{
  const p=path.join("/");const method=request.method;
- if(method==="POST"&&p==="engine/tick"){const secret=settings().workerSecret;if(!secret||request.headers.get("authorization")!==`Bearer ${secret}`)throw new AppError("WORKER_AUTH_REQUIRED",401);await rateLimit("worker",12);const id=await tickQueue();return json({missionId:id});}
+ if(method==="POST"&&p==="engine/tick"){const secret=settings().workerSecret;if(!secret||request.headers.get("authorization")!==`Bearer ${secret}`)throw new AppError("WORKER_AUTH_REQUIRED",401);await rateLimit("worker",12);await exec("INSERT INTO system_config(key,value,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at","worker.heartbeat",JSON.stringify({at:new Date().toISOString()}),new Date().toISOString());const id=await tickQueue();return json({missionId:id});}
  if(method!=="GET"){verifyOrigin(request);const u=await identity(request);await rateLimit(`write:${u?.id??request.headers.get("cf-connecting-ip")??"anonymous"}`,20);}
  if(method==="GET"&&p==="network"){const s=settings();const chain=networkFor(s.chainId);return json({chainId:chain.id,name:chain.name,testnet:!!chain.testnet,token:isAddress(s.token)?s.token:null,explorer:chain.blockExplorers.default.url,faucetEnabled:chain.id===46630&&isAddress(s.token)&&s.token.toLowerCase()===deployment.token?.toLowerCase()});}
+ if(method==="GET"&&p==="runtime")return json({mode:settings().mode,demoEnabled:settings().demoAuth,execution:"on-demand",publicRelease:settings().publicRelease});
+ if(method==="GET"&&p==="launch")return json(await launchStatus());
  if(method==="GET"&&p==="health")return json({status:"ok",mode:settings().mode,version:"1.0.0"});
  if(method==="GET"&&p==="account")return json(await account(await identity(request)));
  if(method==="POST"&&p==="auth/demo")return json({ok:true},200,{"Set-Cookie":await demoSession(request)});
@@ -40,10 +43,11 @@ export async function handleApi(request:Request,path:string[]):Promise<Response>
  if(method==="GET"&&p==="machine")return json(await machineState());
  if(method==="GET"&&p==="worlds"){const records=await query<{manifest:string}>("SELECT w.manifest FROM worlds w JOIN missions m ON m.id=w.mission_id WHERE m.visibility='public' ORDER BY w.created_at DESC LIMIT 100");const registry=new Map(worlds.map(w=>[w.slug,w]));for(const row of records){const manifest=JSON.parse(row.manifest) as WorldManifest;registry.set(manifest.slug,manifest);}return json([...registry.values()]);}
  if(method==="GET"&&path[0]==="worlds"&&path[1]){const base=worlds.find(w=>w.slug===path[1]);if(base)return json({manifest:base});const row=await one<{manifest:string;data:string}>("SELECT manifest,data FROM worlds WHERE slug=?",path[1]);if(!row)throw new AppError("WORLD_NOT_FOUND",404);return json({manifest:JSON.parse(row.manifest) as WorldManifest,data:JSON.parse(row.data) as unknown});}
- if(method==="POST"&&p==="engine/next"){if(!settings().demoAuth)throw new AppError("WORKER_SELECTION_ONLY",403);const a=await account(await requireIdentity(request));if(a.tier==="OBSERVER")throw new AppError("OPERATOR_TIER_REQUIRED",403);const id=await selectNext();background(runMission(id));return json({missionId:id},202);}
+ if(method==="POST"&&p==="engine/next"){const a=await account(await requireIdentity(request));if(a.tier==="OBSERVER")throw new AppError("OPERATOR_TIER_REQUIRED",403);const id=await selectNext();return json({missionId:id},202);}
  if(method==="POST"&&p==="account/lock"){const u=await requireIdentity(request);if(!u.demo)throw new AppError("LOCK_CONTRACT_NOT_DEPLOYED",503);const d=z.object({days:z.union([z.literal(30),z.literal(90),z.literal(180)]),amount:z.number().min(1).max(64000)}).strict().parse(await body(request));const a=await account(u);if(a.lock.unlocksAt&&new Date(a.lock.unlocksAt).getTime()>Date.now())throw new AppError("LOCK_ALREADY_ACTIVE",409);await exec("UPDATE users SET lock_amount=?,lock_days=?,lock_until=? WHERE id=?",d.amount,d.days,new Date(Date.now()+d.days*86400000).toISOString(),u.id);return json(await account((await identity(request))!));}
  if(method==="POST"&&p==="account/burn"){throw new AppError("BURN_UNAVAILABLE",503,"No CTRL burn contract is configured. Normal machine access does not require burning.");}
  if(path[0]==="missions"&&path[1]){const m=await permittedMission(request,path[1]);
+  if(method==="POST"&&path[2]==="execute"){const user=await requireIdentity(request);if(m.ownerId!==user.id&&m.visibility==="private")throw new AppError("MISSION_NOT_FOUND",404);const holder=await account(user);if(holder.tier==="OBSERVER")throw new AppError("OPERATOR_TIER_REQUIRED",403);if(m.status!=="QUEUED")return json({missionId:m.id,status:m.status});await runMission(m.id);return json({missionId:m.id,status:(await getMission(m.id))?.status});}
   if(method==="GET"&&path.length===2)return json({mission:m,events:await missionEvents(m.id),artifacts:await missionArtifacts(m.id)});
   if(method==="POST"&&path[2]==="support")return json(await supportMission(await requireIdentity(request),m.id,await body(request)));
   if(method==="POST"&&path[2]==="retry"){const user=await requireIdentity(request);if(user.id!==m.ownerId)throw new AppError("MISSION_NOT_FOUND",404);if(m.status!=="FAILED")throw new AppError("MISSION_NOT_RETRYABLE",409);throw new AppError("NEW_COMMAND_REQUIRED",409,"The failed receipt is permanent. Check provider settlement, then submit a new command with its own budget and receipt.");}

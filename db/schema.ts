@@ -14,3 +14,5 @@ export const snapshots=sqliteTable("holder_snapshots",{id:text("id").primaryKey(
 export const usage=sqliteTable("provider_usage",{id:text("id").primaryKey(),missionId:text("mission_id").notNull(),provider:text("provider").notNull(),model:text("model"),cost:real("cost"),settled:integer("settled").notNull().default(1),usageId:text("usage_id"),createdAt:text("created_at").notNull()},t=>[index("usage_mission").on(t.missionId)]);
 export const limits=sqliteTable("rate_limits",{id:text("id").primaryKey(),count:integer("count").notNull(),expiresAt:integer("expires_at").notNull()});
 export const systemConfig=sqliteTable("system_config",{key:text("key").primaryKey(),value:text("value").notNull(),updatedAt:text("updated_at").notNull()});
+
+export const computeReservations=sqliteTable("compute_reservations",{missionId:text("mission_id").primaryKey().references(()=>missions.id),period:text("period").notNull(),budget:real("budget").notNull(),cost:real("cost"),state:text("state").notNull()},t=>[index("compute_reservations_period").on(t.period)]);

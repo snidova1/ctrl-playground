@@ -4,7 +4,7 @@
 
 The supplied managed hosting project declares logical `DB` and `BUCKET` bindings in `.openai/hosting.json`. Build through the included Sites helper (`pnpm build`), which preserves the framework/auth/connector worker. Publish the generated worker/assets archive through the hosting workflow. Do not serve only the browser bundle: the product requires its API and database.
 
-Apply `drizzle/0000_fair_susan_delgado.sql` to a fresh D1 database before traffic. For an independently managed Cloudflare deployment, define D1/R2 bindings with those names, migration directory `drizzle`, Worker entrypoint from the generated `dist/server` configuration, and static assets from `dist/client`. Use standard D1 migration tracking for subsequent releases. Never reapply the initial migration over existing tables blindly.
+Apply all tracked `drizzle/*.sql` migrations in order before traffic. `0001_nifty_iron_fist.sql` adds atomic daily compute reservations. For an independently managed Cloudflare deployment, define D1/R2 bindings with those names, migration directory `drizzle`, Worker entrypoint from the generated `dist/server` configuration, and static assets from `dist/client`. Use standard D1 migration tracking for subsequent releases. Never reapply the initial migration over existing tables blindly.
 
 Demo deployment needs no paid credentials. It uses `CTRL_MODE=mock` (default), retains durable data, and labels simulated entitlement/resources/outputs. Set `APP_ORIGIN` to the deployed origin if using reverse proxies. Do not set a real API key in mock mode to imply that mock work is billed.
 
@@ -22,6 +22,8 @@ Demo deployment needs no paid credentials. It uses `CTRL_MODE=mock` (default), r
 | `CTRL_RPC_URL`, `CTRL_CHAIN_ID` | Server chain reads; target Robinhood Chain 4663 |
 | `CTRL_LOCK_ADDRESS` | Reserved reviewed lock deployment; live adapter remains to be connected |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Public pairing ID, supplied at build time |
+| `CTRL_DAILY_COMPUTE_USD` | Total daily reservation ceiling; defaults to US$1; unsettled calls retain their reservation |
+| `CTRL_PUBLIC_RELEASE` | Explicit release flag; defaults false; does not change hosting access |
 | `WORKER_SECRET` | At least 32 unpredictable characters for worker authentication |
 | `DEMO_AUTH_ENABLED` | Optional development demo; always refused in production |
 
@@ -29,7 +31,7 @@ OPENAI_COMPATIBLE fields are reserved; no live adapter selection is implemented 
 
 ## Separate worker
 
-Run `worker/run.ts` on a long-running Node/container service with `APP_ORIGIN` and `WORKER_SECRET` matching the API. `pnpm worker` polls the tick endpoint, awaits completion and stops cleanly on termination. One worker is sufficient for MVP throughput. Production private jobs persist in the queue and await that service. For an owner-private Sites origin, also configure `SITE_ACCESS_TOKEN` with an authorized Sites dispatch token; the worker sends it only to the configured origin. `pnpm worker --once` services at most one queue tick. The hosting release configures Orbio and worker authentication but does not provision a persistent external worker automatically. Browser requests do not start long paid work with a 30-second background deadline.
+Run `worker/run.ts` on a long-running Node/container service with `APP_ORIGIN` and `WORKER_SECRET` matching the API. `pnpm worker` polls the tick endpoint, awaits completion and stops cleanly on termination. One worker is sufficient for MVP throughput. Production private jobs persist in the queue. The authenticated Work page can dispatch a queued job through `POST /api/missions/:id/execute`, which awaits the bounded run in the request. Closing the connection can interrupt execution; this does not replace an unattended worker. For an owner-private Sites origin, also configure `SITE_ACCESS_TOKEN` with an authorized Sites dispatch token; the worker sends it only to the configured origin. `pnpm worker --once` services at most one queue tick. The hosting release configures Orbio and worker authentication but does not provision a persistent external worker automatically. Paid work is never put in a 30-second request background task. Keep the Work page open for on-demand runs. For continuous operation, deploy the supplied container with `docker compose -f worker/compose.yaml up -d --build`, after setting the environment variables above. The container needs no Orbio credential: only the backend does.
 
 Inspect interrupted leases/provider settlement before recovery; do not blindly rerun paid calls. Manual REVIEW commands require a reviewed administrative workflow before enabling execution. Add alerting and retention/cleanup before sustained traffic.
 
@@ -40,3 +42,7 @@ Inspect interrupted leases/provider settlement before recovery; do not blindly r
 ## Release checks
 
 Run unit/API tests, strict typecheck, lint, both builds, desktop/mobile route checks, private job isolation and live-provider missing-key tests. Verify migration coverage, ensure `.env*` files remain ignored except `.env.example`, and confirm no private keys/generated test state enter the source archive. Use the deployment status response as publication verification.
+
+## Launch status
+
+`/launch` exposes current resource, model, mainnet, worker heartbeat, terms and release checks. It is an operational checklist, not proof of a launchpad listing. A real mainnet token and launchpad record must be created and verified separately. Switch both server and wallet configuration to chain 4663 only with the genuine deployment. The current hosting audience is public; token release remains gated separately. Setting `CTRL_PUBLIC_RELEASE=true` does not itself grant public access. Lock/burn integrations remain disabled until specified, deployed and reviewed.

@@ -4,7 +4,7 @@ import {deadWeb,agents} from '@/features/worlds/data';
 export type Exhibit='machine'|'dead-web'|'internet-weather'|'agent-orbit';
 export type Form={root:Group;pickable:Mesh[];tick:(time:number,selection:number,active?:number[])=>void;dispose:()=>void};
 const tau=Math.PI*2;
-export function makeForm(kind:Exhibit,weights:number[]):Form{
+export function makeForm(kind:Exhibit,weights:number[],quality:'full'|'reduced'='full'):Form{
  const root=new Group(),pickable:Mesh[]=[],materials:MeshStandardMaterial[]=[],geometries:BufferGeometry[]=[],textures:CanvasTexture[]=[];
  const mat=(color:string,metal=.1,rough=.38)=>{const m=new MeshStandardMaterial({color,metalness:metal,roughness:rough,side:DoubleSide});materials.push(m);return m;};
  const mesh=(g:BufferGeometry,m:MeshStandardMaterial,parent:Group=root)=>{geometries.push(g);const o=new Mesh(g,m);o.castShadow=true;o.receiveShadow=true;o.renderOrder=parent.children.length;parent.add(o);return o;};
@@ -41,15 +41,15 @@ export function makeForm(kind:Exhibit,weights:number[]):Form{
   const orbital:Group[]=[];const objects:Mesh[]=[];
   agents.forEach((agent,i)=>{
    const plane=new Group();root.add(plane);plane.rotation.set(.5+i*.29, i*.35, i*.24);orbital.push(plane);
-   const radius=1.35+agent.age/56;const track=mesh(new TorusGeometry(radius,.014,4,112),steel,plane);track.userData.index=i;
+   const radius=1.35+agent.age/56;const track=mesh(new TorusGeometry(radius,.014,4,quality==='reduced'?48:112),steel,plane);track.userData.index=i;
    const marker=mesh(new SphereGeometry(.08+agent.budget*.15,14,10),i===0?accent:white,plane);marker.userData.index=i;pickable.push(marker);objects.push(marker);
   });
   mesh(new SphereGeometry(.4,28,20),dark);root.rotation.set(.3,.1,-.2);
   tick=(time,selection,active)=>{orbital.forEach((g,i)=>{g.visible=!active||active.includes(i);});objects.forEach((o,i)=>{const agent=agents[i],t=time*(.03+agent.activity*.045)+i*1.82,r=1.35+agent.age/56;o.position.set(Math.cos(t)*r,Math.sin(t)*r,0);o.material=i===selection?accent:white;});};
  }else{
-  const vertices:number[]=[],indices:number[]=[];const rows=58,cols=54;
+  const vertices:number[]=[],indices:number[]=[];const rows=quality==='reduced'?22:58,cols=quality==='reduced'?24:54;
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const u=x/(cols-1),v=y/(rows-1);vertices.push((u-.5)*7.4,Math.sin(u*5+v*2)*.7+Math.cos(v*8-u*3)*.48,(v-.5)*5);}
-  for(let y=0;y<rows-1;y++)for(let x=0;x<cols-1;x++){const a=y*cols+x;indices.push(a,a+1,a+cols,a+1,a+cols+1,a+cols);}
+  for(let y=0;y<rows-1;y++)for(let x=0;x<cols-1;x++){const a=y*cols+x;indices.push(a,a+cols,a+1,a+1,a+cols,a+cols+1);}
   const geometry=new BufferGeometry();geometry.setAttribute('position',new Float32BufferAttribute(vertices,3));geometry.setIndex(indices);geometry.computeVertexNormals();mesh(geometry,steel);root.rotation.set(.35,0,-.1);
  }
  return {root,pickable,tick,dispose(){new Set(geometries).forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());root.clear();}};

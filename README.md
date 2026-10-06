@@ -32,6 +32,7 @@ The app has two supported targets: standard Next.js App Router on Node with loca
 | `/archive`, `/archive/:id` | Public ledger, permanent receipts, JSON export, verified artifact downloads |
 | `/machine` | Worker instrumentation, live Orbio catalogue/terms, gateway balance when configured |
 | `/account` | Operator credential, holder tier, allowance, reputation, simulated optional locking |
+| `/launch` | Current integration and release gates; honest testnet/mainnet distinction |
 | `/lab` | Authenticated private task workbench, tier and quota enforcement |
 
 ## What is live and what is simulated
@@ -64,10 +65,13 @@ Unit/API tests cover CONTROL, tiers, validation, SSRF URL policy, provider settl
 
 ## Production
 
+The new entrance is a Three.js collection with tactile selection, accessible controls and a canvas fallback. The launch film, original score and X copy are delivered separately as a campaign pack.
+
+
 Use durable D1 and R2 bindings, apply the included Drizzle SQL migration, set `CTRL_MODE=production`, `APP_ORIGIN`, genuine token/RPC configuration, Orbio key/model and a strong worker secret. Run the separate authenticated queue worker; production API submissions do not start long paid jobs in request background tasks. Do not deploy the Node development SQLite adapter to Vercel's ephemeral filesystem. A PostgreSQL/Supabase port can implement the same repository interfaces but is not shipped here.
 
 Read [deployment](docs/deployment.md), [architecture](docs/architecture.md), [Orbio integration](docs/orbio-integration.md), [mission engine](docs/mission-engine.md), [token utility](docs/token-utility.md), [world system](docs/world-system.md), and [security](docs/security.md).
 
 ## Robinhood testnet integration
 
-The default network is now Robinhood Chain Testnet (46630). Connect a browser wallet on `/account`, claim 64,000 tCTRL once, and sign the session challenge. Holder access reads the real ERC-20 balance. The hosted instance now uses live Orbio inference/search with a server-side key. Local development defaults to mock. Live jobs require the authenticated queue worker. See [the testnet runbook](docs/testnet.md) for deployment, verification and signer isolation.
+The default network is now Robinhood Chain Testnet (46630). Connect a browser wallet on `/account`, claim 64,000 tCTRL once, and sign the session challenge. Holder access reads the real ERC-20 balance. The hosted instance now uses live Orbio inference/search with a server-side key. Local development defaults to mock. Live jobs can execute on demand from the authenticated Work page; an external queue worker is needed for continuous unattended execution. See [the testnet runbook](docs/testnet.md) for deployment, verification and signer isolation.

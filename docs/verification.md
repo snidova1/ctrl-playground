@@ -51,3 +51,11 @@ An explicit one-mission live test passed using the production provider, actual w
 The deployed production runtime authenticated the funded testnet signer and read 64,000 tCTRL / ARCHITECT without a demo credential. Private job `CTRL-36E43962` executed through the authenticated tick endpoint and completed using Orbio search plus `openai/gpt-6-luna`. Settled cost: US$0.0059985. Receipt SHA-256: `4fc6b58dbd5335851d008672988b1347b202cc9cf76a46d1f9a5cf474383b0a0`. The receipt remains private to its wallet; it is not a public archive entry.
 
 An earlier hosting-only transport failure was fixed by using manual redirect handling and explicitly refusing 3xx responses; the Cloudflare runtime did not accept the previous redirect mode. The gateway balance read confirmed no charge for that failed attempt. Fifty routine tests, strict typecheck, lint and the hosted build passed after the correction. The standard Next.js build passed in the preceding release. The worker was invoked for this bounded verification only; no persistent 24/7 worker has been provisioned.
+
+## Landing and launch preparation — 2026-10-06
+
+The entrance now contains three lazy-loaded spatial modules with native selection/entry controls, GSAP transitions, reduced-motion support and a canvas renderer fallback. Mobile presents only the selected module. Software mesh winding was corrected to preserve legible CRT screens and weather surfaces.
+
+52 unit/API tests passed during preparation, including concurrent daily resource reservation, settled-release and unknown-liability boundaries. The local mobile preview was inspected at a 390×844 iframe viewport. Explicit demo access, public proposal/support, mission progress, personal JSON transformation and private receipt hash verification were exercised through the visible UI. The local preview initially lacked the new compute-reservation migration; it was applied, and a fresh private transformation completed with a verified receipt. Production packaging includes the generated migration and Drizzle metadata.
+
+The delivered film is an actual 30-second 1920×1080 H.264/AAC render at 24 fps, with an original synthesized score. Twelve X posts were checked below the 280-character limit. No posts were published.
