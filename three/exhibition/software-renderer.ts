@@ -26,7 +26,7 @@ export function paintSculpture(ctx:CanvasRenderingContext2D,root:Group,camera:Ca
    const color=material.color??new Color('#ddd');const tone=`rgb(${srgb(color.r*amount)},${srgb(color.g*amount)},${srgb(color.b*amount)})`;
    const source=material.map?.source.data;const image=source instanceof HTMLCanvasElement?source:undefined;
    const actualDepth=(a.z+b.z+c.z)/3;const groupDepth=object.parent?.userData.paintAsUnit?object.parent.getWorldPosition(new Vector3()).project(camera).z:null;const depth=groupDepth===null?actualDepth:groupDepth+(actualDepth-groupDepth)*.0001-object.renderOrder*.00002;
-   faces.push({points,depth,color:tone,...(image&&uv?{image,uv:ids.map(k=>[uv.getX(k)*image.width,(1-uv.getY(k))*image.height] as [number,number])}:{})});
+   faces.push({points,depth:object.userData.paintBackground?depth+2:depth,color:tone,...(image&&uv?{image,uv:ids.map(k=>[uv.getX(k)*image.width,(1-uv.getY(k))*image.height] as [number,number])}:{})});
   }
  });
  faces.sort((a,b)=>b.depth-a.depth);
