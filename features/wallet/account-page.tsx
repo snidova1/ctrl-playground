@@ -1,15 +1,46 @@
-"use client";
-import { lazy,Suspense,useState } from "react";
-import Link from "@/components/navigation";
-import {useResource} from "@/lib/use-resource";
-import {mutate,ApiError} from "@/lib/api-client";
-import type {Account,Mission} from "@/domain/types";
-import {PageHead,ErrorState,DemoBand,MachineLoading} from "@/components/states";
-import {DemoAccess} from "./access";
-import {policy} from "@/config/policy";
-import {Dialog,DialogContent,DialogTitle,DialogDescription} from "@/components/ui/dialog";
-const WalletConnect=lazy(()=>import("./wallet-connect"));
-export default function AccountPage(){const {data:a,error,loading,refresh}=useResource<Account>("account");const [walletOpen,setWalletOpen]=useState(false);const jobs=useResource<Mission[]>(a?.authenticated?"jobs":null);const [amount,setAmount]=useState(32000),[busy,setBusy]=useState(false),[actionError,setActionError]=useState<ApiError|null>(null);
- async function allocate(amount:number){setBusy(true);setActionError(null);try{await mutate("account/allocation",{amount});}catch(e){setActionError(e as ApiError);}finally{setBusy(false);}}
- async function disconnect(){await mutate("auth/logout",{});}
- return <div className="page account-page"><PageHead index="OPERATOR / CREDENTIAL" title={<>The machine<br/>opens differently.</>} description="CTRL is your access layer. CONTROL is your participation capacity." aside={<button className="button button-dark" onClick={()=>setWalletOpen(true)}>CONNECT WALLET <span>+</span></button>}/>{error?<ErrorState error={error} retry={refresh}/>:loading?<MachineLoading title="READING YOUR CREDENTIAL"/>:a&&<div className="account-layout"><div className="passport"><div className="passport-header"><strong>CTRL</strong><span>OPERATOR CREDENTIAL<br/>NON-TRANSFERABLE STATUS</span></div><div className="passport-identity"><div className="credential-mark" aria-hidden="true"><span>{a.tier.slice(0,1)}</span></div><div><span className="eyebrow">ACCESS CLASS</span><h2>{a.tier}</h2><p className="mono">{a.wallet?`${a.wallet.slice(0,8)}…${a.wallet.slice(-6)}`:a.demo?"SIMULATED OPERATOR":"PUBLIC OBSERVER"}</p></div></div><dl className="dl"><div><dt>{a.chainId===46630?"tCTRL held (testnet)":"CTRL held"}</dt><dd>{a.balance===null?"—":a.balance.toLocaleString()} {a.demo?"(SIMULATED)":""}</dd></div><div><dt>CONTROL today</dt><dd>{a.available} / {a.capacity}</dd></div><div><dt>CONTROL allocated</dt><dd>{a.used}</dd></div><div><dt>Reputation</dt><dd>{a.reputation}</dd></div><div><dt>Personal jobs today</dt><dd>{a.jobsUsed} / {a.jobAllowance}</dd></div><div><dt>Parallel jobs</dt><dd>{a.parallel}</dd></div><div><dt>Network</dt><dd>{a.chainId===46630?"ROBINHOOD TESTNET / 46630":`CHAIN ${a.chainId}`}</dd></div><div><dt>Flexible allocation</dt><dd>{a.lock.amount?`${a.lock.amount.toLocaleString()} CTRL`:"NONE"}</dd></div><div><dt>Release</dt><dd>ANY TIME</dd></div></dl>{a.demo?<DemoBand>DEMO CREDENTIAL / 64,000 simulated CTRL. No wallet assets are created or moved.</DemoBand>:!a.tokenConfigured?<div className="notice"><strong>CTRL NOT DEPLOYED</strong>Balance and holder access will resolve after the token address and RPC are configured.</div>:null}{a.authenticated?<button className="text-button" onClick={disconnect}>LEAVE SESSION</button>:<DemoAccess/>}</div><div className="capability-doors"><span className="eyebrow">ROOMS OPEN TO YOUR CREDENTIAL</span>{policy.tiers.map((tier,i)=>{const level=policy.tiers.findIndex(t=>t.name===a.tier),unlocked=i<=level;return <div className={`capability-door ${unlocked?"unlocked":"locked"}`} key={tier.name}><div className="door-seam"/><div><span className="mono">{String(i).padStart(2,"0")} / {unlocked?"OPEN":"SEALED"}</span><h3>{tier.name}</h3><p>{["Observe commands, worlds and receipts.","Propose commands. Give them weight.","Run bounded personal investigations.","Build artifacts. Transform data.","Parallel work. A larger private allowance."][i]}</p></div><span className="door-mark">{unlocked?"+":"—"}</span></div>})}<Link href="/lab" className="button button-dark lab-entry">ENTER PERSONAL LAB <span>↗</span></Link></div></div>} {a?.authenticated&&<><section className="lock-section"><div><span className="eyebrow">OPTIONAL / FLEXIBLE ALLOCATION</span><h2>Open more capacity.<br/>Leave when you want.</h2><p>Allocate CTRL to increase CONTROL. Release the allocation at any time. No fixed duration, burn, or yield.</p><p className="lock-footnote">Up to {policy.allocation.maximumMultiplier.toFixed(2)}× capacity, proportional to the balance allocated. Illustrative policy; live allocation requires a reviewed contract.</p></div><div className="lock-controls"><div className="field"><label htmlFor="lock-amount">CTRL TO ALLOCATE</label><input id="lock-amount" type="number" min={0} max={a.balance??0} value={amount} onChange={e=>setAmount(Number(e.target.value))}/></div><button className="button button-dark" onClick={()=>allocate(amount)} disabled={busy||!a.demo||!Number.isFinite(amount)||amount<0||amount>(a.balance??0)}>{busy?"UPDATING":a.demo?"SIMULATE ALLOCATION":"CONTRACT NOT DEPLOYED"}</button><button className="button" onClick={()=>allocate(0)} disabled={busy||!a.demo||!a.lock.amount}>RELEASE ALLOCATION</button>{actionError&&<ErrorState error={actionError}/>}<p className="muted lock-disclosure">Simulation only; tokens never move. Releasing reduces capacity immediately. CONTROL already used remains recorded.</p></div></section><section className="operator-history"><div className="section-heading"><h2>Your work trail</h2><span className="mono">{a.proposals} PROPOSED / {a.successful} COMPLETE</span></div>{jobs.error&&<ErrorState error={jobs.error}/>}<div className="history-rows">{jobs.data?.slice(0,8).map(m=><Link key={m.id} href={`/archive/${m.id}`}><span className="mono">{m.visibility.toUpperCase()}</span><span>{m.command}</span><span className="mono">{m.status}</span></Link>)}</div>{!jobs.data?.length&&<p className="muted">Your commands and private jobs leave their records here.</p>}</section></>}<Dialog open={walletOpen} onOpenChange={setWalletOpen}><DialogContent className="ctrl-dialog"><DialogTitle className="dialog-title">WALLET ACCESS</DialogTitle><DialogDescription className="dialog-desc">Connect a wallet, then sign a session challenge. A signature never authorizes a transaction.</DialogDescription><Suspense fallback={<MachineLoading title="PREPARING CONNECTORS"/>}><WalletConnect onVerified={()=>setWalletOpen(false)}/></Suspense></DialogContent></Dialog></div>;}
+'use client';
+import {lazy,Suspense,useState} from 'react';
+import Link from '@/components/navigation';
+import {useResource} from '@/lib/use-resource';
+import {mutate} from '@/lib/api-client';
+import type {Account} from '@/domain/types';
+import {PageHead,ErrorState,DemoBand,MachineLoading} from '@/components/states';
+import {DemoAccess} from './access';
+import {plazaPolicy} from '@/config/plaza';
+import {Dialog,DialogContent,DialogTitle,DialogDescription} from '@/components/ui/dialog';
+const WalletConnect=lazy(()=>import('./wallet-connect'));
+
+export default function AccountPage(){
+ const {data:account,error,loading,refresh}=useResource<Account>('account');
+ const [walletOpen,setWalletOpen]=useState(false);
+ const threshold=plazaPolicy.minimumLiveBuilderBalance;
+ const eligible=!!account?.authenticated&&!account.demo&&(account.balance??0)>=threshold;
+ async function disconnect(){await mutate('auth/logout',{});refresh();}
+ return <div className='page account-page'>
+  <PageHead index='COMMON GROUND / HOLDER ACCESS' title={<>A place for everyone.<br/>More tools for holders.</>} description='Enter the plaza freely. Hold CTRL to use the live object designer. Your tokens stay in your wallet.' aside={<button className='button button-dark' onClick={()=>setWalletOpen(true)}>CONNECT WALLET <span>+</span></button>}/>
+  {error?<ErrorState error={error} retry={refresh}/>:loading?<MachineLoading title='READING YOUR CREDENTIAL'/>:account&&<div className='account-layout'>
+   <div className='passport'>
+    <div className='passport-header'><strong>CTRL</strong><span>COMMON GROUND<br/>HOLDER PASSPORT</span></div>
+    <div className='passport-identity'><div className='credential-mark' aria-hidden='true'><span>{eligible?'+':'○'}</span></div><div><span className='eyebrow'>BUILDER ACCESS</span><h2>{eligible?'HOLDER':'VISITOR'}</h2><p className='mono'>{account.wallet?`${account.wallet.slice(0,8)}…${account.wallet.slice(-6)}`:account.demo?'SIMULATED CREDENTIAL':'PUBLIC ACCESS'}</p></div></div>
+    <dl className='dl'>
+     <div><dt>{account.chainId===46630?'tCTRL held (testnet)':'CTRL held'}</dt><dd>{account.balance===null?'—':account.balance.toLocaleString()}{account.demo?' (SIMULATED)':''}</dd></div>
+     <div><dt>Live designer threshold</dt><dd>{threshold.toLocaleString()} CTRL</dd></div>
+     <div><dt>Live designs per day</dt><dd>Up to {plazaPolicy.modelCallsPerHolderPerDay}</dd></div>
+     <div><dt>Objects per visitor</dt><dd>{plazaPolicy.objectsPerVisitor}</dd></div>
+     <div><dt>Network</dt><dd>{account.chainId===46630?'ROBINHOOD TESTNET / 46630':`CHAIN ${account.chainId}`}</dd></div>
+    </dl>
+    {account.demo?<DemoBand>Explicit demo credential. Simulated balances cannot unlock paid object generation.</DemoBand>:!account.tokenConfigured?<div className='notice'><strong>TOKEN NOT CONNECTED</strong>Holder access will resolve when a genuine token address and RPC are configured.</div>:account.chainId===46630?<div className='notice'><strong>TESTNET ACCESS</strong>This credential uses tCTRL on Robinhood Chain Testnet. It is not a mainnet launch token.</div>:null}
+    {account.authenticated?<button className='text-button' onClick={()=>void disconnect()}>LEAVE SESSION</button>:<DemoAccess/>}
+   </div>
+   <div className='capability-doors'>
+    <span className='eyebrow'>WHAT YOU CAN DO HERE</span>
+    <div className='capability-door unlocked'><div className='door-seam'/><div><span className='mono'>01 / OPEN TO EVERYONE</span><h3>THE COURTYARD</h3><p>Walk around, meet connected visitors, use objects, and collect a little refreshment.</p></div><span className='door-mark'>+</span></div>
+    <div className='capability-door unlocked'><div className='door-seam'/><div><span className='mono'>02 / FREE WORKSHOP</span><h3>MAKE & PLACE</h3><p>Assemble five working object types, change their color and size, test them, and leave them in the shared plaza.</p></div><span className='door-mark'>+</span></div>
+    <div className={`capability-door ${eligible?'unlocked':'locked'}`}><div className='door-seam'/><div><span className='mono'>03 / {threshold.toLocaleString()} CTRL HELD</span><h3>LIVE DESIGNER</h3><p>Use the Orbio model to interpret an object request within the supported building kit. Requires a signed holder session and available model capacity.</p></div><span className='door-mark'>{eligible?'+':'—'}</span></div>
+    <Link href='/' className='button button-dark lab-entry'>BACK TO COMMON GROUND <span>↗</span></Link>
+    <p className='notice'>Access uses a balance threshold checked by the server. No token transfer, burn, lock, or allocation is needed. Daily model limits keep the shared service within its operating budget.</p>
+   </div>
+  </div>}
+  <Dialog open={walletOpen} onOpenChange={setWalletOpen}><DialogContent className='ctrl-dialog'><DialogTitle className='dialog-title'>WALLET ACCESS</DialogTitle><DialogDescription className='dialog-desc'>Connect a wallet and sign a session challenge. The signature does not authorize a token transfer.</DialogDescription><Suspense fallback={<MachineLoading title='PREPARING CONNECTORS'/>}><WalletConnect onVerified={()=>{setWalletOpen(false);refresh();}}/></Suspense></DialogContent></Dialog>
+ </div>;
+}

@@ -1,56 +1,54 @@
-# CTRL — A PUBLIC MACHINE.
+# CTRL — Common Ground
 
-CTRL is a working public mission system. Holders propose commands, allocate participation capacity, inspect execution, and receive artifacts with permanent receipts. Public browsing stays open. The token is the machine's access layer; CONTROL is a non-transferable allowance, not a second token.
+A shared courtyard people can enter, change and use. Walk an animated character through a real 3D space, make an interactive object, test it, and leave it for another visitor. CTRL holder access adds a bounded live object designer; public play stays free.
 
-## Run locally
+**Current status: playable alpha.** One authored world, five working object types, durable shared objects, real guest sessions and lightweight multiplayer presence. This is not an unrestricted world generator or a mainnet token launch.
 
-Requirements: Node 22.13+ (Node 24 recommended), pnpm 11, modern browser. No paid key is needed for the complete mock demo.
+## Run
+
+Node 22.13+ (24 recommended), pnpm 11, a WebGL-capable browser.
 
 ```sh
 pnpm install
 cp .env.example .env.local
 pnpm db:local
 pnpm dev:next
-# http://localhost:3000
+# Open http://localhost:3000
 ```
 
-Open `/account` and choose **ENTER DEMO** explicitly. This creates a simulated operator credential; it does not connect a fabricated blockchain wallet. The public exhibition seeds on the first mission request. Propose a command, allocate support, then use `/work` to execute the highest-supported feasible command. Run private research, JSON transformation, or a playable world build in `/lab`. Execution writes real database events, artifacts and hashed receipts, even when the provider is simulated.
+No paid credentials are needed to enter, walk, make/place/test objects or use the drink dispenser. The free workshop kit is deterministic and explicitly labeled. Objects and bags persist in SQLite locally and D1 on the hosted runtime.
 
-The app has two supported targets: standard Next.js App Router on Node with local SQLite/filesystem adapters, and the hosted Vinext App Router runtime on Cloudflare D1/R2. Next.js production compilation is available with `pnpm build:next`; the managed hosting bundle uses `pnpm build`. Local adapters are for development, not stateless serverless production.
+## What works
 
-## Product surfaces
+- Animated character; WASD/arrows or touch joystick; drag camera; collision boundaries and a walk-in workshop.
+- Make → test → position/rotate → place → interact → remove your own object.
+- Orange cat dispenser with a working virtual soda bag; bench, lamp, planter and kinetic sculpture behaviors.
+- Presence from actual independent sessions, shared persisted objects, owner-only deletion, interaction idempotency, server limits.
+- Public entry without a wallet; a holder passport and the existing signed EVM testnet wallet integration.
+- Server-only Orbio recipe endpoint, with strict schema validation, timeout and daily request limits. Missing credentials leave the free kit usable.
+- Free CC0 Kenney and Quaternius assets, local files and documented provenance.
 
-| Route | Behavior |
+## Product policy
+
+**Hold CTRL → pass a configurable balance threshold → access the live designer.** Tokens stay in the wallet. No allocation, lock, staking or burn is required. `config/plaza.ts` owns the threshold and operational allowances. Demo wallet balances never authorize paid object generation.
+
+The model converts a request into a safe recipe using five authored behaviors. It cannot run generated JavaScript or create arbitrary 3D geometry. Testnet tokens are clearly labeled; an actual mainnet launch address is still required for mainnet holder gating.
+
+## Source map
+
+| Area | Location |
 | --- | --- |
-| `/` | Spatial machine exhibit, selectable rooms, actual command and record counts, latest public work |
-| `/commands` | Physical command arena, accessible index, mission form, CONTROL support |
-| `/work` | Worker stages, SSE tool events, settled usage, completion/failure receipt |
-| `/worlds` | World registry |
-| `/worlds/create` | World recipe workbench, playable local preview, public build proposal |
-| `/worlds/dead-web` | Walkable terminal archive with restoration mechanics |
-| `/worlds/internet-weather` | Living signal garden with growth, wind and daylight controls |
-| `/worlds/agent-orbit` | Walkable relay field with animated instruments and connections |
-| `/archive`, `/archive/:id` | Public ledger, permanent receipts, JSON export, verified artifact downloads |
-| `/machine` | Worker instrumentation, live Orbio catalogue/terms, gateway balance when configured |
-| `/account` | Operator credential, holder tier, allowance, reputation, simulated flexible allocation |
-| `/launch` | Current integration and release gates; honest testnet/mainnet distinction |
-| `/lab` | Authenticated private task workbench, tier and quota enforcement |
+| Shared world, controls and workshop | `features/plaza/` |
+| Session, presence, object and inventory API | `server/plaza/service.ts` |
+| Holder access and wallet | `features/wallet/`, `server/wallet/` |
+| Configurable plaza limits | `config/plaza.ts` |
+| Durable schema and migrations | `db/`, `drizzle/` |
+| Free models and licenses | `public/plaza/` |
+| Tests | `tests/unit/plaza.test.ts`, `scripts/test-plaza-render.mjs` |
 
-## What is live and what is simulated
+The homepage `/` is Common Ground. `/account` is the holder passport. Existing `/commands`, `/work`, `/worlds`, `/archive`, `/machine` and `/lab` routes remain as legacy mission-workbench tools. Their earlier CONTROL support and execution systems are separate from the new plaza's threshold-only access loop.
 
-The API, durable mission/support records, authenticated private access, queue, execution stages, artifact publishing, receipt verification and live public Orbio reads are implemented. Injected wallet connection and EOA signature verification are implemented; WalletConnect requires its public project ID. Token balances are read on the server only when a genuine CTRL address/RPC are configured.
-
-Default mock mode simulates holder balance, holding time, allocation state, provider outputs and compute consumption. The three exhibition datasets are labelled curated/synthetic. They are not claims of current internet activity. Public demo missions start with zero support. Build jobs register an interactive world from a validated recipe in both mock and live modes. Three authored mechanics kits support walkable space, animated objects, saved local progress and forks; they do not autonomously invent renderer code.
-
-Orbio inference/search require server credentials and an exact current model ID. A bounded live execution was verified on 2026-10-05: search and `openai/gpt-6-luna` produced a SHA-256-verified report and settled receipt for US$0.00634955. This local engine integration test does not imply that a persistent hosted worker is running. A disposable tCTRL test token is deployed on Robinhood Chain Testnet (46630); see docs/testnet.md and deployments/robinhood-testnet.json. No production CTRL or allocation contract is deployed. Flexible allocation is simulated only; burn and fixed-duration lock actions are removed. Contract wallet authentication, arbitrary code execution, automatic website deployment, external posting and image generation are not enabled. Build jobs produce validated world-recipe JSON plus a research report and a playable world URL; they are not unrestricted software workers.
-
-## Architecture
-
-Strict TypeScript domain models → configurable policy → server services → D1 transactional allocations → leased mission worker → model/search/tool providers → R2 artifacts → SHA-256 receipt. The frontend reads API snapshots and subscribes to execution events. Secrets remain server-side. Orbio supplies inference/search/resources, while CTRL owns scheduling, permissions, storage and execution.
-
-`config/policy.ts` owns thresholds, sublinear CONTROL weighting, flexible allocation multipliers, daily proposal/job limits, parallelism and budgets. Values are illustrative and editable. `features/worlds/data.ts` owns typed world manifests and curated datasets. `server/providers/types.ts` defines provider boundaries. The optional OpenAI-compatible environment fields are reserved; that adapter is not selected by this MVP.
-
-## Verification
+## Check
 
 ```sh
 pnpm test
@@ -58,27 +56,18 @@ pnpm typecheck
 pnpm lint
 pnpm build:next
 pnpm build
-pnpm exec playwright install chromium
-pnpm test:browser
+# With an installed Playwright Chromium:
+pnpm exec playwright test --config playwright.plaza.config.ts
+# Optional offline component/API browser fixture:
+node scripts/test-plaza-render.mjs
 ```
 
-Unit/API tests cover CONTROL, tiers, validation, SSRF URL policy, provider settlement and budget checks, receipts, CSRF, authentication, allocation idempotency, private job isolation and artifact verification. Browser smoke tests cover major routes, demo submission/support/execution, wallet controls, personal transformation and accessibility. Browser test installation depends on the Chromium download service. See `docs/verification.md` for this environment's actual results and limitations.
+`CTRL_TEST_CHROMIUM=/absolute/path/to/chromium` supports an existing binary. The offline fixture uses real render components/assets and server handlers with an isolated SQLite DB; it does not test hosted networking. See [verification](docs/verification.md) for actual checks and limits.
 
-## Production
+## Runtime and deployment
 
-The new entrance is a Three.js collection with tactile selection, accessible controls and a canvas fallback. The launch film, original score and X copy are delivered separately as a campaign pack.
+The source supports Next.js App Router on Node for development and Vinext App Router / Cloudflare Workers with D1 + R2 for its existing hosted deployment. Production migrations include the new plaza tables. Vercel/Railway migration remains paused; Node's SQLite adapter must not be used on ephemeral serverless storage.
 
+Set server-only `ORBIO_API_KEY` and `ORBIO_MODEL` for live recipes; configure `APP_ORIGIN`, actual chain RPC and token address for holder verification. The older mission engine uses its separate worker and receipt pipeline; immediate plaza actions do not require that worker. Never place credentials in public frontend variables.
 
-Use durable D1 and R2 bindings, apply the included Drizzle SQL migration, set `CTRL_MODE=production`, `APP_ORIGIN`, genuine token/RPC configuration, Orbio key/model and a strong worker secret. Run the separate authenticated queue worker; production API submissions do not start long paid jobs in request background tasks. Do not deploy the Node development SQLite adapter to Vercel's ephemeral filesystem. A PostgreSQL/Supabase port can implement the same repository interfaces but is not shipped here.
-
-Read [deployment](docs/deployment.md), [architecture](docs/architecture.md), [Orbio integration](docs/orbio-integration.md), [mission engine](docs/mission-engine.md), [token utility](docs/token-utility.md), [world system](docs/world-system.md), and [security](docs/security.md).
-
-## Robinhood testnet integration
-
-The default network is now Robinhood Chain Testnet (46630). Connect a browser wallet on `/account`, claim 64,000 tCTRL once, and sign the session challenge. Holder access reads the real ERC-20 balance. The hosted instance now uses live Orbio inference/search with a server-side key. Local development defaults to mock. Live jobs can execute on demand from the authenticated Work page; an external queue worker is needed for continuous unattended execution. See [the testnet runbook](docs/testnet.md) for deployment, verification and signer isolation.
-
-## Current release boundary
-
-Live Orbio model/search and real signed Robinhood testnet holder flows have been verified. Three world experiences are available: a first-person archive, an interactive signal field and a navigable orbital census. The data in the initial worlds is explicitly illustrative; generated worlds use bounded authored kits.
-
-Mainnet launch still requires the owner-signed Orbio transaction, the actual CTRL token address and agent ID, and a persistent external queue service. `/launch` fails closed until its separate checks pass. Worker health is written after successful ticks; expired executions are quarantined without retrying unresolved paid calls. Burn is excluded and optional flexible allocation is not yet live. Follow [the release runbook](docs/launch-runbook.md) for listing copy, configuration, operations and accurate announcement drafts.
+[Common Ground implementation and limits](docs/common-ground.md) · [Architecture](docs/architecture.md) · [Deployment](docs/deployment.md) · [Security](docs/security.md) · [Orbio integration](docs/orbio-integration.md) · [Testnet](docs/testnet.md) · [Asset credits](public/plaza/licenses/README.md)

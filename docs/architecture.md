@@ -1,5 +1,7 @@
 # Architecture
 
+> Current Common Ground alpha (2026-10-09): see [the plaza architecture and release boundary](common-ground.md). The shared courtyard and holder passport use holding thresholds only; no lock, burn or CONTROL allocation is required. Older mission-workbench sections below describe retained legacy routes.
+
 The deployed application is an App Router product running through Vinext on a Cloudflare Worker. Standard Next.js is also a verified build/dev target. Platform access is isolated by `lib/platform.ts`; the Node target replaces it with `platform-node.ts`. Production data is D1 (managed SQLite), with R2 for artifacts. Fifteen schema entities are defined in `db/schema.ts` and migrated in `drizzle/`.
 
 ```mermaid

@@ -1,5 +1,7 @@
 # Token utility / policy v2
 
+> Current Common Ground alpha (2026-10-09): see [the plaza architecture and release boundary](common-ground.md). The shared courtyard and holder passport use holding thresholds only; no lock, burn or CONTROL allocation is required. Older mission-workbench sections below describe retained legacy routes.
+
 CTRL is the access token. CONTROL is a non-transferable daily participation allowance. It is not a tradable token or a substitute for Orbio compute resources. No burn action exists.
 
 `config/policy.ts` owns editable thresholds, daily limits, and square-root balance weighting with bounded time/reputation modifiers. Live holding duration is not inferred from snapshots. Illustrative access classes remain OBSERVER, OPERATOR, PILOT, ARCHITECT and DIRECTOR, with thresholds 0 / 1,000 / 10,000 / 50,000 / 200,000 CTRL.

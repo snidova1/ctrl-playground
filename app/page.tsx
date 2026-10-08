@@ -1,2 +1,2 @@
-import LandingPage from "@/features/landing/landing-page";
-export default function Home(){return <LandingPage/>;}
+import PlazaApp from "@/features/plaza/plaza-app";
+export default function Home(){return <PlazaApp/>;}

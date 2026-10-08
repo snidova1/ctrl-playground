@@ -1,5 +1,7 @@
 # Security boundaries
 
+> Current Common Ground alpha (2026-10-09): see [the plaza architecture and release boundary](common-ground.md). The shared courtyard and holder passport use holding thresholds only; no lock, burn or CONTROL allocation is required. Older mission-workbench sections below describe retained legacy routes.
+
 Secrets are read on the server from runtime bindings/environment. There are no production addresses, keys or private wallet credentials in source. Public WalletConnect IDs are not secret. Private keys are never requested.
 
 Sessions are random opaque tokens stored hashed, HttpOnly, SameSite=Lax, Secure over HTTPS and time-limited. EOA challenges bind wallet/origin/chain and use a short-lived nonce that is atomically consumed once. Signature verification grants session access, not transaction authority. Contract-wallet signatures are not supported by this MVP.

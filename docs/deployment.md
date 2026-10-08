@@ -1,5 +1,7 @@
 # Deployment
 
+> Current Common Ground alpha (2026-10-09): see [the plaza architecture and release boundary](common-ground.md). The shared courtyard and holder passport use holding thresholds only; no lock, burn or CONTROL allocation is required. Older mission-workbench sections below describe retained legacy routes.
+
 ## Hosted Worker / D1 / R2
 
 The supplied managed hosting project declares logical `DB` and `BUCKET` bindings in `.openai/hosting.json`. Build through the included Sites helper (`pnpm build`), which preserves the framework/auth/connector worker. Publish the generated worker/assets archive through the hosting workflow. Do not serve only the browser bundle: the product requires its API and database.
