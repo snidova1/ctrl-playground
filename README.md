@@ -29,6 +29,19 @@ No paid credentials are needed to enter, walk, make/place/test objects or use th
 - MIO: an animated adult toon explorer with a terracotta jacket, cobalt trousers, bob and crossbody satchel. [Asset pipeline and animation checks](docs/mio-avatar.md).
 - Free CC0 Kenney and Quaternius assets, local files and documented provenance.
 
+## VRoid / VRM character study (not deployed)
+
+The current default character remains MIO. A separate `/character-preview` uses the **same Playground**, camera, collision, workshop and API, with `@pixiv/three-vrm` and a licensed VRoid reference avatar. This candidate is not the approved final CTRL character.
+
+```sh
+CTRL_CHARACTER_PREVIEW=1 pnpm dev:next
+# Open http://localhost:3000/character-preview
+```
+
+WASD/arrows walk, Shift runs, Space jumps; touch uses the existing joystick plus run/jump controls. E and the existing interaction buttons still work. The route returns 404 unless explicitly enabled. No public navigation or default avatar was replaced.
+
+[VRoid pipeline, customization boundaries, tests and approval gate](docs/vrm-character-pipeline.md).
+
 ## Product policy
 
 **Hold CTRL → pass a configurable balance threshold → access the live designer.** Tokens stay in the wallet. No allocation, lock, staking or burn is required. `config/plaza.ts` owns the threshold and operational allowances. Demo wallet balances never authorize paid object generation.

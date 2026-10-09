@@ -1,0 +1,242 @@
+[
+  {
+    "quality": "high",
+    "poses": [
+      {
+        "state": "Idle",
+        "close": false,
+        "head": [
+          -0.003251913160361246,
+          1.5761198881669993,
+          0.013433371234572505
+        ],
+        "calls": 86,
+        "triangles": 42630,
+        "textures": 36
+      },
+      {
+        "state": "Idle",
+        "close": true,
+        "head": [
+          -0.005356234986049176,
+          1.5791519333706292,
+          0.02233989462211476
+        ],
+        "calls": 86,
+        "triangles": 42630,
+        "textures": 36
+      },
+      {
+        "state": "Walk",
+        "close": false,
+        "head": [
+          0.003940914412731247,
+          1.610114132702713,
+          0.06767135391220994
+        ],
+        "calls": 86,
+        "triangles": 42630,
+        "textures": 36
+      },
+      {
+        "state": "Run",
+        "close": false,
+        "head": [
+          -0.0031093317310396775,
+          1.4211363338546827,
+          0.17826838444292997
+        ],
+        "calls": 86,
+        "triangles": 42630,
+        "textures": 36
+      },
+      {
+        "state": "JumpLoop",
+        "close": false,
+        "head": [
+          -0.017597082245474842,
+          1.6144441768294249,
+          0.04514363278192969
+        ],
+        "calls": 86,
+        "triangles": 42630,
+        "textures": 36
+      },
+      {
+        "state": "Seated",
+        "close": false,
+        "head": [
+          0.0032806457673254684,
+          1.1730423704801138,
+          -0.2513127106811553
+        ],
+        "calls": 86,
+        "triangles": 42630,
+        "textures": 36
+      },
+      {
+        "state": "Interact",
+        "close": false,
+        "head": [
+          -0.008656035822642395,
+          1.568282145081934,
+          0.03627968364857982
+        ],
+        "calls": 86,
+        "triangles": 42630,
+        "textures": 36
+      }
+    ],
+    "temporal": [
+      {
+        "state": "Idle",
+        "degrees": 0.48635869783515007,
+        "meters": 0.0013673028584666464
+      },
+      {
+        "state": "Walk",
+        "degrees": 0.6289821484940323,
+        "meters": 0.004963151886831424
+      },
+      {
+        "state": "Run",
+        "degrees": 7.957127901779121,
+        "meters": 0.03582095818381229
+      },
+      {
+        "state": "Seated",
+        "degrees": 0.1011826711241786,
+        "meters": 0.0004243833223336429
+      },
+      {
+        "state": "Victory",
+        "degrees": 2.3106374048745293,
+        "meters": 0.014657613364340672
+      }
+    ],
+    "memory": {
+      "geometries": 1,
+      "textures": 0
+    }
+  },
+  {
+    "quality": "low",
+    "poses": [
+      {
+        "state": "Idle",
+        "close": false,
+        "head": [
+          -0.003251913160361246,
+          1.5761198881669993,
+          0.013433371234572505
+        ],
+        "calls": 78,
+        "triangles": 29802,
+        "textures": 35
+      },
+      {
+        "state": "Idle",
+        "close": true,
+        "head": [
+          -0.005356234986049176,
+          1.5791519333706292,
+          0.02233989462211476
+        ],
+        "calls": 78,
+        "triangles": 29802,
+        "textures": 35
+      },
+      {
+        "state": "Walk",
+        "close": false,
+        "head": [
+          0.003940914412731247,
+          1.610114132702713,
+          0.06767135391220994
+        ],
+        "calls": 78,
+        "triangles": 29802,
+        "textures": 35
+      },
+      {
+        "state": "Run",
+        "close": false,
+        "head": [
+          -0.0031093317310396775,
+          1.4211363338546827,
+          0.17826838444292997
+        ],
+        "calls": 78,
+        "triangles": 29802,
+        "textures": 35
+      },
+      {
+        "state": "JumpLoop",
+        "close": false,
+        "head": [
+          -0.017597082245474842,
+          1.6144441768294249,
+          0.04514363278192969
+        ],
+        "calls": 78,
+        "triangles": 29802,
+        "textures": 35
+      },
+      {
+        "state": "Seated",
+        "close": false,
+        "head": [
+          0.0032806457673254684,
+          1.1730423704801138,
+          -0.2513127106811553
+        ],
+        "calls": 78,
+        "triangles": 29802,
+        "textures": 35
+      },
+      {
+        "state": "Interact",
+        "close": false,
+        "head": [
+          -0.008656035822642395,
+          1.568282145081934,
+          0.03627968364857982
+        ],
+        "calls": 78,
+        "triangles": 29802,
+        "textures": 35
+      }
+    ],
+    "temporal": [
+      {
+        "state": "Idle",
+        "degrees": 0.48635869783515007,
+        "meters": 0.0013673028584666464
+      },
+      {
+        "state": "Walk",
+        "degrees": 0.6289821484940323,
+        "meters": 0.004963151886831424
+      },
+      {
+        "state": "Run",
+        "degrees": 7.957127901779121,
+        "meters": 0.03582095818381229
+      },
+      {
+        "state": "Seated",
+        "degrees": 0.1011826711241786,
+        "meters": 0.0004243833223336429
+      },
+      {
+        "state": "Victory",
+        "degrees": 2.3106374048745293,
+        "meters": 0.014657613364340672
+      }
+    ],
+    "memory": {
+      "geometries": 1,
+      "textures": 0
+    }
+  }
+]

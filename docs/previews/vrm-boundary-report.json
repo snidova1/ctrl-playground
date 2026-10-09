@@ -1,0 +1,14 @@
+[
+  {
+    "device": "desktop",
+    "passed": true,
+    "checks": [
+      "WebGL render",
+      "quality switch",
+      "MIO fallback",
+      "successful retry",
+      "no runtime errors",
+      "no horizontal overflow"
+    ]
+  }
+]

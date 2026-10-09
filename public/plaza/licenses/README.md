@@ -10,3 +10,9 @@ All downloaded model assets in `public/plaza/models` are CC0. No paid asset is r
 - **Quaternius — Universal Animation Library, Standard (free)**: six clips retargeted onto The Maker. Official source: https://quaternius.com/packs/universalanimationlibrary.html . Included license: `quaternius-universal-animation.txt`. The Maker's clothes and accessories are custom project meshes; see `docs/maker-avatar.md`.
 
 The cat dispenser, kinetic marble track, bench, lamp, sculpture, courtyard architecture, signs and CTRL mark are authored in the project. Runtime GLBs are served locally; visitors never fetch models from a third-party asset CDN. Source FBX files are not required at runtime.
+
+## Isolated VRoid candidate
+
+`public/plaza/characters/victoria-{desktop,mobile}.vrm`: VRoid Project / pixiv, Victoria Rubin (β Ver AvatarSample_4), CC0 according to the publisher. Texture-resized variants; original metadata preserved. See [provenance](vroid-victoria.md). This sample is not an original CTRL character or a claim that all VRoid Hub models are reusable.
+
+`humanoid-motions.glb`: ten animation-only clips extracted from Quaternius Universal Animation Library Standard (free, CC0). Source: https://quaternius.itch.io/universal-animation-library . Existing `quaternius-universal-animation.txt` applies. No paid Pro/Source package or Mixamo assets are bundled.
