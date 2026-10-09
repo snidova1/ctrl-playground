@@ -62,8 +62,24 @@ try{for(const mobile of [false,true]){
  await other.close();
  await page.getByRole('button',{name:/Remove Little refreshment station/}).click();
  await page.locator('.pl-object-list').waitFor({state:'detached'});
+ if(!mobile){
+  await page.getByRole('button',{name:'Build',exact:true}).click();
+  await page.locator('textarea').fill('A blue bench');
+  await page.getByRole('button',{name:'Assemble object',exact:true}).click();
+  await page.getByRole('button',{name:'Place',exact:true}).click();
+  await page.getByRole('button',{name:'Confirm place',exact:true}).click();
+  await page.getByRole('button',{name:/Sit down/}).click();
+  await page.getByRole('button',{name:/Stand up/}).waitFor();
+  await page.waitForTimeout(2100);
+  await page.screenshot({path:'test-results/plaza-desktop-seated.png'});
+  await page.getByRole('button',{name:/Stand up/}).click();
+  await page.getByRole('button',{name:/Sit down/}).waitFor();
+  await page.getByRole('button',{name:'Bag',exact:true}).click();
+  await page.getByRole('button',{name:/Remove A place to pause/}).click();
+  await page.locator('.pl-object-list').waitFor({state:'detached'});
+ }
  assert.deepEqual(errors,[]);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
- report.push({device:label,passed:true,checks:['WebGL render','guest session','build','test animation','place','reload persistence','independent visitor sharing','owner removal','no runtime errors','no horizontal overflow']});
+ report.push({device:label,passed:true,checks:['WebGL render','Maker avatar','guest session','build','test animation','place','reload persistence','independent visitor sharing','owner removal','no runtime errors','no horizontal overflow']});
  await context.close();console.log(`${label}: passed`);
 }}finally{await browser.close();await writeFile('test-results/plaza-render-report.json',JSON.stringify(report,null,2));}

@@ -26,6 +26,7 @@ No paid credentials are needed to enter, walk, make/place/test objects or use th
 - Presence from actual independent sessions, shared persisted objects, owner-only deletion, interaction idempotency, server limits.
 - Public entry without a wallet; a holder passport and the existing signed EVM testnet wallet integration.
 - Server-only Orbio recipe endpoint, with strict schema validation, timeout and daily request limits. Missing credentials leave the free kit usable.
+- The Maker: a skinned, animated avatar with custom workwear, bob and tool pouch. [Asset pipeline](docs/maker-avatar.md).
 - Free CC0 Kenney and Quaternius assets, local files and documented provenance.
 
 ## Product policy

@@ -80,3 +80,12 @@ The five plaza unit/API tests cover strict recipes, collision boundaries, shared
 This revision does not execute a mainnet transaction or a paid object-generation request. Earlier testnet/Orbio results above are historical evidence, not a fresh verification of the new object generator. The public alpha still requires WebGL, has bounded shared capacity, and does not provide arbitrary mesh/code generation.
 
 Additional browser checks passed: desktop movement to a placed dispenser, on-screen Get a drink interaction, bag increment, Drink decrement, and mobile joystick movement. The preflight now detects missing WebGL before constructing the scene, presents a readable fallback, and avoids an unhandled Three.js context creation error. Rendering pauses while the page is hidden. The holder passport no longer presents allocation or lock controls.
+
+
+## The Maker character release — 2026-10-09
+
+- Real skinned GLB inspected from front, back and portrait cameras, and in walking, seated and celebration poses. All six named clips are embedded; skin and eye images are embedded too. No external model/texture URLs are required. The animation inspection recomputes posed skin bounds, rather than reporting cached rest-pose bounds.
+- Real desktop/mobile courtyard fixtures passed again with The Maker. Existing movement, assembly, object testing, placement, persistence, sharing, dispenser use and removal remain functional. An additional desktop flow creates a bench, sits, enters the seated loop, stands and removes it. The inspected seated screenshot confirms the character fits the revised bench height.
+- TypeScript and lint passed with no warnings. All 65 application tests across 12 files passed. No browser runtime exceptions or horizontal overflow were observed. The expected pre-join 401 remains part of guest session negotiation.
+- The model uses 32,476 triangles, nine material primitives, six clips and a roughly 2.99 MiB self-contained asset. The same material geometry/textures are cached across visitors; their skeleton poses remain independent. This does not establish hardware FPS or mobile thermal performance.
+- This release changes the avatar and its physical bench fit. It does not complete mainnet launch, add unrestricted model generation, or replicate seated/emote state to other visitors. Existing alpha boundaries still apply.
