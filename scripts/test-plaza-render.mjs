@@ -80,6 +80,6 @@ try{for(const mobile of [false,true]){
  }
  assert.deepEqual(errors,[]);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
- report.push({device:label,passed:true,checks:['WebGL render','Maker avatar','guest session','build','test animation','place','reload persistence','independent visitor sharing','owner removal','no runtime errors','no horizontal overflow']});
+ report.push({device:label,passed:true,checks:['WebGL render','MIO avatar','guest session','build','test animation','place','reload persistence','independent visitor sharing','owner removal','no runtime errors','no horizontal overflow']});
  await context.close();console.log(`${label}: passed`);
 }}finally{await browser.close();await writeFile('test-results/plaza-render-report.json',JSON.stringify(report,null,2));}

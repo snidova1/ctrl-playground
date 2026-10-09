@@ -10,7 +10,7 @@ import type {Pose} from './types';
 
 const AVATAR_HEIGHT = 1.88;
 const FADE_SECONDS = .18;
-const MODEL_URL = '/plaza/models/maker.glb';
+const MODEL_URL = '/plaza/models/mio.glb';
 type Motion = 'Idle' | 'Walk' | 'SitDown' | 'Seated' | 'Interact' | 'Victory';
 
 interface AvatarProps {
