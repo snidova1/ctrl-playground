@@ -8,7 +8,7 @@ import {getBuildAsset} from '@/features/plaza/build-assets';
 import {characterCatalog,seededAppearance,validVariant,type CharacterGender} from '@/features/plaza/characters/catalog';
 import {
   characterProfileInputSchema,worldEditorSavePayloadSchema,worldIdSchema,
-  revisionSchema,poseInputSchema,presenceInputSchema,objectCreateSchema,
+  poseInputSchema,presenceInputSchema,objectCreateSchema,
   objectUpdateSchema,objectDeleteSchema,worldSettingsSchema,memberInputSchema,
   type HabitatState,type WorldPermissions
 } from '@/domain/habitat';
