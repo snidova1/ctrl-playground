@@ -66,15 +66,15 @@ export default function HabitatBuilderTools(props:Props){
     <div className='hb-advanced-bar' role='toolbar' aria-label='3D world tools'>
       <strong><span>CTRL</span> / BUILD</strong>
       <div className='hb-advanced-tools'>
-        {(['translate','rotate','scale'] as const).map(tool=><button key={tool} type='button' aria-pressed={props.tool===tool} onClick={()=>props.onTool(tool)}>
+        {(['translate','rotate','scale'] as const).map(tool=><button key={tool} type='button' aria-label={tool==='translate'?'Move':tool==='rotate'?'Rotate':'Scale'} aria-pressed={props.tool===tool} onClick={()=>props.onTool(tool)}>
           {tool==='translate'?<Move3D size={16}/>:tool==='rotate'?<RotateCw size={16}/>:<Scaling size={16}/>}
           <span>{tool==='translate'?'Move':tool==='rotate'?'Rotate':'Scale'}</span>
         </button>)}
-        <button type='button' aria-pressed={props.snap} onClick={()=>props.onSnap(!props.snap)}><Grid2X2 size={16}/><span>Snap</span></button>
+        <button type='button' aria-label='Snap to grid' aria-pressed={props.snap} onClick={()=>props.onSnap(!props.snap)}><Grid2X2 size={16}/><span>Snap</span></button>
         <button type='button' aria-label='Undo' disabled={!props.canUndo} onClick={props.onUndo}><Undo2 size={16}/></button>
         <button type='button' aria-label='Redo' disabled={!props.canRedo} onClick={props.onRedo}><Redo2 size={16}/></button>
       </div>
-      <div className='hb-advanced-commit'><button type='button' onClick={props.onCancel}><X size={14}/> Cancel</button><button type='button' className='hb-primary' disabled={props.busy||!props.online} onClick={props.onSave}><Check size={14}/> {props.busy?'Saving…':'Save & Play'}</button></div>
+      <div className='hb-advanced-commit'><button type='button' aria-label='Cancel' onClick={props.onCancel}><X size={14}/><span className='hb-cancel-text'>Cancel</span></button><button type='button' className='hb-primary' disabled={props.busy||!props.online} onClick={props.onSave}><Check size={14}/> {props.busy?'Saving…':'Save & Play'}</button></div>
     </div>
     <div className='hb-advanced-tabs'>
       <button onClick={()=>setMobilePanel('assets')} aria-pressed={mobilePanel==='assets'}>Catalog · {BUILD_ASSETS.length}</button>
