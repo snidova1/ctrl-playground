@@ -118,4 +118,4 @@ async function main() {
     if (!sent || complete) await unlink(lockPath);
   }
 }
-main().catch((error) => {console.error(error.shortMessage || error.message);process.exitCode=1;});
+main().catch((error) => {console.error(error.shortMessage || error.message);if(process.env.CTRL_KEYS_DEBUG==='1')console.error(error.stack||error);process.exitCode=1;});
