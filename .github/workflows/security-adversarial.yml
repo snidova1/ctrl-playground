@@ -31,6 +31,6 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Run isolated adversarial regression suite
         run: pnpm exec vitest run tests/unit/security --config vitest.config.ts --reporter=verbose
-      - name: Type-check security test files alongside repository
+      - name: Type-check with BigInt-compatible ES2020 target (existing repo target is ES2017)
         if: success() || failure()
-        run: pnpm typecheck
+        run: pnpm exec tsc --noEmit --target ES2020
