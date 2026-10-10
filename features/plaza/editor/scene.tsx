@@ -111,7 +111,7 @@ export default function EditorScene(props:SceneProps){
       if(placingAsset){
         const x=snap?Math.round(e.point.x*2)/2:e.point.x;
         const z=snap?Math.round(e.point.z*2)/2:e.point.z;
-        onPlace([x,0,z]);
+        onPlace([Math.max(EDITOR_LIMITS.minX,Math.min(EDITOR_LIMITS.maxX,x)),0,Math.max(EDITOR_LIMITS.minZ,Math.min(EDITOR_LIMITS.maxZ,z))]);
       }else onSelect(null);
     }}>
       <planeGeometry args={[48,48]}/>
