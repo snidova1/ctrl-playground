@@ -18,3 +18,5 @@ Branch based on Astra master-integrated PR #13. No changes to main/prod. Do not 
 No wallets or purchases sent and no live deployment triggered.
 
 Legacy personal worlds that were deliberately emptied after their first save (revision >0) are never automatically overwritten. If the owner chooses, the world UI offers an explicit Use starter garden button only while their own home is empty. That action uses the current revision and is safe against concurrent edits.
+
+Performance: while a settings/character modal locks world interaction, the background Habitat canvas uses demand rendering rather than running a second continuous GPU loop behind the character preview. Normal world frames resume after closing the modal. Hidden tabs still use never-render mode.
