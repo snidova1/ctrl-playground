@@ -1,6 +1,9 @@
 import {describe,it,expect} from 'vitest';
 import {handleApi} from '@/server/api';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
+import {exec,one} from '@/db';
+import {hash} from '@/server/receipts/hash';
+import {actor} from './habitat-fixtures';
 
 const origin='http://localhost:3000';
 function api(path:string,body?:unknown,cookie?:string,headers:Record<string,string>={}){
@@ -47,5 +50,30 @@ describe('security: signed wallet identity and session boundaries',()=>{
   expect((await api('auth/nonce',data,undefined,{Origin:''})).status).toBe(403);
   expect((await api('auth/nonce',data,undefined,{'Content-Type':'text/plain'})).status).toBe(415);
   expect((await api('jobs',{command:'Find a forgotten public archive.',operationId:crypto.randomUUID()},'ctrl_session=fake',{Origin:'https://attacker.example'})).status).toBe(403);
+ });
+ it('denies real signatures over altered/expired challenges without creating sessions',async()=>{
+  const signer=privateKeyToAccount(generatePrivateKey());
+  const {nonce,message}=await (await api('auth/nonce',{address:signer.address})).json() as {nonce:string;message:string};
+  const altered=await signer.signMessage({message:message.replace('Chain ID: 4663','Chain ID: 1')});
+  expect((await api('auth/verify',{address:signer.address,nonce,signature:altered})).status).toBe(401);
+  expect(await one('SELECT used FROM nonces WHERE id=?',nonce)).toEqual({used:0});
+  const signature=await signer.signMessage({message});
+  await exec('UPDATE nonces SET expires_at=? WHERE id=?',Date.now()-1,nonce);
+  const rejected=await api('auth/verify',{address:signer.address,nonce,signature});
+  expect(rejected.status).toBe(401);
+  expect(rejected.headers.get('set-cookie')).toBeNull();
+  expect(await one('SELECT id FROM users WHERE wallet=?',signer.address.toLowerCase())).toBeNull();
+ });
+ it('rejects a previously signed wallet cookie after expiry/logout without deleting durable home state',async()=>{
+  const owner=await actor('Expired Auth Owner');
+  const token=owner.cookie.slice('ctrl_session='.length);
+  await exec('UPDATE sessions SET expires_at=? WHERE id=?',Date.now()-1,await hash(token));
+  expect((await api('habitat/state',undefined,owner.cookie)).status).toBe(401);
+  expect((await api('habitat/save',{worldId:owner.worldId,revision:0,objects:[]},owner.cookie)).status).toBe(401);
+  expect(await one('SELECT id,revision FROM habitat_worlds WHERE id=?',owner.worldId)).toEqual({id:owner.worldId,revision:0});
+  const revoked=await actor('Logged Out Owner');
+  expect((await api('auth/logout',{},revoked.cookie)).status).toBe(200);
+  expect((await api('habitat/profile',{name:'Replay Owner',character:'male'},revoked.cookie)).status).toBe(401);
+  expect((await api('habitat/state',undefined,revoked.cookie)).status).toBe(401);
  });
 });
