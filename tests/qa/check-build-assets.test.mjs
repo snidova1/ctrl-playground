@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, renameSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { auditBuildAssets } from '../../scripts/qa/check-build-assets.mjs';
+import { auditBuildAssets, DEFAULT_BUDGETS } from '../../scripts/qa/check-build-assets.mjs';
 
 function glb(animations = ['open']) {
   const json = Buffer.from(JSON.stringify({ asset: { version: '2.0' }, animations: animations.map(name => ({ name })) }));
@@ -129,4 +129,14 @@ test('rejects a present but zero-byte WebP thumbnail', () => withFixture(f => {
   const errors = auditBuildAssets(f.root).errors.join('\n');
   assert.match(errors, /Invalid thumbnail/);
   assert.match(errors, /invalid WebP RIFF header/);
+}));
+
+test('enforces the mobile VRM profile without changing renderer or app code', () => withFixture(f => {
+  const directory = path.join(f.root, 'public/plaza/characters');
+  mkdirSync(directory, {recursive: true});
+  writeFileSync(path.join(directory, 'qa-mobile.vrm'), glb([]));
+  const budget = {...DEFAULT_BUDGETS, maxMobileVrmBytes: 16};
+  const errors = auditBuildAssets(f.root, budget).errors.join('\n');
+  assert.match(errors, /Oversized VRM/);
+  assert.doesNotMatch(errors, /Invalid VRM/);
 }));
