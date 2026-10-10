@@ -22,8 +22,8 @@ export function activatePreviewObject(doc:EditorDocument,state:PreviewState,id:s
   }
   if(item.behavior==='finish'){
     const required=doc.objects.filter(o=>o.behavior==='checkpoint').map(o=>o.id);
-    const complete=required.length>0&&required.every(key=>state.checkpoints.includes(key));
-    return {...state,completed:complete,message:complete?'Course completed!':'Reach every checkpoint before finishing.'};
+    const complete=required.length>0&&required.some(key=>state.checkpoints.includes(key));
+    return {...state,completed:complete,message:complete?'Course completed!':'Reach a checkpoint before finishing.'};
   }
   const wasActive=!!state.active[id],nextActive=!wasActive;
   const message=item.behavior==='toggle-light'?(nextActive?'Light switched on.':'Light switched off.'):
