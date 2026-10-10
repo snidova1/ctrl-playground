@@ -10,8 +10,6 @@ on:
       - 'tests/unit/world-editor*.test.ts'
       - 'package.json'
       - 'pnpm-lock.yaml'
-  push:
-    branches: ['gpt6/world-builder']
   workflow_dispatch:
 permissions:
   contents: read
@@ -38,11 +36,11 @@ jobs:
         run: |
           cp .env.example .env.local
           pnpm db:local
-      - name: TypeScript
-        run: pnpm typecheck
       - name: Unit/API tests
         run: pnpm test
       - name: ESLint
         run: pnpm lint
       - name: Next production build
         run: pnpm build:next
+      - name: Full project TypeScript (includes pre-existing key policy)
+        run: pnpm typecheck
