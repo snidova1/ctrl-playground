@@ -24,7 +24,7 @@ let keysAddr;
 let token;
 let keys;
 async function mined(hash) {
-  const receipt = await reader.waitForTransactionReceipt({hash});
+  const receipt = await reader.waitForTransactionReceipt({hash,pollingInterval:150,timeout:30000});
   assert.equal(receipt.status,'success');
   return receipt;
 }
