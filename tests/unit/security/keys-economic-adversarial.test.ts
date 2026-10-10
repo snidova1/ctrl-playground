@@ -52,7 +52,7 @@ describe('security: offline CTRL key curve invariants (no public network)',()=>{
    const afterBuy=await reader.readContract({address:keysAddr,abi:keys.abi,functionName:'worlds',args:[worldId]}) as [string,bigint,bigint];
    expect(afterBuy[1]).toBe(3n);
    expect(afterBuy[2]).toBe(principal);
-   expect(await reader.readContract({address:keysAddr,abi:erc20Abi,functionName:'balanceOf',args:[keysAddr]})).toBe(principal);
+   expect(await reader.readContract({address:tokenAddr,abi:erc20Abi,functionName:'balanceOf',args:[keysAddr]})).toBe(principal);
    const [sellPrincipal,sellFee,payout]=await reader.readContract({address:keysAddr,abi:keys.abi,functionName:'quoteSell',args:[worldId,2n]}) as [bigint,bigint,bigint];
    expect(sellPrincipal).toBe(principal);
    expect(sellFee).toBe(principal*300n/10000n);
@@ -61,7 +61,7 @@ describe('security: offline CTRL key curve invariants (no public network)',()=>{
    const afterSell=await reader.readContract({address:keysAddr,abi:keys.abi,functionName:'worlds',args:[worldId]}) as [string,bigint,bigint];
    expect(afterSell[1]).toBe(1n);
    expect(afterSell[2]).toBe(0n);
-   expect(await reader.readContract({address:keysAddr,abi:erc20Abi,functionName:'balanceOf',args:[keysAddr]})).toBe(0n);
+   expect(await reader.readContract({address:tokenAddr,abi:erc20Abi,functionName:'balanceOf',args:[keysAddr]})).toBe(0n);
    expect(await reader.readContract({address:tokenAddr,abi:erc20Abi,functionName:'balanceOf',args:[t.address]})).toBe(buyFee+sellFee);
    expect(await reader.readContract({address:keysAddr,abi:keys.abi,functionName:'balanceOf',args:[worldId,a.address]})).toBe(1n);
    await expect(reader.simulateContract({account:b,address:keysAddr,abi:keys.abi,functionName:'quoteBuy',args:[worldId,101n]})).rejects.toThrow();
