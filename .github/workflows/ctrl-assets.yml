@@ -1,0 +1,39 @@
+name: CTRL Asset Integrity
+
+on:
+  pull_request:
+    paths:
+      - 'public/plaza/build-kit/**'
+      - 'public/plaza/characters/**'
+      - 'features/plaza/build-assets.ts'
+      - 'scripts/qa/**'
+      - 'tests/qa/**'
+      - '.github/workflows/ctrl-assets.yml'
+  push:
+    branches:
+      - 'qa/asset-integrity-budget'
+    paths:
+      - 'public/plaza/build-kit/**'
+      - 'public/plaza/characters/**'
+      - 'features/plaza/build-assets.ts'
+      - 'scripts/qa/**'
+      - 'tests/qa/**'
+      - '.github/workflows/ctrl-assets.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Validate shipped 3D assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Adversarial fixture tests
+        run: node --test tests/qa/check-build-assets.test.mjs
+      - name: Shipped catalog and file budgets
+        run: node scripts/qa/check-build-assets.mjs
