@@ -1,4 +1,6 @@
 'use client';
+/* eslint-disable react-hooks/set-state-in-effect -- Restore device-only local drafts after hydration, never on the server. */
+/* eslint-disable @next/next/no-img-element -- The catalogue uses tiny, already-optimized, local WebP thumbnails. */
 import dynamic from 'next/dynamic';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowDownToLine,Box,Copy,Grid2X2,Move3D,Redo2,RotateCw,Search,Trash2,Undo2,Upload,Waypoints} from 'lucide-react';
