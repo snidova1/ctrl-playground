@@ -16,3 +16,5 @@ Branch based on Astra master-integrated PR #13. No changes to main/prod. Do not 
 - Do not claim outfit mesh swapping yet: currently only 4 genuine VRM material colorways and VRoid gender options; future real fitted costume/hair exports require import.
 
 No wallets or purchases sent and no live deployment triggered.
+
+Legacy personal worlds that were deliberately emptied after their first save (revision >0) are never automatically overwritten. If the owner chooses, the world UI offers an explicit Use starter garden button only while their own home is empty. That action uses the current revision and is safe against concurrent edits.
