@@ -24,6 +24,17 @@ async function profile(cookie:string,name:string){
 }
 function object(id=crypto.randomUUID()){return {id,assetId:'ctrl-block',name:'Safe Block',x:0,y:0,z:0,rotation:0,scale:1,behavior:'solid',target:''};}
 describe('security: habitat access control and adversarial saves',()=>{
+ it('records current unsigned guest-to-world exploit as a behavior proof (NOT a security pass)',async()=>{
+  const guest=await api('plaza/join',{name:'Guest Evidence'});
+  expect(guest.status).toBe(201);
+  const cookie=guest.headers.get('set-cookie')!.split(';')[0];
+  const creation=await api('habitat/profile',{name:'Guest Evidence',character:'female',variant:'original'},cookie);
+  expect(creation.status).toBe(200); // Current vulnerability, not desired behavior.
+  const data=await creation.json() as {world:{ownerId:string;id:string}};
+  expect(data.world.ownerId).toMatch(/^guest-/);
+  expect(data.world.id).toBeTruthy();
+  // Remove this characterization and replace XFAIL after wallet-only auth is fixed.
+ });
  it.fails('rejects unsigned plaza guest world creation (known wallet-boundary regression)',async()=>{
   const guest=await api('plaza/join',{name:'Unauthorized Guest'});
   expect(guest.status).toBe(201);
