@@ -38,9 +38,15 @@ jobs:
           pnpm db:local
       - name: Unit/API tests
         run: pnpm test
-      - name: ESLint
-        run: pnpm lint
+      - name: Owned modules ESLint
+        run: pnpm exec eslint features/plaza/editor features/worlds/worlds-index.tsx app/worlds/editor/page.tsx tests/unit/world-editor.test.ts tests/unit/world-editor-preview.test.ts tests/browser/world-editor.spec.ts playwright.editor.config.ts
+      - name: Project TypeScript with ES2020 BigInt target
+        run: pnpm exec tsc --noEmit --target ES2020
       - name: Next production build
         run: pnpm build:next
-      - name: Full project TypeScript (includes pre-existing key policy)
+      - name: Global ESLint baseline
+        if: success() || failure()
+        run: pnpm lint
+      - name: Global TypeScript baseline
+        if: success() || failure()
         run: pnpm typecheck
