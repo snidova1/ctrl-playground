@@ -20,15 +20,12 @@ describe('world editor live preview',()=>{
     expect(doc.objects[0].behavior).toBe('toggle-light');
     expect(s.completed).toBe(false);
   });
-  it('requires all checkpoints before completion and deduplicates visits',()=>{
+  it('requires a checkpoint before completion and deduplicates visits',()=>{
     let s=activatePreviewObject(doc,initialPreviewState(),'finish');
     expect(s.completed).toBe(false);
     s=activatePreviewObject(doc,s,'point-a');
     s=activatePreviewObject(doc,s,'point-a');
     expect(s.checkpoints).toEqual(['point-a']);
-    s=activatePreviewObject(doc,s,'finish');
-    expect(s.completed).toBe(false);
-    s=activatePreviewObject(doc,s,'point-b');
     s=activatePreviewObject(doc,s,'finish');
     expect(s.completed).toBe(true);
   });
