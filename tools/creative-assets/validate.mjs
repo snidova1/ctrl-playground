@@ -6,15 +6,15 @@ const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const kinds=new Set(['official-github','publisher-download','api-catalog','permission-gated','account-gated','reference-code']);
 const reviews=new Set(['source-license-file-needed','quaternius-2026-license-check','per-avatar-rights','no-raw-redistribution','source-code-only']);
 const rigs=new Set(['none','vroid-vrm','quaternius-universal','quaternius-legacy','kaykit','kenney-characters','mixamo']);
-const categories=new Set(['avatar-base','outfit','animation','npc-character','world-kit','environment-light','material','ui','user-avatar','reference']);
+const categories=new Set(['avatar-base','outfit','animation','npc-character','world-kit','environment-light','material','ui','user-avatar','reference','audio','vfx']);
 const check=(good,message)=>{if(!good)throw Error(message);};
 const urlOK=value=>{try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password;}catch{return false;}};
 const unique=rows=>new Set(rows.map(x=>x.id)).size===rows.length;
 export const loadJSON=relative=>JSON.parse(readFileSync(path.join(ROOT,relative),'utf8'));
 export const extractLiveCatalogIds=contents=>new Set([...contents.matchAll(/^\{"id":"([^"]+)"/gm)].map(m=>m[1]));
 export function validateCreativeAssets(registry,custom,presets,catalog){
-  check(registry.schemaVersion===1&&Array.isArray(registry.sources)&&registry.sources.length>=20&&unique(registry.sources),'Registry count or duplicate IDs');
-  for(const group of ['avatar-base','outfit','animation','npc-character','world-kit','user-avatar'])check(registry.sources.some(s=>s.category===group),'Missing '+group);
+  check(registry.schemaVersion===1&&Array.isArray(registry.sources)&&registry.sources.length>=35&&unique(registry.sources),'Registry count or duplicate IDs');
+  for(const group of ['avatar-base','outfit','animation','npc-character','world-kit','user-avatar','audio','vfx'])check(registry.sources.some(s=>s.category===group),'Missing '+group);
   for(const s of registry.sources){
     check(/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s.id)&&typeof s.title==='string'&&s.title.length>=5,'Bad ID/title '+s.id);
     check(categories.has(s.category)&&kinds.has(s.sourceKind)&&rigs.has(s.rig),'Bad group/source/rig '+s.id);
@@ -51,10 +51,25 @@ export function validateCreativeAssets(registry,custom,presets,catalog){
   }
   return {sources:registry.sources.length,templates:presets.templates.length,worldObjects:presets.templates.reduce((n,t)=>n+t.objects.length,0)};
 }
+
+export function validateUpstreamEvidence(evidence,registry){
+ check(evidence.schemaVersion===1&&Array.isArray(evidence.upstreams)&&evidence.upstreams.length>=6&&unique(evidence.upstreams.map(x=>({...x,id:x.sourceId}))), 'Missing or duplicate official CC0 license evidence');
+ const sources=new Map(registry.sources.map(x=>[x.id,x]));
+ for(const e of evidence.upstreams){
+   const s=sources.get(e.sourceId);
+   check(s&&s.sourceKind==='official-github'&&s.sourceUrl==='https://github.com/'+e.repository,'Evidence source mismatch '+e.sourceId);
+   check(/^[a-f0-9]{40}$/.test(e.sourceCommit)&&/^[a-f0-9]{40}$/.test(e.licenseBlobSha),'License evidence must pin canonical commit and blob SHA');
+   check(e.licensePath==='LICENSE.txt'&&e.observedLicense==='CC0-1.0'&&e.status==='license-text-verified','CC0 license text not verified');
+   check(e.assetFilesDownloaded===false&&e.binaryHashesVerified===false,'Do not overstate unimported media audit');
+ }
+ return evidence.upstreams.length;
+}
+
 export function validateRepo(){
   const catalog=extractLiveCatalogIds(readFileSync(path.join(ROOT,'features/plaza/build-assets.ts'),'utf8'));
   check(catalog.size>=900,'Live CTRL catalog has changed unexpectedly');
-  return {...validateCreativeAssets(loadJSON('creative-assets/sources.json'),loadJSON('creative-assets/customization-contract.json'),loadJSON('creative-assets/world-presets.json'),catalog),existingModels:catalog.size};
+  const registry=loadJSON('creative-assets/sources.json');
+  return {...validateCreativeAssets(registry,loadJSON('creative-assets/customization-contract.json'),loadJSON('creative-assets/world-presets.json'),catalog),upstreamLicenses:validateUpstreamEvidence(loadJSON('creative-assets/upstream-license-evidence.json'),registry),existingModels:catalog.size};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   try{console.log(JSON.stringify({status:'PASS',...validateRepo()},null,2));}

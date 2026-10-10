@@ -71,3 +71,14 @@ Commands:
   node tools/creative-assets/plan.mjs
 
 CI runs on this PR under CTRL Creative Asset Review. Keep PR draft until Astra and QA confirm rights/technical approach. No testnet/mainnet deployment, wallet transaction, assets upload or changes to main. PR should be treated as a queue of vetted candidates, not 23 shippable packs.
+
+
+## 2026-10-10 completion audit: player delight and art workflow gaps closed in shortlist
+
+Now **38** curated sources (23 original + 15 audited additions), covering sound/UI feedback, gameplay VFX, touch/controller prompts, mobile dungeon/world kit, and VRM-native authoring. License-file evidence for **6** canonical KayKit GitHub repos is pinned in `creative-assets/upstream-license-evidence.json` with exact repository HEAD SHA and LICENSE.txt blob SHA. This is **not** proof that any particular model binary was downloaded or approved.
+
+New practical sources: [Kenney Impact Sounds](https://kenney.nl/assets/impact-sounds), [Interface Sounds](https://kenney.nl/assets/interface-sounds), [RPG Audio](https://kenney.nl/assets/rpg-audio), [Particle Pack](https://kenney.nl/assets/particle-pack), [Mobile Controls](https://kenney.nl/assets/mobile-controls), [Kenney Modular Dungeon](https://kenney.nl/assets/modular-dungeon-kit), [KayKit Medieval Hexagon](https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0), [KayKit Prototype Bits](https://github.com/KayKit-Game-Assets/KayKit-Prototype-Bits-1.0).
+
+New VRM-compatible workflow tools: [VRoid Studio](https://vroid.com/en/studio) for authoring real avatar hair/outfit variants, [VRM Add-on for Blender](https://github.com/saturday06/VRM-Addon-for-Blender) for rig/mesh fitting and export, and [pixiv three-vrm-animation](https://github.com/pixiv/three-vrm) for VRMA emotes. The existence of these tools **does not** supply approved hair/costume meshes. Such meshes must be authored/licensed and tested. Optimization sources: glTF-Transform, meshoptimizer and Khronos KTX tools. QA asset worker owns processing.
+
+**Audio implementation gate:** avoid autoplay before consent; include accessibility mute, per-channel volume, voice cap and spatial attenuation. **VFX gate:** reduced-motion preference, particle budget, texture atlas and capped overdraw. **Mobile gate:** touch input targets, low-memory UI, draw-call budgets, and independent editor navigation.

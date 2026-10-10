@@ -6,7 +6,8 @@
     "everyBinaryNeedsProvenance": true,
     "defaults": "deny until file SHA256, source license evidence and rig review",
     "quaterniusNotice": "Publisher added QAL on 2026-08-28. Several individual source pack pages still show CC0. Freeze license + download timestamp for the exact pack; never infer cross-version permission.",
-    "vroidNotice": "VRM avatars have individual permission flags. Never apply default CC0; verify the file's VRM meta and user's upload rights."
+    "vroidNotice": "VRM avatars have individual permission flags. Never apply default CC0; verify the file's VRM meta and user's upload rights.",
+    "evidenceExplanation": "upstream-license-evidence.json freezes specific original CC0 LICENSE.txt revision; NOT SHA256 of binaries and not evidence any assets were downloaded. New source entries likewise remain candidates."
   },
   "sources": [
     {
@@ -422,6 +423,274 @@
       "downloaded": false,
       "ingested": false,
       "notes": "MIT source code reference for retargeting, foot IK, and character swap; its bundled avatars/animations have distinct licenses. DO NOT replace Astra Habitat controller."
+    },
+    {
+      "id": "kaykit-medieval-hexagon",
+      "title": "KayKit Medieval Hexagon Pack",
+      "category": "world-kit",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0",
+      "licenseUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/main/LICENSE.txt",
+      "sourceKind": "official-github",
+      "rig": "none",
+      "formats": [
+        "GLTF",
+        "FBX"
+      ],
+      "priority": 1,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "200+ modular medieval tiles, buildings and props; 2024 public FREE repo with verified CC0 LICENSE.txt. Strong themed village starter."
+    },
+    {
+      "id": "kaykit-prototype-bits",
+      "title": "KayKit Prototype Bits",
+      "category": "world-kit",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Prototype-Bits-1.0",
+      "licenseUrl": "https://github.com/KayKit-Game-Assets/KayKit-Prototype-Bits-1.0/blob/main/LICENSE.txt",
+      "sourceKind": "official-github",
+      "rig": "none",
+      "formats": [
+        "GLTF",
+        "FBX"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "Game-playable placeholder geometry for creator blockouts and mini-game prototyping. Official CC0 LICENSE.txt checked."
+    },
+    {
+      "id": "kenney-modular-dungeon",
+      "title": "Kenney Modular Dungeon Kit",
+      "category": "world-kit",
+      "sourceUrl": "https://kenney.nl/assets/modular-dungeon-kit",
+      "licenseUrl": "https://kenney.nl/assets/modular-dungeon-kit",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "GLB",
+        "FBX"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "40 CC0 modular dungeon pieces, animated and variations. Test pivots, collision and doors against Habitat schema."
+    },
+    {
+      "id": "kenney-particle-pack",
+      "title": "Kenney Particle Pack",
+      "category": "vfx",
+      "sourceUrl": "https://kenney.nl/assets/particle-pack",
+      "licenseUrl": "https://kenney.nl/assets/particle-pack",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "PNG"
+      ],
+      "priority": 1,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "80 CC0 particle/sprite sheets; local GPU batched sparkle, confetti, impact, weather; FPS and accessibility reduced motion caps."
+    },
+    {
+      "id": "kenney-impact-sounds",
+      "title": "Kenney Impact Sounds",
+      "category": "audio",
+      "sourceUrl": "https://kenney.nl/assets/impact-sounds",
+      "licenseUrl": "https://kenney.nl/assets/impact-sounds",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "OGG",
+        "WAV"
+      ],
+      "priority": 1,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "130 CC0 sound effects for contact, footsteps and mini-game interactions; normalize loudness and cap concurrent voices."
+    },
+    {
+      "id": "kenney-interface-sounds",
+      "title": "Kenney Interface Sounds",
+      "category": "audio",
+      "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+      "licenseUrl": "https://kenney.nl/assets/interface-sounds",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "OGG",
+        "WAV"
+      ],
+      "priority": 1,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "100 CC0 UI clicks for builder placement, selection, undo/save feedback; independent mute and volume controls."
+    },
+    {
+      "id": "kenney-rpg-audio",
+      "title": "Kenney RPG Audio",
+      "category": "audio",
+      "sourceUrl": "https://kenney.nl/assets/rpg-audio",
+      "licenseUrl": "https://kenney.nl/assets/rpg-audio",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "OGG",
+        "WAV"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "50 CC0 RPG foley/footstep/game actions. Tag surface type and prevent duplicate sounds from client prediction."
+    },
+    {
+      "id": "kenney-mobile-controls",
+      "title": "Kenney Mobile Controls",
+      "category": "ui",
+      "sourceUrl": "https://kenney.nl/assets/mobile-controls",
+      "licenseUrl": "https://kenney.nl/assets/mobile-controls",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "PNG",
+        "SVG"
+      ],
+      "priority": 1,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "900 CC0 mobile control glyphs/UI references for touch movement, inventory and editing; use curated subset, not restyle Astra UI."
+    },
+    {
+      "id": "kenney-input-prompts",
+      "title": "Kenney Input Prompts",
+      "category": "ui",
+      "sourceUrl": "https://kenney.nl/assets/input-prompts",
+      "licenseUrl": "https://kenney.nl/assets/input-prompts",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "PNG",
+        "SVG"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "1500 CC0 prompt glyphs for keyboard, controller and touch, useful future cross-platform creator help."
+    },
+    {
+      "id": "vroid-studio-authoring",
+      "title": "VRoid Studio Avatar Authoring",
+      "category": "reference",
+      "sourceUrl": "https://vroid.com/en/studio",
+      "licenseUrl": "https://vroid.com/en/studio",
+      "sourceKind": "publisher-download",
+      "rig": "vroid-vrm",
+      "formats": [
+        "VRM",
+        "PNG"
+      ],
+      "priority": 1,
+      "rightsReview": "per-avatar-rights",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "Official avatar/hair/texture authoring pipeline for real Astra-style VRM wearables; pixiv base meshes NOT CC0; individual export usage review mandatory."
+    },
+    {
+      "id": "blender-vrm-addon",
+      "title": "VRM Add-on for Blender",
+      "category": "reference",
+      "sourceUrl": "https://github.com/saturday06/VRM-Addon-for-Blender",
+      "licenseUrl": "https://github.com/saturday06/VRM-Addon-for-Blender#license",
+      "sourceKind": "reference-code",
+      "rig": "vroid-vrm",
+      "formats": [
+        "BLEND",
+        "VRM"
+      ],
+      "priority": 1,
+      "rightsReview": "source-code-only",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "MIT Blender tool for importing/exporting VRM 1.0 humanoids and authoring MToon, separate code vs avatar asset licensing."
+    },
+    {
+      "id": "pixiv-vrm-animation",
+      "title": "Official three-vrm animation (.vrma)",
+      "category": "reference",
+      "sourceUrl": "https://github.com/pixiv/three-vrm",
+      "licenseUrl": "https://github.com/pixiv/three-vrm#license",
+      "sourceKind": "reference-code",
+      "rig": "vroid-vrm",
+      "formats": [
+        "VRMA",
+        "TypeScript"
+      ],
+      "priority": 1,
+      "rightsReview": "source-code-only",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "MIT @pixiv/three-vrm-animation VRMC_vrm_animation plugin. Stable matching 3.5.5 family for existing CTRL 3.5.5, retarget/VRM emote playback."
+    },
+    {
+      "id": "gltf-transform-pipeline",
+      "title": "glTF-Transform Asset Optimizer",
+      "category": "reference",
+      "sourceUrl": "https://github.com/donmccurdy/glTF-Transform",
+      "licenseUrl": "https://github.com/donmccurdy/glTF-Transform#license",
+      "sourceKind": "reference-code",
+      "rig": "none",
+      "formats": [
+        "GLB",
+        "TypeScript"
+      ],
+      "priority": 1,
+      "rightsReview": "source-code-only",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "MIT offline glTF inspect, prune, dedup, mesh/texture optimization. QA-worker-owned intake tool, not a browser runtime dependency."
+    },
+    {
+      "id": "ktx-texture-pipeline",
+      "title": "Khronos KTX-Software",
+      "category": "reference",
+      "sourceUrl": "https://github.com/KhronosGroup/KTX-Software",
+      "licenseUrl": "https://github.com/KhronosGroup/KTX-Software#license",
+      "sourceKind": "reference-code",
+      "rig": "none",
+      "formats": [
+        "KTX2"
+      ],
+      "priority": 2,
+      "rightsReview": "source-code-only",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "Offline KTX2/BasisU encoding tool for mobile material atlases; verify platform-specific tool terms before redistribution."
+    },
+    {
+      "id": "meshoptimizer-tools",
+      "title": "meshoptimizer",
+      "category": "reference",
+      "sourceUrl": "https://github.com/zeux/meshoptimizer",
+      "licenseUrl": "https://github.com/zeux/meshoptimizer#license",
+      "sourceKind": "reference-code",
+      "rig": "none",
+      "formats": [
+        "GLB",
+        "C++"
+      ],
+      "priority": 2,
+      "rightsReview": "source-code-only",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "MIT mesh compression/vertex cache simplification candidate for large GLB imports, ensure decoder/runtime support and compatibility."
     }
   ]
 }
