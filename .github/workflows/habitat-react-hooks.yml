@@ -1,0 +1,41 @@
+name: Habitat React Hooks baseline
+on:
+  pull_request:
+    paths:
+      - 'features/habitat/app.tsx'
+      - 'features/habitat/stage.tsx'
+      - '.github/workflows/habitat-react-hooks.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: habitat-hooks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare local database
+        run: |
+          cp .env.example .env.local
+          pnpm db:local
+      - name: Project-wide ESLint
+        run: pnpm lint
+      - name: TypeScript with ES2020 for BigInt key policy
+        run: pnpm exec tsc --noEmit --target ES2020
+      - name: Existing unit and API regressions
+        run: pnpm test
+      - name: Next production build
+        run: pnpm build:next
