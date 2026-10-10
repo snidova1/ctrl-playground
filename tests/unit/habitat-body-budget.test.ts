@@ -2,7 +2,6 @@ import {beforeAll,describe,expect,it} from 'vitest';
 import {handleApi} from '@/server/api';
 import {createSession} from '@/server/wallet/auth';
 import {exec} from '@/db';
-import {AppError} from '@/server/errors';
 import {HABITAT_MAX_BODY_BYTES,readHabitatJson} from '@/server/habitat/read-json';
 
 const origin='http://localhost:3000';
