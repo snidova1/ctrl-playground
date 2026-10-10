@@ -7,6 +7,7 @@ on:
       - 'contracts/CTRLTestToken.sol'
       - 'scripts/testnet/world-keys-*.mjs'
       - 'scripts/testnet/check-world-keys.mjs'
+      - 'scripts/testnet/check-world-keys-cli.mjs'
       - 'scripts/testnet/compile.mjs'
       - '.github/workflows/world-keys-readiness.yml'
       - 'docs/world-keys-testnet-handoff.md'
@@ -34,5 +35,7 @@ jobs:
         run: node scripts/testnet/world-keys-deploy.mjs --help
       - name: Execute World Keys solvency and adversarial scenarios on in-memory Ganache
         run: node scripts/testnet/check-world-keys.mjs
+      - name: Exercise testnet CLI entirely against localhost Ganache fixture
+        run: node scripts/testnet/check-world-keys-cli.mjs
       - name: TypeScript check with existing BigInt-compatible override
         run: pnpm exec tsc --noEmit --target ES2020
