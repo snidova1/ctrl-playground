@@ -6,6 +6,7 @@ import {settings} from '@/server/env';
 import {AppError,safeError} from '@/server/errors';
 import {layoutSchema,motionSchema,collideWorld,type WorldState,type WorldProfile,type WorldObject,type WorldPlayer} from '@/features/habitat/types';
 import {getBuildAsset} from '@/features/plaza/build-assets';
+import {resolveHabitatAssets} from './asset-resolver';
 interface Row{id:string;owner_id:string;name:string;visibility:'public'|'private';revision:number;layout:string;}
 const reply=(v:unknown,status=200,headers:Record<string,string>={})=>Response.json(v,{status,headers:{'Cache-Control':'no-store',...headers}});
 async function body(r:Request){const text=await r.text();if(text.length>80000)throw new AppError('INPUT_TOO_LARGE',413);return JSON.parse(text) as unknown;}
@@ -17,6 +18,12 @@ async function state(user:{id:string;wallet:string|null},worldId?:string):Promis
  return {profile,homeId:home?.id??null,world:w?{id:w.id,ownerId:w.owner_id,name:w.name,visibility:w.visibility,revision:w.revision,objects:layoutSchema.parse(JSON.parse(w.layout))}:null,canEdit:!!w&&w.owner_id===user.id,players:players.map(p=>({...p,motion:motionSchema.parse(JSON.parse(p.motion))})) as WorldPlayer[],states,wallet:user.wallet,keyStatus:'not-deployed',worlds:await query<{id:string;name:string;owner:string}>("SELECT w.id,w.name,p.name AS owner FROM habitat_worlds w JOIN habitat_profiles p ON p.id=w.owner_id WHERE w.visibility='public' OR w.owner_id=? ORDER BY w.updated_at DESC LIMIT 60",user.id)};}
 export async function handleHabitat(r:Request,path:string[]){try{const p=path.join('/');if(r.method!=='GET'){if(r.headers.get('origin')!==(settings().origin||new URL(r.url).origin))throw new AppError('ORIGIN_NOT_ALLOWED',403);if(!r.headers.get('content-type')?.startsWith('application/json'))throw new AppError('JSON_REQUIRED',415);}
  const u=await principal(r);if(!u)throw new AppError('SESSION_REQUIRED',401,'Sign a wallet session or enter the guest workshop.');if(r.method==='GET'&&p==='state')return reply(await state(u));if(r.method!=='POST')throw new AppError('ROUTE_NOT_FOUND',404);await rateLimit(`habitat:${p}:${u.id}`,p==='pose'?150:40);
+ if(p==='assets/resolve'){
+  // Asset metadata is read-only, but this POST is scoped to a verified wallet.
+  // An unsigned plaza guest must not inherit durable habitat API authority.
+  if(!u.wallet)throw new AppError('WALLET_REQUIRED',401,'Verify a wallet before resolving personal-world assets.');
+  return reply(resolveHabitatAssets(await body(r)));
+ }
  if(p==='profile'){const d=z.object({name:z.string().trim().min(2).max(20).regex(/^[\p{L}\p{N} _-]+$/u),character:z.enum(['female','male']),variant:z.string().regex(/^[a-z0-9-]{1,60}$/)}).strict().parse(await body(r));const id=crypto.randomUUID(),now=Date.now();await batch([statement('INSERT INTO habitat_profiles(id,name,character,variant,created_at) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,character=excluded.character,variant=excluded.variant',u.id,d.name,d.character,d.variant,now),statement("INSERT OR IGNORE INTO habitat_worlds(id,owner_id,name,visibility,layout,created_at,updated_at) VALUES(?,?,?,'private','[]',?,?)",id,u.id,`${d.name}'s place`,now,now)]);return reply(await state(u));}
  const current=await state(u);if(!current.profile||!current.world)throw new AppError('PROFILE_REQUIRED',409);const w=current.world;
  if(p==='visit'){const d=z.object({id:z.string().uuid()}).strict().parse(await body(r));await readWorld(d.id,u.id);await exec('INSERT INTO habitat_presence(profile_id,world_id,x,z,angle,motion,seen_at) VALUES(?,?,0,6,3.14,?,?) ON CONFLICT(profile_id) DO UPDATE SET world_id=excluded.world_id,x=0,z=6,motion=excluded.motion,seen_at=excluded.seen_at',u.id,d.id,'{}',Date.now());return reply(await state(u,d.id));}
