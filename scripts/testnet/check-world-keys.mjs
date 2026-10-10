@@ -83,8 +83,10 @@ async function main() {
   const keysTx = await writer(ownerA).deployContract({abi:keys.abi,bytecode:keys.bytecode,args:[tokenAddr,treasury.address,curveUnit]});
   keysAddr=(await mined(keysTx)).contractAddress;
   assert.ok(keysAddr);
-  assertMatchingKeysRuntime(await reader.getCode({address:keysAddr}),keys);
-  assert.throws(()=>assertMatchingKeysRuntime('0x6000',keys),/KEYS_BYTECODE_MISMATCH/);
+  const deployedCode = await reader.getCode({address:keysAddr});
+  assertMatchingKeysRuntime(deployedCode,keys);
+  const mutatedCode = deployedCode.slice(0,-2) + (deployedCode.endsWith('00') ? '01' : '00');
+  assert.throws(()=>assertMatchingKeysRuntime(mutatedCode,keys),/KEYS_BYTECODE_MISMATCH/);
   assert.equal(await keysRead('ctrl'),tokenAddr);
   assert.equal(await keysRead('developmentTreasury'),treasury.address);
   assert.equal(await keysRead('curveUnit'),curveUnit);
