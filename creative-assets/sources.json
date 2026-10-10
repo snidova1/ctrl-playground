@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-10-10",
+  "intent": "Astra review candidates, not live/included game assets",
+  "licensePolicy": {
+    "everyBinaryNeedsProvenance": true,
+    "defaults": "deny until file SHA256, source license evidence and rig review",
+    "quaterniusNotice": "Publisher added QAL on 2026-08-28. Several individual source pack pages still show CC0. Freeze license + download timestamp for the exact pack; never infer cross-version permission.",
+    "vroidNotice": "VRM avatars have individual permission flags. Never apply default CC0; verify the file's VRM meta and user's upload rights."
+  },
+  "sources": [
+    {
+      "id": "quaternius-base-characters",
+      "title": "Universal Base Characters",
+      "category": "avatar-base",
+      "sourceUrl": "https://quaternius.itch.io/universal-base-characters",
+      "licenseUrl": "https://quaternius.itch.io/universal-base-characters",
+      "sourceKind": "publisher-download",
+      "rig": "quaternius-universal",
+      "formats": [
+        "glTF",
+        "FBX",
+        "Blend"
+      ],
+      "priority": 1,
+      "rightsReview": "quaternius-2026-license-check",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "6 base proportions and 20 hairstyles; strong candidate for a SECOND, stylized character family, not direct replacement of the approved Victoria/Fumiriya VRMs."
+    },
+    {
+      "id": "quaternius-outfits-fantasy",
+      "title": "Modular Character Outfits Fantasy",
+      "category": "outfit",
+      "sourceUrl": "https://quaternius.itch.io/modular-character-outfits-fantasy",
+      "licenseUrl": "https://quaternius.itch.io/modular-character-outfits-fantasy",
+      "sourceKind": "publisher-download",
+      "rig": "quaternius-universal",
+      "formats": [
+        "glTF",
+        "FBX",
+        "Blend"
+      ],
+      "priority": 1,
+      "rightsReview": "quaternius-2026-license-check",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "12 outfits, 62 swappable rigged parts, 3 colorways; same rig family as Universal Base Characters; 280MB Standard; gate mesh clipping, body compatibility and texture licenses."
+    },
+    {
+      "id": "quaternius-animation-library",
+      "title": "Universal Animation Library",
+      "category": "animation",
+      "sourceUrl": "https://quaternius.itch.io/universal-animation-library",
+      "licenseUrl": "https://quaternius.itch.io/universal-animation-library",
+      "sourceKind": "publisher-download",
+      "rig": "quaternius-universal",
+      "formats": [
+        "GLB",
+        "FBX"
+      ],
+      "priority": 1,
+      "rightsReview": "quaternius-2026-license-check",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "120+ motion clips; rig names and root motion changed in 2026. Retarget to VRM separately, choose in-place locomotion for network prediction."
+    },
+    {
+      "id": "quaternius-animation-library-2",
+      "title": "Universal Animation Library 2",
+      "category": "animation",
+      "sourceUrl": "https://quaternius.itch.io/universal-animation-library-2",
+      "licenseUrl": "https://quaternius.itch.io/universal-animation-library-2",
+      "sourceKind": "publisher-download",
+      "rig": "quaternius-universal",
+      "formats": [
+        "GLB",
+        "FBX"
+      ],
+      "priority": 2,
+      "rightsReview": "quaternius-2026-license-check",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "Additional parkour/combat/farming/zombie motions. Free Standard vs paid Source differences must be recorded."
+    },
+    {
+      "id": "quaternius-modular-women-2022",
+      "title": "Ultimate Modular Women",
+      "category": "npc-character",
+      "sourceUrl": "https://quaternius.com/packs/ultimatemodularwomen.html",
+      "licenseUrl": "https://quaternius.com/packs/ultimatemodularwomen.html",
+      "sourceKind": "publisher-download",
+      "rig": "quaternius-legacy",
+      "formats": [
+        "glTF",
+        "FBX",
+        "Blend"
+      ],
+      "priority": 2,
+      "rightsReview": "quaternius-2026-license-check",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "10 characters, four swappable parts, 24 animations. Different family from Universal Base Characters; prefer NPCs or separate avatar set."
+    },
+    {
+      "id": "quaternius-modular-men-2022",
+      "title": "Ultimate Modular Men",
+      "category": "npc-character",
+      "sourceUrl": "https://quaternius.com/packs/ultimatemodularcharacters.html",
+      "licenseUrl": "https://quaternius.com/packs/ultimatemodularcharacters.html",
+      "sourceKind": "publisher-download",
+      "rig": "quaternius-legacy",
+      "formats": [
+        "glTF",
+        "FBX",
+        "Blend"
+      ],
+      "priority": 2,
+      "rightsReview": "quaternius-2026-license-check",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "11 characters, four swappable parts, 24 animations. Do not mix components with Victoria/Fumiriya VRMs without explicit retarget."
+    },
+    {
+      "id": "kaykit-animations",
+      "title": "KayKit Character Animations",
+      "category": "animation",
+      "sourceUrl": "https://kaylousberg.itch.io/kaykit-character-animations",
+      "licenseUrl": "https://kaylousberg.itch.io/kaykit-character-animations",
+      "sourceKind": "publisher-download",
+      "rig": "kaykit",
+      "formats": [
+        "GLTF",
+        "FBX"
+      ],
+      "priority": 1,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "CC0 animation rigs suited to KayKit characters; verify current free tier before importing."
+    },
+    {
+      "id": "kaykit-adventurers-github",
+      "title": "KayKit Adventurers Official GitHub",
+      "category": "npc-character",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
+      "licenseUrl": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/blob/main/LICENSE.txt",
+      "sourceKind": "official-github",
+      "rig": "kaykit",
+      "formats": [
+        "GLTF",
+        "FBX"
+      ],
+      "priority": 1,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "Open-source distributor repository with rigged characters, motions and accessories. Could be NPC/adventure world pack, NOT native VRM clothing."
+    },
+    {
+      "id": "kaykit-skeletons-github",
+      "title": "KayKit Skeletons Official GitHub",
+      "category": "npc-character",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0",
+      "licenseUrl": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/blob/main/LICENSE.txt",
+      "sourceKind": "official-github",
+      "rig": "kaykit",
+      "formats": [
+        "GLTF",
+        "FBX"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "Skeleton NPC/encounter set, 90+ animation clips, accessory props; preserve original rights record."
+    },
+    {
+      "id": "kenney-animated-characters-3",
+      "title": "Kenney Animated Characters 3",
+      "category": "npc-character",
+      "sourceUrl": "https://kenney-assets.itch.io/animated-characters-3",
+      "licenseUrl": "https://kenney-assets.itch.io/animated-characters-3",
+      "sourceKind": "publisher-download",
+      "rig": "kenney-characters",
+      "formats": [
+        "FBX"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "CC0 rigged characters with human/zombie skins, idle/run/jump. Animation rig family not compatible with VRM by default."
+    },
+    {
+      "id": "quaternius-city",
+      "title": "Downtown City MegaKit",
+      "category": "world-kit",
+      "sourceUrl": "https://quaternius.itch.io/downtown-city-megakit",
+      "licenseUrl": "https://quaternius.itch.io/downtown-city-megakit",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "glTF",
+        "FBX"
+      ],
+      "priority": 1,
+      "rightsReview": "quaternius-2026-license-check",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "315 modular urban structures/streets in pack index; cozy urban plazas and town-building, reuse common atlas, validate pivots/colliders."
+    },
+    {
+      "id": "quaternius-medieval-village",
+      "title": "Medieval Village MegaKit",
+      "category": "world-kit",
+      "sourceUrl": "https://quaternius.itch.io/medieval-village-megakit",
+      "licenseUrl": "https://quaternius.itch.io/medieval-village-megakit",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "glTF",
+        "FBX"
+      ],
+      "priority": 2,
+      "rightsReview": "quaternius-2026-license-check",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "300+ modular grid-snap village elements, doors, stairs and buildings; Stage for player creator themed worlds."
+    },
+    {
+      "id": "quaternius-nature",
+      "title": "Stylized Nature MegaKit",
+      "category": "world-kit",
+      "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html",
+      "licenseUrl": "https://quaternius.com/packs/stylizednaturemegakit.html",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "glTF",
+        "FBX"
+      ],
+      "priority": 1,
+      "rightsReview": "quaternius-2026-license-check",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "116 trees/plants/rocks from older CC0 pack. Optimize alpha foliage and LOD before mobile rollout."
+    },
+    {
+      "id": "kaykit-city-bits-github",
+      "title": "KayKit City Builder Bits Official GitHub",
+      "category": "world-kit",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0",
+      "licenseUrl": "https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0/blob/main/LICENSE.txt",
+      "sourceKind": "official-github",
+      "rig": "none",
+      "formats": [
+        "GLTF",
+        "FBX",
+        "OBJ"
+      ],
+      "priority": 1,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "32+ city props, gradient atlas 1024; direct GitHub source available. Check actual downloaded archive contains complete GLTF texture/bin references."
+    },
+    {
+      "id": "kaykit-dungeon-github",
+      "title": "KayKit Dungeon Remastered Official GitHub",
+      "category": "world-kit",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0",
+      "licenseUrl": "https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0",
+      "sourceKind": "official-github",
+      "rig": "none",
+      "formats": [
+        "GLTF",
+        "FBX"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "200+ stylized dungeon pieces; can support player-created quests without external LLM."
+    },
+    {
+      "id": "kaykit-city-itch",
+      "title": "KayKit City Builder Bits Creator Page",
+      "category": "reference",
+      "sourceUrl": "https://kaylousberg.itch.io/city-builder-bits",
+      "licenseUrl": "https://kaylousberg.itch.io/city-builder-bits",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "GLTF"
+      ],
+      "priority": 3,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "Reference page for pack version and free-vs-extra split; prefer direct official GitHub repo for reproducible source."
+    },
+    {
+      "id": "poly-haven-models",
+      "title": "Poly Haven CC0 Models",
+      "category": "world-kit",
+      "sourceUrl": "https://polyhaven.com/models",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceKind": "api-catalog",
+      "rig": "none",
+      "formats": [
+        "glTF",
+        "GLB"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "High-fidelity object and environment decor. Download selected files only; heavy meshes and textures need mobile reductions."
+    },
+    {
+      "id": "poly-haven-hdri",
+      "title": "Poly Haven HDRIs",
+      "category": "environment-light",
+      "sourceUrl": "https://polyhaven.com/hdris",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceKind": "api-catalog",
+      "rig": "none",
+      "formats": [
+        "HDR",
+        "EXR"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "Bake/convert optional skies to small compressed environment maps; no live API dependency for end-user builder."
+    },
+    {
+      "id": "ambientcg-pbr",
+      "title": "ambientCG PBR Materials",
+      "category": "material",
+      "sourceUrl": "https://ambientcg.com/",
+      "licenseUrl": "https://ambientcg.com/view?id=WoodFloor051",
+      "sourceKind": "api-catalog",
+      "rig": "none",
+      "formats": [
+        "JPG",
+        "PNG"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "CC0 material library; select texture sets by target world quality tier, convert to KTX2. Confirm license from publisher before import."
+    },
+    {
+      "id": "kenney-ui-pack",
+      "title": "Kenney UI Pack",
+      "category": "ui",
+      "sourceUrl": "https://kenney-assets.itch.io/ui-pack",
+      "licenseUrl": "https://kenney-assets.itch.io/ui-pack",
+      "sourceKind": "publisher-download",
+      "rig": "none",
+      "formats": [
+        "PNG",
+        "SVG"
+      ],
+      "priority": 2,
+      "rightsReview": "source-license-file-needed",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "400+ CC0 icons and components; use only pieces consistent with CTRL's editorial design."
+    },
+    {
+      "id": "vroid-user-avatar",
+      "title": "VRoid Hub / Creator Avatars (per model permission)",
+      "category": "user-avatar",
+      "sourceUrl": "https://hub.vroid.com/en",
+      "licenseUrl": "https://developer.vroid.com/en/guidelines/conditions_of_use.html",
+      "sourceKind": "permission-gated",
+      "rig": "vroid-vrm",
+      "formats": [
+        "VRM"
+      ],
+      "priority": 1,
+      "rightsReview": "per-avatar-rights",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "NOT blanket CC0. Require explicit avatar use, corporate/commercial use, modifications, redistribution and creator/user consent from each asset's VRM1 meta before hosting."
+    },
+    {
+      "id": "mixamo-optional",
+      "title": "Adobe Mixamo Motion Retargeting (not redistributed)",
+      "category": "reference",
+      "sourceUrl": "https://www.mixamo.com/",
+      "licenseUrl": "https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html",
+      "sourceKind": "account-gated",
+      "rig": "mixamo",
+      "formats": [
+        "FBX"
+      ],
+      "priority": 3,
+      "rightsReview": "no-raw-redistribution",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "Can use in complete game subject to Adobe terms; do NOT mirror or sell individual/raw animation files. Source remains optional; account needed."
+    },
+    {
+      "id": "vroid-game-starter-reference",
+      "title": "VRM Game Starter Retarget/Foot IK Reference",
+      "category": "reference",
+      "sourceUrl": "https://github.com/norio/vrm-game-starter",
+      "licenseUrl": "https://github.com/norio/vrm-game-starter#license",
+      "sourceKind": "reference-code",
+      "rig": "vroid-vrm",
+      "formats": [
+        "TypeScript"
+      ],
+      "priority": 2,
+      "rightsReview": "source-code-only",
+      "downloaded": false,
+      "ingested": false,
+      "notes": "MIT source code reference for retargeting, foot IK, and character swap; its bundled avatars/animations have distinct licenses. DO NOT replace Astra Habitat controller."
+    }
+  ]
+}
