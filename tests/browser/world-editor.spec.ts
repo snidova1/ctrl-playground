@@ -5,7 +5,7 @@ test('catalogue, placement, local persistence, gameplay preview and JSON export'
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/worlds/editor');
   await expect(page.getByRole('heading',{name:/World Builder/})).toBeVisible({timeout:60000});
-  await expect(page.getByText('991 ASSETS')).toBeVisible();
+  await expect(page.getByText('991 MODELS + 7 TOOLS')).toBeVisible();
   await expect(page.getByText('LOCAL DRAFT / AUTOSAVED')).toBeVisible();
 
   const search=page.getByRole('textbox',{name:'Search 3D assets'});
@@ -29,7 +29,7 @@ test('catalogue, placement, local persistence, gameplay preview and JSON export'
   expect(download.suggestedFilename()).toBe('ctrl-world-draft.json');
   await page.reload();
   await expect(page.locator('.ctrl-editor-bottom')).toContainText('1 / 120 OBJECTS');
-  await expect(page.getByText('991 ASSETS')).toBeVisible();
+  await expect(page.getByText('991 MODELS + 7 TOOLS')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
