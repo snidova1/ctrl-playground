@@ -73,8 +73,8 @@ describe('Habitat contract: safe discovery and ACL',()=>{
     const downgraded=await api('worlds/'+owner.worldId+'/members','POST',
       {wallet:editor.wallet,role:'visitor'},owner.cookie);
     expect(downgraded.status).toBe(200);
-    expect((await api('worlds/'+owner.worldId+'/permissions','GET',undefined,editor.cookie).then(r=>r.json())
-      as {canEdit:boolean}).canEdit).toBe(false);
+    const downgradedPermissions=await api('worlds/'+owner.worldId+'/permissions','GET',undefined,editor.cookie);
+    expect(((await downgradedPermissions.json()) as {canEdit:boolean}).canEdit).toBe(false);
     expect((await api('worlds/'+owner.worldId+'/objects','POST',
       {revision:0,object:object()},editor.cookie)).status).toBe(403);
     const removed=await api('worlds/'+owner.worldId+'/members/'+editor.id,'DELETE',{},owner.cookie);
