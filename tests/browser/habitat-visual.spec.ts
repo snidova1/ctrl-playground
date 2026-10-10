@@ -135,5 +135,17 @@ test('wallet player sees a rotating real VRoid preview and a visibly furnished, 
   console.log('World vs empty rendered pixel-change:',(worldDelta*100).toFixed(2)+'%','idle variance:',(naturalAnimation*100).toFixed(2)+'%');
   expect(worldDelta,'Starter models must render visibly different from empty ground, beyond VRM idle animation')
     .toBeGreaterThan(Math.max(.025,naturalAnimation*2.5));
+  // Regression for wallets that already have an empty home. It must be
+  // recoverable by one visible action without creating a second world.
+  const restore=page.getByRole('button',{name:'Use starter garden ✦'});
+  await expect(restore).toBeVisible();
+  await press(page,restore);
+  await expect.poll(async()=>{
+    const result=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
+    expect(result.homeId).toBe(initial.homeId);
+    return result.world?.objects.length??0;
+  },{timeout:25000}).toBeGreaterThan(20);
+  await page.waitForTimeout(1200);
+  await page.screenshot({path:test.info().outputPath('recovered-old-empty-wallet-world.png'),fullPage:true});
   expect(errors,'No unhandled browser rendering errors').toEqual([]);
 });
