@@ -99,6 +99,9 @@ try {
   await writeFile(recordPath,JSON.stringify({...record,codeHash:'0x'+'ee'.repeat(32)}));
   await rejectWith(verifyScript,[],'KEYS_CODE_HASH_MISMATCH');
   await writeFile(recordPath,JSON.stringify(record));
+  await writeFile(fixturePath,JSON.stringify({...JSON.parse(goodFixture),codeHash:'0x'+'dd'.repeat(32)}));
+  await rejectWith(verifyScript,[],'TOKEN_FIXTURE_CODE_HASH_MISMATCH');
+  await writeFile(fixturePath,goodFixture);
   await rejectWith(verifyScript,[],'WRONG_CHAIN',{CTRL_TESTNET_RPC_URL:wrongUrl});
   console.log('PASS read-only verifier, no writes, duplicate deployment blocked, tampered treasury and code hash rejected, wrong chain rejected');
   console.log('WORLDKEYS_CLI_OFFLINE_GREEN: all chain requests limited to localhost');
