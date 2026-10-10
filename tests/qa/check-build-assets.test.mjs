@@ -123,3 +123,10 @@ test('accepts authentic Kenney mixed-case and underscore asset names', () => wit
   f.store({ ...f.entry, id: 'mini-kit/' + name, url: '/plaza/build-kit/mini-kit/' + name + '.glb', thumbnailUrl: '/plaza/build-kit/mini-kit/thumbs/' + name + '.webp' });
   assert.equal(auditBuildAssets(f.root).ok, true);
 }));
+
+test('rejects a present but zero-byte WebP thumbnail', () => withFixture(f => {
+  writeFileSync(f.thumbPath, Buffer.alloc(0));
+  const errors = auditBuildAssets(f.root).errors.join('\n');
+  assert.match(errors, /Invalid thumbnail/);
+  assert.match(errors, /invalid WebP RIFF header/);
+}));
