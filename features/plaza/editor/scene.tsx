@@ -49,7 +49,7 @@ function EditorItem({item,asset,selected,tool,snap,preview,active,reached,onActi
     const node=behaviorGroup.current;
     if(!node)return;
     if(preview&&active&&item.behavior==='spin')node.rotation.y+=Math.min(delta,.05)*1.7;
-    else node.rotation.y+=(preview&&active&&item.behavior==='open-close'?Math.PI/2:0-node.rotation.y)*Math.min(1,delta*8);
+    else node.rotation.y+=((preview&&active&&item.behavior==='open-close'?Math.PI/2:0)-node.rotation.y)*Math.min(1,delta*8);
   });
   const commit=()=>{
     const node=group.current;
