@@ -66,8 +66,34 @@ Other shipped VRMs from the main snapshot:
 
 ## Verification and integration boundary
 
-Seven Node test cases passed locally using temporary synthetic fixtures: clean baseline, missing/orphan files, tampered bytes/IDs, untrusted URLs, corrupt GLB and clip names, dimension/file-size overflows, and provenance/license corruption.
+Nine Node test cases passed locally using temporary synthetic fixtures: clean baseline, missing/orphan files, tampered bytes/IDs, untrusted URLs, corrupt GLB and clip names, dimension/file-size overflows, provenance/license corruption, mixed-case naming compatibility, and zero-byte thumbnails.
 
 The current workspace lacks an authenticated checkout of all private binary files, so the **full-repository CLI binary pass has not been claimed here**. The scoped GitHub Actions job will exercise it on a checked-out branch if workflows are enabled. Treat a CI failure as a finding to investigate, not something to bypass silently.
 
 No production asset, frontend, backend, migration, contract or other worker branch is modified by this task. The PR is intended for manual integration after any failing checks are understood.
+
+## Confirmed repository defects (GitHub Actions)
+
+The actual checked-out main-derived catalog **does not pass the binary integrity gate**: 14 WebP preview files are precisely **0 bytes**. These are not missing catalog rows or invented URLs. The workflow passed all synthetic fixture tests, then rejected these 14 real files. See [CI run 38039725112](https://github.com/snidova1/ctrl-playground/actions/runs/38039725112). This is a confirmed packaging defect, not a measured GPU regression.
+
+Furniture Kit (3):
+
+- coatRackStanding.webp
+- rugRounded.webp
+- stairsOpen.webp
+
+Nature Kit (11):
+
+- cliff_blockSlopeHalfWalls_stone.webp
+- cliff_cornerLarge_rock.webp
+- cliff_waterfall_rock.webp
+- fence_simpleCenter.webp
+- grass_leafsLarge.webp
+- lily_large.webp
+- stone_tallC.webp
+- tent_detailedOpen.webp
+- tree_detailed_fall.webp
+- tree_pineTallB.webp
+- tree_tall.webp
+
+All names above are in each pack's thumbs/ folder. The other 977 thumbnails did not trigger that empty-header failure. The initial validator incorrectly restricted legal Kenney identifiers to lowercase/hyphen; its rule was fixed after the first CI attempt and a mixed-case/underscore test was added. **Do not waive the thumbnail check or treat this PR as green until valid model previews replace these empty blobs and the full CI run passes.**
