@@ -1,7 +1,7 @@
 'use client';
-/* eslint-disable react-hooks/set-state-in-effect -- Restore device-only local drafts after hydration, never on the server. */
 /* eslint-disable @next/next/no-img-element -- The catalogue uses tiny, already-optimized, local WebP thumbnails. */
 import dynamic from 'next/dynamic';
+import Link from '@/components/navigation';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowDownToLine,Box,Copy,Grid2X2,Move3D,Redo2,RotateCw,Search,Trash2,Undo2,Upload,Waypoints} from 'lucide-react';
 import {BUILD_ASSETS,BUILD_ASSET_CATEGORIES,type BuildAsset,type BuildAssetCategory} from '../build-assets';
@@ -147,7 +147,7 @@ export default function WorldEditor(){
     <label className='ctrl-editor-number'><span>{name.toUpperCase()}</span><input type='number' step={name==='rotation'?15:.25} value={Math.round(value*1000)/1000} onChange={e=>propertyChange(name,Number(e.target.value))}/></label>;
   return <section className='ctrl-editor'>
     <header className='ctrl-editor-header'>
-      <div><a href='/worlds' className='ctrl-editor-back'>← BACK TO WORLDS</a><h1>World Builder <span>001</span></h1><p>Shape a place, object by object. No AI, tokens or paid account required.</p></div>
+      <div><Link href='/worlds' className='ctrl-editor-back'>← BACK TO WORLDS</Link><h1>World Builder <span>001</span></h1><p>Shape a place, object by object. No AI, tokens or paid account required.</p></div>
       <div className='ctrl-editor-header-actions'>
         <span className='ctrl-editor-status'>{ready?'LOCAL DRAFT / AUTOSAVED':'OPENING DRAFT'}</span>
         <button onClick={download} disabled={!ready}><ArrowDownToLine size={16}/> Export</button>
