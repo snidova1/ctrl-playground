@@ -71,6 +71,8 @@ async function main() {
     client.getGasPrice(),
     client.getBalance({address:account.address})
   ]);
+  const latestBlock=await client.getBlock({blockTag:'latest'});
+  if(latestBlock.baseFeePerGas!==null && latestBlock.baseFeePerGas!==undefined && gasPrice<latestBlock.baseFeePerGas) throw new Error('RPC_GAS_PRICE_BELOW_BASE_FEE');
   const gasLimit = gas * 12n / 10n;
   const maxCost = gasLimit * gasPrice;
   if (maxCost > parseEther('0.002') || balance < maxCost) throw new Error('GAS_BUDGET_EXCEEDED_OR_WALLET_UNFUNDED');
