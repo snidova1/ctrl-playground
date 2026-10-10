@@ -29,9 +29,9 @@ async function pointer(page: Page, locator: Locator) {
   if (await page.evaluate(() => matchMedia('(pointer:coarse)').matches)) await locator.tap();
   else await locator.click();
 }
-async function openWorld(page: Page) {
+async function openWorld(page: Page, route = '/worlds/editor') {
   await installWallet(page);
-  await page.goto('/worlds/editor');
+  await page.goto(route);
   await expect(page.locator('.hb-stage canvas')).toBeVisible({timeout: 60000});
   await pointer(page, page.getByRole('button', {name: /INJECTED|METAMASK/i}));
   await pointer(page, page.getByRole('button', {name: 'SIGN SESSION CHALLENGE'}));
@@ -120,6 +120,35 @@ test('Real pointer catalog, transforms, duplicate/delete, Undo/Redo, Save & Play
   await expect(page.getByRole('combobox', {name: 'Placed objects'}).locator('option')).toHaveCount(3);
   expect(errors).toEqual([]);
   await page.screenshot({path: test.info().outputPath('persisted-world.png')});
+});
+
+test('Homepage editor enables Redo after Undo and persists the restored draft', async ({page}) => {
+  const initial = await openWorld(page, '/');
+  await pointer(page, page.getByRole('button', {name: 'Build my world +'}));
+  const placed = page.getByRole('combobox', {name: 'Placed objects'});
+  const undo = page.getByRole('button', {name: 'Undo', exact: true});
+  const redo = page.getByRole('button', {name: 'Redo', exact: true});
+  await expect(undo).toBeDisabled();
+  await expect(redo).toBeDisabled();
+  await pointer(page, page.getByRole('button', {name: 'Building block +', exact: true}));
+  await expect(placed.locator('option')).toHaveCount(2);
+  await pointer(page, undo);
+  await expect(placed.locator('option')).toHaveCount(1);
+  await expect(undo).toBeDisabled();
+  await expect(redo).toBeEnabled();
+  await pointer(page, redo);
+  await expect(placed.locator('option')).toHaveCount(2);
+  await expect(redo).toBeDisabled();
+  await pointer(page, page.getByRole('button', {name: 'Save & play', exact: true}));
+  await expect(page.getByRole('button', {name: 'Build my world +'})).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('button', {name: 'Build my world +'})).toBeVisible();
+  const response = await page.request.get('/api/habitat/state');
+  expect(response.status()).toBe(200);
+  const saved = await response.json() as HabitatState;
+  expect(saved.world?.id).toBe(initial.world?.id);
+  expect(saved.world?.objects).toHaveLength(1);
+  expect(saved.world?.objects[0]).toMatchObject({assetId: 'ctrl-block', behavior: 'solid'});
 });
 
 test('Two verified wallets visit, exercise member permissions, leave and reconnect', async ({page, browser}) => {
