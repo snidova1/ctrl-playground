@@ -41,3 +41,50 @@
  .hb-creator-identity strong{font-size:16px}
  .hb-avatar-preview-label{font-size:9px;bottom:9px}
 }
+
+/* CTRL UNIVERSAL GAME HUD: same design language desktop, tablet and phone. */
+.hb-app{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#c6d3cb}
+.hb-top{top:calc(8px + env(safe-area-inset-top,0px));left:clamp(8px,1.6vw,22px);right:clamp(8px,1.6vw,22px);padding:6px 9px;min-height:48px;box-sizing:border-box;border:1px solid #64756788;border-radius:12px;background:#29362fe8;backdrop-filter:blur(14px);color:#f8f6ea;box-shadow:0 6px 24px #131c1940;gap:10px}
+.hb-brand{gap:7px;color:#f5f4e9!important}.hb-brand strong{font-size:20px;letter-spacing:-.04em}.hb-brand span{font-size:10px;color:#cfd7cb;letter-spacing:.12em}
+.hb-top>div{gap:5px}.hb-top .hb-status{color:#bedac7;font-size:10px;margin-right:8px}
+.hb-app .hb-top button{border:1px solid #75857588;color:#f8f6ea;background:#405047;padding:10px 13px;font-size:12px;border-radius:8px;min-height:40px}
+.hb-app .hb-top button:hover{background:#52665a}
+.hb-app .hb-primary{background:#365542;color:#fff;border-color:#365542}
+.hb-title{top:calc(86px + env(safe-area-inset-top,0px));left:clamp(12px,2vw,28px);text-shadow:0 1px 8px #f1f0dc99}
+.hb-title h1{font-size:clamp(19px,2.1vw,31px);letter-spacing:-.04em;max-width:360px;margin:4px 0}
+.hb-title small{font-size:10px;font-weight:750}.hb-title p{font-size:11px;opacity:.8}
+.hb-bottom{bottom:calc(15px + env(safe-area-inset-bottom,0px));gap:7px;z-index:9;padding:6px;border-radius:12px;background:#29362fee;box-shadow:0 8px 28px #19221c55}
+.hb-app .hb-bottom button{border-color:#687d6a;background:#465d4e;color:#fff;min-height:42px;padding:10px 15px}
+.hb-app .hb-bottom .hb-primary{background:#f3e6bd;color:#283629;border-color:#f3e6bd;font-weight:750}
+.hb-panel:not(.hb-character-creator){background:#f3f2e9;border:1px solid #b1b9ae;border-radius:14px;box-shadow:0 12px 42px #16251d30}
+.hb-panel:not(.hb-character-creator) h1{font-size:clamp(24px,2.7vw,32px)}
+.hb-app button{transition:background-color .12s ease,border-color .12s ease}
+.hb-panel.hb-character-creator{box-shadow:0 20px 56px #1a2b203d;border-radius:12px}
+@media(max-width:1024px){
+ .hb-top{left:8px;right:8px;top:calc(4px + env(safe-area-inset-top,0px));padding:5px 7px;min-height:44px}
+ .hb-top .hb-brand svg{height:24px;width:24px}.hb-top .hb-brand strong{font-size:18px}
+ .hb-top .hb-brand span,.hb-top .hb-status{display:none}
+ .hb-top>div{gap:3px}
+ .hb-app .hb-top button{padding:8px 9px;min-height:40px;font-size:11px}
+ .hb-title{top:calc(64px + env(safe-area-inset-top,0px));left:12px}
+ .hb-title h1{font-size:21px;max-width:65vw}.hb-title p{display:none}
+ .hb-panel:not(.hb-character-creator){left:auto;right:8px;top:calc(61px + env(safe-area-inset-top,0px));width:min(370px,calc(100vw - 24px));max-height:calc(100dvh - 83px - env(safe-area-inset-bottom,0px));padding:18px}
+ .hb-bottom{left:auto;right:calc(8px + env(safe-area-inset-right,0px));transform:none;bottom:calc(12px + env(safe-area-inset-bottom,0px));flex-direction:column;gap:5px;padding:5px}
+ .hb-app .hb-bottom button{min-height:44px;font-size:12px}
+ .hb-touch{display:grid;grid-template-columns:repeat(3,44px);position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:calc(10px + env(safe-area-inset-left,0px));gap:4px;touch-action:none}
+ .hb-touch button:first-child{grid-column:2}.hb-touch button:nth-child(2){grid-column:1}
+ .hb-app .hb-touch button{width:44px;height:44px;padding:8px;background:#29362fdc;color:white;border:1px solid #c9d6c580;touch-action:none}
+ .hb-message,.hb-alert{left:50%;width:min(360px,calc(100vw - 24px));bottom:calc(150px + env(safe-area-inset-bottom,0px));font-size:12px}
+ .hb-panel.hb-character-creator{left:8px;right:8px;top:calc(58px + env(safe-area-inset-top,0px));width:auto;transform:none}
+}
+@media(max-width:600px){
+ .hb-top{gap:2px}.hb-top>div{gap:3px}
+ .hb-app .hb-top button{font-size:10.5px;padding:8px 7px}
+ .hb-brand strong{font-size:17px}.hb-brand svg{display:none}
+ .hb-title h1{font-size:19px;max-width:70vw}
+ .hb-panel.hb-character-creator{grid-template-rows:minmax(245px,49dvh) minmax(0,1fr);max-height:calc(100dvh - 68px - env(safe-area-inset-top,0px))}
+ .hb-creator-identity span{display:none}.hb-creator-controls{gap:10px;padding:15px 16px 20px}
+ .hb-creator-controls h1{font-size:23px}.hb-creator-controls>p:first-of-type{display:none}
+}
+@media(max-height:660px) and (max-width:600px){.hb-panel.hb-character-creator{grid-template-rows:minmax(185px,42dvh) minmax(0,1fr)}.hb-creator-controls{gap:8px}}
+@media(prefers-reduced-motion:reduce){.hb-app button{transition:none}}
