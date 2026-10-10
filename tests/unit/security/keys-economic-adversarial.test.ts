@@ -11,7 +11,7 @@ function compile(path:string,name:string){
  const source=readFileSync(path,'utf8');
  const output=JSON.parse(solc.compile(JSON.stringify({
   language:'Solidity',sources:{[name+'.sol']:{content:source}},
-  settings:{optimizer:{enabled:true,runs:200},evmVersion:'paris',
+  settings:{optimizer:{enabled:true,runs:200},viaIR:true,evmVersion:'paris',
    outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}
  })));
  const errors=(output.errors??[]).filter((e:{severity:string})=>e.severity==='error');
