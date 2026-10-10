@@ -193,7 +193,15 @@ test('Two verified wallets visit, exercise member permissions, leave and reconne
       return state.players.some(p => p.id === visitor.profile!.id);
     }).toBe(false);
     await visitorPage.goto('/worlds/editor');
-    await expect(visitorPage.getByRole('button', {name: 'Build my world +'})).toBeVisible();
+    // CI 38059466918: the restored state returned HTTP 200 and the final DOM
+    // contained this button, but two SwiftShader canvases exceeded the default
+    // 5s hydration wait. Use the same bounded readiness budget as reload above.
+    await expect(visitorPage.getByRole('button', {name: 'Build my world +'})).toBeVisible({timeout: 20000});
+    const restoredResponse = await visitorPage.request.get('/api/habitat/state');
+    expect(restoredResponse.status()).toBe(200);
+    const restored = await restoredResponse.json() as HabitatState;
+    expect(restored.wallet).toBe(visitor.wallet);
+    expect(restored.world?.id).toBe(visitor.homeId);
     await pointer(visitorPage, visitorPage.getByRole('button', {name: 'Worlds', exact: true}));
     await pointer(visitorPage, visitorPage.getByRole('button', {name: new RegExp(sharedName)}));
     await expect.poll(async () => {
