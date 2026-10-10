@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import path from "node:path";
 import { batch, exec, query, statement } from "@/db";
 
 beforeAll(async () => {
@@ -18,6 +19,18 @@ function rows() {
 }
 
 describe("local SQLite D1 batches", () => {
+  it("uses a migrated per-file database inside this run's temporary directory", async () => {
+    const databases = await query<{ name: string; file: string }>("PRAGMA database_list");
+    const main = databases.find(database => database.name === "main")!;
+    expect(main.file).toBe(process.env.CTRL_LOCAL_DB);
+    expect(path.dirname(path.dirname(main.file))).toBe(process.env.CTRL_TEST_DB_ROOT);
+    expect(path.basename(path.dirname(main.file))).toMatch(/^ctrl-suite-/);
+    expect(await query("PRAGMA quick_check")).toEqual([{ quick_check: "ok" }]);
+    expect((await query("SELECT name FROM ctrl_migrations")).length).toBeGreaterThan(0);
+    expect(await query("SELECT id FROM users")).toEqual([]);
+    expect(await query("SELECT id FROM rate_limits")).toEqual([]);
+  });
+
   it("commits two concurrent batches without nesting transactions and returns ordered results", async () => {
     const first = batch([
       statement("INSERT INTO local_batch_test(id,value) VALUES(?,?)", "first", 1),
