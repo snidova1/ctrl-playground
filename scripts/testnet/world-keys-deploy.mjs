@@ -4,7 +4,7 @@
 import {readFile, writeFile, mkdir, open, unlink} from 'node:fs/promises';
 import {createPublicClient, createWalletClient, defineChain, http, encodeDeployData, erc20Abi, formatEther, keccak256, parseEther, getAddress} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
-import {compileWorldKeys, assertMatchingKeysRuntime} from './world-keys-artifact.mjs';
+import {compileWorldKeys, assertMatchingKeysRuntime, worldIdForOwner} from './world-keys-artifact.mjs';
 
 const chainId = 46630;
 const instructions = [
@@ -102,16 +102,18 @@ async function main() {
     const address = receipt.contractAddress;
     const code = await client.getCode({address});
     assertMatchingKeysRuntime(code, artifact);
-    const [actualToken,actualTreasury,actualUnit,fee,maxSupply] = await Promise.all([
+    const [actualToken,actualTreasury,actualUnit,fee,maxSupply,ownerId] = await Promise.all([
       client.readContract({address,abi:artifact.abi,functionName:'ctrl'}),
       client.readContract({address,abi:artifact.abi,functionName:'developmentTreasury'}),
       client.readContract({address,abi:artifact.abi,functionName:'curveUnit'}),
       client.readContract({address,abi:artifact.abi,functionName:'FEE_BPS'}),
-      client.readContract({address,abi:artifact.abi,functionName:'MAX_SUPPLY'})
+      client.readContract({address,abi:artifact.abi,functionName:'MAX_SUPPLY'}),
+      client.readContract({address,abi:artifact.abi,functionName:'worldIdFor',args:[account.address]})
     ]);
     if (getAddress(actualToken) !== token || getAddress(actualTreasury) !== treasury || actualUnit !== curveUnit || fee !== 300n || maxSupply !== 10000n) {
       throw new Error('WORLDKEYS_CONSTRUCTOR_OR_CONSTANTS_MISMATCH');
     }
+    if (ownerId !== worldIdForOwner(account.address)) throw new Error('OWNER_WORLD_ID_MISMATCH');
     const record = {chainId,worldKeys:address,token,treasury,curveUnitWei:curveUnit.toString(),transactionHash,block:receipt.blockNumber.toString(),deployer:account.address,compiler:artifact.compiler,codeHash:keccak256(code),gasUsed:receipt.gasUsed.toString(),testnetOnly:true};
     await writeFile('deployments/robinhood-worldkeys.json',JSON.stringify(record,null,2)+'\n',{flag:'wx'});
     complete = true;

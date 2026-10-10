@@ -8,9 +8,10 @@ import {fileURLToPath} from 'node:url';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import ganache from 'ganache';
-import {createPublicClient,createWalletClient,http,defineChain,keccak256} from 'viem';
+import {createPublicClient,createWalletClient,http,defineChain,keccak256,toHex,zeroAddress,zeroHash} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {compileToken} from './compile.mjs';
+import {compileWorldKeys} from './world-keys-artifact.mjs';
 
 const execFileAsync=promisify(execFile);
 const deployScript=fileURLToPath(new URL('./world-keys-deploy.mjs',import.meta.url));
@@ -91,6 +92,8 @@ try {
   assert.equal(report.verified,true);
   assert.equal(report.readOnly,true);
   assert.equal(report.worldKeys.toLowerCase(),record.worldKeys.toLowerCase());
+  const ownerId=keccak256(`${toHex('CTRL_WORLD_V1')}${account.address.slice(2)}`);
+  assert.equal(report.ownerWorldId,ownerId);
   assert.equal(await reader.getTransactionCount({address:account.address}),before+1);
   await rejectWith(deployScript,[],'DEPLOYMENT_ALREADY_RECORDED');
   const recordPath=join(workspace,'deployments/robinhood-worldkeys.json');
@@ -104,6 +107,21 @@ try {
   await writeFile(fixturePath,goodFixture);
   await rejectWith(verifyScript,[],'WRONG_CHAIN',{CTRL_TESTNET_RPC_URL:wrongUrl});
   console.log('PASS read-only verifier, no writes, duplicate deployment blocked, tampered treasury and code hash rejected, wrong chain rejected');
+  const keys=await compileWorldKeys();
+  const request={address:record.worldKeys,abi:keys.abi};
+  assert.equal(await reader.readContract({...request,functionName:'worldIdFor',args:[account.address]}),ownerId);
+  const attacker=createWalletClient({account:treasury,chain,transport:http(url)});
+  await assert.rejects(()=>reader.simulateContract({...request,account:treasury,functionName:'createWorld',args:[ownerId]}),/OWNER_WORLD_ID_MISMATCH/);
+  const attack=await reader.waitForTransactionReceipt({hash:await attacker.writeContract({...request,functionName:'createWorld',args:[ownerId],gas:200000n}),pollingInterval:100});
+  assert.equal(attack.status,'reverted');
+  assert.equal(attack.logs.length,0);
+  assert.deepEqual(await reader.readContract({...request,functionName:'worlds',args:[ownerId]}),[zeroAddress,0n,0n]);
+  assert.equal(await reader.readContract({...request,functionName:'ownerWorld',args:[treasury.address]}),zeroHash);
+  const claim=await reader.waitForTransactionReceipt({hash:await writer.writeContract({...request,functionName:'createWorld',args:[ownerId]}),pollingInterval:100});
+  assert.equal(claim.status,'success');
+  assert.equal(await reader.readContract({...request,functionName:'ownerWorld',args:[account.address]}),ownerId);
+  assert.equal(await reader.readContract({...request,functionName:'balanceOf',args:[ownerId,account.address]}),1n);
+  console.log('PASS CLI-deployed contract rejects mined victim-ID squatting before genuine owner registration');
   console.log('WORLDKEYS_CLI_OFFLINE_GREEN: all chain requests limited to localhost');
 } finally {
   if(otherServer)await otherServer.close().catch(()=>{});

@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import ganache from 'ganache';
-import {createPublicClient,createWalletClient,custom,defineChain,parseEther,stringToHex,erc20Abi} from 'viem';
+import {createPublicClient,createWalletClient,custom,defineChain,parseEther,keccak256,encodePacked,zeroAddress,zeroHash,erc20Abi} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 
 const require=createRequire(import.meta.url);
@@ -25,7 +25,7 @@ describe('security: offline CTRL key curve invariants (no public network)',()=>{
   const provider=ganache.provider({chain:{chainId:46630},logging:{quiet:true}});
   try{
    const [a,b,t]=Object.values(provider.getInitialAccounts()).slice(0,3).map(v=>privateKeyToAccount(v.secretKey as `0x${string}`));
-   const transport=custom(provider as any);
+   const transport=custom(provider);
    const reader=createPublicClient({chain,transport});
    const owner=createWalletClient({account:a,chain,transport});
    const buyer=createWalletClient({account:b,chain,transport});
@@ -36,9 +36,21 @@ describe('security: offline CTRL key curve invariants (no public network)',()=>{
    const tokenAddr=(await reader.waitForTransactionReceipt({hash:tokenHash})).contractAddress!;
    const keysHash=await owner.deployContract({abi:keys.abi,bytecode:keys.bytecode,args:[tokenAddr,t.address,parseEther('1')]});
    const keysAddr=(await reader.waitForTransactionReceipt({hash:keysHash})).contractAddress!;
-   const worldId=stringToHex('security-fixture',{size:32});
+   const worldId=keccak256(encodePacked(['string','address'],['CTRL_WORLD_V1',a.address]));
+   expect(await reader.readContract({address:keysAddr,abi:keys.abi,functionName:'worldIdFor',args:[a.address]})).toBe(worldId);
+   await expect(reader.simulateContract({account:b,address:keysAddr,abi:keys.abi,functionName:'createWorld',args:[worldId]})).rejects.toThrow('OWNER_WORLD_ID_MISMATCH');
+   const attackHash=await buyer.writeContract({address:keysAddr,abi:keys.abi,functionName:'createWorld',args:[worldId],gas:200000n});
+   const attackReceipt=await reader.waitForTransactionReceipt({hash:attackHash});
+   expect(attackReceipt.status).toBe('reverted');
+   expect(attackReceipt.logs).toHaveLength(0);
+   expect(await reader.readContract({address:keysAddr,abi:keys.abi,functionName:'worlds',args:[worldId]})).toEqual([zeroAddress,0n,0n]);
+   expect(await reader.readContract({address:keysAddr,abi:keys.abi,functionName:'ownerWorld',args:[b.address]})).toBe(zeroHash);
    await mined(owner.writeContract({address:keysAddr,abi:keys.abi,functionName:'createWorld',args:[worldId]}));
-   await expect(reader.simulateContract({account:a,address:keysAddr,abi:keys.abi,functionName:'createWorld',args:[stringToHex('second-world',{size:32})]})).rejects.toThrow();
+   await expect(reader.simulateContract({account:a,address:keysAddr,abi:keys.abi,functionName:'createWorld',args:[worldId]})).rejects.toThrow('OWNER_ALREADY_CREATED');
+   const buyerWorldId=keccak256(encodePacked(['string','address'],['CTRL_WORLD_V1',b.address]));
+   await expect(reader.simulateContract({account:a,address:keysAddr,abi:keys.abi,functionName:'createWorld',args:[buyerWorldId]})).rejects.toThrow('OWNER_WORLD_ID_MISMATCH');
+   await mined(buyer.writeContract({address:keysAddr,abi:keys.abi,functionName:'createWorld',args:[buyerWorldId]}));
+   await expect(reader.simulateContract({account:b,address:keysAddr,abi:keys.abi,functionName:'createWorld',args:[worldId]})).rejects.toThrow('OWNER_WORLD_ID_MISMATCH');
    expect(await reader.readContract({address:keysAddr,abi:keys.abi,functionName:'balanceOf',args:[worldId,a.address]})).toBe(1n);
    await expect(reader.simulateContract({account:a,address:keysAddr,abi:keys.abi,functionName:'sell',args:[worldId,1n,0n,BigInt(Math.floor(Date.now()/1000)+3600)]})).rejects.toThrow();
    await mined(buyer.writeContract({address:tokenAddr,abi:token.abi,functionName:'claim'}));

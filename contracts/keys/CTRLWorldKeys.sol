@@ -28,9 +28,14 @@ contract CTRLWorldKeys {
         require(unit > 0 && unit <= 1e30, 'INVALID_UNIT');
         ctrl = ICTRLToken(token); developmentTreasury = treasury; curveUnit = unit;
     }
+    /// @notice One permanent world/key per wallet. Offchain UUIDs are not key IDs.
+    function worldIdFor(address owner) public pure returns(bytes32) {
+        return keccak256(abi.encodePacked('CTRL_WORLD_V1', owner));
+    }
     function createWorld(bytes32 id) external nonReentrant {
-        require(id != bytes32(0) && worlds[id].owner == address(0), 'WORLD_EXISTS');
+        require(id == worldIdFor(msg.sender), 'OWNER_WORLD_ID_MISMATCH');
         require(ownerWorld[msg.sender] == bytes32(0), 'OWNER_ALREADY_CREATED');
+        require(id != bytes32(0) && worlds[id].owner == address(0), 'WORLD_EXISTS');
         ownerWorld[msg.sender] = id;
         worlds[id] = World(msg.sender, 1, 0);
         balanceOf[id][msg.sender] = 1;

@@ -4,7 +4,7 @@
 import {readFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {createPublicClient,http,getAddress,keccak256} from 'viem';
-import {compileWorldKeys,assertMatchingKeysRuntime} from './world-keys-artifact.mjs';
+import {compileWorldKeys,assertMatchingKeysRuntime,worldIdForOwner} from './world-keys-artifact.mjs';
 
 export async function verifyWorldKeys(options={}) {
   const path=options.recordPath??'deployments/robinhood-worldkeys.json';
@@ -52,7 +52,9 @@ export async function verifyWorldKeys(options={}) {
   assert.equal(actualUnit,curveUnit,'CURVE_UNIT_MISMATCH');
   assert.equal(fee,300n,'FEE_MISMATCH');
   assert.equal(maxSupply,10000n,'MAX_SUPPLY_MISMATCH');
-  return {verified:true,chainId:46630,worldKeys:address,token,treasury,curveUnitWei:curveUnit.toString(),transactionHash:d.transactionHash,block:receipt.blockNumber.toString(),confirmations:(blockNumber-receipt.blockNumber+1n).toString(),codeHash:d.codeHash,feeBps:Number(fee),maxSupply:Number(maxSupply),readOnly:true};
+  const ownerId=await client.readContract({address,abi:artifact.abi,functionName:'worldIdFor',args:[deployer]});
+  assert.equal(ownerId,worldIdForOwner(deployer),'OWNER_WORLD_ID_MISMATCH');
+  return {verified:true,chainId:46630,worldKeys:address,token,treasury,curveUnitWei:curveUnit.toString(),transactionHash:d.transactionHash,block:receipt.blockNumber.toString(),confirmations:(blockNumber-receipt.blockNumber+1n).toString(),codeHash:d.codeHash,feeBps:Number(fee),maxSupply:Number(maxSupply),ownerWorldId:ownerId,readOnly:true};
 }
 
 if(process.argv[1] && import.meta.url===new URL('file://'+process.argv[1]).href) {

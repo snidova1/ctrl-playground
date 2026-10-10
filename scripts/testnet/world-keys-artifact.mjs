@@ -1,5 +1,10 @@
 import solc from 'solc';
 import {readFile} from 'node:fs/promises';
+import {encodePacked,keccak256} from 'viem';
+
+export function worldIdForOwner(owner) {
+  return keccak256(encodePacked(['string','address'],['CTRL_WORLD_V1',owner]));
+}
 
 export async function compileWorldKeys() {
   const source = await readFile(new URL('../../contracts/keys/CTRLWorldKeys.sol', import.meta.url), 'utf8');
@@ -8,7 +13,7 @@ export async function compileWorldKeys() {
     sources: {'CTRLWorldKeys.sol': {content: source}},
     settings: {
       optimizer: {enabled: true, runs: 200},
-      // The current unmodified contract needs IR compilation (otherwise Stack too deep).
+      // Match the PR7 compiler configuration used by deployment/runtime verification.
       viaIR: true,
       evmVersion: 'paris',
       outputSelection: {'*': {'*': ['abi', 'evm.bytecode.object', 'evm.deployedBytecode.object', 'evm.deployedBytecode.immutableReferences']}}

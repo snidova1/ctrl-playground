@@ -2,7 +2,7 @@
 // Deterministic, provider-isolated contract test. Never calls a public RPC.
 import assert from 'node:assert/strict';
 import ganache from 'ganache';
-import {createPublicClient,createWalletClient,custom,defineChain,erc20Abi,parseEther,stringToHex} from 'viem';
+import {createPublicClient,createWalletClient,custom,defineChain,erc20Abi,parseEther,keccak256,encodePacked,zeroHash,zeroAddress} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {compileToken} from './compile.mjs';
 import {compileWorldKeys,assertMatchingKeysRuntime} from './world-keys-artifact.mjs';
@@ -16,7 +16,8 @@ const [ownerA,ownerB,buyer,treasury] = accounts;
 const writer = (account) => createWalletClient({account,chain,transport});
 const sumSquares = (n) => n*(n+1n)*(2n*n+1n)/6n;
 const curveUnit = parseEther('0.001');
-const worldIds = [stringToHex('offline-world-a',{size:32}),stringToHex('offline-world-b',{size:32})];
+const worldIdFor = (owner) => keccak256(encodePacked(['string','address'],['CTRL_WORLD_V1',owner]));
+const worldIds = [worldIdFor(ownerA.address),worldIdFor(ownerB.address)];
 const worldOwners = [ownerA,ownerB];
 let expectedFees = 0n;
 let tokenAddr;
@@ -33,8 +34,8 @@ async function keysRead(method,args=[]) {return reader.readContract({address:key
 async function keysWrite(account,method,args) {
   return mined(await writer(account).writeContract({address:keysAddr,abi:keys.abi,functionName:method,args}));
 }
-async function rejected(account,method,args) {
-  await assert.rejects(() => reader.simulateContract({account,address:keysAddr,abi:keys.abi,functionName:method,args}));
+async function rejected(account,method,args,reason) {
+  await assert.rejects(() => reader.simulateContract({account,address:keysAddr,abi:keys.abi,functionName:method,args}),reason ? new RegExp(reason) : undefined);
 }
 async function assertSolvent(label) {
   let reserves = 0n;
@@ -94,14 +95,25 @@ async function main() {
   assert.equal(await keysRead('MAX_SUPPLY'),10000n);
   console.log('PASS compiler viaIR, actual deployed bytecode with masked immutables, constructor and constants');
 
-  for(let i=0;i<2;i++) await keysWrite(worldOwners[i],'createWorld',[worldIds[i]]);
-  await rejected(ownerA,'createWorld',[stringToHex('second-owner-world',{size:32})]);
-  await rejected(buyer,'createWorld',[worldIds[0]]);
-  await rejected(buyer,'createWorld',['0x'+'00'.repeat(32)]);
+  for(let i=0;i<2;i++) {
+    assert.equal(await keysRead('worldIdFor',[worldOwners[i].address]),worldIds[i]);
+    await rejected(buyer,'createWorld',[worldIds[i]],'OWNER_WORLD_ID_MISMATCH');
+    const failedHash=await writer(buyer).writeContract({address:keysAddr,abi:keys.abi,functionName:'createWorld',args:[worldIds[i]],gas:200000n});
+    const failedReceipt=await reader.waitForTransactionReceipt({hash:failedHash,pollingInterval:150});
+    assert.equal(failedReceipt.status,'reverted');
+    assert.equal(failedReceipt.logs.length,0);
+    assert.deepEqual(await keysRead('worlds',[worldIds[i]]),[zeroAddress,0n,0n]);
+    assert.equal(await keysRead('ownerWorld',[buyer.address]),zeroHash);
+    await keysWrite(worldOwners[i],'createWorld',[worldIds[i]]);
+  }
+  await rejected(ownerA,'createWorld',[worldIds[0]],'OWNER_ALREADY_CREATED');
+  await rejected(ownerA,'createWorld',[worldIdFor(buyer.address)],'OWNER_WORLD_ID_MISMATCH');
+  await rejected(buyer,'createWorld',[worldIds[0]],'OWNER_WORLD_ID_MISMATCH');
+  await rejected(buyer,'createWorld',[zeroHash],'OWNER_WORLD_ID_MISMATCH');
   await rejected(ownerA,'sell',[worldIds[0],1n,0n,BigInt(Math.floor(Date.now()/1000)+7200)]);
   assert.equal(await keysRead('balanceOf',[worldIds[0],ownerA.address]),1n);
   await assertSolvent('after world setup');
-  console.log('PASS unique world, one free owner key per address, duplicate and zero ID rejected, owner key reserved');
+  console.log('PASS owner-derived IDs: mined attacker squatting reverts before victim registration; one permanent free key per wallet, duplicate and zero rejected');
 
   await mined(await writer(ownerB).writeContract({address:tokenAddr,abi:token.abi,functionName:'claim'}));
   await mined(await writer(buyer).writeContract({address:tokenAddr,abi:token.abi,functionName:'claim'}));
@@ -114,7 +126,7 @@ async function main() {
   await rejected(buyer,'buy',[worldIds[0],1n,total-1n,deadline]);
   await rejected(buyer,'buy',[worldIds[0],0n,total,deadline]);
   await rejected(buyer,'buy',[worldIds[0],101n,parseEther('100000'),deadline]);
-  await rejected(buyer,'buy',[stringToHex('unknown',{size:32}),1n,total,deadline]);
+  await rejected(buyer,'buy',[worldIdFor(treasury.address),1n,total,deadline]);
   await rejected(buyer,'sell',[worldIds[0],1n,0n,deadline]);
   await assert.rejects(()=>keysRead('curve',[10000n,1n]));
   assert.equal(await keysRead('curve',[9999n,1n]),9999n*9999n*curveUnit);
@@ -164,13 +176,13 @@ async function main() {
   }
   assert.equal(await tokenRead('balanceOf',[keysAddr]),0n);
   assert.equal(await tokenRead('balanceOf',[treasury.address]),expectedFees);
-  // Known registration/squatting risk: createWorld(id) has no owner-bound authorization.
-  // An unrelated wallet can claim a guessed or mempool-visible ID before its rightful owner.
-  const targetedId=stringToHex('victim-public-world',{size:32});
-  await keysWrite(buyer,'createWorld',[targetedId]);
-  await rejected(treasury,'createWorld',[targetedId]);
-  assert.equal((await keysRead('worlds',[targetedId]))[0].toLowerCase(),buyer.address.toLowerCase());
-  console.log('KNOWN RISK REPRODUCED: permissionless world ID registration permits front-run/squatting; requires owner binding in contract integration');
+  const targetedId=worldIdFor(treasury.address);
+  await rejected(buyer,'createWorld',[targetedId],'OWNER_WORLD_ID_MISMATCH');
+  await keysWrite(buyer,'createWorld',[worldIdFor(buyer.address)]);
+  await rejected(buyer,'createWorld',[targetedId],'OWNER_WORLD_ID_MISMATCH');
+  await keysWrite(treasury,'createWorld',[targetedId]);
+  assert.equal((await keysRead('worlds',[targetedId]))[0].toLowerCase(),treasury.address.toLowerCase());
+  console.log('PASS attacker with its own permanent key cannot claim victim ID; victim can still register');
   console.log('PASS 28 deterministic mixed world trades, reserve formula after every mutation, treasury fee accounting and full redemption');
   console.log('WORLD_KEYS_OFFLINE_READY: no public RPC, no external wallet and no testnet or production transaction');
 }

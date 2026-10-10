@@ -1,6 +1,6 @@
 import {
   createPublicClient, decodeEventLog, encodeFunctionData, getAddress, http,
-  isAddress, keccak256, toHex, TransactionReceiptNotFoundError, zeroAddress, zeroHash,
+  isAddress, keccak256, encodePacked, toHex, TransactionReceiptNotFoundError, zeroAddress, zeroHash,
   type Address, type Hex,
 } from 'viem';
 import {AppError} from '../errors';
@@ -20,6 +20,9 @@ export interface KeysConfig {
 interface Identity {
   worldId: string;
   keyWorldId: Hex;
+  /** Trusted UUID owner resolved by the parent from the signed offchain wallet binding. */
+  ownerWallet: Address;
+  /** Authenticated viewer/trader; never used to derive the world's ID. */
   wallet: Address;
 }
 interface DeploymentSnapshot {
@@ -39,6 +42,7 @@ export interface WorldKeysReady extends Identity, DeploymentSnapshot {
   status: 'ready';
   exists: boolean;
   ownerAddress: Address | null;
+  /** Registry entry for ownerWallet, not the viewer/trader wallet. */
   ownerWorldId: Hex | null;
   isOwner: boolean;
   /** Includes the locked owner key; memberBalance excludes it. */
@@ -70,16 +74,23 @@ function canonicalWorldId(worldId: string): string {
   if (typeof worldId !== 'string' || !UUID.test(worldId)) reject('KEYS_INVALID_WORLD_ID', 422);
   return worldId.toLowerCase();
 }
-/** Stable, domain-separated hash of the canonical personal-world UUID's UTF-8 text. */
-export function worldKeyId(worldId: string): Hex {
-  return keccak256(toHex(`ctrl:personal-world:v1:${canonicalWorldId(worldId)}`));
+/** Matches Solidity worldIdFor(address): UTF-8 domain plus exactly 20 address bytes. */
+export function worldKeyId(ownerWallet: string): Hex {
+  return keccak256(encodePacked(['string', 'address'], ['CTRL_WORLD_V1', address(ownerWallet, 'KEYS_INVALID_OWNER_WALLET')]));
 }
 function address(value: string, code: string): Address {
   if (typeof value !== 'string' || !isAddress(value) || value.toLowerCase() === zeroAddress) reject(code, 422);
   return getAddress(value);
 }
-function identity(worldId: string, wallet: string): Identity {
-  return {worldId: canonicalWorldId(worldId), keyWorldId: worldKeyId(worldId), wallet: address(wallet, 'KEYS_INVALID_WALLET')};
+function sameAddress(actual: Address | null, expected: Address): boolean {
+  return actual !== null && getAddress(actual) === expected;
+}
+function identity(worldId: string, ownerWallet: string, wallet: string): Identity {
+  const owner = address(ownerWallet, 'KEYS_INVALID_OWNER_WALLET');
+  return {worldId: canonicalWorldId(worldId), keyWorldId: worldKeyId(owner), ownerWallet: owner, wallet: address(wallet, 'KEYS_INVALID_WALLET')};
+}
+function requireClaimOwner(who: Identity) {
+  if (who.wallet !== who.ownerWallet) reject('KEYS_NOT_WORLD_OWNER', 403);
 }
 function normalize(config: KeysConfig | null) {
   if (config === null) reject('KEYS_NOT_DEPLOYED');
@@ -147,14 +158,16 @@ async function validateDeployment(ctx: Context, blockNumber: bigint, blockHash: 
 }
 async function ownership(ctx: Context, who: Identity, blockNumber: bigint) {
   const request = {address: ctx.deployment.contractAddress, abi: worldKeysAbi, blockNumber};
+  const derivedId = await ctx.client.readContract({...request, functionName: 'worldIdFor', args: [who.ownerWallet]});
+  if (derivedId !== who.keyWorldId) reject('KEYS_OWNER_ID_MISMATCH');
   const [ownerAddress, supply, reserve] = await ctx.client.readContract({...request, functionName: 'worlds', args: [who.keyWorldId]});
-  const ownerWorldId = await ctx.client.readContract({...request, functionName: 'ownerWorld', args: [who.wallet]});
+  const ownerWorldId = await ctx.client.readContract({...request, functionName: 'ownerWorld', args: [who.ownerWallet]});
   const balance = await ctx.client.readContract({...request, functionName: 'balanceOf', args: [who.keyWorldId, who.wallet]});
   const memberBalance = await ctx.client.readContract({...request, functionName: 'memberBalanceOf', args: [who.keyWorldId, who.wallet]});
   const exists = ownerAddress !== zeroAddress;
   const isOwner = exists && ownerAddress === who.wallet;
-  if ((isOwner && ownerWorldId !== who.keyWorldId) ||
-      (!isOwner && ownerWorldId === who.keyWorldId) ||
+  if ((exists && (ownerAddress !== who.ownerWallet || ownerWorldId !== who.keyWorldId)) ||
+      (!exists && ownerWorldId !== zeroHash) ||
       balance !== memberBalance + (isOwner ? ONE : ZERO) ||
       (exists ? supply < ONE || balance > supply : supply !== ZERO || reserve !== ZERO || balance !== ZERO)) {
     reject('KEYS_STATE_MISMATCH');
@@ -169,8 +182,9 @@ async function ownership(ctx: Context, who: Identity, blockNumber: bigint) {
   };
 }
 
-export async function readWorldKeys(config: KeysConfig | null, worldId: string, wallet: string): Promise<WorldKeysRead> {
-  const who = identity(worldId, wallet);
+/** Parent must resolve ownerWallet from its signed-wallet UUID record, never request input. */
+export async function readWorldKeys(config: KeysConfig | null, worldId: string, ownerWallet: string, wallet: string): Promise<WorldKeysRead> {
+  const who = identity(worldId, ownerWallet, wallet);
   if (config === null) return {...who, status: 'not-deployed', isOwner: false};
   const ctx = context(config);
   return rpcGuard(async () => {
@@ -182,9 +196,10 @@ export async function readWorldKeys(config: KeysConfig | null, worldId: string, 
   });
 }
 
-export async function prepareOwnerClaim(config: KeysConfig | null, worldId: string, wallet: string): Promise<PreparedOwnerClaim> {
+export async function prepareOwnerClaim(config: KeysConfig | null, worldId: string, ownerWallet: string, wallet: string): Promise<PreparedOwnerClaim> {
+  const who = identity(worldId, ownerWallet, wallet);
+  requireClaimOwner(who);
   const ctx = context(config);
-  const who = identity(worldId, wallet);
   return rpcGuard(async () => {
     const block = await snapshotBlock(ctx, false);
     const deployment = await validateDeployment(ctx, block.number, block.hash);
@@ -203,9 +218,10 @@ export async function prepareOwnerClaim(config: KeysConfig | null, worldId: stri
   });
 }
 
-export async function verifyOwnerClaim(config: KeysConfig | null, worldId: string, wallet: string, txHash: string): Promise<VerifiedOwnerClaim> {
+export async function verifyOwnerClaim(config: KeysConfig | null, worldId: string, ownerWallet: string, wallet: string, txHash: string): Promise<VerifiedOwnerClaim> {
+  const who = identity(worldId, ownerWallet, wallet);
+  requireClaimOwner(who);
   const ctx = context(config);
-  const who = identity(worldId, wallet);
   if (typeof txHash !== 'string' || !/^0x[0-9a-f]{64}$/i.test(txHash)) reject('KEYS_INVALID_TX_HASH', 422);
   const hash = txHash.toLowerCase() as Hex;
   return rpcGuard(async () => {
@@ -215,7 +231,7 @@ export async function verifyOwnerClaim(config: KeysConfig | null, worldId: strin
       throw error;
     });
     if (receipt.status !== 'success') reject('KEYS_CLAIM_REVERTED', 409);
-    if (receipt.transactionHash !== hash || receipt.from !== who.wallet || receipt.to !== ctx.deployment.contractAddress) {
+    if (receipt.transactionHash !== hash || !sameAddress(receipt.from, who.wallet) || !sameAddress(receipt.to, ctx.deployment.contractAddress)) {
       reject('KEYS_CLAIM_TRANSACTION_MISMATCH', 422);
     }
     const latest = await ctx.client.getBlockNumber();
@@ -225,13 +241,13 @@ export async function verifyOwnerClaim(config: KeysConfig | null, worldId: strin
     const deployment = await validateDeployment(ctx, receipt.blockNumber, receipt.blockHash);
     const transaction = await ctx.client.getTransaction({hash});
     const expectedData = encodeFunctionData({abi: worldKeysAbi, functionName: 'createWorld', args: [who.keyWorldId]});
-    if (transaction.hash !== hash || transaction.from !== who.wallet || transaction.to !== deployment.contractAddress ||
+    if (transaction.hash !== hash || !sameAddress(transaction.from, who.wallet) || !sameAddress(transaction.to, deployment.contractAddress) ||
         transaction.blockHash !== receipt.blockHash || transaction.blockNumber !== receipt.blockNumber ||
         transaction.transactionIndex !== receipt.transactionIndex || transaction.input !== expectedData || transaction.value !== ZERO ||
         (transaction.chainId !== undefined && transaction.chainId !== deployment.chainId)) {
       reject('KEYS_CLAIM_TRANSACTION_MISMATCH', 422);
     }
-    const logs = receipt.logs.filter(log => log.address === deployment.contractAddress && log.topics[0] === CREATED_TOPIC);
+    const logs = receipt.logs.filter(log => sameAddress(log.address, deployment.contractAddress) && log.topics[0] === CREATED_TOPIC);
     if (logs.length !== 1) reject('KEYS_CLAIM_EVENT_MISMATCH', 422);
     const log = logs[0];
     if (log.removed || log.transactionHash !== hash || log.blockHash !== receipt.blockHash || log.blockNumber !== receipt.blockNumber) {

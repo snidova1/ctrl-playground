@@ -5,7 +5,8 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
-const id = (name) => keccak256(toHex(name));
+// Independent packed encoding: domain bytes followed by the 20-byte owner address.
+const worldIdFor = (owner) => keccak256(`${toHex('CTRL_WORLD_V1')}${owner.slice(2)}`);
 const deadline = 2_000_000_000n;
 const funded = 10n ** 50n;
 const feeOf = (principal) => principal * 3n / 100n;
@@ -76,6 +77,8 @@ export async function runChecks(provider, keysArtifact, tokenArtifact) {
     let donations = 0n;
     const expectedTokens = new Map(addresses.map((address, index) => [address, index < 5 ? funded : 0n]));
     async function create(world, actor) {
+      assert.equal(world, worldIdFor(addresses[actor]));
+      assert.equal(await k('worldIdFor', [addresses[actor]]), world);
       const result = await ks('createWorld', [world], actor);
       const event = decodeEventLog({ abi: keysArtifact.abi, ...result.logs[0] });
       assert.equal(event.eventName, 'WorldCreated');
@@ -170,19 +173,25 @@ export async function runChecks(provider, keysArtifact, tokenArtifact) {
   });
 
   const f = await fixture();
-  const a = id('alpha');
-  const b = id('beta');
-  await check('gas-only owner creation without CTRL or allowance; duplicate wallet/world/zero ID rejection', async () => {
+  const a = worldIdFor(addresses[5]);
+  const b = worldIdFor(addresses[0]);
+  const unknown = worldIdFor(addresses[3]);
+  await check('owner-bound IDs reject mined squatting before victim; gas-only permanent key and duplicate/zero rejection', async () => {
+    await f.fail('createWorld', [a], 1, 'OWNER_WORLD_ID_MISMATCH');
+    assert.deepEqual(await f.k('worlds', [a]), [zeroAddress, 0n, 0n]);
+    assert.equal(await f.k('ownerWorld', [addresses[1]]), zeroHash);
+    assert.equal(await f.k('balanceOf', [a, addresses[1]]), 0n);
     const before = await read.getBalance({ address: addresses[5] });
     await f.create(a, 5);
     assert.ok(await read.getBalance({ address: addresses[5] }) < before);
     assert.equal(await f.t('balanceOf', [addresses[5]]), 0n);
     assert.equal(await f.t('allowance', [addresses[5], f.keys]), 0n);
     await f.create(b, 0);
-    await f.fail('createWorld', [id('duplicate-owner')], 5, 'OWNER_ALREADY_CREATED');
-    await f.fail('createWorld', [a], 1, 'WORLD_EXISTS');
-    await f.fail('createWorld', [zeroHash], 1, 'WORLD_EXISTS');
-    assert.equal(await f.k('worlds', [id('duplicate-owner')]).then((world) => world[0]), zeroAddress);
+    await f.fail('createWorld', [a], 5, 'OWNER_ALREADY_CREATED');
+    await f.fail('createWorld', [unknown], 5, 'OWNER_WORLD_ID_MISMATCH');
+    await f.fail('createWorld', [a], 1, 'OWNER_WORLD_ID_MISMATCH');
+    await f.fail('createWorld', [zeroHash], 1, 'OWNER_WORLD_ID_MISMATCH');
+    assert.equal(await f.k('worlds', [unknown]).then((world) => world[0]), zeroAddress);
     await f.invariant();
   });
   await check('owner authority stays separate from member keys; owner key cannot sell or transfer', async () => {
@@ -191,13 +200,14 @@ export async function runChecks(provider, keysArtifact, tokenArtifact) {
     await f.trade(b, 0, true, 3n);
     await f.trade(b, 1, true, 2n);
     await f.fail('sell', [b, 1n, 0n, deadline], 2, 'INSUFFICIENT_KEYS');
-    await f.create(id('member-owned-world'), 1);
+    await f.create(worldIdFor(addresses[1]), 1);
+    await f.fail('createWorld', [a], 1, 'OWNER_WORLD_ID_MISMATCH');
     assert.equal(await f.k('isWorldOwner', [b, addresses[1]]), false);
     await f.fail('sell', [b, 4n, 0n, deadline], 0, 'OWNER_KEY_RESERVED');
     await f.trade(b, 0, false, 3n);
     assert.equal(await f.k('isWorldOwner', [b, addresses[1]]), false);
-    assert.equal(await f.k('isWorldOwner', [id('unknown'), zeroAddress]), false);
-    assert.equal(await f.k('memberBalanceOf', [id('unknown'), zeroAddress]), 0n);
+    assert.equal(await f.k('isWorldOwner', [unknown, zeroAddress]), false);
+    assert.equal(await f.k('memberBalanceOf', [unknown, zeroAddress]), 0n);
     for (const signature of [
       { name: 'transfer', inputs: [{ type: 'address' }, { type: 'uint256' }], args: [addresses[1], 1n] },
       { name: 'transferOwnership', inputs: [{ type: 'address' }], args: [addresses[1]] },
@@ -219,21 +229,21 @@ export async function runChecks(provider, keysArtifact, tokenArtifact) {
     await f.trade(b, 1, false, 2n);
     await f.invariant();
     const dust = await fixture(1n);
-    await dust.create(a, 0);
-    await dust.trade(a, 1, true, 1n);
-    await dust.trade(a, 1, false, 1n);
+    const dustWorld = b; // This independent deployment is owned by actor 0, not actor 5.
+    await dust.create(dustWorld, 0);
+    await dust.trade(dustWorld, 1, true, 1n);
+    await dust.trade(dustWorld, 1, false, 1n);
     assert.equal(dust.fees(), 0n);
-    await dust.trade(a, 1, true, 5n); // principal 55, fee 1, remainder 65/100 discarded.
-    await dust.trade(a, 1, false, 5n);
+    await dust.trade(dustWorld, 1, true, 5n); // principal 55, fee 1, remainder 65/100 discarded.
+    await dust.trade(dustWorld, 1, false, 5n);
     assert.equal(dust.fees(), 2n);
     // Splitting trades preserves principal, but each separate fee rounds down independently.
-    for (let amount = 0; amount < 5; amount++) await dust.trade(a, 1, true, 1n);
-    for (let amount = 0; amount < 5; amount++) await dust.trade(a, 1, false, 1n);
+    for (let amount = 0; amount < 5; amount++) await dust.trade(dustWorld, 1, true, 1n);
+    for (let amount = 0; amount < 5; amount++) await dust.trade(dustWorld, 1, false, 1n);
     assert.equal(dust.fees(), 2n);
     await dust.invariant();
   });
   await check('unknown worlds, invalid amounts, overflow inputs, expiry, allowance, and balance rejection', async () => {
-    const unknown = id('unknown');
     for (const name of ['quoteBuy', 'quoteSell']) await assert.rejects(() => f.k(name, [unknown, 1n]), /UNKNOWN_WORLD/);
     await f.fail('buy', [unknown, 1n, maxUint256, deadline], 1, 'UNKNOWN_WORLD');
     await f.fail('sell', [unknown, 1n, 0n, deadline], 1, 'INSUFFICIENT_KEYS');
@@ -320,7 +330,7 @@ export async function runChecks(provider, keysArtifact, tokenArtifact) {
   });
   await check('buy/sell/createWorld reentrancy blocked during incoming, fee, and payout callbacks', async () => {
     for (const entry of ['buy', 'sell', 'createWorld']) {
-      const callbackId = id(`callback-${entry}`);
+      const callbackId = worldIdFor(f.token); // Callback msg.sender is the token contract.
       const args = entry === 'createWorld' ? [callbackId] : [a, 1n, entry === 'buy' ? maxUint256 : 0n, deadline];
       const data = encodeFunctionData({ abi: keysArtifact.abi, functionName: entry, args });
       for (const phase of ['incoming', 'fee', 'payout']) {
@@ -337,7 +347,7 @@ export async function runChecks(provider, keysArtifact, tokenArtifact) {
         await f.invariant();
       }
     }
-    const data = encodeFunctionData({ abi: keysArtifact.abi, functionName: 'createWorld', args: [id('bubble')] });
+    const data = encodeFunctionData({ abi: keysArtifact.abi, functionName: 'createWorld', args: [worldIdFor(f.token)] });
     await f.ts('setCallback', [f.keys, data]);
     await f.ts('configure', [7, 0, zeroAddress]);
     await f.fail('buy', [a, 2n, maxUint256, deadline], 1, 'REENTRANCY');
@@ -351,6 +361,7 @@ export async function runChecks(provider, keysArtifact, tokenArtifact) {
   });
   await check('maximum supply and curve unit, 100-unit batch bound, full unwind to locked owner key', async () => {
     const cap = await fixture(10n ** 30n);
+    const a = b; // Cap fixture's owner is actor 0.
     await cap.create(a, 0);
     for (let batch = 0; batch < 99; batch++) await cap.trade(a, 1, true, 100n);
     await cap.trade(a, 1, true, 99n);
