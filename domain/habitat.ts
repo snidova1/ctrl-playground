@@ -35,6 +35,7 @@ export const poseInputSchema = z.object({
   worldId: worldIdSchema,
   x: z.number().finite().min(-15).max(15), z: z.number().finite().min(-9).max(13),
   angle: z.number().finite().min(-100).max(100), motion: motionSchema,
+  moving: z.boolean().optional(),
   sessionId: z.string().uuid().optional(), sequence: revisionSchema.optional(),
 }).strict().refine(v => (v.sessionId === undefined) === (v.sequence === undefined), 'Session and sequence must be supplied together');
 export const presenceInputSchema = poseInputSchema.refine(v => v.sessionId !== undefined, 'Join before sending presence');

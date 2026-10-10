@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer, real, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index, uniqueIndex, primaryKey, check } from "drizzle-orm/sqlite-core";
+import {sql} from 'drizzle-orm';
 export const users=sqliteTable("users",{id:text("id").primaryKey(),wallet:text("wallet"),demo:integer("demo").notNull().default(0),createdAt:text("created_at").notNull(),reputation:integer("reputation").notNull().default(0),lockAmount:real("lock_amount").notNull().default(0),lockDays:integer("lock_days").notNull().default(0),lockUntil:text("lock_until")},t=>[uniqueIndex("users_wallet").on(t.wallet)]);
 export const sessions=sqliteTable("sessions",{id:text("id").primaryKey(),userId:text("user_id").notNull().references(()=>users.id),expiresAt:integer("expires_at").notNull()},t=>[index("sessions_user").on(t.userId)]);
 export const nonces=sqliteTable("nonces",{id:text("id").primaryKey(),message:text("message").notNull(),expiresAt:integer("expires_at").notNull(),used:integer("used").notNull().default(0)});
@@ -22,3 +23,30 @@ export const plazaVisitors=sqliteTable('plaza_visitors',{id:text('id').primaryKe
 export const plazaPlayers=sqliteTable('plaza_players',{id:text('id').primaryKey().references(()=>plazaVisitors.id),x:real('x').notNull(),z:real('z').notNull(),angle:real('angle').notNull(),moving:integer('moving').notNull().default(0),seenAt:integer('seen_at').notNull()},t=>[index('plaza_seen_idx').on(t.seenAt)]);
 export const plazaObjects=sqliteTable('plaza_objects',{id:text('id').primaryKey(),ownerId:text('owner_id').notNull().references(()=>plazaVisitors.id),blueprint:text('blueprint').notNull(),x:real('x').notNull(),z:real('z').notNull(),rotation:real('rotation').notNull(),active:integer('active').notNull().default(0),usedAt:integer('used_at').notNull().default(0),createdAt:integer('created_at').notNull()},t=>[index('plaza_owner_idx').on(t.ownerId)]);
 export const plazaActions=sqliteTable('plaza_actions',{id:text('id').primaryKey(),visitorId:text('visitor_id').notNull().references(()=>plazaVisitors.id),objectId:text('object_id').notNull(),kind:text('kind').notNull(),at:integer('at').notNull()},t=>[index('plaza_action_visitor_idx').on(t.visitorId,t.at)]);
+
+export const habitatProfiles = sqliteTable('habitat_profiles', {
+  id: text('id').primaryKey(), name: text('name').notNull(), character: text('character').notNull(),
+  variant: text('variant').notNull(), createdAt: integer('created_at').notNull(),
+});
+export const habitatWorlds = sqliteTable('habitat_worlds', {
+  id: text('id').primaryKey(), ownerId: text('owner_id').notNull().unique().references(() => habitatProfiles.id),
+  name: text('name').notNull(), visibility: text('visibility').notNull().default('private'),
+  layout: text('layout').notNull().default('[]'), revision: integer('revision').notNull().default(0),
+  createdAt: integer('created_at').notNull(), updatedAt: integer('updated_at').notNull(),
+});
+export const habitatMembers = sqliteTable('habitat_members', {
+  worldId: text('world_id').notNull().references(() => habitatWorlds.id, {onDelete: 'cascade'}),
+  profileId: text('profile_id').notNull().references(() => habitatProfiles.id, {onDelete: 'cascade'}),
+  role: text('role', {enum: ['editor', 'visitor']}).notNull(), createdAt: integer('created_at').notNull(),
+}, t => [primaryKey({columns: [t.worldId, t.profileId]}), index('habitat_members_profile').on(t.profileId, t.worldId), check('habitat_member_role', sql`${t.role} IN ('editor','visitor')`)]);
+export const habitatPresence = sqliteTable('habitat_presence', {
+  profileId: text('profile_id').primaryKey().references(() => habitatProfiles.id),
+  worldId: text('world_id').notNull().references(() => habitatWorlds.id),
+  x: real('x').notNull().default(0), z: real('z').notNull().default(6), angle: real('angle').notNull().default(3.14),
+  motion: text('motion').notNull().default('{}'), seenAt: integer('seen_at').notNull(),
+  sessionId: text('session_id').notNull().default(''), sequence: integer('sequence').notNull().default(0),
+}, t => [index('habitat_presence_world').on(t.worldId, t.seenAt)]);
+export const habitatObjectState = sqliteTable('habitat_object_state', {
+  worldId: text('world_id').notNull().references(() => habitatWorlds.id), objectId: text('object_id').notNull(),
+  active: integer('active').notNull().default(0), usedAt: integer('used_at').notNull().default(0),
+}, t => [primaryKey({columns: [t.worldId, t.objectId]})]);
