@@ -46,9 +46,10 @@ export function validateCreativeAssets(registry,custom,presets,catalog){
       for(const [axis,min,max] of [['x',-14,14],['y',0,8],['z',-8,12],['rotation',-100,100],['scale',.25,4]]){
         check(Number.isFinite(o[axis])&&o[axis]>=min&&o[axis]<=max,'Coordinate out of bounds '+axis+' '+preset.id);
       }
-      check(['solid','decoration'].includes(o.behavior)&&o.target==='','Unsupported game behavior in scene seed');
+      check(['solid','decoration','seat','light'].includes(o.behavior)&&o.target==='','Unsupported game behavior in scene seed');
     }
   }
+  check(presets.templates.some(t=>t.objects.some(o=>o.behavior==='seat'))&&presets.templates.some(t=>t.objects.some(o=>o.behavior==='light')),'Templates need real seat/light interactions');
   return {sources:registry.sources.length,templates:presets.templates.length,worldObjects:presets.templates.reduce((n,t)=>n+t.objects.length,0)};
 }
 

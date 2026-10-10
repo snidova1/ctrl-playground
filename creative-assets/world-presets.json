@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "suggested world layout seeds built ONLY from existing verified 991 Kenney GLBs",
+  "scope": "opt-in starter layouts from existing 991 approved models with optional seat/light behaviors. Dry-run only until wallet owner confirms.",
   "templates": [
     {
       "id": "sage-courtyard",
@@ -64,7 +64,7 @@
           "z": 4,
           "rotation": 0,
           "scale": 1,
-          "behavior": "decoration",
+          "behavior": "seat",
           "target": ""
         },
         {
@@ -76,7 +76,7 @@
           "z": 4,
           "rotation": 0,
           "scale": 1,
-          "behavior": "decoration",
+          "behavior": "seat",
           "target": ""
         },
         {
@@ -100,7 +100,7 @@
           "z": -2,
           "rotation": 0,
           "scale": 1,
-          "behavior": "decoration",
+          "behavior": "light",
           "target": ""
         }
       ]
@@ -143,7 +143,7 @@
           "z": -0.5,
           "rotation": 0,
           "scale": 1,
-          "behavior": "decoration",
+          "behavior": "seat",
           "target": ""
         },
         {
@@ -167,7 +167,7 @@
           "z": 0,
           "rotation": 0,
           "scale": 1,
-          "behavior": "decoration",
+          "behavior": "light",
           "target": ""
         },
         {
@@ -179,7 +179,7 @@
           "z": 3,
           "rotation": 0,
           "scale": 1,
-          "behavior": "decoration",
+          "behavior": "seat",
           "target": ""
         },
         {
@@ -210,7 +210,7 @@
           "z": 0,
           "rotation": 0,
           "scale": 1,
-          "behavior": "decoration",
+          "behavior": "light",
           "target": ""
         },
         {
@@ -282,7 +282,7 @@
           "z": 2,
           "rotation": 0,
           "scale": 1,
-          "behavior": "decoration",
+          "behavior": "seat",
           "target": ""
         },
         {
@@ -294,7 +294,7 @@
           "z": 2,
           "rotation": 0,
           "scale": 1,
-          "behavior": "decoration",
+          "behavior": "seat",
           "target": ""
         },
         {
@@ -334,6 +334,6 @@
         4
       ]
     },
-    "notes": "Preview templates only; real authorization and persistence remain Astra's responsibility."
+    "notes": "Node preview generates new UUIDs for each instance and NEVER persists a world; server authorization, revision check and user confirmation required."
   }
 }

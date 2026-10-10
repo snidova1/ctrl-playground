@@ -16,3 +16,5 @@ test('duplicate source IDs rejected',()=>{const [r,c,p]=input();r.sources.push({
 test('six official CC0 KayKit license files pinned to immutable hashes',()=>{const [r]=input();const e=loadJSON('creative-assets/upstream-license-evidence.json');assert.equal(validateUpstreamEvidence(e,r),6);});
 test('tampered upstream license receipt is rejected',()=>{const [r]=input();const e=loadJSON('creative-assets/upstream-license-evidence.json');e.upstreams[0].licenseBlobSha='not-verified';assert.throws(()=>validateUpstreamEvidence(e,r),/commit and blob SHA/);});
 test('audio and VFX pack coverage cannot disappear',()=>{const [r,c,p]=input();r.sources=r.sources.filter(s=>s.category!=='audio');assert.throws(()=>validateCreativeAssets(r,c,p,catalog),/Missing audio/);});
+
+test('starter scene behavior tags include usable seats and light toggles',()=>{const [r,c,p]=input();assert.ok(p.templates.flatMap(x=>x.objects).some(x=>x.behavior==='seat'));assert.ok(p.templates.flatMap(x=>x.objects).some(x=>x.behavior==='light'));assert.doesNotThrow(()=>validateCreativeAssets(r,c,p,catalog));});

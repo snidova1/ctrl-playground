@@ -22,6 +22,8 @@ jobs:
         run: node tools/creative-assets/validate.mjs
       - name: Regression tests
         run: node --test tools/creative-assets/validate.test.mjs
+      - name: Test ready-to-save scene templates without server writes
+        run: node --test tools/creative-assets/instantiate-preset.test.mjs
       - name: Reject unaudited binary assets
         run: |
           if git ls-files creative-assets tools/creative-assets | grep -Ei '\.(glb|gltf|fbx|vrm|vrma|blend|zip|png|jpg|webp|wav|mp3|ktx2)$'; then
