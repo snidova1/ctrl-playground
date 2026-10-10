@@ -8,4 +8,4 @@
 .hb-music-volume{display:flex;align-items:center;gap:4px;background:#f5f2e5ed;border-radius:100px;padding:6px;max-width:125px}
 .hb-music-volume input{width:77px;min-width:50px;margin:0;accent-color:#345e48;padding:0}
 .hb-music-error{position:absolute;left:0;bottom:43px;background:#fff9ea;padding:7px;min-width:170px;border-radius:6px;color:#894a2b;font-size:10px}
-@media(max-width:760px){.hb-music-player{left:10px;bottom:9px;z-index:23}.hb-app .hb-music-player>button{padding:9px 10px;min-width:64px;font-size:10px}.hb-music-volume{max-width:95px}.hb-music-volume input{width:48px}.hb-app.is-editing .hb-music-player{bottom:12px}}
+@media(max-width:760px){ .hb-music-player{left:10px;bottom:185px;z-index:15}.hb-app .hb-music-player>button{padding:9px 10px;min-width:64px;font-size:10px}.hb-music-volume{max-width:95px}.hb-music-volume input{width:48px}.hb-app.is-editing .hb-music-player{bottom:12px}}
