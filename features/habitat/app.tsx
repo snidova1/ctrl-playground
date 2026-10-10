@@ -15,6 +15,7 @@ import type {HabitatState as WorldState} from '@/domain/habitat';
 import {habitatApi as api,HabitatApiError} from './api';
 import {useWorldPresence} from './use-presence';
 import WorldMembers from './world-members';
+import HabitatMusic from './music-player';
 import HabitatBuilderTools,{type HabitatTool} from '@/features/plaza/editor/habitat-tools';
 import './habitat.css';
 const Stage=dynamic(()=>import('./stage'),{ssr:false});
@@ -45,6 +46,7 @@ export default function HabitatApp({advancedBuilder=false}:{advancedBuilder?:boo
  const chosen=draft.find(o=>o.id===selected),filtered=BUILD_ASSETS.filter(a=>(category==='all'||a.category===category)&&a.name.toLowerCase().includes(query.toLowerCase())),shown=filtered.slice(page*24,page*24+24);
  return <main className={`hb-app${editing?' is-editing':''}${advancedBuilder?' is-advanced':''}`} id='main'><div className='hb-stage'><StageBoundary><Stage state={state} pose={pose} input={input} motion={motion} editing={editing} locked={!!panel||!state?.profile} selected={selected} draft={draft} onSelect={setSelected} onUse={o=>void use(o)} sitting={sitting} celebrate={celebrate} interactedAt={interactedAt} quality={quality} advancedBuilder={advancedBuilder} tool={advancedTool} snap={advancedSnap} onTransform={(id,values)=>change(draft.map(o=>o.id===id?{...o,...values}:o))}/></StageBoundary></div>
  <header className='hb-top'><Link href='/' className='hb-brand'><BrandMark/><strong>CTRL</strong><span>PLAYGROUND</span></Link><div><span className='hb-status'>{state?(online?'CONNECTED':'OFFLINE'):'WALLET REQUIRED'}</span>{!online&&state?.world&&<button onClick={()=>void action(async()=>{await connect(state.world!.id);})}>Reconnect</button>}<button onClick={()=>setPanel('worlds')}>Worlds</button><button onClick={()=>setPanel(state?'wardrobe':'entry')}>Character</button><button onClick={()=>setPanel('keys')}>Keys</button><button onClick={()=>{settingsRevision.current=state?.world?.revision??0;setWorldName(state?.world?.name??'');setPanel('settings');}}>Settings</button></div></header>
+ {state&&<HabitatMusic/>}
  {!editing&&!panel&&state?.world&&<div className='hb-title'><small>{state.canEdit?'YOUR PLACE':'VISITING'} / {state.world.visibility.toUpperCase()}</small><h1>{state.world.name}</h1><p>{state.world.objects.length} objects · {state.players.length} here</p><span className='hb-draft-label'>WORLD DRAFT · KEY CONTRACT NOT DEPLOYED</span></div>}
  {error&&<div className='hb-alert' role='alert'>{error}<button onClick={()=>setError('')}>Dismiss</button></div>}{message&&!error&&<div className='hb-message' role='status' onClick={()=>setMessage('')}>{message}</div>}
  {!loaded&&<div className='hb-panel'><h1>Opening your place.</h1><p>Reading your saved world…</p></div>}
