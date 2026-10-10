@@ -1,0 +1,48 @@
+name: World Builder validation
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/world-builder.yml'
+      - 'features/plaza/editor/**'
+      - 'features/worlds/worlds-index.tsx'
+      - 'features/worlds/editor-entry.css'
+      - 'app/worlds/editor/**'
+      - 'tests/unit/world-editor*.test.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  push:
+    branches: ['gpt6/world-builder']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: world-builder-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare local configuration
+        run: |
+          cp .env.example .env.local
+          pnpm db:local
+      - name: TypeScript
+        run: pnpm typecheck
+      - name: Unit/API tests
+        run: pnpm test
+      - name: ESLint
+        run: pnpm lint
+      - name: Next production build
+        run: pnpm build:next
