@@ -28,11 +28,13 @@ export async function verifyWorldKeys(options={}) {
   if (await client.getChainId()!==46630) throw new Error('WRONG_CHAIN');
   const artifact=await compileWorldKeys();
   if (d.compiler!==artifact.compiler) throw new Error('COMPILER_VERSION_MISMATCH');
-  const [receipt,code,blockNumber] = await Promise.all([
+  const [receipt,code,tokenCode,blockNumber] = await Promise.all([
     client.getTransactionReceipt({hash:d.transactionHash}),
     client.getCode({address}),
+    client.getCode({address:token}),
     client.getBlockNumber()
   ]);
+  if(!tokenCode || tokenCode==='0x' || !/^0x[0-9a-fA-F]{64}$/.test(tokenFixture.codeHash??'') || keccak256(tokenCode).toLowerCase()!==tokenFixture.codeHash.toLowerCase()) throw new Error('TOKEN_FIXTURE_CODE_HASH_MISMATCH');
   assert.equal(receipt.status,'success','FAILED_DEPLOYMENT_RECEIPT');
   assert.equal(getAddress(receipt.contractAddress??'0x0000000000000000000000000000000000000000'),address,'DEPLOYMENT_ADDRESS_MISMATCH');
   assert.equal(getAddress(receipt.from),deployer,'DEPLOYER_MISMATCH');
