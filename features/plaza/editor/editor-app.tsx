@@ -5,6 +5,8 @@ import Link from '@/components/navigation';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowDownToLine,Box,Copy,Grid2X2,Move3D,Redo2,RotateCw,Search,Trash2,Undo2,Upload,Waypoints} from 'lucide-react';
 import {BUILD_ASSETS,BUILD_ASSET_CATEGORIES,type BuildAsset,type BuildAssetCategory} from '../build-assets';
+import {editorAssetIndex,exportHabitatLayout,HABITAT_PRIMITIVES,importHabitatLayout} from './habitat-bridge';
+import type {WorldState} from '@/features/habitat/types';
 import {EDITOR_BEHAVIORS,EDITOR_LIMITS,editWorld,loadEditorHistory,newEditorHistory,readEditorJSON,redoEditor,serializeEditorDocument,undoEditor,type EditorAction,type EditorTool,type Vec3} from './model';
 import {activatePreviewObject,initialPreviewState,isInteractiveInPreview} from './preview';
 import './editor.css';
@@ -16,7 +18,8 @@ const categoryNames:Record<BuildAssetCategory,string>={architecture:'Buildings',
 const toolNames:Record<EditorTool,string>={translate:'Move',rotate:'Rotate',scale:'Scale'};
 
 export default function WorldEditor(){
-  const assetIndex=useMemo(()=>new Map<string,BuildAsset>(BUILD_ASSETS.map(asset=>[asset.id,asset])),[]);
+  const assetIndex=useMemo(()=>editorAssetIndex(),[]);
+  const allAssets=useMemo(()=>[...BUILD_ASSETS,...HABITAT_PRIMITIVES],[]);
   const [history,setHistory]=useState(newEditorHistory);
   const [ready,setReady]=useState(false);
   const [blockedAutosave,setBlockedAutosave]=useState(false);
@@ -29,16 +32,19 @@ export default function WorldEditor(){
   const [snap,setSnap]=useState(true);
   const [preview,setPreview]=useState(false);
   const [previewState,setPreviewState]=useState(initialPreviewState);
+  const [remote,setRemote]=useState<WorldState|null>(null);
+  const [remoteBusy,setRemoteBusy]=useState(false);
+  const [loadedWorld,setLoadedWorld]=useState<{id:string;revision:number;name:string}|null>(null);
   const [message,setMessage]=useState('');
   const [importError,setImportError]=useState('');
   const fileInput=useRef<HTMLInputElement>(null);
   const draft=history.present;
   const selected=draft.objects.find(item=>item.id===selection)??null;
   const selectedAsset=selected?assetIndex.get(selected.assetId):undefined;
-  const filtered=useMemo(()=>BUILD_ASSETS.filter(asset=>{
+  const filtered=useMemo(()=>allAssets.filter(asset=>{
     const name=(asset.name+' '+asset.id).toLowerCase();
     return (category==='all'||asset.category===category)&&name.includes(query.trim().toLowerCase());
-  }),[category,query]);
+  }),[category,query,allAssets]);
   const shown=filtered.slice(0,page*PAGE_SIZE);
 
   useEffect(()=>{
@@ -51,6 +57,15 @@ export default function WorldEditor(){
     }
     setReady(true);
   },[assetIndex]);
+  useEffect(()=>{
+    let active=true;
+    void fetch('/api/habitat/state',{cache:'no-store',credentials:'same-origin'}).then(async response=>{
+      if(!response.ok)return;
+      const world=await response.json() as WorldState;
+      if(active)setRemote(world);
+    }).catch(()=>{});
+    return()=>{active=false;};
+  },[]);
   useEffect(()=>{
     if(!ready||blockedAutosave)return;
     try{window.localStorage.setItem(STORAGE_KEY,serializeEditorDocument(draft,assetIndex));}
@@ -130,14 +145,39 @@ export default function WorldEditor(){
     try{
       if(file.size>250_000)throw Error('File exceeds the 250 KB draft limit.');
       const next=readEditorJSON(await file.text(),assetIndex);
-      setHistory(loadEditorHistory(next,assetIndex));setSelection(null);setStagedAsset(null);setPreview(false);setPreviewState(initialPreviewState());
+      setHistory(loadEditorHistory(next,assetIndex));setSelection(null);setStagedAsset(null);setLoadedWorld(null);setPreview(false);setPreviewState(initialPreviewState());
       setBlockedAutosave(false);setImportError('');setMessage('Draft imported and saved locally.');
     }catch(error){setImportError(error instanceof Error?error.message:'Invalid world file.');}
     if(fileInput.current)fileInput.current.value='';
   }
   function reset(){
     if(!window.confirm('Clear this local world draft? Export it first if you want to keep it.'))return;
-    setHistory(newEditorHistory());setSelection(null);setStagedAsset(null);setPreview(false);setPreviewState(initialPreviewState());setBlockedAutosave(false);setImportError('');setMessage('New empty draft ready.');
+    setHistory(newEditorHistory());setSelection(null);setStagedAsset(null);setLoadedWorld(null);setPreview(false);setPreviewState(initialPreviewState());setBlockedAutosave(false);setImportError('');setMessage('New empty draft ready.');
+  }
+  function loadOwnedWorld(){
+    if(!remote?.canEdit||!remote.world)return;
+    if(draft.objects.length&&!window.confirm('Replace this local draft with your saved world? Export first if needed.'))return;
+    try{
+      const fromServer=importHabitatLayout(remote.world.objects,assetIndex);
+      setHistory(loadEditorHistory(fromServer,assetIndex));
+      setLoadedWorld({id:remote.world.id,revision:remote.world.revision,name:remote.world.name});
+      setSelection(null);setStagedAsset(null);setPreview(false);setPreviewState(initialPreviewState());
+      setBlockedAutosave(false);setImportError('');setMessage('Loaded your personal world. Changes are local until you press Save to world.');
+    }catch(error){setMessage(error instanceof Error?error.message:'Could not load every existing world object. Nothing was replaced.');}
+  }
+  async function saveToWorld(){
+    if(!remote?.canEdit||!remote.world||!loadedWorld||remote.world.id!==loadedWorld.id)return;
+    setRemoteBusy(true);
+    try{
+      const objects=exportHabitatLayout(draft,assetIndex);
+      const response=await fetch('/api/habitat/save',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({worldId:loadedWorld.id,revision:loadedWorld.revision,objects})});
+      const data=await response.json() as WorldState&{detail?:string};
+      if(!response.ok)throw Error(data.detail||'World save failed. Your local draft is unchanged.');
+      if(!data.world||data.world.id!==loadedWorld.id)throw Error('World response did not match the edited world.');
+      setRemote(data);setLoadedWorld({id:data.world.id,revision:data.world.revision,name:data.world.name});
+      setMessage('Saved to your personal world. Visitors will see these changes.');
+    }catch(error){setMessage(error instanceof Error?error.message:'Could not save the world. Keep your local draft.');}
+    finally{setRemoteBusy(false);}
   }
   function chooseAsset(asset:BuildAsset){
     if(preview){setMessage('Exit Play Test to place another model.');return;}
@@ -147,9 +187,11 @@ export default function WorldEditor(){
     <label className='ctrl-editor-number'><span>{name.toUpperCase()}</span><input type='number' step={name==='rotation'?15:.25} value={Math.round(value*1000)/1000} onChange={e=>propertyChange(name,Number(e.target.value))}/></label>;
   return <section className='ctrl-editor'>
     <header className='ctrl-editor-header'>
-      <div><Link href='/worlds' className='ctrl-editor-back'>← BACK TO WORLDS</Link><h1>World Builder <span>001</span></h1><p>Shape a place, object by object. No AI, tokens or paid account required.</p></div>
+      <div><Link href='/worlds' className='ctrl-editor-back'>← BACK TO WORLDS</Link><h1>World Builder <span>001</span></h1><p>Shape a place, object by object. No AI required. Connect your existing personal world to publish changes.</p></div>
       <div className='ctrl-editor-header-actions'>
-        <span className='ctrl-editor-status'>{ready?'LOCAL DRAFT / AUTOSAVED':'OPENING DRAFT'}</span>
+        <span className='ctrl-editor-status'>{ready?(loadedWorld?'PERSONAL WORLD / EDITING':'LOCAL DRAFT / AUTOSAVED'):'OPENING DRAFT'}</span>
+        {remote?.canEdit&&remote.world&&<button onClick={loadOwnedWorld} disabled={!ready||remoteBusy}>Load my world</button>}
+        {loadedWorld&&<button className='ctrl-editor-save' onClick={()=>void saveToWorld()} disabled={!ready||remoteBusy||preview}>{remoteBusy?'Saving…':'Save to world'}</button>}
         <button onClick={download} disabled={!ready}><ArrowDownToLine size={16}/> Export</button>
         <button onClick={()=>fileInput.current?.click()} disabled={!ready}><Upload size={16}/> Import</button>
         <input hidden type='file' accept='.json,application/json' ref={fileInput} onChange={e=>void importFile(e.target.files?.[0])}/>
@@ -157,12 +199,12 @@ export default function WorldEditor(){
     </header>
     <div className='ctrl-editor-grid'>
       <aside className='ctrl-editor-library' aria-label='Model library'>
-        <div className='ctrl-editor-side-heading'><div><span>01 / LIBRARY</span><h2>Make it yours.</h2></div><span>{BUILD_ASSETS.length} ASSETS</span></div>
+        <div className='ctrl-editor-side-heading'><div><span>01 / LIBRARY</span><h2>Make it yours.</h2></div><span>{BUILD_ASSETS.length} MODELS + {HABITAT_PRIMITIVES.length} TOOLS</span></div>
         <label className='ctrl-editor-search'><Search size={17}/><input aria-label='Search 3D assets' placeholder='Search models…' value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}}/></label>
         <div className='ctrl-editor-categories'><button aria-pressed={category==='all'} onClick={()=>{setCategory('all');setPage(1);}}>All</button>{BUILD_ASSET_CATEGORIES.map(c=><button key={c} aria-pressed={category===c} onClick={()=>{setCategory(c);setPage(1);}}>{categoryNames[c]}</button>)}</div>
         <div className='ctrl-editor-assets'>
           {shown.map(asset=><button className='ctrl-editor-asset' key={asset.id} aria-pressed={stagedAsset===asset.id} onClick={()=>chooseAsset(asset)} title={asset.id}>
-            <img src={asset.thumbnailUrl} alt='' loading='lazy' width={80} height={80}/><span>{asset.name}</span>
+            {asset.thumbnailUrl?<img src={asset.thumbnailUrl} alt='' loading='lazy' width={80} height={80}/>:<div className='ctrl-editor-asset-placeholder' aria-hidden='true'>CTRL</div>}<span>{asset.name}</span>
           </button>)}
         </div>
         {!filtered.length&&<p className='ctrl-editor-hint'>No matching models. Try another category or search term.</p>}
@@ -191,18 +233,21 @@ export default function WorldEditor(){
       <aside className='ctrl-editor-inspector' aria-label='Object inspector'>
         <div className='ctrl-editor-side-heading'><div><span>02 / INSPECTOR</span><h2>{selected?'Edit object.':'Your world.'}</h2></div></div>
         {selected&&selectedAsset?<div className='ctrl-editor-inspector-body'>
-          <div className='ctrl-editor-selection'><img src={selectedAsset.thumbnailUrl} width={68} height={68} alt=''/><div><span>{selectedAsset.category.toUpperCase()}</span><strong>{selectedAsset.name}</strong><small>{selected.id.slice(0,15)}</small></div></div>
+          <div className='ctrl-editor-selection'>{selectedAsset.thumbnailUrl?<img src={selectedAsset.thumbnailUrl} width={68} height={68} alt=''/>:<div className='ctrl-editor-asset-placeholder'>CTRL</div>}<div><span>{selectedAsset.category.toUpperCase()}</span><strong>{selectedAsset.name}</strong><small>{selected.id.slice(0,15)}</small></div></div>
+          <label className='ctrl-editor-name'>Name<input aria-label='Object name' value={selected.name??selectedAsset.name} maxLength={60} onChange={e=>apply({type:'properties',id:selected.id,name:e.target.value})}/></label>
           <h3>Position</h3><div className='ctrl-editor-numbers'>{input('x',selected.position[0])}{input('y',selected.position[1])}{input('z',selected.position[2])}</div>
           <h3>Transform</h3><div className='ctrl-editor-numbers'>{input('rotation',selected.rotationY*180/Math.PI)}{input('scale',selected.scale)}</div>
           <h3>Behavior tag</h3>
           <select aria-label='Object behavior tag' disabled={preview} value={selected.behavior} onChange={e=>apply({type:'behavior',id:selected.id,behavior:e.target.value as typeof selected.behavior})}>
-            {EDITOR_BEHAVIORS.map(b=><option key={b} value={b} disabled={!isInteractiveInPreview({...selected,behavior:b})&&b!=='none'}>{b.replace(/-/g,' ')}{isInteractiveInPreview({...selected,behavior:b})?' (preview ready)':''}</option>)}
+            {EDITOR_BEHAVIORS.map(b=><option key={b} value={b}>{b.replace(/-/g,' ')}{isInteractiveInPreview({...selected,behavior:b})?' (preview ready)':''}</option>)}
           </select>
-          <p className='ctrl-editor-hint'>Switch to Play test to click lights, opening objects, spinning objects, checkpoints and finish markers. This is a local simulation, not multiplayer gameplay. Sit, button and portal need the personal-world runtime.</p>
+          {selected.behavior==='button'&&<label className='ctrl-editor-target'>Switch target<select aria-label='Switch target' value={selected.target??''} onChange={e=>apply({type:'properties',id:selected.id,target:e.target.value})}><option value=''>Choose target</option>{draft.objects.filter(o=>o.id!==selected.id).map(o=><option key={o.id} value={o.id}>{o.name??assetIndex.get(o.assetId)?.name??o.id}</option>)}</select></label>}
+          {selected.behavior==='portal'&&<label className='ctrl-editor-target'>Destination world<select aria-label='Portal destination' value={selected.target??''} onChange={e=>apply({type:'properties',id:selected.id,target:e.target.value})}><option value=''>No destination</option>{remote?.worlds.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}
+          <p className='ctrl-editor-hint'>Play test runs local lights, doors, spinning objects and checkpoints. Seat, switch and portal interactions run in Habitat after Save to world. Server permissions and revisions are enforced.</p>
           <div className='ctrl-editor-inspector-actions'><button disabled={preview} onClick={duplicate}><Copy size={16}/> Duplicate</button><button className='ctrl-editor-danger' disabled={preview} onClick={()=>{apply({type:'remove',id:selected.id});setSelection(null);}}><Trash2 size={16}/> Delete</button></div>
         </div>:<div className='ctrl-editor-empty'><Box size={35}/><strong>{stagedAsset?'Ready to place.':'Choose a model.'}</strong><p>{stagedAsset?'Tap the ground in the 3D scene to add the selected asset.':'Select a model from the library, then click the ground to place it. Select an existing object to edit it.'}</p><p className='ctrl-editor-hint'>Use the gizmos to move, rotate and scale. Ctrl/Cmd + Z to undo; Delete removes a selected object.</p></div>}
         <div className='ctrl-editor-file'>
-          <h3>Draft storage</h3><p>Autosaved in this browser only. Export JSON to keep or transfer your work. No wallet, server save or multiplayer sync is implied.</p>
+          <h3>Draft storage</h3><p>{loadedWorld?`Editing ${loadedWorld.name}. Autosaved locally; Save to world publishes for visitors.`:'This is a local draft. Enter CTRL and create a personal world to enable server saves.'}</p>
           <button onClick={reset}>Clear local draft</button>
         </div>
       </aside>
