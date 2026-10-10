@@ -29,7 +29,7 @@ All changes are limited to new security tests, this report and a targeted GitHub
 | --- | --- |
 | `auth-adversarial.test.ts` | 4 concurrent uses of one signed nonce: exactly one succeeds; replay; wrong signer; wrong address; fake/revoked cookie; invalid origin, missing origin, non-JSON content type |
 | `habitat-adversarial.test.ts` | Known guest-origin bypass recorded as XFAIL; private-world visit exclusion; cross-wallet save/settings protection; invalid/remote/script object input; 120-object ceiling; oversized body; cross-origin mutation; two simultaneous same-revision saves, exactly one accepted |
-| `missions-adversarial.test.ts` | Private jobs, receipts, events, execute/support and downloaded artifacts inaccessible across sessions; artifact download sandbox headers; malicious destination forms and unsupported tools; unsigned/cross-site writes |
+| `plaza-presence-adversarial.test.ts` | Cookie/session impersonation, forged caller player IDs and movement, foreign object-ID collision/removal, action-ID replay between visitors, unsafe plaza blueprint fields |\n| `missions-adversarial.test.ts` | Private jobs, receipts, events, execute/support and downloaded artifacts inaccessible across sessions; artifact download sandbox headers; malicious destination forms and unsupported tools; unsigned/cross-site writes |
 | `keys-economic-adversarial.test.ts` | Compile **actual Solidity source** with solc and deploy locally to Ganache; unique free first owner key; irreversible owner key restriction; 3% buy and sell treasury fees; quote/slippage math; reserve solvency and zero outstanding liability after round-trip; amount ceiling |
 
 ### How to execute
@@ -37,7 +37,7 @@ All changes are limited to new security tests, this report and a targeted GitHub
 ```sh
 pnpm install --frozen-lockfile
 pnpm exec vitest run tests/unit/security --config vitest.config.ts --reporter=verbose
-pnpm typecheck
+pnpm exec tsc --noEmit --target ES2020
 ```
 
 The PR workflow `.github/workflows/security-adversarial.yml` runs these tests on a GitHub-hosted Node 22 worker when actions are enabled. No paid provider keys, external token RPCs, or production state should be supplied. The project's unit-test setup initializes a local `node:sqlite` database.
@@ -49,6 +49,12 @@ The PR workflow `.github/workflows/security-adversarial.yml` runs these tests on
 - **Economic properties on a live mainnet, third-party ERC-20 behaviors, exchange-rate manipulation, cross-world trade sequences:** not examined. Local Ganache fixture only.
 - **Rendered XSS, browser multi-tab CSRF, and production distributed race conditions:** unit tests verify API-level restrictions; no production browser or distributed deployment test was conducted.
 - **Run status:** New test files are executable regression artifacts. GitHub Actions result is a separate requirement; do not read “committed” as “executed” until a run ID and logs are available.
+
+## CI execution evidence
+
+- Initial GitHub Actions execution: [run 38039913599](https://github.com/snidova1/ctrl-playground/actions/runs/38039913599), 2026-10-10 09:01 UTC. Dependency installation succeeded. **11 assertions passed, one signed-wallet bypass assertion was explicitly XFAIL, and one contract execution failed at Solidity compilation.** The specific compiler diagnostic was `CTRLWorldKeys.sol:60:67, Stack too deep`, not an observed token reserve failure.
+- Initial full-project typecheck also failed because the repository's existing `tsconfig.json` targets ES2017 while `features/keys/policy.ts` uses native `bigint` literals. This is an existing project configuration mismatch, not a reason to modify production code in this PR.
+- Follow-up test-only fixes: Solidity compile with `viaIR: true` to compile the *unchanged* contract; CI typecheck overrides target ES2020 without modifying `tsconfig.json`. Added a fifth suite for cross-session plaza presence/action replay. Follow-up run status must be checked independently.
 
 ## Review gate
 
