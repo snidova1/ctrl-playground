@@ -28,7 +28,10 @@ All endpoints below are under `/api/habitat`. JSON mutations require same-origin
 | POST `worlds/:id/settings` | `{name,visibility,revision?}` | `HabitatState` |
 | GET/POST `worlds/:id/members` | POST `{wallet,role:'editor'|'visitor'}` | `{members}`; owner only, recipient must onboard first |
 | DELETE `worlds/:id/members/:profileId` | `{}` | `{members}`; owner only |
+| GET `worlds/:id/keys` | none | `WorldKeysRead`; trusted database owner binding, private-world ACL |
+| POST `worlds/:id/keys/prepare` | `{}` | `PreparedOwnerClaim`; owner only, unsigned transaction |
+| POST `worlds/:id/keys/verify` | `{txHash:0x...64 hex}` | `VerifiedOwnerClaim`; owner only, confirmed canonical receipt |
 
 Legacy `visit` explicitly creates a compatibility session (`id:''`); `pose`, `settings`, `use` remain available. Sessionless pose cannot downgrade an active/expired modern session. New clients heartbeat at 700ms and leave on hiding/unmount; TTL15s. Join supersedes old sessions; stale clients stop and offer reconnect instead of fighting tabs. Players carry server-resolved loadouts; colorways are not garment meshes. Owner-managed ACL is independent of tradeable keys.
 
-Keys: `worldKeyId(trustedOwnerWallet)` matches Solidity `worldIdFor(address)`. Pass app UUID plus its database-resolved signed owner wallet and authenticated viewer/trader separately; never request-body owner bindings. `readWorldKeys`, `prepareOwnerClaim`, `verifyOwnerClaim` validate chain/deployment/receipt. App routes/public deployment remain disabled; offchain drafts never claim an onchain key.
+Keys: `worldKeyId(trustedOwnerWallet)` matches Solidity `worldIdFor(address)`. Pass app UUID plus its database-resolved signed owner wallet and authenticated viewer/trader separately; never request-body owner bindings. Routes validate chain/deployment/receipt and never send transactions. Deployment configuration is fail-closed, disabled by default (`CTRL_KEYS_ENABLED=false`); reads return `not-deployed`, prepare/verify return 503. Do not enable public RPC/deployment without approval. Offchain drafts never claim an onchain key or grant member/admin roles from a receipt.

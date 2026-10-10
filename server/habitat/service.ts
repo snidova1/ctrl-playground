@@ -15,6 +15,8 @@ import {
 } from '@/domain/habitat';
 import {readHabitatJson} from './read-json';
 import {resolveHabitatAssets} from './asset-resolver';
+import {keysConfig} from '@/server/keys/config';
+import {readWorldKeys, prepareOwnerClaim, verifyOwnerClaim} from '@/server/keys/service';
 
 interface Principal {id: string; wallet: string}
 interface Row {id: string; owner_id: string; name: string; visibility: 'public' | 'private'; revision: number; layout: string}
@@ -180,6 +182,24 @@ export async function handleHabitat(r: Request, path: string[]) {
       const {world, access} = await readWorld(id, user.id);
       if (r.method === 'GET' && path.length === 2) return reply(await state(user, id));
       if (r.method === 'GET' && path[2] === 'permissions' && path.length === 3) return reply(access);
+      if (path[2] === 'keys' && (path.length === 3 || path.length === 4 && ['prepare', 'verify'].includes(path[3]))) {
+        const reading = r.method === 'GET' && path.length === 3;
+        const claiming = r.method === 'POST' && path.length === 4;
+        if (!reading && !claiming) throw new AppError('ROUTE_NOT_FOUND', 404);
+        if (claiming && world.owner_id !== user.id) throw new AppError('OWNER_REQUIRED', 403);
+        // Resolve the owner only from the trusted UUID -> user record, never body/query fields.
+        const owner = await one<{wallet: string}>(
+          'SELECT wallet FROM users WHERE id=? AND demo=0 AND wallet IS NOT NULL', world.owner_id);
+        if (!owner || world.owner_id !== `wallet-${owner.wallet.toLowerCase()}`) throw new AppError('KEYS_OWNER_BINDING_UNAVAILABLE', 503);
+        if (reading) return reply(await readWorldKeys(keysConfig(), id, owner.wallet, user.wallet));
+        const input = await body(r);
+        if (path[3] === 'prepare') {
+          z.object({}).strict().parse(input);
+          return reply(await prepareOwnerClaim(keysConfig(), id, owner.wallet, user.wallet));
+        }
+        const {txHash} = z.object({txHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/)}).strict().parse(input);
+        return reply(await verifyOwnerClaim(keysConfig(), id, owner.wallet, user.wallet, txHash));
+      }
       if (path[2] === 'objects') {
         if (!access.canEdit) throw new AppError('EDITOR_REQUIRED', 403);
         if (r.method === 'PUT' && path.length === 3) {
