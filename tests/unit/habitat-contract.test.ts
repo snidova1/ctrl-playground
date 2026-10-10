@@ -1,6 +1,6 @@
 import {beforeAll,describe,expect,it} from 'vitest';
 import {handleApi} from '@/server/api';
-import {exec,one} from '@/db';
+import {exec} from '@/db';
 import {createSession} from '@/server/wallet/auth';
 import type {HabitatState} from '@/domain/habitat';
 

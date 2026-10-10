@@ -105,7 +105,7 @@ async function save(user: Principal, id: string, revision: number, input: WorldO
   if (!result[0]?.meta.changes) throw new AppError('WORLD_EDIT_CONFLICT', 409, 'Reload the latest world before editing.');
   return state(user, id);
 }
-async function join(user: Principal, id: string) {
+async function join(user: Principal, id: string, sequenced = true) {
   await readWorld(id, user.id);
   if (!await one('SELECT id FROM habitat_profiles WHERE id=?', user.id)) throw new AppError('PROFILE_REQUIRED', 409);
   const result = await exec(`INSERT INTO habitat_presence(profile_id,world_id,x,z,angle,motion,seen_at,session_id,sequence)
@@ -113,7 +113,7 @@ async function join(user: Principal, id: string) {
       (visibility='public' OR owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=habitat_worlds.id AND m.profile_id=?))
     ON CONFLICT(profile_id) DO UPDATE SET
     world_id=excluded.world_id,x=0,z=6,angle=3.14,motion='{}',seen_at=excluded.seen_at,session_id=excluded.session_id,sequence=0`,
-  user.id, Date.now(), crypto.randomUUID(), id, user.id, user.id);
+  user.id, Date.now(), sequenced ? crypto.randomUUID() : '', id, user.id, user.id);
   if (!result.meta.changes) throw new AppError('WORLD_NOT_FOUND', 404);
   return state(user, id);
 }
@@ -163,11 +163,12 @@ export async function handleHabitat(r: Request, path: string[]) {
     }
     if (r.method === 'POST' && (p === 'join' || p === 'visit')) {
       const {id} = z.object({id: worldIdSchema}).strict().parse(await body(r));
-      return reply(await join(user, id));
+      return reply(await join(user, id, p === 'join'));
     }
     if (r.method === 'POST' && p === 'leave') {
       const data = z.object({worldId: worldIdSchema, sessionId: z.string().uuid()}).strict().parse(await body(r));
-      await exec('DELETE FROM habitat_presence WHERE profile_id=? AND world_id=? AND session_id=?', user.id, data.worldId, data.sessionId);
+      const result = await exec('DELETE FROM habitat_presence WHERE profile_id=? AND world_id=? AND session_id=?', user.id, data.worldId, data.sessionId);
+      if (!result.meta.changes) throw new AppError('STALE_PRESENCE', 409);
       return reply({ok: true});
     }
     if (r.method === 'POST' && p === 'save') {
@@ -233,9 +234,12 @@ export async function handleHabitat(r: Request, path: string[]) {
       const current = await state(user, data.worldId);
       if (!current.profile || !current.world) throw new AppError('PROFILE_REQUIRED', 409);
       let old = await one<Presence>('SELECT * FROM habitat_presence WHERE profile_id=?', user.id);
+      // An expired modern connection must explicitly rejoin; never downgrade it
+      // to the legacy protocol before checking its session binding.
+      if (p === 'pose' && !data.sessionId && old?.session_id) throw new AppError('STALE_PRESENCE', 409, 'Use sequenced presence for this connection.');
       // Legacy courtyard clients may implicitly join their own home on first pose.
       if ((!old || old.seen_at <= Date.now() - TTL) && p === 'pose' && !data.sessionId && (old?.world_id === data.worldId || current.homeId === data.worldId)) {
-        await join(user, data.worldId);
+        await join(user, data.worldId, false);
         old = await one<Presence>('SELECT * FROM habitat_presence WHERE profile_id=?', user.id);
       }
       if (!old || old.world_id !== data.worldId || old.seen_at <= Date.now() - TTL) throw new AppError('WORLD_SESSION_EXPIRED', 409);

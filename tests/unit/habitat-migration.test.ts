@@ -3,6 +3,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {mkdtempSync, readFileSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
+import {execFileSync} from 'node:child_process';
 
 const baseline = [
   '0000_fair_susan_delgado.sql', '0001_nifty_iron_fist.sql',
@@ -94,6 +95,24 @@ afterEach(() => {
 });
 
 describe('Habitat 0004 existing-database SQLite migration rehearsal', () => {
+  it('runs the real migration CLI against an existing fixture and safely resumes without reapplying', () => {
+    const filename = existingDatabase();
+    let db = open(filename);
+    const before = snapshot(db);
+    db.close();
+    const options = {cwd: process.cwd(), env: {...process.env, CTRL_LOCAL_DB: filename}, encoding: 'utf8' as const};
+    expect(execFileSync(process.execPath, ['scripts/migrate-local.mjs'], options)).toContain(`Applied ${upgrade}`);
+    expect(execFileSync(process.execPath, ['scripts/migrate-local.mjs'], options)).toBe('');
+    db = open(filename);
+    try {
+      for (const table of before) {
+        if (table.name === 'ctrl_migrations') continue;
+        expect(db.prepare(`SELECT ${table.columns.map(quote).join(',')} FROM ${quote(table.name)} ORDER BY rowid`).all(), table.name).toEqual(table.rows);
+      }
+      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 5});
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    } finally {db.close();}
+  });
   it('applies actual 0000-0003, reopens seeded DB, and transactionally preserves every existing row through 0004', () => {
     const filename = existingDatabase();
     let db = open(filename);
