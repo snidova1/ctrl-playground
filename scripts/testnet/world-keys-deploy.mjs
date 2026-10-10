@@ -57,7 +57,8 @@ async function main() {
   const transport = http(url, {timeout: 15000, retryCount: 0});
   const client = createPublicClient({chain, transport});
   if (await client.getChainId() !== chainId) throw new Error('WRONG_CHAIN: refusing non-testnet execution');
-  if (!await client.getCode({address:token})) throw new Error('TOKEN_CONTRACT_NOT_FOUND');
+  const tokenCode=await client.getCode({address:token});
+  if (!tokenCode || tokenCode==='0x') throw new Error('TOKEN_CONTRACT_NOT_FOUND');
   if (await client.readContract({address:token, abi:erc20Abi, functionName:'symbol'}) !== 'tCTRL') {
     throw new Error('UNEXPECTED_TOKEN_SYMBOL: disposable tCTRL fixture required');
   }
