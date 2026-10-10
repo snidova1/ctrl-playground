@@ -5,6 +5,9 @@ on:
       - 'features/plaza/editor/**'
       - 'server/habitat/service.ts'
       - 'docs/holder-catalog-handoff.md'
+      - 'docs/PREMIUM_ASSET_SOURCING.md'
+      - 'creative-assets/premium-source-candidates.json'
+      - 'tools/creative-assets/validate-premium-sources.mjs'
       - '.github/workflows/holder-gallery.yml'
   workflow_dispatch:
 permissions:
@@ -24,6 +27,8 @@ jobs:
           node-version: '22'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify sourced model evidence and no fabricated paid inventory
+        run: node tools/creative-assets/validate-premium-sources.mjs
       - name: Tier and ETH price/quality policy tests
         run: pnpm exec vitest run tests/unit/holder-gallery-tiers.test.ts tests/unit/holder-gallery-eth.test.ts
       - name: Scoped lint
