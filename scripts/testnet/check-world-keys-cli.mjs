@@ -16,7 +16,7 @@ const execFileAsync=promisify(execFile);
 const deployScript=fileURLToPath(new URL('./world-keys-deploy.mjs',import.meta.url));
 const verifyScript=fileURLToPath(new URL('./world-keys-verify.mjs',import.meta.url));
 const workspace=await mkdtemp(join(tmpdir(),'ctrl-keys-offline-'));
-const server=ganache.server({chain:{chainId:46630},miner:{defaultGasPrice:100000000},logging:{quiet:true}});
+const server=ganache.server({chain:{chainId:46630},miner:{defaultGasPrice:1000000000},logging:{quiet:true}});
 let otherServer=null;
 try {
   await server.listen(0,'127.0.0.1');
