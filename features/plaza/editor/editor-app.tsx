@@ -18,6 +18,7 @@ export default function WorldEditor(){
   const assetIndex=useMemo(()=>new Map<string,BuildAsset>(BUILD_ASSETS.map(asset=>[asset.id,asset])),[]);
   const [history,setHistory]=useState(newEditorHistory);
   const [ready,setReady]=useState(false);
+  const [blockedAutosave,setBlockedAutosave]=useState(false);
   const [selection,setSelection]=useState<string|null>(null);
   const [stagedAsset,setStagedAsset]=useState<string|null>(null);
   const [category,setCategory]=useState<BuildAssetCategory|'all'>('all');
@@ -42,15 +43,16 @@ export default function WorldEditor(){
       const raw=window.localStorage.getItem(STORAGE_KEY);
       if(raw)setHistory(loadEditorHistory(readEditorJSON(raw,assetIndex),assetIndex));
     }catch{
-      setImportError('The saved draft could not be opened. It was preserved in local storage; export/import a valid document to continue.');
+      setBlockedAutosave(true);
+      setImportError('This browser has an invalid saved draft. It will not be overwritten until you import a valid document or clear the draft.');
     }
     setReady(true);
   },[assetIndex]);
   useEffect(()=>{
-    if(!ready)return;
+    if(!ready||blockedAutosave)return;
     try{window.localStorage.setItem(STORAGE_KEY,serializeEditorDocument(draft,assetIndex));}
     catch{setMessage('Local autosave is unavailable on this device. Export your draft to keep it.');}
-  },[ready,draft,assetIndex]);
+  },[ready,blockedAutosave,draft,assetIndex]);
 
   const apply=useCallback((action:EditorAction)=>{
     try{
@@ -125,13 +127,13 @@ export default function WorldEditor(){
       if(file.size>250_000)throw Error('File exceeds the 250 KB draft limit.');
       const next=readEditorJSON(await file.text(),assetIndex);
       setHistory(loadEditorHistory(next,assetIndex));setSelection(null);setStagedAsset(null);
-      setImportError('');setMessage('Draft imported and saved locally.');
+      setBlockedAutosave(false);setImportError('');setMessage('Draft imported and saved locally.');
     }catch(error){setImportError(error instanceof Error?error.message:'Invalid world file.');}
     if(fileInput.current)fileInput.current.value='';
   }
   function reset(){
     if(!window.confirm('Clear this local world draft? Export it first if you want to keep it.'))return;
-    setHistory(newEditorHistory());setSelection(null);setStagedAsset(null);setMessage('New empty draft ready.');
+    setHistory(newEditorHistory());setSelection(null);setStagedAsset(null);setBlockedAutosave(false);setImportError('');setMessage('New empty draft ready.');
   }
   function chooseAsset(asset:BuildAsset){
     setStagedAsset(asset.id);setSelection(null);setMessage('Click the ground in the 3D view to place '+asset.name+'.');
