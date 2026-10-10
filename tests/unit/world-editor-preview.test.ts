@@ -5,11 +5,11 @@ function object(id:string,behavior:EditorObject['behavior']):EditorObject {
   return {id,assetId:'building-kit/wall',position:[0,0,0],rotationY:0,scale:1,behavior};
 }
 const doc:EditorDocument={version:1,objects:[
-  object('light','toggle-light'),object('door','open-close'),object('platform','moving-platform'),
+  object('light','toggle-light'),object('door','open-close'),object('platform','spin'),
   object('point-a','checkpoint'),object('point-b','checkpoint'),object('finish','finish'),object('plain','none')
 ]};
 describe('world editor live preview',()=>{
-  it('toggles lights, doors and moving platforms without modifying the world',()=>{
+  it('toggles lights, doors and spinning objects without modifying the world',()=>{
     let s=initialPreviewState();
     for(const id of ['light','door','platform']) {
       s=activatePreviewObject(doc,s,id);
@@ -38,7 +38,7 @@ describe('world editor live preview',()=>{
     expect(activatePreviewObject(doc,s,'plain')).toBe(s);
     expect(isInteractiveInPreview(object('x','sit'))).toBe(false);
     expect(isInteractiveInPreview(object('x','portal'))).toBe(false);
-    expect(isInteractiveInPreview(object('x','moving-platform'))).toBe(true);
+    expect(isInteractiveInPreview(object('x','spin'))).toBe(true);
   });
   it('does not complete a course with no checkpoints',()=>{
     const d:EditorDocument={version:1,objects:[object('finish','finish')]};
