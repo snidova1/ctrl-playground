@@ -29,7 +29,7 @@ async function pointer(page: Page, locator: Locator) {
   if (await page.evaluate(() => matchMedia('(pointer:coarse)').matches)) await locator.tap();
   else await locator.click();
 }
-async function openWorld(page: Page, route = '/worlds/editor') {
+async function openWorld(page: Page, route = '/worlds/editor', preserveStarter = false) {
   await installWallet(page);
   await page.goto(route);
   await expect(page.locator('.hb-stage canvas')).toBeVisible({timeout: 60000});
@@ -37,6 +37,7 @@ async function openWorld(page: Page, route = '/worlds/editor') {
   await pointer(page, page.getByRole('button', {name: 'SIGN SESSION CHALLENGE'}));
   await expect(page.getByRole('button', {name: 'Enter my world draft'})).toBeVisible({timeout: 30000});
   await page.getByRole('textbox', {name: 'Name', exact: true}).fill('CTRL Browser Builder');
+  await expect(page.locator('.hb-avatar-preview canvas')).toBeVisible({timeout: 60000});
   await pointer(page, page.getByRole('button', {name: 'Male', exact: true}));
   await pointer(page, page.getByRole('button', {name: 'Enter my world draft'}));
   await expect(page.getByRole('button', {name: 'Build my world +'})).toBeVisible({timeout: 30000});
@@ -45,6 +46,16 @@ async function openWorld(page: Page, route = '/worlds/editor') {
   const state = await response.json() as HabitatState;
   expect(state.wallet).toMatch(/^0x/);
   expect(state.profile?.character).toBe('male');
+  expect(state.world?.objects.length).toBeGreaterThan(20);
+  if (!preserveStarter) {
+    const reset=await page.request.post('/api/habitat/save',{
+      headers:{Origin:new URL(page.url()).origin},
+      data:{worldId:state.world!.id,revision:state.world!.revision,objects:[]}
+    });
+    expect(reset.status()).toBe(200);
+    await page.reload();
+    await expect(page.getByRole('button',{name:'Build my world +'})).toBeVisible({timeout:30000});
+  }
   return state;
 }
 async function build(page: Page) {
@@ -295,4 +306,24 @@ test('Revoking a private-world editor clears the active tools and inaccessible s
     await expect(visitorPage.getByRole('button', {name: 'Build my world +'})).toHaveCount(0);
     expect((await visitorPage.request.get('/api/habitat/state')).status()).toBe(401);
   } finally {await otherContext.close();}
+});
+
+test('VRoid model preview and furnished editable starter world persist on a fresh signed wallet', async({page})=>{
+ const errors:string[]=[];
+ page.on('pageerror',error=>errors.push(error.message));
+ const state=await openWorld(page,'/worlds/editor',true);
+ expect(state.world?.objects.length).toBeGreaterThan(20);
+ expect(state.world?.objects.some(o=>o.behavior==='seat')).toBe(true);
+ expect(state.world?.objects.some(o=>o.assetId.includes('tree'))).toBe(true);
+ const count=state.world!.objects.length;
+ await build(page);
+ await expect(page.getByRole('combobox',{name:'Placed objects'}).locator('option')).toHaveCount(count+1);
+ await pointer(page,page.getByRole('button',{name:'Cancel',exact:true}));
+ await page.reload();
+ await expect(page.getByRole('button',{name:'Build my world +'})).toBeVisible();
+ const fresh=(await (await page.request.get('/api/habitat/state')).json()) as HabitatState;
+ expect(fresh.world?.id).toBe(state.world!.id);
+ expect(fresh.world?.revision).toBe(state.world!.revision);
+ expect(fresh.world?.objects.length).toBe(count);
+ expect(errors).toEqual([]);
 });
