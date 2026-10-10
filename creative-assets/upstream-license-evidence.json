@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-10",
+  "verificationMethod": "Read canonical GitHub LICENSE.txt through authenticated connector; identify CC0 text; pin repository HEAD and license blob SHA",
+  "claims": "License-file verification only. Does NOT establish exact model file hashes, pack downloads, included free-tier file coverage or approval to redistribute paid extras.",
+  "upstreams": [
+    {
+      "sourceId": "kaykit-adventurers-github",
+      "repository": "KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
+      "sourceCommit": "672074b73ba276876a19e8816ecdc5241817ab47",
+      "licensePath": "LICENSE.txt",
+      "licenseBlobSha": "877e44735b5869c10e17a59e3b757905aa390626",
+      "observedLicense": "CC0-1.0",
+      "status": "license-text-verified",
+      "assetFilesDownloaded": false,
+      "binaryHashesVerified": false
+    },
+    {
+      "sourceId": "kaykit-skeletons-github",
+      "repository": "KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0",
+      "sourceCommit": "15b62b9bad122f72926c10fb14d622c73819fa54",
+      "licensePath": "LICENSE.txt",
+      "licenseBlobSha": "5de5a1e35003680bd6b97b4c247eed71d51a9fb7",
+      "observedLicense": "CC0-1.0",
+      "status": "license-text-verified",
+      "assetFilesDownloaded": false,
+      "binaryHashesVerified": false
+    },
+    {
+      "sourceId": "kaykit-city-bits-github",
+      "repository": "KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0",
+      "sourceCommit": "63976910ca04d16f0fc531b9c614244be8128713",
+      "licensePath": "LICENSE.txt",
+      "licenseBlobSha": "a311fe646973aa7da11458c3cbfefbb4c671f857",
+      "observedLicense": "CC0-1.0",
+      "status": "license-text-verified",
+      "assetFilesDownloaded": false,
+      "binaryHashesVerified": false
+    },
+    {
+      "sourceId": "kaykit-dungeon-github",
+      "repository": "KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0",
+      "sourceCommit": "b0ca9bd96a8072ab36a3a5464f00ed1e06a16d07",
+      "licensePath": "LICENSE.txt",
+      "licenseBlobSha": "686cf4ee3931b75d4ecfac6308f9d3287553748c",
+      "observedLicense": "CC0-1.0",
+      "status": "license-text-verified",
+      "assetFilesDownloaded": false,
+      "binaryHashesVerified": false
+    },
+    {
+      "sourceId": "kaykit-medieval-hexagon",
+      "repository": "KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0",
+      "sourceCommit": "84fa4e91af6a88989be7c99e0891cede11f2ca38",
+      "licensePath": "LICENSE.txt",
+      "licenseBlobSha": "db3b53b5425c48afc0f606bfc0de84e51d834e95",
+      "observedLicense": "CC0-1.0",
+      "status": "license-text-verified",
+      "assetFilesDownloaded": false,
+      "binaryHashesVerified": false
+    },
+    {
+      "sourceId": "kaykit-prototype-bits",
+      "repository": "KayKit-Game-Assets/KayKit-Prototype-Bits-1.0",
+      "sourceCommit": "bb159596f4f5106b663741d002c8eb45c80c0f41",
+      "licensePath": "LICENSE.txt",
+      "licenseBlobSha": "d0acf387bccc4fed5bf51f5dd5882a25c3451d94",
+      "observedLicense": "CC0-1.0",
+      "status": "license-text-verified",
+      "assetFilesDownloaded": false,
+      "binaryHashesVerified": false
+    }
+  ]
+}
