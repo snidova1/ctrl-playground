@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {ETH_EXCLUSIVE_BANDS,ETH_PRODUCTS,ETH_SHOP_STATUS,eligibleEthProduct,type EthProduct} from './eth-exclusive';
+import {ETH_EXCLUSIVE_BANDS,ETH_PRODUCTS,ETH_SHOP_STATUS,eligibleEthProduct,type EthProduct} from '@/features/plaza/editor/eth-exclusive';
 describe('ETH exclusive price tiers and release gates',()=>{
  it('shows correct USD bands',()=>expect(ETH_EXCLUSIVE_BANDS.map(b=>[b.usdMin,b.usdMax])).toEqual([[1,10],[10,50],[50,100]]));
  it('refuses sales while no real approved products exist',()=>{expect(ETH_SHOP_STATUS).toBe('curation-only-not-live');expect(ETH_PRODUCTS).toHaveLength(0);});

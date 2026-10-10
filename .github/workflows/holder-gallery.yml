@@ -25,7 +25,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Tier and ETH price/quality policy tests
-        run: pnpm exec vitest run features/plaza/editor/holder-tiers.test.ts features/plaza/editor/eth-exclusive.test.ts
+        run: pnpm exec vitest run tests/unit/holder-gallery-tiers.test.ts tests/unit/holder-gallery-eth.test.ts
       - name: Scoped lint
         run: pnpm exec eslint features/plaza/editor/holder-tiers.ts features/plaza/editor/eth-exclusive.ts features/plaza/editor/habitat-tools.tsx
       - name: Typecheck ES2020

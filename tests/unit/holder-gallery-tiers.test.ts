@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {BUILD_ASSETS} from '@/features/plaza/build-assets';
-import {HOLDER_ASSET_TIERS,requiredAssetTier,resolveHolderAssetTier,canPlaceAsset,premiumAssetIds,lockedNewAssets} from './holder-tiers';
+import {HOLDER_ASSET_TIERS,requiredAssetTier,resolveHolderAssetTier,canPlaceAsset,premiumAssetIds,lockedNewAssets} from '@/features/plaza/editor/holder-tiers';
 describe('Holder tier assets use real catalog IDs',()=>{
  const ids=new Set(BUILD_ASSETS.map(a=>a.id));
  it('all curated IDs exist in CTRL',()=>{expect(BUILD_ASSETS).toHaveLength(991);expect(premiumAssetIds.every(id=>ids.has(id))).toBe(true);expect(new Set(premiumAssetIds).size).toBe(premiumAssetIds.length);});
