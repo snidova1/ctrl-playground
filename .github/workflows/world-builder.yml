@@ -48,6 +48,14 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Playwright World Builder desktop and mobile
         run: pnpm exec playwright test --config playwright.editor.config.ts
+      - name: Preserve browser failure traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-builder-browser-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Global ESLint baseline
         if: success() || failure()
         run: pnpm lint
