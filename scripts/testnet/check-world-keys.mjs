@@ -164,6 +164,13 @@ async function main() {
   }
   assert.equal(await tokenRead('balanceOf',[keysAddr]),0n);
   assert.equal(await tokenRead('balanceOf',[treasury.address]),expectedFees);
+  // Known registration/squatting risk: createWorld(id) has no owner-bound authorization.
+  // An unrelated wallet can claim a guessed or mempool-visible ID before its rightful owner.
+  const targetedId=stringToHex('victim-public-world',{size:32});
+  await keysWrite(buyer,'createWorld',[targetedId]);
+  await rejected(treasury,'createWorld',[targetedId]);
+  assert.equal((await keysRead('worlds',[targetedId]))[0].toLowerCase(),buyer.address.toLowerCase());
+  console.log('KNOWN RISK REPRODUCED: permissionless world ID registration permits front-run/squatting; requires owner binding in contract integration');
   console.log('PASS 28 deterministic mixed world trades, reserve formula after every mutation, treasury fee accounting and full redemption');
   console.log('WORLD_KEYS_OFFLINE_READY: no public RPC, no external wallet and no testnet or production transaction');
 }
