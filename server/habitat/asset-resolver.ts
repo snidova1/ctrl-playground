@@ -1,4 +1,3 @@
-import {z} from 'zod';
 import {getBuildAsset, type BuildAsset} from '@/features/plaza/build-assets';
 import {resolveAssetsSchema} from '@/domain/habitat';
 import {AppError} from '@/server/errors';
