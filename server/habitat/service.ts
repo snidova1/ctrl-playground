@@ -10,9 +10,11 @@ import {
   layoutSchema, motionSchema, worldIdSchema, worldEditorSavePayloadSchema,
   characterProfileInputSchema, poseInputSchema, presenceInputSchema,
   objectCreateSchema, objectUpdateSchema, objectDeleteSchema, worldSettingsSchema,
-  memberInputSchema, resolveAssetsSchema,
+  memberInputSchema,
   type HabitatState, type WorldPermissions, type CharacterProfile, type WorldMember,
 } from '@/domain/habitat';
+import {readHabitatJson} from './read-json';
+import {resolveHabitatAssets} from './asset-resolver';
 
 interface Principal {id: string; wallet: string}
 interface Row {id: string; owner_id: string; name: string; visibility: 'public' | 'private'; revision: number; layout: string}
@@ -22,21 +24,7 @@ const builtins = new Set(['ctrl-block', 'ctrl-door', 'ctrl-switch', 'ctrl-lamp',
 const reply = (v: unknown, status = 200) => Response.json(v, {status, headers: {'Cache-Control': 'no-store'}});
 
 async function body(r: Request): Promise<unknown> {
-  const reader = r.body?.getReader();
-  if (!reader) throw new AppError('INVALID_INPUT', 422);
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  while (true) {
-    const {done, value} = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > 80000) {await reader.cancel(); throw new AppError('INPUT_TOO_LARGE', 413);}
-    chunks.push(value);
-  }
-  const bytes = new Uint8Array(size);
-  let offset = 0;
-  for (const chunk of chunks) {bytes.set(chunk, offset); offset += chunk.byteLength;}
-  return JSON.parse(new TextDecoder().decode(bytes));
+  return readHabitatJson(r);
 }
 
 async function principal(r: Request): Promise<Principal> {
@@ -171,14 +159,7 @@ export async function handleHabitat(r: Request, path: string[]) {
       return reply(await state(user));
     }
     if (r.method === 'POST' && p === 'assets/resolve') {
-      const {ids} = resolveAssetsSchema.parse(await body(r));
-      const assets = [...new Set(ids)].map(id => {
-        const asset = getBuildAsset(id);
-        if (asset) return asset;
-        if (builtins.has(id)) return {id, kind: 'builtin' as const};
-        throw new AppError('UNKNOWN_ASSET', 422);
-      });
-      return reply({assets});
+      return reply(resolveHabitatAssets(await body(r)));
     }
     if (r.method === 'POST' && (p === 'join' || p === 'visit')) {
       const {id} = z.object({id: worldIdSchema}).strict().parse(await body(r));
@@ -208,6 +189,7 @@ export async function handleHabitat(r: Request, path: string[]) {
         const objects = layoutSchema.parse(JSON.parse(world.layout));
         if (r.method === 'POST' && path.length === 3) {
           const data = objectCreateSchema.parse(await body(r));
+          if (objects.some(o => o.id === data.object.id)) throw new AppError('OBJECT_ALREADY_EXISTS', 409);
           return reply(await save(user, id, data.revision, [...objects, data.object]));
         }
         if (path.length === 4 && ['PATCH', 'DELETE'].includes(r.method)) {
