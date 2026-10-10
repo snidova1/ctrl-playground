@@ -4,7 +4,7 @@ import {Canvas,type ThreeEvent} from '@react-three/fiber';
 import {Grid,OrbitControls,TransformControls,useGLTF} from '@react-three/drei';
 import {Group} from 'three';
 import type {BuildAsset} from '../build-assets';
-import type {EditorObject,EditorTool,Vec3} from './model';
+import {EDITOR_LIMITS,type EditorObject,type EditorTool,type Vec3} from './model';
 
 interface SceneProps {
   objects:EditorObject[];
@@ -43,9 +43,9 @@ function EditorItem({item,asset,selected,tool,snap,onSelect,onTransform}:{
     const node=group.current;
     if(!node)return;
     onTransform(item.id,{
-      position:[node.position.x,node.position.y,node.position.z],
+      position:[Math.max(-EDITOR_LIMITS.worldExtent,Math.min(EDITOR_LIMITS.worldExtent,node.position.x)),Math.max(0,Math.min(EDITOR_LIMITS.maxHeight,node.position.y)),Math.max(-EDITOR_LIMITS.worldExtent,Math.min(EDITOR_LIMITS.worldExtent,node.position.z))],
       rotationY:node.rotation.y,
-      scale:node.scale.x,
+      scale:Math.max(EDITOR_LIMITS.minScale,Math.min(EDITOR_LIMITS.maxScale,node.scale.x)),
     });
   };
   const object=<group ref={group} position={item.position} rotation={[0,item.rotationY,0]} scale={item.scale}
