@@ -1,3 +1,4 @@
+import {handleHabitat} from './habitat/service';
 import {handlePlaza} from './plaza/service';
 import {launchStatus} from "./launch/status";
 import {deployment} from "@/config/deployment";
@@ -26,6 +27,7 @@ function verifyOrigin(request:Request){const origin=request.headers.get("origin"
 async function permittedMission(request:Request,id:string){const mission=await getMission(id);if(!mission)throw new AppError("MISSION_NOT_FOUND",404);if(mission.visibility==="private"&&(await requireIdentity(request)).id!==mission.ownerId)throw new AppError("MISSION_NOT_FOUND",404);return mission;}
 export async function handleApi(request:Request,path:string[]):Promise<Response>{try{
  const p=path.join("/");const method=request.method;
+ if(path[0]==="habitat")return handleHabitat(request,path.slice(1));
  if(path[0]==="plaza")return handlePlaza(request,path.slice(1));
  if(method==="POST"&&p==="engine/tick"){const secret=settings().workerSecret;if(!secret||request.headers.get("authorization")!==`Bearer ${secret}`)throw new AppError("WORKER_AUTH_REQUIRED",401);await rateLimit("worker",12);const id=await tickQueue();await exec("INSERT INTO system_config(key,value,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at","worker.heartbeat",JSON.stringify({at:new Date().toISOString(),healthy:true}),new Date().toISOString());return json({missionId:id});}
  if(method!=="GET"){verifyOrigin(request);const u=await identity(request);await rateLimit(`write:${u?.id??request.headers.get("cf-connecting-ip")??"anonymous"}`,20);}
