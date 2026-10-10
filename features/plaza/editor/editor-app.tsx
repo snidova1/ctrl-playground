@@ -6,6 +6,7 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowDownToLine,Box,Copy,Grid2X2,Move3D,Redo2,RotateCw,Search,Trash2,Undo2,Upload,Waypoints} from 'lucide-react';
 import {BUILD_ASSETS,BUILD_ASSET_CATEGORIES,type BuildAsset,type BuildAssetCategory} from '../build-assets';
 import {EDITOR_BEHAVIORS,EDITOR_LIMITS,editWorld,loadEditorHistory,newEditorHistory,readEditorJSON,redoEditor,serializeEditorDocument,undoEditor,type EditorAction,type EditorTool,type Vec3} from './model';
+import {activatePreviewObject,initialPreviewState,isInteractiveInPreview} from './preview';
 import './editor.css';
 
 const EditorScene=dynamic(()=>import('./scene'),{ssr:false,loading:()=> <div className='ctrl-editor-loading'>Opening the 3D workshop…</div>});
@@ -26,6 +27,8 @@ export default function WorldEditor(){
   const [page,setPage]=useState(1);
   const [tool,setTool]=useState<EditorTool>('translate');
   const [snap,setSnap]=useState(true);
+  const [preview,setPreview]=useState(false);
+  const [previewState,setPreviewState]=useState(initialPreviewState);
   const [message,setMessage]=useState('');
   const [importError,setImportError]=useState('');
   const fileInput=useRef<HTMLInputElement>(null);
@@ -56,6 +59,7 @@ export default function WorldEditor(){
 
   const apply=useCallback((action:EditorAction)=>{
     try{
+      if(preview)throw Error('Exit Play Test to edit objects.');
       setHistory(editWorld(history,action,assetIndex));
       setImportError('');
       return true;
@@ -63,7 +67,7 @@ export default function WorldEditor(){
       setMessage(error instanceof Error?error.message:'Cannot edit this object.');
       return false;
     }
-  },[assetIndex,history]);
+  },[assetIndex,history,preview]);
 
   const undo=useCallback(()=>{setHistory(undoEditor);setMessage('');},[]);
   const redo=useCallback(()=>{setHistory(redoEditor);setMessage('');},[]);
@@ -126,16 +130,17 @@ export default function WorldEditor(){
     try{
       if(file.size>250_000)throw Error('File exceeds the 250 KB draft limit.');
       const next=readEditorJSON(await file.text(),assetIndex);
-      setHistory(loadEditorHistory(next,assetIndex));setSelection(null);setStagedAsset(null);
+      setHistory(loadEditorHistory(next,assetIndex));setSelection(null);setStagedAsset(null);setPreview(false);setPreviewState(initialPreviewState());
       setBlockedAutosave(false);setImportError('');setMessage('Draft imported and saved locally.');
     }catch(error){setImportError(error instanceof Error?error.message:'Invalid world file.');}
     if(fileInput.current)fileInput.current.value='';
   }
   function reset(){
     if(!window.confirm('Clear this local world draft? Export it first if you want to keep it.'))return;
-    setHistory(newEditorHistory());setSelection(null);setStagedAsset(null);setBlockedAutosave(false);setImportError('');setMessage('New empty draft ready.');
+    setHistory(newEditorHistory());setSelection(null);setStagedAsset(null);setPreview(false);setPreviewState(initialPreviewState());setBlockedAutosave(false);setImportError('');setMessage('New empty draft ready.');
   }
   function chooseAsset(asset:BuildAsset){
+    if(preview){setMessage('Exit Play Test to place another model.');return;}
     setStagedAsset(asset.id);setSelection(null);setMessage('Click the ground in the 3D view to place '+asset.name+'.');
   }
   const input=(name:'x'|'y'|'z'|'rotation'|'scale',value:number)=>
@@ -169,16 +174,19 @@ export default function WorldEditor(){
           {(['translate','rotate','scale'] as const).map(t=><button key={t} aria-pressed={tool===t} title={toolNames[t]} onClick={()=>setTool(t)}>{t==='translate'?<Move3D size={17}/>:t==='rotate'?<RotateCw size={17}/>:<Box size={17}/>}<span>{toolNames[t]}</span></button>)}
           <span className='ctrl-editor-toolbar-divider'/>
           <button aria-pressed={snap} onClick={()=>setSnap(v=>!v)} title='Snap to grid'><Grid2X2 size={17}/><span>Snap</span></button>
-          <button onClick={undo} disabled={!history.past.length} title='Undo'><Undo2 size={17}/></button>
-          <button onClick={redo} disabled={!history.future.length} title='Redo'><Redo2 size={17}/></button>
+          <button onClick={undo} disabled={preview||!history.past.length} title='Undo'><Undo2 size={17}/></button>
+          <button onClick={redo} disabled={preview||!history.future.length} title='Redo'><Redo2 size={17}/></button>
+          <button className='ctrl-editor-play-button' aria-pressed={preview} onClick={()=>{setPreview(value=>!value);setPreviewState(initialPreviewState());setStagedAsset(null);setSelection(null);}}>{preview?'■ Exit test':'▶ Play test'}</button>
         </div>
         <div className='ctrl-editor-stage'>
           {ready?<EditorScene objects={draft.objects} assetIndex={assetIndex} selectedId={selected?.id??null}
             placingAsset={stagedAsset?assetIndex.get(stagedAsset)??null:null} tool={tool} snap={snap}
+            preview={preview} previewState={previewState} onActivate={id=>setPreviewState(state=>activatePreviewObject(draft,state,id))}
             onSelect={id=>{setSelection(id);if(id)setStagedAsset(null);}} onPlace={addAsset} onTransform={transform}/>:
             <div className='ctrl-editor-loading'>Restoring your local draft…</div>}
         </div>
-        <div className='ctrl-editor-bottom'><span><Waypoints size={14}/> {draft.objects.length} / {EDITOR_LIMITS.maxObjects} OBJECTS</span><span>{stagedAsset?'PLACE MODE: CLICK GROUND':'DRAG TO ORBIT · SCROLL TO ZOOM · CLICK TO SELECT'}</span></div>
+        {preview&&<div className='ctrl-editor-preview-status' role='status'><strong>{previewState.completed?'COURSE COMPLETED':'PLAY TEST / LOCAL SIMULATION'}</strong><span>{previewState.message}</span><small>{previewState.checkpoints.length}/{draft.objects.filter(o=>o.behavior==='checkpoint').length} checkpoints</small></div>}
+        <div className='ctrl-editor-bottom'><span><Waypoints size={14}/> {draft.objects.length} / {EDITOR_LIMITS.maxObjects} OBJECTS</span><span>{preview?'TEST INTERACTIVE OBJECTS · EXIT TO CONTINUE EDITING':stagedAsset?'PLACE MODE: CLICK GROUND':'DRAG TO ORBIT · SCROLL TO ZOOM · CLICK TO SELECT'}</span></div>
       </div>
       <aside className='ctrl-editor-inspector' aria-label='Object inspector'>
         <div className='ctrl-editor-side-heading'><div><span>02 / INSPECTOR</span><h2>{selected?'Edit object.':'Your world.'}</h2></div></div>
@@ -187,11 +195,11 @@ export default function WorldEditor(){
           <h3>Position</h3><div className='ctrl-editor-numbers'>{input('x',selected.position[0])}{input('y',selected.position[1])}{input('z',selected.position[2])}</div>
           <h3>Transform</h3><div className='ctrl-editor-numbers'>{input('rotation',selected.rotationY*180/Math.PI)}{input('scale',selected.scale)}</div>
           <h3>Behavior tag</h3>
-          <select aria-label='Object behavior tag' value={selected.behavior} onChange={e=>apply({type:'behavior',id:selected.id,behavior:e.target.value as typeof selected.behavior})}>
-            {EDITOR_BEHAVIORS.map(b=><option key={b} value={b}>{b.replace(/-/g,' ')}</option>)}
+          <select aria-label='Object behavior tag' disabled={preview} value={selected.behavior} onChange={e=>apply({type:'behavior',id:selected.id,behavior:e.target.value as typeof selected.behavior})}>
+            {EDITOR_BEHAVIORS.map(b=><option key={b} value={b} disabled={!isInteractiveInPreview({...selected,behavior:b})&&b!=='none'}>{b.replace(/-/g,' ')}{isInteractiveInPreview({...selected,behavior:b})?' (preview ready)':''}</option>)}
           </select>
-          <p className='ctrl-editor-hint'>Behavior tags are saved as metadata. Actual gameplay wiring is not enabled in this editor yet.</p>
-          <div className='ctrl-editor-inspector-actions'><button onClick={duplicate}><Copy size={16}/> Duplicate</button><button className='ctrl-editor-danger' onClick={()=>{apply({type:'remove',id:selected.id});setSelection(null);}}><Trash2 size={16}/> Delete</button></div>
+          <p className='ctrl-editor-hint'>Switch to Play test to click lights, opening objects, moving platforms, checkpoints and finish markers. This is a local simulation, not multiplayer gameplay. Sit, button and portal need the personal-world runtime.</p>
+          <div className='ctrl-editor-inspector-actions'><button disabled={preview} onClick={duplicate}><Copy size={16}/> Duplicate</button><button className='ctrl-editor-danger' disabled={preview} onClick={()=>{apply({type:'remove',id:selected.id});setSelection(null);}}><Trash2 size={16}/> Delete</button></div>
         </div>:<div className='ctrl-editor-empty'><Box size={35}/><strong>{stagedAsset?'Ready to place.':'Choose a model.'}</strong><p>{stagedAsset?'Tap the ground in the 3D scene to add the selected asset.':'Select a model from the library, then click the ground to place it. Select an existing object to edit it.'}</p><p className='ctrl-editor-hint'>Use the gizmos to move, rotate and scale. Ctrl/Cmd + Z to undo; Delete removes a selected object.</p></div>}
         <div className='ctrl-editor-file'>
           <h3>Draft storage</h3><p>Autosaved in this browser only. Export JSON to keep or transfer your work. No wallet, server save or multiplayer sync is implied.</p>
