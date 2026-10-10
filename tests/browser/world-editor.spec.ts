@@ -174,11 +174,22 @@ test('Two verified wallets visit, exercise member permissions, leave and reconne
     await expect(visitorPage.getByRole('button', {name: 'Build my world +'})).toHaveCount(0);
     const worldId = owner.homeId!;
     const origin = new URL(page.url()).origin;
-    const grant = await page.request.post(`/api/habitat/worlds/${worldId}/members`, {
-      headers: {Origin: origin}, data: {wallet: visitor.wallet, role: 'editor'},
-    });
-    expect(grant.status()).toBe(200);
+    await pointer(page, page.getByRole('button', {name: 'Settings', exact: true}));
+    await page.getByRole('textbox', {name: 'Member wallet', exact: true}).fill(visitor.wallet!);
+    await page.getByRole('combobox', {name: 'Member role', exact: true}).selectOption('editor');
+    await pointer(page, page.getByRole('button', {name: 'Save member access', exact: true}));
+    await expect(page.getByText('Saved editor access.', {exact: true})).toBeVisible({timeout: 20000});
+    await pointer(page, page.getByRole('button', {name: 'Close', exact: true}));
+    // Reopening fetches persisted members, not the component's optimistic state.
+    await pointer(page, page.getByRole('button', {name: 'Settings', exact: true}));
+    await expect(page.getByRole('button', {name: `Revoke access for ${visitor.wallet}`})).toBeVisible({timeout: 20000});
+    await page.screenshot({path: test.info().outputPath('persisted-member-access.png')});
+    await pointer(page, page.getByRole('button', {name: 'Close', exact: true}));
     await expect(visitorPage.getByRole('button', {name: 'Build my world +'})).toBeVisible({timeout: 15000});
+    await pointer(visitorPage, visitorPage.getByRole('button', {name: 'Settings', exact: true}));
+    await expect(visitorPage.getByRole('textbox', {name: 'World name', exact: true})).toHaveCount(0);
+    await expect(visitorPage.getByRole('textbox', {name: 'Member wallet', exact: true})).toHaveCount(0);
+    await pointer(visitorPage, visitorPage.getByRole('button', {name: 'Close', exact: true}));
     const denied = await visitorPage.request.post(`/api/habitat/worlds/${worldId}/settings`, {
       headers: {Origin: origin}, data: {name: 'Unauthorized', visibility: 'private'},
     });
@@ -208,8 +219,13 @@ test('Two verified wallets visit, exercise member permissions, leave and reconne
       const state = await (await page.request.get(`/api/habitat/worlds/${worldId}`)).json() as HabitatState;
       return state.players.some(p => p.id === visitor.profile!.id);
     }).toBe(true);
-    const revoked = await page.request.delete(`/api/habitat/worlds/${worldId}/members/${visitor.profile!.id}`, {headers: {Origin: origin}, data: {}});
-    expect(revoked.status()).toBe(200);
+    await pointer(page, page.getByRole('button', {name: 'Settings', exact: true}));
+    await pointer(page, page.getByRole('button', {name: `Revoke access for ${visitor.wallet}`}));
+    await expect(page.getByText('Member access revoked.', {exact: true})).toBeVisible({timeout: 20000});
+    const memberResponse = await page.request.get(`/api/habitat/worlds/${worldId}/members`);
+    expect(memberResponse.status()).toBe(200);
+    expect((await memberResponse.json()).members).toEqual([]);
+    await pointer(page, page.getByRole('button', {name: 'Close', exact: true}));
     await expect(visitorPage.getByRole('button', {name: 'Build my world +'})).toHaveCount(0, {timeout: 15000});
   } finally {await otherContext.close();}
 });

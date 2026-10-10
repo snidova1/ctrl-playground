@@ -3,6 +3,7 @@
 - Astra: `server/`, `domain/habitat.ts`, database migrations, key contracts, API tests.
 - GPT-6 (`gpt6/world-builder`): isolated asset browser/editor, transforms, undo/redo, mobile controls, behavior UI, avatar previews. Do not replace existing plaza/mission systems.
 - Astra owns final review: helpers are accepted only after source review and tests. PR13 uses `work/master-integration`; worker history is preserved and `main` stays stable.
+- Owner access/settings UI is isolated in `features/habitat/world-members.tsx`, using existing member APIs and server `permissions.canManage`. Editors retain object editing only; no competing builder changes.
 
 ## Wire Contract
 

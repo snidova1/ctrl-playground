@@ -1,6 +1,6 @@
 # CTRL integration handoff — 2026-10-10
 
-Implementation checkpoint: `41b9d6134a9159896792cebcce74b057f86bcde5`, `work/master-integration`; draft PR https://github.com/snidova1/ctrl-playground/pull/13. Main unchanged at `cbe941bd369424f00c70fdd9c8d1a85f1e76a717`. Unfinished local work preserved in `149bcd6`; separate worker/merge ancestry retained. PR11 includes PR6/8/9, not reapplied.
+Implementation checkpoint: `fff0a41372f8525e8c3f1619743a204466c22752`, `work/master-integration`; draft PR https://github.com/snidova1/ctrl-playground/pull/13. Main unchanged at `cbe941bd369424f00c70fdd9c8d1a85f1e76a717`. Unfinished local work preserved in `149bcd6`; separate worker/merge ancestry retained. PR11 includes PR6/8/9, not reapplied.
 
 ## Implemented and tested
 
@@ -11,6 +11,7 @@ Implementation checkpoint: `41b9d6134a9159896792cebcce74b057f86bcde5`, `work/mas
 - Migration0004: existing on-disk worlds/presence/missions/plaza preserved; actual CLI resume, constraints and rollback verified. No live database manually changed.
 - `17f370c`: Habitat key read/prepare/verify routes resolve UUID owners from signed-wallet database records, enforce private-world ACL/owner-only claims, strict body budgets and fail-closed deployment settings. Five real API tests pass, including isolated localhost EVM deployment/confirmed receipt; no public RPC/signers/transactions.
 - `6200b5f`: homepage Undo/Redo shares the advanced editor's history-state handlers. Real pointer save/reload regressions on `/` passed desktop/mobile CI at `41b9d61`.
+- Owner member UI uses existing persisted APIs: invite/update visitor or editor, reload membership and revoke. Settings use server `canManage`, not `canEdit`; editors no longer see owner-only controls. Isolated `features/habitat/world-members.tsx`, API DELETE support, app/CSS wiring; two-wallet browser journey now grants/revokes through real pointer UI and verifies persisted membership/editor denial. Unit/API 165/165, typecheck/lint and both Next/Vinext production builds pass after implementation; its exact-head CI/browser checks are required before readiness.
 
 ## Actual local gates
 
