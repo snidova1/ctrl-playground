@@ -1,3 +1,3 @@
-import WorldEditor from '@/features/plaza/editor/editor-app';
-export const metadata={title:'World Builder Studio',description:'Build a 3D world from the CTRL catalog with locally saved drafts.'};
-export default function Page(){return <WorldEditor/>;}
+import HabitatApp from '@/features/habitat/app';
+export const metadata={title:'CTRL Habitat | World Builder',description:'Build and save your personal world in the existing CTRL Habitat with your avatar and shared environment.'};
+export default function Page(){return <HabitatApp advancedBuilder/>;}
