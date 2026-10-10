@@ -4,6 +4,7 @@
 - GPT-6 (`gpt6/world-builder`): isolated asset browser/editor, transforms, undo/redo, mobile controls, behavior UI, avatar previews. Do not replace existing plaza/mission systems.
 - Astra owns final review: helpers are accepted only after source review and tests. PR13 uses `work/master-integration`; worker history is preserved and `main` stays stable.
 - Owner access/settings UI is isolated in `features/habitat/world-members.tsx`, using existing member APIs and server `permissions.canManage`. Editors retain object editing only; no competing builder changes.
+- Settings forms submit the revision captured when opened. Presence permission loss closes active editing; 403/404 clears inaccessible scene data and offers home/world selection, 401 clears identity and requires wallet verification again.
 
 ## Wire Contract
 

@@ -10,7 +10,7 @@ interface Options {
   pose: MutableRefObject<Pose>;
   motion: MutableRefObject<CharacterMotion>;
   flags: MutableRefObject<{sitting: boolean; celebrate: boolean; interactedAt: number}>;
-  onState: (state: HabitatState) => void;
+  onState: (state: HabitatState | null) => void;
   onOnline: (online: boolean) => void;
 }
 export function useWorldPresence(options: Options) {
@@ -72,7 +72,19 @@ export function useWorldPresence(options: Options) {
       if (error instanceof HabitatApiError) {
         if (error.code === 'STALE_PRESENCE' || error.code === 'PRESENCE_SESSION_STALE') superseded.current = true;
         else if (error.code === 'WORLD_SESSION_EXPIRED') connection.current = null;
-        else if ([401, 403, 404].includes(error.status)) {leave(); superseded.current = true;}
+        else if ([401, 403, 404].includes(error.status)) {
+          leave(); superseded.current = true;
+          // Do not keep a revoked private world/render or expired identity in
+          // client memory while the server correctly rejects its heartbeats.
+          const old = latest.current;
+          const cleared = error.status === 401 || !old ? null : {
+            ...old, world: null, players: [], states: {}, canEdit: false,
+            permissions: null, presenceSession: null,
+            worlds: old.worlds.filter(candidate => candidate.id !== world.id),
+          };
+          latest.current = cleared;
+          onState(cleared);
+        }
       }
     } finally {syncing.current = false;}
   }, [connect, leave]);

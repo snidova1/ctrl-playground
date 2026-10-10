@@ -152,15 +152,35 @@ test('Homepage editor enables Redo after Undo and persists the restored draft', 
 });
 
 test('Two verified wallets visit, exercise member permissions, leave and reconnect', async ({page, browser}) => {
-  // CI trace 38058049234 passed the mobile flow through revocation, then the
-  // 90s whole-test timer killed context disposal. Two real SwiftShader VRM
-  // canvases need a larger journey budget; per-assertion deadlines are unchanged.
-  test.setTimeout(180000);
+  // CI 38059466918 took 2.8m for the original desktop two-canvas flow. This
+  // journey now also exercises settings CAS and persisted member management
+  // via real UI. Budget the complete journey; keep individual bounded waits.
+  test.setTimeout(240000);
   const owner = await openWorld(page);
   const sharedName = `Browser Shared ${owner.homeId!.slice(0, 8)}`;
   await pointer(page, page.getByRole('button', {name: 'Settings', exact: true}));
   await page.getByRole('textbox', {name: 'World name'}).fill(sharedName);
+  // A genuine second signed request changes settings after this form opened.
+  // The stale form must send its captured revision, not the latest heartbeat's.
+  const anotherName = `Other tab ${owner.homeId!.slice(0, 8)}`;
+  const otherSave = await page.request.post(`/api/habitat/worlds/${owner.homeId}/settings`, {
+    headers: {Origin: new URL(page.url()).origin},
+    data: {name: anotherName, visibility: 'public', revision: owner.world!.revision},
+  });
+  expect(otherSave.status()).toBe(200);
+  const conflictResponse = page.waitForResponse(response => response.url().endsWith('/api/habitat/settings') && response.request().method() === 'POST');
   await pointer(page, page.getByRole('button', {name: 'Save public', exact: true}));
+  expect((await conflictResponse).status()).toBe(409);
+  await expect(page.locator('.hb-alert')).toBeVisible();
+  expect((await (await page.request.get(`/api/habitat/worlds/${owner.homeId}`)).json()).world.name).toBe(anotherName);
+  await pointer(page, page.getByRole('button', {name: 'Dismiss', exact: true}));
+  await pointer(page, page.getByRole('button', {name: 'Close', exact: true}));
+  await expect(page.getByRole('heading', {name: anotherName, exact: true})).toBeVisible({timeout: 20000});
+  await pointer(page, page.getByRole('button', {name: 'Settings', exact: true}));
+  await page.getByRole('textbox', {name: 'World name'}).fill(sharedName);
+  const retriedSave = page.waitForResponse(response => response.url().endsWith('/api/habitat/settings') && response.request().method() === 'POST');
+  await pointer(page, page.getByRole('button', {name: 'Save public', exact: true}));
+  expect((await retriedSave).status()).toBe(200);
   await pointer(page, page.getByRole('button', {name: 'Close', exact: true}));
   const mobile = test.info().project.name.includes('mobile');
   const otherContext = await browser.newContext({baseURL: new URL(page.url()).origin,
@@ -219,6 +239,7 @@ test('Two verified wallets visit, exercise member permissions, leave and reconne
       const state = await (await page.request.get(`/api/habitat/worlds/${worldId}`)).json() as HabitatState;
       return state.players.some(p => p.id === visitor.profile!.id);
     }).toBe(true);
+    await build(visitorPage);
     await pointer(page, page.getByRole('button', {name: 'Settings', exact: true}));
     await pointer(page, page.getByRole('button', {name: `Revoke access for ${visitor.wallet}`}));
     await expect(page.getByText('Member access revoked.', {exact: true})).toBeVisible({timeout: 20000});
@@ -227,5 +248,50 @@ test('Two verified wallets visit, exercise member permissions, leave and reconne
     expect((await memberResponse.json()).members).toEqual([]);
     await pointer(page, page.getByRole('button', {name: 'Close', exact: true}));
     await expect(visitorPage.getByRole('button', {name: 'Build my world +'})).toHaveCount(0, {timeout: 15000});
+    await expect(visitorPage.getByRole('toolbar', {name: '3D world tools'})).toHaveCount(0, {timeout: 15000});
+  } finally {await otherContext.close();}
+});
+
+test('Revoking a private-world editor clears the active tools and inaccessible scene', async ({page, browser}) => {
+  test.setTimeout(180000);
+  const owner = await openWorld(page);
+  const privateName = `Private ACL ${owner.homeId!.slice(0, 8)}`;
+  await pointer(page, page.getByRole('button', {name: 'Settings', exact: true}));
+  await page.getByRole('textbox', {name: 'World name', exact: true}).fill(privateName);
+  await pointer(page, page.getByRole('button', {name: 'Save private', exact: true}));
+  await pointer(page, page.getByRole('button', {name: 'Close', exact: true}));
+  const mobile = test.info().project.name.includes('mobile');
+  const otherContext = await browser.newContext({baseURL: new URL(page.url()).origin,
+    viewport: mobile ? {width: 390, height: 844} : {width: 1440, height: 900}, isMobile: mobile, hasTouch: mobile});
+  try {
+    const visitorPage = await otherContext.newPage();
+    const visitor = await openWorld(visitorPage);
+    await pointer(page, page.getByRole('button', {name: 'Settings', exact: true}));
+    await page.getByRole('textbox', {name: 'Member wallet', exact: true}).fill(visitor.wallet!);
+    await page.getByRole('combobox', {name: 'Member role', exact: true}).selectOption('editor');
+    await pointer(page, page.getByRole('button', {name: 'Save member access', exact: true}));
+    await expect(page.getByText('Saved editor access.', {exact: true})).toBeVisible({timeout: 20000});
+    await pointer(visitorPage, visitorPage.getByRole('button', {name: 'Worlds', exact: true}));
+    await pointer(visitorPage, visitorPage.getByRole('button', {name: new RegExp(privateName)}));
+    await expect(visitorPage.getByRole('heading', {name: privateName, exact: true})).toBeVisible({timeout: 20000});
+    await build(visitorPage);
+    await pointer(page, page.getByRole('button', {name: `Revoke access for ${visitor.wallet}`}));
+    await expect(page.getByText('Member access revoked.', {exact: true})).toBeVisible({timeout: 20000});
+    await expect(visitorPage.getByRole('toolbar', {name: '3D world tools'})).toHaveCount(0, {timeout: 20000});
+    await expect(visitorPage.getByRole('heading', {name: privateName, exact: true})).toHaveCount(0);
+    await expect(visitorPage.getByRole('button', {name: 'Go home', exact: true})).toBeVisible({timeout: 20000});
+    expect((await visitorPage.request.get(`/api/habitat/worlds/${owner.homeId}`)).status()).toBe(404);
+    await pointer(visitorPage, visitorPage.getByRole('button', {name: 'Go home', exact: true}));
+    await expect(visitorPage.getByRole('button', {name: 'Build my world +'})).toBeVisible({timeout: 20000});
+    const restored = await (await visitorPage.request.get('/api/habitat/state')).json() as HabitatState;
+    expect(restored.world?.id).toBe(visitor.homeId);
+    await visitorPage.screenshot({path: test.info().outputPath('private-revocation-home.png')});
+    const logout = await visitorPage.request.post('/api/auth/logout', {
+      headers: {Origin: new URL(visitorPage.url()).origin}, data: {},
+    });
+    expect(logout.status()).toBe(200);
+    await expect(visitorPage.getByRole('button', {name: 'Enter Common Ground', exact: true})).toBeVisible({timeout: 20000});
+    await expect(visitorPage.getByRole('button', {name: 'Build my world +'})).toHaveCount(0);
+    expect((await visitorPage.request.get('/api/habitat/state')).status()).toBe(401);
   } finally {await otherContext.close();}
 });
