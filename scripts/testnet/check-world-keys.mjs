@@ -87,8 +87,8 @@ async function main() {
   assertMatchingKeysRuntime(deployedCode,keys);
   const mutatedCode = deployedCode.slice(0,-2) + (deployedCode.endsWith('00') ? '01' : '00');
   assert.throws(()=>assertMatchingKeysRuntime(mutatedCode,keys),/KEYS_BYTECODE_MISMATCH/);
-  assert.equal(await keysRead('ctrl'),tokenAddr);
-  assert.equal(await keysRead('developmentTreasury'),treasury.address);
+  assert.equal((await keysRead('ctrl')).toLowerCase(),tokenAddr.toLowerCase());
+  assert.equal((await keysRead('developmentTreasury')).toLowerCase(),treasury.address.toLowerCase());
   assert.equal(await keysRead('curveUnit'),curveUnit);
   assert.equal(await keysRead('FEE_BPS'),300n);
   assert.equal(await keysRead('MAX_SUPPLY'),10000n);
