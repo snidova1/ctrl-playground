@@ -11,7 +11,7 @@ export function initialPreviewState():PreviewState {
   return {active:{},checkpoints:[],completed:false,message:'Click an interactive object to test it.'};
 }
 export function isInteractiveInPreview(item:EditorObject):boolean {
-  return ['toggle-light','open-close','moving-platform','checkpoint','finish'].includes(item.behavior);
+  return ['toggle-light','open-close','spin','checkpoint','finish'].includes(item.behavior);
 }
 export function activatePreviewObject(doc:EditorDocument,state:PreviewState,id:string):PreviewState {
   const item=doc.objects.find(o=>o.id===id);
@@ -28,6 +28,6 @@ export function activatePreviewObject(doc:EditorDocument,state:PreviewState,id:s
   const wasActive=!!state.active[id],nextActive=!wasActive;
   const message=item.behavior==='toggle-light'?(nextActive?'Light switched on.':'Light switched off.'):
     item.behavior==='open-close'?(nextActive?'Object opened.':'Object closed.'):
-    (nextActive?'Platform moving.':'Platform stopped.');
+    (nextActive?'Object spinning.':'Object stopped.');
   return {...state,active:{...state.active,[id]:nextActive},message};
 }
