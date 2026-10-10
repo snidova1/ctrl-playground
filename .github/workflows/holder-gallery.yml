@@ -1,0 +1,34 @@
+name: CTRL Holder Gallery Review
+on:
+  pull_request:
+    paths:
+      - 'features/plaza/editor/**'
+      - 'server/habitat/service.ts'
+      - 'docs/holder-catalog-handoff.md'
+      - '.github/workflows/holder-gallery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Tier and ETH price/quality policy tests
+        run: pnpm exec vitest run features/plaza/editor/holder-tiers.test.ts features/plaza/editor/eth-exclusive.test.ts
+      - name: Scoped lint
+        run: pnpm exec eslint features/plaza/editor/holder-tiers.ts features/plaza/editor/eth-exclusive.ts features/plaza/editor/habitat-tools.tsx
+      - name: Typecheck ES2020
+        run: pnpm exec tsc --noEmit --target ES2020
+      - name: Next production build
+        run: pnpm build:next
