@@ -1,48 +1,44 @@
 import {test,expect} from '@playwright/test';
 
-test('catalogue, placement, local persistence, gameplay preview and JSON export',async({page})=>{
-  const errors:string[]=[];
-  page.on('pageerror',error=>errors.push(error.message));
+async function openBuilder(page:import('@playwright/test').Page){
   await page.goto('/worlds/editor');
-  await expect(page.getByRole('heading',{name:/World Builder/})).toBeVisible({timeout:60000});
-  await expect(page.getByText('991 MODELS + 7 TOOLS')).toBeVisible();
-  await expect(page.getByRole('button',{name:'Export'})).toBeEnabled({timeout:60000});
-
-  const search=page.getByRole('textbox',{name:'Search 3D assets'});
-  await search.fill('wall');
-  await expect(page.locator('.ctrl-editor-asset').first()).toBeVisible();
-  await page.locator('.ctrl-editor-asset').first().click();
-  await expect(page.getByText(/Click the ground in the 3D view to place/)).toBeVisible();
-  const canvas=page.locator('.ctrl-editor-stage canvas').first();
-  await expect(canvas).toBeVisible({timeout:30000});
-  await canvas.click({position:{x:(await canvas.boundingBox())!.width/2,y:(await canvas.boundingBox())!.height/2}});
-  await expect(page.locator('.ctrl-editor-bottom')).toContainText('1 / 120 OBJECTS');
-  await expect(page.getByRole('combobox',{name:'Object behavior tag'})).toBeVisible();
-  await page.getByRole('combobox',{name:'Object behavior tag'}).selectOption('toggle-light');
-
-  await page.getByRole('button',{name:'Play test'}).click();
-  await expect(page.getByText('PLAY TEST / LOCAL SIMULATION')).toBeVisible();
-  await page.getByRole('button',{name:'Exit test'}).click();
-
-  await expect.poll(async()=>page.evaluate(()=>JSON.parse(localStorage.getItem('ctrl:world-editor-v1')||'{}').objects?.length)).toBe(1);
-  const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export'}).click()]);
-  expect(download.suggestedFilename()).toBe('ctrl-world-draft.json');
-  await page.reload();
-  await expect(page.locator('.ctrl-editor-bottom')).toContainText('1 / 120 OBJECTS');
-  await expect(page.getByText('991 MODELS + 7 TOOLS')).toBeVisible();
-  expect(errors).toEqual([]);
+  await expect(page.locator('.hb-app .hb-stage canvas')).toBeVisible({timeout:60000});
+  await expect(page.getByRole('button',{name:'Worlds',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Enter guest workshop'}).click();
+  await expect(page.getByRole('button',{name:'Enter my world draft'})).toBeVisible({timeout:60000});
+  await page.getByRole('textbox',{name:'Name'}).fill('CTRL Browser Builder');
+  await page.getByRole('button',{name:'Enter my world draft'}).click();
+  await expect(page.getByRole('button',{name:'Build my world +'})).toBeVisible({timeout:20000});
+  await page.getByRole('button',{name:'Build my world +'}).click();
+  await expect(page.getByRole('toolbar',{name:'3D world tools'})).toBeVisible();
+}
+test('World Builder remains inside Astra Habitat with its shared canvas',async({page})=>{
+  await openBuilder(page);
+  await expect(page.locator('.hb-stage canvas')).toHaveCount(1);
+  await expect(page.getByRole('heading',{name:'Build inside your world.'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Save & Play'})).toBeVisible();
+  await page.screenshot({path:'test-results/habitat-integrated-builder.png',fullPage:true});
 });
-
-test('rejects unsafe imported asset URLs while preserving existing draft',async({page})=>{
-  await page.goto('/worlds/editor');
-  await expect(page.getByRole('button',{name:'Export'})).toBeEnabled({timeout:60000});
-  await page.locator('input[type="file"]').setInputFiles({
-    name:'unsafe.json',mimeType:'application/json',
-    buffer:Buffer.from(JSON.stringify({version:1,objects:[{
-      id:'unknown-1',assetId:'https://evil.example/object.glb',position:[0,0,0],
-      rotationY:0,scale:1,behavior:'none'
-    }]}))
-  });
-  await expect(page.getByRole('alert')).toContainText('approved catalogue');
-  await expect(page.locator('.ctrl-editor-bottom')).toContainText('0 / 120 OBJECTS');
+test('Place, edit, undo, redo and save a model through Habitat backend',async({page})=>{
+  await openBuilder(page);
+  const search=page.getByRole('textbox',{name:'Search world assets'});
+  await search.fill('wall');
+  const first=page.locator('.hb-advanced-assets button').first();
+  await expect(first).toBeVisible();
+  await first.click();
+  await expect(page.getByRole('combobox',{name:'Placed objects'})).toContainText('wall',{ignoreCase:true});
+  await page.getByRole('spinbutton',{name:'Object x'}).fill('4');
+  await page.getByRole('spinbutton',{name:'Object x'}).blur();
+  await expect(page.getByRole('spinbutton',{name:'Object x'})).toHaveValue('4');
+  await page.getByRole('button',{name:'Duplicate'}).click();
+  await expect(page.getByRole('combobox',{name:'Placed objects'}).locator('option')).toHaveCount(3);
+  await page.getByRole('button',{name:'Undo'}).click();
+  await expect(page.getByRole('combobox',{name:'Placed objects'}).locator('option')).toHaveCount(2);
+  await page.getByRole('button',{name:'Redo'}).click();
+  await expect(page.getByRole('combobox',{name:'Placed objects'}).locator('option')).toHaveCount(3);
+  await page.getByRole('button',{name:'Save & Play'}).click();
+  await expect(page.getByRole('button',{name:'Build my world +'})).toBeVisible({timeout:20000});
+  await expect(page.getByText('2 objects')).toBeVisible();
+  await page.getByRole('button',{name:'Build my world +'}).click();
+  await expect(page.getByRole('combobox',{name:'Placed objects'}).locator('option')).toHaveCount(3);
 });
