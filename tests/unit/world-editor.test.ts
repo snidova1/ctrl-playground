@@ -11,7 +11,7 @@ describe('CTRL world editor draft',()=>{
   it('places only approved assets and rejects duplicate or malformed IDs',()=>{
     const draft=editWorld(newEditorHistory(),addWall,assets);
     expect(draft.present.objects).toHaveLength(1);
-    expect(draft.present.objects[0]).toMatchObject({id:'wall-1',scale:1,behavior:'none',position:[0,0,0]});
+    expect(draft.present.objects[0]).toMatchObject({id:'wall-1',scale:1,behavior:'solid',position:[0,0,0]});
     expect(()=>editWorld(draft,addWall,assets)).toThrow(/duplicate/i);
     expect(()=>editWorld(draft,{type:'add',id:'bad',assetId:'https://outside.example/evil.glb'},assets)).toThrow(/catalogue/i);
     expect(()=>editWorld(draft,{type:'add',id:'script<script>',assetId:'building-kit/wall'},assets)).toThrow(/ID/i);
