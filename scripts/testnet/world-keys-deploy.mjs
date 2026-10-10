@@ -59,6 +59,7 @@ async function main() {
   if (await client.getChainId() !== chainId) throw new Error('WRONG_CHAIN: refusing non-testnet execution');
   const tokenCode=await client.getCode({address:token});
   if (!tokenCode || tokenCode==='0x') throw new Error('TOKEN_CONTRACT_NOT_FOUND');
+  if(!/^0x[0-9a-fA-F]{64}$/.test(tokenFixture.codeHash??'')||keccak256(tokenCode).toLowerCase()!==tokenFixture.codeHash.toLowerCase()) throw new Error('TOKEN_FIXTURE_CODE_HASH_MISMATCH');
   if (await client.readContract({address:token, abi:erc20Abi, functionName:'symbol'}) !== 'tCTRL') {
     throw new Error('UNEXPECTED_TOKEN_SYMBOL: disposable tCTRL fixture required');
   }
