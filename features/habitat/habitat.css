@@ -88,3 +88,12 @@
 }
 @media(max-height:660px) and (max-width:600px){.hb-panel.hb-character-creator{grid-template-rows:minmax(185px,42dvh) minmax(0,1fr)}.hb-creator-controls{gap:8px}}
 @media(prefers-reduced-motion:reduce){.hb-app button{transition:none}}
+
+/* One optional self-hosted BGM player, designed around mobile touch controls. */
+.hb-music-player{position:absolute;left:18px;bottom:22px;z-index:24;display:flex;align-items:center;gap:8px;max-width:min(75vw,260px)}
+.hb-app .hb-music-player>button{display:flex;align-items:center;gap:6px;padding:9px 11px;font-size:11px;background:#f5f2e5f0;border:1px solid #9aa99a;box-shadow:0 4px 18px #38483533;border-radius:100px;white-space:nowrap;min-width:89px;justify-content:center}
+.hb-app .hb-music-player>button[aria-pressed=true]{background:#304e41;color:#fff;border-color:#304e41}
+.hb-music-volume{display:flex;align-items:center;gap:4px;background:#f5f2e5ed;border-radius:100px;padding:6px;max-width:125px}
+.hb-music-volume input{width:77px;min-width:50px;margin:0;accent-color:#345e48;padding:0}
+.hb-music-error{position:absolute;left:0;bottom:43px;background:#fff9ea;padding:7px;min-width:170px;border-radius:6px;color:#894a2b;font-size:10px}
+@media(max-width:760px){.hb-music-player{left:10px;bottom:9px;z-index:23}.hb-app .hb-music-player>button{padding:9px 10px;min-width:64px;font-size:10px}.hb-music-volume{max-width:95px}.hb-music-volume input{width:48px}.hb-app.is-editing .hb-music-player{bottom:12px}}
