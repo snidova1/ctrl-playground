@@ -123,6 +123,10 @@ test('Real pointer catalog, transforms, duplicate/delete, Undo/Redo, Save & Play
 });
 
 test('Two verified wallets visit, exercise member permissions, leave and reconnect', async ({page, browser}) => {
+  // CI trace 38058049234 passed the mobile flow through revocation, then the
+  // 90s whole-test timer killed context disposal. Two real SwiftShader VRM
+  // canvases need a larger journey budget; per-assertion deadlines are unchanged.
+  test.setTimeout(180000);
   const owner = await openWorld(page);
   const sharedName = `Browser Shared ${owner.homeId!.slice(0, 8)}`;
   await pointer(page, page.getByRole('button', {name: 'Settings', exact: true}));
