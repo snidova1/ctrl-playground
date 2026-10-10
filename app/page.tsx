@@ -1,2 +1,2 @@
 import HabitatApp from '@/features/habitat/app';
-export default function Home(){return <HabitatApp/>;}
+export default function Home(){return <HabitatApp advancedBuilder/>;}

@@ -64,7 +64,7 @@ export default function HabitatBuilderTools(props:Props){
   };
   return <>
     <div className='hb-advanced-bar' role='toolbar' aria-label='3D world tools'>
-      <strong><span>CTRL</span> / WORLD BUILDER</strong>
+      <strong><span>CTRL</span> / BUILD</strong>
       <div className='hb-advanced-tools'>
         {(['translate','rotate','scale'] as const).map(tool=><button key={tool} type='button' aria-pressed={props.tool===tool} onClick={()=>props.onTool(tool)}>
           {tool==='translate'?<Move3D size={16}/>:tool==='rotate'?<RotateCw size={16}/>:<Scaling size={16}/>}
@@ -81,10 +81,10 @@ export default function HabitatBuilderTools(props:Props){
       <button onClick={()=>setMobilePanel('inspect')} aria-pressed={mobilePanel==='inspect'}>Inspector · {props.objects.length}</button>
     </div>
     <aside className={'hb-catalog hb-advanced-library'+(mobilePanel==='assets'?' is-mobile-active':'')} aria-label='World object catalog'>
-      <div className='hb-advanced-heading'><small>01 / OBJECT LIBRARY</small><h2>Build inside your world.</h2><p>{BUILD_ASSETS.length} verified models, placed into the Habitat scene.</p></div>
+      <div className='hb-advanced-heading'><small>OBJECTS / {BUILD_ASSETS.length}</small><h2>Build inside your world.</h2></div>
       <label className='hb-advanced-search'><Search size={16}/><input aria-label='Search world assets' placeholder='Search walls, trees, furniture...' value={query} onChange={e=>{setQuery(e.target.value);setPage(0);}}/></label>
       <div className='hb-advanced-categories'><button aria-pressed={category==='all'} onClick={()=>{setCategory('all');setPage(0);}}>All</button>{BUILD_ASSET_CATEGORIES.map(c=><button key={c} aria-pressed={category===c} onClick={()=>{setCategory(c);setPage(0);}}>{labels[c]??c}</button>)}</div>
-      <details open><summary>Interactive objects</summary><div className='hb-primitives'>{primitives.map(([id,name,behavior])=><button key={id} onClick={()=>{props.onAdd(id,name,behavior);setMobilePanel('inspect');}}>{name} +</button>)}</div></details>
+      <details className='hb-advanced-primitives'><summary>Interactive pieces</summary><div className='hb-primitives'>{primitives.map(([id,name,behavior])=><button key={id} onClick={()=>{props.onAdd(id,name,behavior);setMobilePanel('inspect');}}>{name} +</button>)}</div></details>
       <div className='hb-advanced-assets'>{shown.map(a=><button title={a.id} key={a.id} onClick={()=>{props.onAdd(a.id,a.name,a.collision==='solid'?'solid':'decoration');setMobilePanel('inspect');}}>
         <img src={a.thumbnailUrl} loading='lazy' alt=''/><span>{a.name}</span>
       </button>)}</div>
@@ -92,7 +92,7 @@ export default function HabitatBuilderTools(props:Props){
       <div className='hb-advanced-paging'><button disabled={page===0} onClick={()=>setPage(p=>p-1)}>Previous</button><span>{matches.length? page+1:0}/{Math.max(1,Math.ceil(matches.length/36))}</span><button disabled={(page+1)*36>=matches.length} onClick={()=>setPage(p=>p+1)}>Next</button></div>
     </aside>
     <aside className={'hb-inspector hb-advanced-inspector'+(mobilePanel==='inspect'?' is-mobile-active':'')} aria-label='Selected world object inspector'>
-      <small>02 / OBJECT INSPECTOR</small><h2>{chosen?'Edit in place.':'Select an object.'}</h2>
+      <small>SELECTED OBJECT</small><h2>{chosen?'Transform':'Select an object'}</h2>
       <p className='hb-small'>{props.objects.length}/120 placed objects</p>
       <select aria-label='Placed objects' value={props.selectedId??''} onChange={e=>props.onSelect(e.target.value||null)}><option value=''>Select placed object</option>{props.objects.map(o=><option value={o.id} key={o.id}>{o.name}</option>)}</select>
       {chosen?<div className='hb-advanced-properties'>
@@ -105,9 +105,9 @@ export default function HabitatBuilderTools(props:Props){
         {chosen.behavior==='switch'&&<label>Target<select aria-label='Switch target' value={chosen.target} onChange={e=>props.onPatch({target:e.target.value})}><option value=''>Choose a target</option>{props.objects.filter(o=>o.id!==chosen.id).map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select></label>}
         {chosen.behavior==='portal'&&<label>World destination<select aria-label='World destination' value={chosen.target} onChange={e=>props.onPatch({target:e.target.value})}><option value=''>Choose world</option>{props.worlds.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}
         <div className='hb-advanced-object-actions'><button onClick={props.onDuplicate}><Copy size={14}/> Duplicate</button><button onClick={props.onDelete}><Trash2 size={14}/> Delete</button></div>
-        <p className='hb-small'>Drag the gizmo in the 3D scene, or use numeric values. No external models or generated scripts can be inserted.</p>
-      </div>:<div className='hb-advanced-empty'>Pick a catalog model to place it near your character, or click an existing object in the world.</div>}
-      <div className='hb-advanced-footer'>Save & Play commits this draft to your current personal world. Other visitors see it after saving.</div>
+        
+      </div>:<div className='hb-advanced-empty'>Tap a model or object in your world to edit it.</div>}
+      
     </aside>
   </>;
 }
