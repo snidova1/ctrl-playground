@@ -1,4 +1,10 @@
 /* Add-on for the existing Astra Habitat canvas, not a separate application shell. */
+.hb-app.is-editing .hb-message{display:none}
+.hb-app.is-editing .hb-alert{top:120px;bottom:auto;z-index:30;width:calc(100% - 32px);max-width:600px}
+.hb-app.is-advanced .hb-advanced-bar{box-sizing:border-box;top:76px;left:16px;right:16px;transform:none;width:auto;min-height:44px;border-radius:8px}
+.hb-app.is-advanced .hb-catalog.hb-advanced-library,.hb-app.is-advanced .hb-inspector.hb-advanced-inspector{box-sizing:border-box;top:132px;bottom:16px;max-height:none;border-radius:8px}
+.hb-app.is-advanced .hb-catalog.hb-advanced-library{width:285px}
+.hb-app.is-advanced .hb-inspector.hb-advanced-inspector{width:280px}
 .hb-advanced-bar{position:absolute;top:66px;left:50%;transform:translateX(-50%);z-index:15;width:min(830px,calc(100vw - 330px));background:#f6f5ebef;color:#303b34;border:1px solid #c5c9b7;border-radius:12px;box-shadow:0 10px 35px #303b3420;padding:8px;display:flex;gap:8px;align-items:center;justify-content:space-between}
 .hb-advanced-bar>strong{font:700 10px ui-monospace,monospace;letter-spacing:.03em;white-space:nowrap}.hb-advanced-bar>strong span{color:#da6e43}
 .hb-advanced-tools,.hb-advanced-commit{display:flex;gap:4px;align-items:center}
@@ -39,3 +45,15 @@
 .hb-advanced-tabs{display:none}
 @media(max-width:1150px){.hb-advanced-bar{left:295px;right:280px;transform:none;width:auto;flex-wrap:wrap}.hb-advanced-bar>strong{display:none}.hb-advanced-library{width:255px}.hb-advanced-inspector{width:245px}.hb-advanced-tools button span{display:none}}
 @media(max-width:760px){.hb-advanced-bar{left:7px;right:7px;top:51px;width:auto;flex-wrap:nowrap;padding:5px;gap:4px}.hb-app .hb-advanced-tools button,.hb-app .hb-advanced-commit button{padding:7px 6px;font-size:10px}.hb-advanced-commit button:not(.hb-primary){display:none}.hb-advanced-tools button span{display:none}.hb-advanced-tabs{position:absolute;left:7px;right:7px;bottom:10px;z-index:16;display:grid;grid-template-columns:1fr 1fr;gap:6px}.hb-app .hb-advanced-tabs button{padding:9px}.hb-advanced-tabs button[aria-pressed=true]{background:#354a3e;color:#fff}.hb-advanced-library,.hb-advanced-inspector{top:108px;left:7px;right:7px;width:auto;bottom:52px;max-height:none;display:none}.hb-advanced-library.is-mobile-active,.hb-advanced-inspector.is-mobile-active{display:flex}.hb-advanced-library.is-mobile-active{max-height:calc(100dvh - 170px)}.hb-advanced-assets{grid-template-columns:repeat(3,minmax(0,1fr));max-height:none;flex:1}.hb-advanced-inspector.is-mobile-active{max-height:calc(100dvh - 170px)}.hb-advanced-preview img{height:45px;width:45px}}
+@media(max-width:760px){
+ .hb-app.is-advanced .hb-advanced-bar{top:54px;left:8px;right:8px;min-height:44px;flex-wrap:nowrap}
+ .hb-app.is-advanced .hb-catalog.hb-advanced-library,.hb-app.is-advanced .hb-inspector.hb-advanced-inspector{top:108px;bottom:calc(64px + env(safe-area-inset-bottom,0px));left:8px;right:8px;width:auto;max-height:none;display:none;padding:12px}
+ .hb-app.is-advanced .hb-catalog.hb-advanced-library.is-mobile-active,.hb-app.is-advanced .hb-inspector.hb-advanced-inspector.is-mobile-active{display:flex}
+ .hb-app.is-advanced .hb-advanced-tabs{bottom:calc(8px + env(safe-area-inset-bottom,0px));left:8px;right:8px}
+ .hb-app.is-advanced .hb-advanced-assets{flex:none;overflow:visible;max-height:none}
+ .hb-app.is-advanced .hb-advanced-tools{gap:2px;flex-shrink:0}
+ .hb-app.is-advanced .hb-advanced-tools button{min-width:30px;min-height:36px;padding:6px}
+ .hb-app.is-advanced .hb-advanced-commit{margin-left:auto}
+ .hb-app.is-advanced .hb-advanced-commit button{min-height:36px;padding:6px}
+ .hb-app.is-editing .hb-alert{top:102px}
+}

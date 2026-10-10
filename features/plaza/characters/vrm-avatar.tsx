@@ -9,7 +9,7 @@ import {loadCharacter,disposeVrm,type LoadedCharacter} from './loader';
 import {previewCharacter,validVariant,type CharacterDefinition,type CharacterMotion,type CharacterQuality} from './catalog';
 import {applyCharacterColorway} from './appearance';
 import {HumanoidAnimator} from './animation';
-interface Props {definition?:CharacterDefinition;variant?:string;local?:boolean;name:string;pose:Pose;quality:CharacterQuality;motion:MutableRefObject<CharacterMotion>;sitting:boolean;celebrate:boolean;interactedAt:number;seatLift:number;}
+interface Props {definition?:CharacterDefinition;variant?:string;local?:boolean;htmlPortal?:MutableRefObject<HTMLDivElement|null>;name:string;pose:Pose;quality:CharacterQuality;motion:MutableRefObject<CharacterMotion>;sitting:boolean;celebrate:boolean;interactedAt:number;seatLift:number;}
 export default function VrmAvatar(props:Props) {
   const [character,setCharacter]=useState<LoadedCharacter|null>(null),[error,setError]=useState(''),[attempt,setAttempt]=useState(0);
   const firstFrame=useRef(true),[initialAngle]=useState(props.pose.angle);
@@ -33,7 +33,7 @@ export default function VrmAvatar(props:Props) {
     if(firstFrame.current){r.updateMatrixWorld(true);character.vrm.springBoneManager?.reset();firstFrame.current=false;}
     animator.current.update(delta,{...props,moving:p.moving,motion:props.motion.current});
   });
-  if(error)return <><Avatar {...props} local/><Html position={[props.pose.x,2.5,props.pose.z]} center><div className='pl-character-error' role='alert'><strong>Character unavailable</strong><p>{error}</p><button onClick={()=>{setError('');setCharacter(null);setAttempt(v=>v+1);}}>Retry character</button></div></Html></>;
-  if(!character)return <Html position={[props.pose.x,1.3,props.pose.z]} center><span className='pl-preview-label' role='status'>Preparing character…</span></Html>;
-  return <group ref={root} position={initial} rotation={[0,initialAngle,0]}><group scale={character.scale} position={[0,character.floor,0]}><primitive object={character.vrm.scene} dispose={null}/></group><Html position={[0,2.1,0]} center distanceFactor={9} zIndexRange={[10,0]} style={{pointerEvents:'none'}}><span className='pl-name'>{props.local===false?props.name:'You'}</span></Html></group>;
+  if(error)return <><Avatar {...props} local/><Html portal={props.htmlPortal?.current?{current:props.htmlPortal.current}:undefined} position={[props.pose.x,2.5,props.pose.z]} center><div className='pl-character-error' role='alert'><strong>Character unavailable</strong><p>{error}</p><button onClick={()=>{setError('');setCharacter(null);setAttempt(v=>v+1);}}>Retry character</button></div></Html></>;
+  if(!character)return <Html portal={props.htmlPortal?.current?{current:props.htmlPortal.current}:undefined} position={[props.pose.x,1.3,props.pose.z]} center><span className='pl-preview-label' role='status'>Preparing character…</span></Html>;
+  return <group ref={root} position={initial} rotation={[0,initialAngle,0]}><group scale={character.scale} position={[0,character.floor,0]}><primitive object={character.vrm.scene} dispose={null}/></group><Html portal={props.htmlPortal?.current?{current:props.htmlPortal.current}:undefined} position={[0,2.1,0]} center distanceFactor={9} zIndexRange={[10,0]} style={{pointerEvents:'none'}}><span className='pl-name'>{props.local===false?props.name:'You'}</span></Html></group>;
 }
