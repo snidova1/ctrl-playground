@@ -2,7 +2,7 @@
 
 - Astra: `server/`, `domain/habitat.ts`, database migrations, key contracts, API tests.
 - GPT-6 (`gpt6/world-builder`): isolated asset browser/editor, transforms, undo/redo, mobile controls, behavior UI, avatar previews. Do not replace existing plaza/mission systems.
-- Integrate client changes by PR after API and browser tests; no direct edits to each other's branch. `main` stays stable.
+- Astra owns final review: helpers are accepted only after source review and tests. PR13 uses `work/master-integration`; worker history is preserved and `main` stays stable.
 
 ## Wire Contract
 
@@ -22,11 +22,13 @@ All endpoints below are under `/api/habitat`. JSON mutations require same-origin
 | PATCH `worlds/:id/objects/:objectId` | `{revision,object:partial}` | `HabitatState` |
 | DELETE `worlds/:id/objects/:objectId` | `{revision}` | `HabitatState` |
 | POST `assets/resolve` | `{ids:string[]}` | `{assets}` reviewed catalog metadata |
-| POST `join` (legacy `visit`) | `{id:worldId}` | `HabitatState`, including new `presenceSession` |
+| POST `join` | `{id:worldId}` | `HabitatState`, including new sequenced `presenceSession` |
 | POST `presence` | `PresenceInput` with sessionId and increasing sequence | `HabitatState & {accepted:{x,z}}` |
 | POST `leave` | `{worldId,sessionId}` | `{ok:true}` |
 | POST `worlds/:id/settings` | `{name,visibility,revision?}` | `HabitatState` |
 | GET/POST `worlds/:id/members` | POST `{wallet,role:'editor'|'visitor'}` | `{members}`; owner only, recipient must onboard first |
 | DELETE `worlds/:id/members/:profileId` | `{}` | `{members}`; owner only |
 
-Legacy `pose`, `settings`, `use` remain available. New clients use `join` + `presence`, poll state, and leave using the returned session ID. Presence expires after 15 seconds; heartbeat before expiry. New join supersedes old connection. Players carry server-resolved loadouts. Colorways are not separate garment meshes. Member/editor ACL is owner-managed and independent of tradeable keys. Key status remains `not-deployed`; do not imply offchain world creation minted a key.
+Legacy `visit` explicitly creates a compatibility session (`id:''`); `pose`, `settings`, `use` remain available. Sessionless pose cannot downgrade an active/expired modern session. New clients heartbeat at 700ms and leave on hiding/unmount; TTL15s. Join supersedes old sessions; stale clients stop and offer reconnect instead of fighting tabs. Players carry server-resolved loadouts; colorways are not garment meshes. Owner-managed ACL is independent of tradeable keys.
+
+Keys: `worldKeyId(trustedOwnerWallet)` matches Solidity `worldIdFor(address)`. Pass app UUID plus its database-resolved signed owner wallet and authenticated viewer/trader separately; never request-body owner bindings. `readWorldKeys`, `prepareOwnerClaim`, `verifyOwnerClaim` validate chain/deployment/receipt. App routes/public deployment remain disabled; offchain drafts never claim an onchain key.

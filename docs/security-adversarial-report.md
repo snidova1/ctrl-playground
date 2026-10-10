@@ -1,5 +1,7 @@
 # CTRL security adversarial regression report (independent worker)
 
+> Integration addendum (2026-10-10, PR13): historical isolated-main audit below. Integrated source replaces guest XFAIL with positive HTTP401 and real EOA signatures. SEC-01/streamed-budget SEC-02 are fixed; combined-backend ACL/revision/presence tests pass. Expired-session downgrade was found then fixed in `c113617`. Full local run 160/160; require current-head CI. See HANDOFF and migration rehearsal, not the historical results below, for current evidence.
+
 Date: 2026-10-10 | Repository: `snidova1/ctrl-playground` | Branch: `qa/security-adversarial` | Base: `main@cbe941bd369424f00c70fdd9c8d1a85f1e76a717`
 
 ## Scope and provenance

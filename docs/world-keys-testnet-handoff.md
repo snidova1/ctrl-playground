@@ -1,5 +1,7 @@
 # World Keys | isolated testnet deploy-readiness handoff
 
+> Integration addendum (2026-10-10, `4c22a97`, PR13): squatting finding below is remediated in the integrated candidate. `createWorld` requires caller-derived `worldIdFor(address)`; mined attacker copies revert before rightful registration. UUID maps through its signed DB owner, separate from trader. Parent reran all four offline economic/service/CLI gates. Still unaudited, undeployed, and not public-chain authorization. Original independent report preserved below.
+
 Owner: independent QA/deployment-preflight worker (not Astra backend owner)
 Base: main at cbe941bd369424f00c70fdd9c8d1a85f1e76a717
 Scope: NEW testnet scripts, offline contract test and isolated CI only. No source contracts, application routes, secrets, database schema, or deployed state changed.

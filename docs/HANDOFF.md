@@ -1,104 +1,27 @@
-# CTRL Playground Handoff
+# CTRL integration handoff — 2026-10-10
 
-## Snapshot
+Implementation checkpoint: `3f836b4cb3ea306698890b8748cf5cdc59cfcb3e`, `work/master-integration`; draft PR https://github.com/snidova1/ctrl-playground/pull/13. Main unchanged at `cbe941bd369424f00c70fdd9c8d1a85f1e76a717`. Unfinished local work preserved in `149bcd6`; separate worker/merge ancestry retained. PR11 includes PR6/8/9, not reapplied.
 
-This repository is the current CTRL Playground development state. It must be continued in place; do not restart or rebuild the project from scratch.
+## Implemented and tested
 
-The live public character is still the previous stable MIO build unless a later deployment explicitly changes it. The current development branch contains the newer VRM character pipeline, personal world groundwork, build asset catalog work, and onchain key contract groundwork. This state is intended as a development checkpoint, not a final production release.
+- Signed-wallet-only durable profiles/homes; persisted Victoria/Fumiriya and curated colorways; owner/editor/visitor ACL, private-world concealment, object CRUD/save with revision CAS, catalog allowlist and streaming 80KB body budget.
+- Native Habitat builder: masthead/mobile hit areas repaired; real pointer transforms, duplicate/delete, Undo/Redo, Save & Play and reload. No forced clicks, skipped assertions or backend route mocks.
+- Sequenced join/presence/leave, reconnect/expiration/supersession and avatar metadata. Expired modern sessions cannot downgrade to legacy pose (`c113617`).
+- Owner-bound keys (`4c22a97`): Solidity ID = packed domain 'CTRL_WORLD_V1' + owner wallet hash. Mined attacker copies revert. Resolve UUID owner from trusted signed-wallet DB record, separate from member/trader wallet.
+- Migration0004: existing on-disk worlds/presence/missions/plaza preserved; actual CLI resume, constraints and rollback verified. No live database manually changed.
 
-## Product Decisions
+## Actual local gates
 
-- CTRL is the platform token used for world key buy/sell.
-- A new wallet can create its first personal world through an onchain transaction.
-- The first owner key has price `0 CTRL`, but the user still pays gas.
-- Club/world member keys are bought and sold in CTRL.
-- Buy and sell each take a `3%` development treasury fee.
-- The contract reserve must remain able to serve key sales back to the curve.
-- Owner/admin rights are separate from member key ownership.
-- The core builder must work without LLM availability.
-- LLM help is only an assistant layer for arranging supported catalog objects and recipes.
-- Testnet deployment for keys should wait until the implementation is complete and locally tested.
+Frozen install PASS; `pnpm test` **160/160, 28 files**; typecheck/lint PASS, zero warnings; Next and Vinext production builds PASS; integrity **991GLB/991WebP** PASS; QA/research **32/32** PASS. Keys: **12 economic groups, 386 successful local transactions, 63 mined reverts**, service + PR7 economic/CLI gates PASS. Playwright desktop/mobile **6/6** PASS, isolated real signed test wallets/SQLite. Not physical-device/Safari or public financial testing.
 
-## Current Development Work
+Checkpoint CI https://github.com/snidova1/ctrl-playground/actions/runs/38057450130 pending at handoff; require final PR-head checks. Not READY FOR MERGE while pending.
 
-- Stable VRM character preview using `@pixiv/three-vrm`.
-- Existing movement controller and camera are reused for VRM preview.
-- Female VRM candidate is approved visually as the current target direction.
-- Male/female selection and randomized outfit architecture is started but not finished.
-- Personal world/habitat route and server service groundwork is started.
-- Build asset catalog groundwork is started.
-- Large modular asset packs have been staged locally for catalog import.
-- CTRL world key contract draft is present under `contracts/keys/`.
-- Database migration for personal worlds is present as `drizzle/0003_personal_worlds.sql`.
+## Interfaces and changed paths
 
-## Existing Stable Systems To Preserve
+Exact schemas/APIs: `domain/habitat.ts`, `docs/TASK_OWNERSHIP.md`. Core: `server/habitat/`, wallet auth, `db/`, migration0004, local D1 adapter. Client: `features/habitat/`, editor CSS, VRM label portal, shell, wallet connector, framework configs. Tests: Habitat/security/migration/browser/keys; runners: keys/testnet CLI, migration CLI, master CI. Milestones: `d2c9d36` security, `c113617` session/migration fixes, `1ae3352` client integration, `3f836b4` production-server browser CI.
 
-- Common Ground plaza route and interactions.
-- Movement, camera, joystick, and collision controller.
-- Make/test/place/remove object loop.
-- Dispenser, bench, lamp, planter, and kinetic sculpture behaviors.
-- Session persistence, ownership checks, and presence.
-- Holder passport and existing wallet integration.
-- Orbio recipe endpoint as a bounded optional generator.
-- Tests and browser render fixtures.
+## Publication and unfinished work
 
-## Next Implementation Order
+User requested website publication to view/share characters on Oct10; preserve same public Site/audience. Alpha publication is not main merge or onchain approval. Reown configured as public build/runtime setting; real-phone QR pairing unverified. Current models Victoria/Fumiriya are not an original CTRL design or modular costume meshes; latest visual-choice approval was not independently recovered. Courtyard remote visitors still use legacy avatars; Habitat remote wallets use persisted VRM metadata.
 
-1. Finish the personal world model:
-   - one durable world per wallet,
-   - owner permissions,
-   - member/visitor permissions,
-   - no duplicate free-owner-key abuse.
-2. Finish character onboarding:
-   - wallet sign-in,
-   - choose male or female,
-   - randomized outfit from curated sets,
-   - save appearance per wallet.
-3. Promote the approved VRM character only after preview tests pass:
-   - desktop,
-   - mobile,
-   - idle/walk/run/jump/interact,
-   - no torso/head jitter.
-4. Convert staged asset packs into a lazy-loaded builder catalog:
-   - building,
-   - furniture,
-   - nature,
-   - food/props,
-   - roads,
-   - platform/game pieces.
-5. Add behavior wiring without LLM:
-   - sit,
-   - open/close,
-   - light toggle,
-   - button target,
-   - moving platform,
-   - portal,
-   - checkpoint/timer/finish.
-6. Complete key contract and local contract tests:
-   - 0 CTRL first owner key plus gas,
-   - CTRL-denominated buy/sell curve,
-   - 3% fee,
-   - reserve invariants,
-   - permissions separated from member keys.
-7. Only then prepare testnet deployment.
-
-## Do Not Do Yet
-
-- Do not deploy the current character replacement without approval.
-- Do not deploy key contracts to testnet yet.
-- Do not make the builder dependent on live LLM calls.
-- Do not remove existing plaza features while adding personal worlds.
-
-## Verification Baseline
-
-Run the standard checks before any handoff or deployment:
-
-```sh
-pnpm test
-pnpm typecheck
-pnpm lint
-pnpm build:next
-pnpm build
-```
-
-Browser verification should cover both the existing Common Ground flow and any VRM/personal-world preview routes.
+Keys remain undeployed; claim/buy/sell UI and trusted deployment config unfinished. PR10 sources not automatically ingested. Mission/Orbio/archive/receipt regressions pass; no paid calls or public-chain transactions made. Next: inspect final current-head CI, repair failures, merge PR13 normally only after gates/approval; finish key transaction UI without public transactions. No force push, destructive migration, or GPT-6 branch overwrite.

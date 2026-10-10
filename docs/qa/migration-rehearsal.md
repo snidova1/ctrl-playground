@@ -1,5 +1,7 @@
 # Existing-state Habitat migration rehearsal
 
+> Parent follow-up: `c113617` fixes the expiry downgrade reported below and adds a fourth test invoking the actual migration CLI on an existing fixture, then safely resuming. Runner validates foreign keys/integrity before commits. Latest integrated result 160/160, including all four migration tests and active expiry regression. Earlier 31-pass/1-fail evidence records the discovered defect, not current status.
+
 Date: 2026-10-10. Branch: `work/master-integration`. This is a local, on-disk SQLite rehearsal using the checked-in SQL, not a Cloudflare D1 deployment or a production database backup. Server, migration, UI, Solidity and parent-owned contract-test files were not edited by this work.
 
 ## Reproduce
