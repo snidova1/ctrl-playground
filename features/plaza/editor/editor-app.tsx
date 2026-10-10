@@ -90,7 +90,7 @@ export default function WorldEditor(){
 
   function addAsset(position:Vec3){
     if(!stagedAsset)return;
-    const id='object-'+crypto.randomUUID().replace(/-/g,'');
+    const id=crypto.randomUUID();
     if(apply({type:'add',id,assetId:stagedAsset,position})){
       setSelection(id);setStagedAsset(null);
       setMessage('Object placed. Select and transform it, or choose another model.');
@@ -112,7 +112,7 @@ export default function WorldEditor(){
   }
   function duplicate(){
     if(!selected)return;
-    const id='object-'+crypto.randomUUID().replace(/-/g,'');
+    const id=crypto.randomUUID();
     if(apply({type:'duplicate',id:selected.id,newId:id}))setSelection(id);
   }
   function download(){
@@ -198,7 +198,7 @@ export default function WorldEditor(){
           <select aria-label='Object behavior tag' disabled={preview} value={selected.behavior} onChange={e=>apply({type:'behavior',id:selected.id,behavior:e.target.value as typeof selected.behavior})}>
             {EDITOR_BEHAVIORS.map(b=><option key={b} value={b} disabled={!isInteractiveInPreview({...selected,behavior:b})&&b!=='none'}>{b.replace(/-/g,' ')}{isInteractiveInPreview({...selected,behavior:b})?' (preview ready)':''}</option>)}
           </select>
-          <p className='ctrl-editor-hint'>Switch to Play test to click lights, opening objects, moving platforms, checkpoints and finish markers. This is a local simulation, not multiplayer gameplay. Sit, button and portal need the personal-world runtime.</p>
+          <p className='ctrl-editor-hint'>Switch to Play test to click lights, opening objects, spinning objects, checkpoints and finish markers. This is a local simulation, not multiplayer gameplay. Sit, button and portal need the personal-world runtime.</p>
           <div className='ctrl-editor-inspector-actions'><button disabled={preview} onClick={duplicate}><Copy size={16}/> Duplicate</button><button className='ctrl-editor-danger' disabled={preview} onClick={()=>{apply({type:'remove',id:selected.id});setSelection(null);}}><Trash2 size={16}/> Delete</button></div>
         </div>:<div className='ctrl-editor-empty'><Box size={35}/><strong>{stagedAsset?'Ready to place.':'Choose a model.'}</strong><p>{stagedAsset?'Tap the ground in the 3D scene to add the selected asset.':'Select a model from the library, then click the ground to place it. Select an existing object to edit it.'}</p><p className='ctrl-editor-hint'>Use the gizmos to move, rotate and scale. Ctrl/Cmd + Z to undo; Delete removes a selected object.</p></div>}
         <div className='ctrl-editor-file'>
