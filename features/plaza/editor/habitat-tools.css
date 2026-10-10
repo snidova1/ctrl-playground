@@ -122,3 +122,12 @@
  .hb-app.is-advanced .hb-catalog.hb-advanced-library,.hb-app.is-advanced .hb-inspector.hb-advanced-inspector{height:43dvh}
  .hb-advanced-heading{display:none}
 }
+
+/* Preserve critical game actions on touch: exit editor & interactive primitives. */
+@media(max-width:1024px){
+ .hb-app.is-advanced .hb-advanced-commit button:not(.hb-primary){display:flex;min-width:38px}
+ .hb-advanced-commit .hb-cancel-text{display:none}
+ .hb-advanced-library>details{display:block;flex-shrink:0}
+ .hb-advanced-library>details[open] .hb-primitives{display:flex;flex-wrap:nowrap;overflow-x:auto;max-height:48px}
+ .hb-advanced-library>details[open] .hb-primitives button{flex:0 0 auto}
+}
