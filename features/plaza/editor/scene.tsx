@@ -1,10 +1,11 @@
 'use client';
 import {Component,Suspense,useMemo,useRef,type ReactNode} from 'react';
-import {Canvas,type ThreeEvent} from '@react-three/fiber';
+import {Canvas,useFrame,type ThreeEvent} from '@react-three/fiber';
 import {Grid,OrbitControls,TransformControls,useGLTF} from '@react-three/drei';
 import {Group} from 'three';
 import type {BuildAsset} from '../build-assets';
 import {EDITOR_LIMITS,type EditorObject,type EditorTool,type Vec3} from './model';
+import type {PreviewState} from './preview';
 
 interface SceneProps {
   objects:EditorObject[];
@@ -13,6 +14,9 @@ interface SceneProps {
   placingAsset:BuildAsset|null;
   tool:EditorTool;
   snap:boolean;
+  preview:boolean;
+  previewState:PreviewState;
+  onActivate:(id:string)=>void;
   onSelect:(id:string|null)=>void;
   onPlace:(position:Vec3)=>void;
   onTransform:(id:string,transform:{position:Vec3;rotationY:number;scale:number})=>void;
@@ -33,12 +37,19 @@ function AssetModel({asset}:{asset:BuildAsset}){
     <primitive object={instance}/>
   </group>;
 }
-function EditorItem({item,asset,selected,tool,snap,onSelect,onTransform}:{
+function EditorItem({item,asset,selected,tool,snap,preview,active,reached,onActivate,onSelect,onTransform}:{
   item:EditorObject;asset:BuildAsset;selected:boolean;tool:EditorTool;snap:boolean;
-  onSelect:(id:string)=>void;
+  preview:boolean;active:boolean;reached:boolean;
+  onActivate:(id:string)=>void;onSelect:(id:string)=>void;
   onTransform:SceneProps['onTransform'];
 }){
   const group=useRef<Group>(null);
+  const behaviorGroup=useRef<Group>(null);
+  useFrame(({clock})=>{
+    const node=behaviorGroup.current;
+    if(!node)return;
+    node.position.y=preview&&active&&item.behavior==='moving-platform'?0.65+Math.sin(clock.elapsedTime*1.8)*0.55:0;
+  });
   const commit=()=>{
     const node=group.current;
     if(!node)return;
@@ -49,17 +60,21 @@ function EditorItem({item,asset,selected,tool,snap,onSelect,onTransform}:{
     });
   };
   const object=<group ref={group} position={item.position} rotation={[0,item.rotationY,0]} scale={item.scale}
-    onClick={(event:ThreeEvent<MouseEvent>)=>{event.stopPropagation();onSelect(item.id);}}>
+    onClick={(event:ThreeEvent<MouseEvent>)=>{event.stopPropagation();if(preview)onActivate(item.id);else onSelect(item.id);}}>
+    <group ref={behaviorGroup} rotation-y={preview&&active&&item.behavior==='open-close'?Math.PI/2:0}>
     <ModelBoundary label={asset.name}>
       <Suspense fallback={<mesh position={[0,.4,0]}><boxGeometry args={[.8,.8,.8]}/><meshStandardMaterial color='#b0aba2' wireframe/></mesh>}>
         <AssetModel asset={asset}/>
       </Suspense>
     </ModelBoundary>
+    {preview&&active&&item.behavior==='toggle-light'&&<pointLight position={[0,1.7,0]} color='#ffd887' intensity={5} distance={6}/>}
+    </group>
+    {preview&&reached&&item.behavior==='checkpoint'&&<mesh position={[0,.08,0]} rotation-x={-Math.PI/2}><ringGeometry args={[.63,.72,42]}/><meshBasicMaterial color='#4cbf78' depthTest={false}/></mesh>}
     {selected&&<mesh position={[0,.02,0]} rotation-x={-Math.PI/2}>
       <ringGeometry args={[.48,.54,48]}/><meshBasicMaterial color='#ef5f30' depthTest={false}/>
     </mesh>}
   </group>;
-  return selected?<TransformControls mode={tool==='translate'?'translate':tool}
+  return selected&&!preview?<TransformControls mode={tool==='translate'?'translate':tool}
     translationSnap={snap?.5:undefined}
     rotationSnap={snap?Math.PI/12:undefined}
     scaleSnap={snap?.1:undefined}
@@ -67,7 +82,7 @@ function EditorItem({item,asset,selected,tool,snap,onSelect,onTransform}:{
     onMouseUp={commit}>{object}</TransformControls>:object;
 }
 export default function EditorScene(props:SceneProps){
-  const {objects,assetIndex,selectedId,placingAsset,tool,snap,onSelect,onPlace,onTransform}=props;
+  const {objects,assetIndex,selectedId,placingAsset,tool,snap,preview,previewState,onActivate,onSelect,onPlace,onTransform}=props;
   return <Canvas shadows dpr={[1,1.5]} camera={{position:[9,11,14],fov:47,near:.1,far:160}}
     gl={{antialias:true,alpha:false}} onCreated={({gl})=>{gl.domElement.setAttribute('aria-label','3D editor. Click a model to select; choose an asset and click the ground to place it.');}}>
     <color attach='background' args={['#dee7df']}/>
@@ -78,6 +93,7 @@ export default function EditorScene(props:SceneProps){
       cellColor='#a2bcb1' sectionColor='#729c8c' fadeDistance={65} fadeStrength={1}/>
     <mesh rotation-x={-Math.PI/2} onClick={e=>{
       e.stopPropagation();
+      if(preview)return;
       if(placingAsset){
         const x=snap?Math.round(e.point.x*2)/2:e.point.x;
         const z=snap?Math.round(e.point.z*2)/2:e.point.z;
@@ -91,7 +107,7 @@ export default function EditorScene(props:SceneProps){
       const asset=assetIndex.get(item.assetId);
       if(!asset)return null;
       return <EditorItem key={item.id} item={item} asset={asset} selected={selectedId===item.id}
-        tool={tool} snap={snap} onSelect={onSelect} onTransform={onTransform}/>;
+        tool={tool} snap={snap} preview={preview} active={!!previewState.active[item.id]} reached={previewState.checkpoints.includes(item.id)} onActivate={onActivate} onSelect={onSelect} onTransform={onTransform}/>;
     })}
     <OrbitControls makeDefault minDistance={2.5} maxDistance={65} maxPolarAngle={Math.PI/2.02}
       enableDamping dampingFactor={.12} target={[0,1,0]}/>
