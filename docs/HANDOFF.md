@@ -2,6 +2,8 @@
 
 Source checkpoint: `eb7d1a1e449daef4b8533bb66384081881e52f18`; follow-up hardening described below. Resulting SHA/current checks: PR https://github.com/snidova1/ctrl-playground/pull/13, `work/master-integration`. Main stays `cbe941bd369424f00c70fdd9c8d1a85f1e76a717`; newer local work149bcd6 and worker ancestry retained. PR11 incorporates PR6/8/9, not reapplied. Latest PR1–12 heads rechecked unchanged.
 
+Hardening checkpoint `84a3c5061953e4939c5491fe76493dfc26090330`: final review corrected failed-join generation handling before publication. A join synchronously advances generation, so sync must recapture its own attempt's epoch before awaiting it; independent later leave/join still invalidates it. Superseded joins throw rather than returning stale state for callers to adopt. Require follow-up exact-head 10-journey CI; saved Site19 at84a3c50 is obsolete and must not be deployed.
+
 ## Implemented
 
 - Signed-wallet durable identity/profile/one home, persisted Victoria/Fumiriya colorways, owner/editor/visitor ACL, private-world concealment, object CRUD/save revision CAS, 120-object/catalog allowlist and80KB streaming body budget.

@@ -31,7 +31,7 @@ export function useWorldPresence(options: Options) {
     leave();
     const epoch = generation.current;
     const state = await habitatApi<HabitatState>('join', {id});
-    if (epoch !== generation.current) return state;
+    if (epoch !== generation.current) throw new HabitatApiError('PRESENCE_SESSION_STALE', 409, 'This join was superseded by a newer connection.');
     connection.current = state.presenceSession;
     superseded.current = false;
     Object.assign(handlers.current.pose.current, {x: 0, z: 6, angle: Math.PI, moving: false});
@@ -45,10 +45,14 @@ export function useWorldPresence(options: Options) {
     const world = latest.current?.world;
     if (!world || !latest.current?.profile || syncing.current || superseded.current) return;
     syncing.current = true;
-    const epoch = generation.current;
+    let epoch = generation.current;
     try {
       if (!connection.current || connection.current.worldId !== world.id || connection.current.expiresAt <= Date.now()) {
-        await connect(world.id);
+        const joining = connect(world.id);
+        // connect synchronously starts a new generation. Its own failed join
+        // is not stale; only a later independent leave/join invalidates it.
+        epoch = generation.current;
+        await joining;
         return;
       }
       const session = connection.current;
@@ -100,7 +104,13 @@ export function useWorldPresence(options: Options) {
       if (document.visibilityState === 'hidden') leave();
       else {
         const id = handlers.current.latest.current?.world?.id;
-        if (id) void connect(id).catch(() => handlers.current.onOnline(false));
+        if (id) {
+          const joining = connect(id);
+          const epoch = generation.current;
+          void joining.catch(() => {
+            if (epoch === generation.current) handlers.current.onOnline(false);
+          });
+        }
       }
     };
     window.addEventListener('pagehide', leave);
