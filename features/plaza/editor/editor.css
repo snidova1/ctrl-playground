@@ -72,3 +72,11 @@
 @media(max-width:1080px){.ctrl-editor-grid{grid-template-columns:230px minmax(0,1fr) 235px}.ctrl-editor-header{align-items:flex-start;flex-direction:column}.ctrl-editor-status{display:none}}
 @media(max-width:800px){.ctrl-editor-header{padding:24px 15px 16px}.ctrl-editor-grid{display:flex;flex-direction:column;height:auto;min-height:0}.ctrl-editor-viewport{order:0;height:55dvh;min-height:390px}.ctrl-editor-library{order:1;border-right:0;border-top:1px solid var(--ed-line)}.ctrl-editor-inspector{order:2;border-left:0;border-top:1px solid var(--ed-line)}.ctrl-editor-assets{grid-template-columns:repeat(4,minmax(0,1fr));max-height:340px}.ctrl-editor-side-heading{padding:18px 16px 14px}.ctrl-editor-library .ctrl-editor-credits{margin-top:0}.ctrl-editor-inspector-body{overflow:visible}.ctrl-editor-toolbar{padding:6px}.ctrl-editor-toolbar button{padding:9px 7px}.ctrl-editor-inspector .ctrl-editor-file{margin-top:24px}}
 @media(max-width:480px){.ctrl-editor-toolbar button span{display:none}.ctrl-editor-toolbar{gap:3px}.ctrl-editor-toolbar button{padding:9px}.ctrl-editor-assets{grid-template-columns:repeat(3,minmax(0,1fr))}.ctrl-editor-header-actions button{padding:9px}.ctrl-editor-viewport{height:50dvh;min-height:340px}.ctrl-editor-bottom{font-size:9px}}
+
+.ctrl-editor-play-button{margin-left:auto;background:#273c31!important;color:#fff;font-weight:650!important;border-radius:2px;border:1px solid #273c31!important}
+.ctrl-editor-play-button[aria-pressed="true"]{background:#e76942!important;border-color:#e76942!important;color:#fff}
+.ctrl-editor-preview-status{position:absolute;bottom:51px;left:12px;right:12px;z-index:5;background:#263b31ee;color:#f9f5e8;padding:12px 15px;display:flex;align-items:center;justify-content:space-between;gap:13px;font-size:12px;flex-wrap:wrap;pointer-events:none}
+.ctrl-editor-preview-status strong{font:10px var(--font-mono,monospace);white-space:nowrap}
+.ctrl-editor-preview-status span{flex:1;min-width:180px}
+.ctrl-editor-preview-status small{font:10px var(--font-mono,monospace);opacity:.78;white-space:nowrap}
+@media(max-width:480px){.ctrl-editor-play-button{font-size:10px!important;padding:8px!important}.ctrl-editor-preview-status{bottom:45px;padding:10px}.ctrl-editor-preview-status strong{white-space:normal}}
