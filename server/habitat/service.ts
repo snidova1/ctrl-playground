@@ -6,9 +6,10 @@ import {settings} from '@/server/env';
 import {AppError,safeError} from '@/server/errors';
 import {layoutSchema,motionSchema,collideWorld,type WorldState,type WorldProfile,type WorldObject,type WorldPlayer} from '@/features/habitat/types';
 import {getBuildAsset} from '@/features/plaza/build-assets';
+import {readHabitatJson} from './read-json';
 interface Row{id:string;owner_id:string;name:string;visibility:'public'|'private';revision:number;layout:string;}
 const reply=(v:unknown,status=200,headers:Record<string,string>={})=>Response.json(v,{status,headers:{'Cache-Control':'no-store',...headers}});
-async function body(r:Request){const text=await r.text();if(text.length>80000)throw new AppError('INPUT_TOO_LARGE',413);return JSON.parse(text) as unknown;}
+const body=readHabitatJson;
 async function principal(r:Request){const u=await identity(r);if(u&&!u.demo&&u.wallet)return {id:u.id,wallet:u.wallet};const token=r.headers.get('cookie')?.split(';').map(s=>s.trim()).find(s=>s.startsWith('ctrl_plaza='))?.slice(11);if(token){const v=await one<{id:string}>('SELECT id FROM plaza_visitors WHERE token_hash=? AND expires_at>?',await hash(token),Date.now());if(v)return {id:`guest-${v.id}`,wallet:null};}return null;}
 async function readWorld(id:string,user:string){const w=await one<Row>('SELECT * FROM habitat_worlds WHERE id=?',id);if(!w||(w.visibility==='private'&&w.owner_id!==user))throw new AppError('WORLD_NOT_FOUND',404,'This world is private or unavailable.');return w;}
 async function state(user:{id:string;wallet:string|null},worldId?:string):Promise<WorldState>{const profile=await one<WorldProfile>('SELECT id,name,character,variant FROM habitat_profiles WHERE id=?',user.id);const home=await one<Row>('SELECT * FROM habitat_worlds WHERE owner_id=?',user.id);const location=await one<{world_id:string}>('SELECT world_id FROM habitat_presence WHERE profile_id=?',user.id);let w:Row|null=null;const target=worldId??location?.world_id??home?.id;if(target){try{w=await readWorld(target,user.id);}catch{w=home;}}
