@@ -4,6 +4,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 const origin=process.env.CTRL_TEST_ORIGIN??'http://localhost:3147';
 const port=new URL(origin).port||'3147';
+const production=process.env.CTRL_TEST_PRODUCTION==='1';
 const database=path.join(mkdtempSync(path.join(tmpdir(),'ctrl-browser-')),'worlds.sqlite');
 export default defineConfig({
   testDir:'tests/browser',testMatch:'world-editor.spec.ts',timeout:90000,workers:1,
@@ -20,7 +21,7 @@ export default defineConfig({
     {name:'editor-mobile',use:{...devices['iPhone 13'],defaultBrowserType:'chromium'}},
   ],
   webServer:{
-    command:`pnpm db:local && pnpm dev:next --hostname 127.0.0.1 --port ${port}`,
+    command:`pnpm db:local && ${production?'CTRL_BUILD_TARGET=node pnpm exec next start':'pnpm dev:next'} --hostname 127.0.0.1 --port ${port}`,
     url:origin,
     env:{CTRL_LOCAL_DB:database,APP_ORIGIN:origin,CTRL_MODE:'mock',NEXT_TELEMETRY_DISABLED:'1'},
     timeout:150000,
