@@ -6,7 +6,7 @@ test('catalogue, placement, local persistence, gameplay preview and JSON export'
   await page.goto('/worlds/editor');
   await expect(page.getByRole('heading',{name:/World Builder/})).toBeVisible({timeout:60000});
   await expect(page.getByText('991 MODELS + 7 TOOLS')).toBeVisible();
-  await expect(page.getByText('LOCAL DRAFT / AUTOSAVED')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Export'})).toBeEnabled({timeout:60000});
 
   const search=page.getByRole('textbox',{name:'Search 3D assets'});
   await search.fill('wall');
@@ -35,7 +35,7 @@ test('catalogue, placement, local persistence, gameplay preview and JSON export'
 
 test('rejects unsafe imported asset URLs while preserving existing draft',async({page})=>{
   await page.goto('/worlds/editor');
-  await expect(page.getByText('LOCAL DRAFT / AUTOSAVED')).toBeVisible({timeout:60000});
+  await expect(page.getByRole('button',{name:'Export'})).toBeEnabled({timeout:60000});
   await page.locator('input[type="file"]').setInputFiles({
     name:'unsafe.json',mimeType:'application/json',
     buffer:Buffer.from(JSON.stringify({version:1,objects:[{
