@@ -42,7 +42,7 @@ function resolveOne(id:string):ResolvedHabitatAsset {
   if(model){
     // Explicit catalogue lookup, never interpolating the submitted ID into a URL.
     // A fresh copy prevents API consumers from mutating the global registry.
-    return {...model,kind:'model',bounds:[...model.bounds],center:[...model.center],animationClips:[...model.animationClips]};
+    return {...model,kind:'model',bounds:[...model.bounds] as [number,number,number],center:[...model.center] as [number,number,number],animationClips:[...model.animationClips]};
   }
   if(Object.prototype.hasOwnProperty.call(primitives,id)){
     const primitive=primitives[id as keyof typeof primitives];
