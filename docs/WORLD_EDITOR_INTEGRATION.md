@@ -1,68 +1,46 @@
-# World Builder 3D: integration contract (GPT-6 branch)
+# CTRL advanced 3D editor / Habitat integration
 
-Status: browser-local editor implementation, **not yet wired to personal-world server persistence or deployed**. This module does not replace the legacy /worlds/create mission-recipe workbench or the existing Common Ground plaza.
+## Implementation
 
-## Entry
+Route: `/worlds/editor`. Linked from `/worlds`; existing `/worlds/create` recipe workbench and the main Habitat remain intact. This is an advanced, client-owned world layout interface for the **existing** Habitat backend, not a competing backend or a replacement for world visiting.
 
-- Route: `/worlds/editor`
-- Client: `features/plaza/editor/editor-app.tsx`
-- Rendering: `features/plaza/editor/scene.tsx`
-- Validated model/history: `features/plaza/editor/model.ts`
-- Source catalog: `features/plaza/build-assets.ts` (991 licensed local GLB assets)
+Modules:
+- `features/plaza/editor/editor-app.tsx`: searchable catalog, inspector, 3D edits, local autosave, owner save UI.
+- `features/plaza/editor/scene.tsx`: lazy GLBs, procedural CTRL builtins, selection and move/rotate/scale gizmos, deterministic play preview.
+- `features/plaza/editor/model.ts`: strictly validated versioned draft, undo/redo and spatial limits.
+- `features/plaza/editor/preview.ts`: local light, door, spin, checkpoint, finish interactions.
+- `features/plaza/editor/habitat-bridge.ts`: lossless conversion between `EditorDocument` and existing `WorldObject[]` layout.
+- `tests/unit/world-editor*.test.ts`: round-trip, allowlist, history, preview, malicious input and constraint tests.
 
-Users can search and filter the asset catalog, place approved models, select them, move/rotate/scale with 3D gizmos or numeric inputs, duplicate, delete, and undo/redo. Mouse/touch orbit and grid snapping are supported by the scene controls. Only the thumbnails in the active 48-item batch are rendered; GLB models are loaded on demand.
+Library: 991 Kenney CC0 models already present in `features/plaza/build-assets.ts`, plus seven authored CTRL procedural Habitat primitives. The client renders at most 48 thumbnail entries per page and loads GLBs when actually placed. No mandatory LLM or provider call.
 
-The editor autosaves a **local browser draft** under `ctrl:world-editor-v1`. The user can import/export a versioned JSON document. There is no claimed cross-device storage or API persistence yet. Invalid existing local drafts are preserved until explicit recovery.
+## Actual server integration
 
-## Serialized WorldEditorDocument v1
+There is **no new API**. The editor reads:
+`GET /api/habitat/state` and writes:
+`POST /api/habitat/save` with `{worldId,revision,objects}`.
 
-```ts
-interface EditorDocument {
-  version: 1;
-  objects: Array<{
-    id: string;                // stable unique alphanumeric, hyphen or underscore ID
-    assetId: string;           // exact allowlisted BUILD_ASSETS ID
-    position: [number,number,number]; // x/y/z, bounded
-    rotationY: number;         // radians
-    scale: number;             // uniform
-    behavior: EditorBehavior;  // trusted tag, not runnable code
-  }>;
-}
-```
+`features/habitat/types.ts` and `server/habitat/service.ts` remain authoritative:
+- Signed-wallet or existing guest session resolves identity.
+- `canEdit` must be true and the selected world must belong to the authenticated owner.
+- World revision is required: backend rejects stale editor saves with HTTP 409; local draft is never discarded.
+- Existing server layout schemas enforce UUID IDs, catalog allowlists, bounded transforms, known behavior tags, switch target references, and 120-object cap.
+- Browser UI makes loading an owned world explicit; existing unsaved local draft requires user confirmation before replacement.
+- Publishing requires pressing **Save to world**; local autosave alone is not publication.
+- Browser import/export preserves an independent JSON draft; importing or clearing it detaches from the remote world to prevent accidental remote overwrite.
 
-Exported validators: `parseEditorDocument(unknown, assets)`, `readEditorJSON(string, assets)`, and `serializeEditorDocument(doc, assets)` in `model.ts`.
+The editor's limits match the backend: x -14..14, y 0..8, z -8..12, scale 0.25..4. Names, target IDs and primitive objects survive round trips; a document with unknown assets is rejected completely, never partially imported. Newly placed objects use UUID IDs.
 
-Current caps: 120 objects; x/z within ±24, y from 0 to 12, scale 0.15 to 8; rotation finite and bounded. Imports reject extra document/object keys, unknown assets, duplicates, unsafe IDs and invalid numeric values. Controls use a maximum of 60 history snapshots.
+Behavior mapping:
+- none → decoration, solid → solid, sit → seat
+- toggle-light → light, open-close → door, button → switch
+- spin → spin, portal → portal, checkpoint → checkpoint, finish → finish
 
-Behavior tags (`none`, `sit`, `toggle-light`, `open-close`, `button`, `moving-platform`, `portal`, `checkpoint`, `finish`) are **only metadata**. Interaction/runtime wiring remains unfinished. Do not claim enabled gameplay behaviors.
-
-## Work/Astra backend integration
-
-Astra owns persistence and authorization. Suggested adapter boundary:
-
-- `GET /api/worlds/:worldId/editor`: return an ownership-checked document and revision.
-- `PUT /api/worlds/:worldId/editor`: validate `EditorDocument` on the server against the same approved asset manifest and caps; check wallet session + owner/editor rights, revision match and rate limit; atomically persist document and increment revision.
-- The client may import an existing document via `loadEditorHistory`, save `history.present`, then reset history on confirmation.
-- Treat asset IDs and behavior tags as plain data, **never** remote URLs or generated JS.
-- Keep world identity and wallet permissions separate from the editor document; the client must not dictate ownership.
-- Future runtime should render catalog objects from the stored IDs with calibrated colliders and per-behavior allowlisted implementations.
-
-Astra should connect these after its personal world APIs and permission model are ready. Do not create competing client-side storage backends.
+**Local Play Test** is a limited simulation: clickable lights, doors, spin, checkpoint and finish. Full movement, proximity, collision, seating, switching to configured targets, real portals and shared state are executed by the existing Habitat runtime after saving and entering the world. Do not present Play Test as a complete gameplay session.
 
 ## Verification
 
-New pure-model test suite: `tests/unit/world-editor.test.ts` (allowlist, duplicate IDs, transform limits, history, import/export).
+GitHub Actions workflow: `.github/workflows/world-builder.yml`. Tests and lint for owned modules run before project-wide compatibility checks; the workflow also reports any unrelated baseline regressions. Separate browser suite:
+`pnpm exec playwright test --config playwright.editor.config.ts`.
 
-Recommended checks at merge time:
-
-```sh
-pnpm test
-pnpm typecheck
-pnpm lint
-pnpm build:next
-pnpm build
-```
-
-Browser test: visit `/worlds/editor`; add two different assets, move/scale one, duplicate/remove, undo/redo, reload and verify local persistence, export/import JSON, then test at mobile viewport width 390px. Verify no GPU leaks when unmounting editor scene.
-
-This branch's changes have **not** been executed in the full Work runtime yet. Merge/deploy only after the checks above pass.
+Do not merge a draft PR or deploy before TypeScript, full builds, actual desktop/mobile browser testing, and multi-session saved-world verification. The initial backend already exists, but actual live-user editing/persistence behavior is not yet browser-verified in this PR.
