@@ -26,7 +26,6 @@ export default function WorldEditor(){
   const [message,setMessage]=useState('');
   const [importError,setImportError]=useState('');
   const fileInput=useRef<HTMLInputElement>(null);
-  const fileId=useRef(0);
   const draft=history.present;
   const selected=draft.objects.find(item=>item.id===selection)??null;
   const selectedAsset=selected?assetIndex.get(selected.assetId):undefined;
@@ -53,14 +52,14 @@ export default function WorldEditor(){
 
   const apply=useCallback((action:EditorAction)=>{
     try{
-      setHistory(current=>editWorld(current,action,assetIndex));
+      setHistory(editWorld(history,action,assetIndex));
       setImportError('');
       return true;
     }catch(error){
       setMessage(error instanceof Error?error.message:'Cannot edit this object.');
       return false;
     }
-  },[assetIndex]);
+  },[assetIndex,history]);
 
   const undo=useCallback(()=>{setHistory(undoEditor);setMessage('');},[]);
   const redo=useCallback(()=>{setHistory(redoEditor);setMessage('');},[]);
