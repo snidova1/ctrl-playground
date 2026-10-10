@@ -6,7 +6,7 @@ const origin='http://localhost:3000';
 function api(path:string,body?:unknown,cookie?:string,headers:Record<string,string>={}){
  const hasBody=body!==undefined;
  return handleApi(new Request(`${origin}/api/${path}`,{method:hasBody?'POST':'GET',
-  headers:{...(hasBody?{'Content-Type':'application/json',Origin:origin}:{}),...(cookie?{Cookie:cookie}:{}),...headers},
+  headers:{...(hasBody?{'Content-Type':'application/json',Origin:origin}:{}),'cf-connecting-ip':crypto.randomUUID(),...(cookie?{Cookie:cookie}:{}),...headers},
   ...(hasBody?{body:JSON.stringify(body)}:{})}),path.split('/'));
 }
 const cookieFrom=(r:Response)=>r.headers.get('set-cookie')!.split(';')[0];
