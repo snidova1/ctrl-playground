@@ -116,7 +116,7 @@ export function auditBuildAssets(root = process.cwd(), budgets = DEFAULT_BUDGETS
   for (const entry of entries) {
     if (!entry || typeof entry !== 'object') { fail('Invalid catalog record'); continue; }
     const id = entry.id;
-    if (typeof id !== 'string' || !/^[a-z0-9-]+\/[a-z0-9-]+$/.test(id)) { fail('Invalid ID: ' + String(id)); continue; }
+    if (typeof id !== 'string' || !/^[a-z0-9-]+\/[A-Za-z0-9_-]+$/.test(id)) { fail('Invalid ID: ' + String(id)); continue; }
     if (seenIds.has(id)) fail('Duplicate asset ID: ' + id);
     seenIds.add(id);
     const [pack, name] = id.split('/');
