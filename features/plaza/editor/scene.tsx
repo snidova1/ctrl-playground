@@ -45,23 +45,24 @@ function EditorItem({item,asset,selected,tool,snap,preview,active,reached,onActi
 }){
   const group=useRef<Group>(null);
   const behaviorGroup=useRef<Group>(null);
-  useFrame(({clock})=>{
+  useFrame((_,delta)=>{
     const node=behaviorGroup.current;
     if(!node)return;
-    node.position.y=preview&&active&&item.behavior==='moving-platform'?0.65+Math.sin(clock.elapsedTime*1.8)*0.55:0;
+    if(preview&&active&&item.behavior==='spin')node.rotation.y+=Math.min(delta,.05)*1.7;
+    else node.rotation.y+=(preview&&active&&item.behavior==='open-close'?Math.PI/2:0-node.rotation.y)*Math.min(1,delta*8);
   });
   const commit=()=>{
     const node=group.current;
     if(!node)return;
     onTransform(item.id,{
-      position:[Math.max(-EDITOR_LIMITS.worldExtent,Math.min(EDITOR_LIMITS.worldExtent,node.position.x)),Math.max(0,Math.min(EDITOR_LIMITS.maxHeight,node.position.y)),Math.max(-EDITOR_LIMITS.worldExtent,Math.min(EDITOR_LIMITS.worldExtent,node.position.z))],
+      position:[Math.max(EDITOR_LIMITS.minX,Math.min(EDITOR_LIMITS.maxX,node.position.x)),Math.max(0,Math.min(EDITOR_LIMITS.maxHeight,node.position.y)),Math.max(EDITOR_LIMITS.minZ,Math.min(EDITOR_LIMITS.maxZ,node.position.z))],
       rotationY:node.rotation.y,
       scale:Math.max(EDITOR_LIMITS.minScale,Math.min(EDITOR_LIMITS.maxScale,node.scale.x)),
     });
   };
   const object=<group ref={group} position={item.position} rotation={[0,item.rotationY,0]} scale={item.scale}
     onClick={(event:ThreeEvent<MouseEvent>)=>{event.stopPropagation();if(preview)onActivate(item.id);else onSelect(item.id);}}>
-    <group ref={behaviorGroup} rotation-y={preview&&active&&item.behavior==='open-close'?Math.PI/2:0}>
+    <group ref={behaviorGroup}>
     <ModelBoundary label={asset.name}>
       <Suspense fallback={<mesh position={[0,.4,0]}><boxGeometry args={[.8,.8,.8]}/><meshStandardMaterial color='#b0aba2' wireframe/></mesh>}>
         <AssetModel asset={asset}/>
