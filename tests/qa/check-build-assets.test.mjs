@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, renameSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { auditBuildAssets } from '../../scripts/qa/check-build-assets.mjs';
@@ -114,4 +114,12 @@ test('detects provenance count mismatch and a missing license', () => withFixtur
   const errors = auditBuildAssets(f.root).errors.join('\n');
   assert.match(errors, /Missing\/empty pack license/);
   assert.match(errors, /Pack count mismatch/);
+}));
+
+test('accepts authentic Kenney mixed-case and underscore asset names', () => withFixture(f => {
+  const name = 'treeVariant_A';
+  renameSync(f.modelPath, path.join(f.target, name + '.glb'));
+  renameSync(f.thumbPath, path.join(f.target, 'thumbs', name + '.webp'));
+  f.store({ ...f.entry, id: 'mini-kit/' + name, url: '/plaza/build-kit/mini-kit/' + name + '.glb', thumbnailUrl: '/plaza/build-kit/mini-kit/thumbs/' + name + '.webp' });
+  assert.equal(auditBuildAssets(f.root).ok, true);
 }));
