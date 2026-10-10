@@ -14,7 +14,7 @@ All changes are limited to new security tests, this report and a targeted GitHub
 - **Evidence in code:** `server/habitat/service.ts` `principal()` accepts `ctrl_plaza` for any valid `plaza_visitors` row and returns `guest-<id>` as a habitat principal, without requiring a cryptographic wallet identity. `POST /api/habitat/profile` creates `habitat_profiles` and `habitat_worlds` using that principal. The signed-wallet requirement in `docs/TASK_OWNERSHIP.md` contradicts this flow.
 - **Impact:** A non-wallet guest can create a durable habitat world by acquiring a low-friction anonymous plaza cookie. This bypasses wallet-gated onboarding and permits persistent world allocation outside the intended key-ownership lifecycle. No theft of another wallet's world or tokens has been proven.
 - **Deterministic reproduction:** `POST /api/plaza/join` with a valid guest name, capture `Set-Cookie: ctrl_plaza=...`; then `POST /api/habitat/profile` using that cookie with `{ "name":"Unauthorized Guest", "character":"female", "variant":"original" }`. Source control flow reaches `habitat_worlds` insertion. `tests/unit/security/habitat-adversarial.test.ts` includes this as `it.fails` documenting the known violated 401 expectation, so future remediation requires converting it to a normal assertion.
-- **State:** Source-level finding, independently reproducible regression code committed; runner result must be checked separately. The expected-failure marker is not a passing security guarantee.
+- **State:** **Confirmed in isolated CI**, including an independent positive reproduction that asserts HTTP 200 and the resulting \`guest-\` owner ID. The separate 401 security expectation is XFAIL, not a secure pass. [Proof run 38040181998](https://github.com/snidova1/ctrl-playground/actions/runs/38040181998).
 - **Owner for remediation:** Backend/habitat worker. Require a wallet-authenticated identity for owner profile/world creation and privileged updates. Define separately whether anonymous visitors may join public realms; do not authorize durable creation from guest session alone.
 
 ### SEC-02 | LOW (hardening) | Body size evaluated only after reading full habitat request
@@ -48,7 +48,7 @@ The PR workflow `.github/workflows/security-adversarial.yml` runs these tests on
 - **World editor member/editor roles, world deletion, object mutation/deletion endpoints and session-sequenced presence:** described in `docs/TASK_OWNERSHIP.md`, not yet implemented on the inspected branch. No adversarial pass claim.
 - **Economic properties on a live mainnet, third-party ERC-20 behaviors, exchange-rate manipulation, cross-world trade sequences:** not examined. Local Ganache fixture only.
 - **Rendered XSS, browser multi-tab CSRF, and production distributed race conditions:** unit tests verify API-level restrictions; no production browser or distributed deployment test was conducted.
-- **Run status:** New test files are executable regression artifacts. GitHub Actions result is a separate requirement; do not read “committed” as “executed” until a run ID and logs are available.
+- **Run status:** **Executed on GitHub Actions.** Final code-bearing commit \`42474df\` passed its isolated CI run (16 positive tests, 1 expected failure), and ES2020-override TypeScript check succeeded. Production/deployment penetration tests remain unperformed.
 
 ## CI execution evidence
 
