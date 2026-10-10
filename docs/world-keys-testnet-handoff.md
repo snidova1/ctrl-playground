@@ -40,12 +40,18 @@ The CLI broadcast path runs in CI only on a throwaway localhost Ganache blockcha
 
 The wallet file must stay OUTSIDE the repository and never be attached to any chat or committed. No mainnet broadcast path is provided. Do not deploy using production token, mainnet chain ID 4663, or real funds.
 
+## Newly reproduced launch blocker: permissionless World ID squatting
+
+`CTRLWorldKeys.createWorld(bytes32 id)` currently authorizes the **transaction caller**, not a prior signed binding between an app UUID and its intended wallet owner. In a local Ganache proof, an unrelated wallet creates a known candidate world ID first; the rightful wallet's later attempt to create the same ID reverts with WORLD_EXISTS. A third party could observe an unconfirmed transaction and front-run the same bytes32 or reserve a public/predictable app ID. This does not steal existing keys, but can prevent the app owner's deterministic onchain enrollment. **Do not claim protection from front-running.**
+
+Recommended remediation for contract owner: design a verifiable wallet-to-world-ID binding (e.g. owner-authorized registration or signed registration permit checked onchain), or choose an ownership-safe non-guessable mapping with front-run-resistant creation semantics. A purely obscured world ID does not stop mempool observation. Decide whether `createWorld` should accept a wallet-owner authorization proof, how a backend world UUID maps to bytes32, whether registration can be recovered if squatted, and test all variants before live launch. This independent worker has deliberately not changed the Solidity contract or production server.
+
 ## Remaining Astra/backend integration work (NOT done here)
 
 1. Decide approved production/token address, fee recipient, and curveUnit, and commission contract review before public money is used. Check integer dust fee and user-visible price floor for selected curveUnit.
 2. For testnet: approve and perform the deliberate CLI broadcast only after preview; record and verify live address, chain ID and code hash.
 3. Add app transaction states for wallet-initiated createWorld(bytes32), buy(bytes32,uint256,maxTotal,deadline), sell(bytes32,uint256,minPayout,deadline), and await final receipts (not merely transaction hashes).
-4. Define deterministic, collision-resistant mapping between app world IDs and bytes32 world IDs, verify chain events/owners instead of trusting browser submissions, and reconcile asynchronous backend writes.
+4. Define deterministic, collision-resistant mapping between app world IDs and bytes32 world IDs; **resolve the reproduced world-ID front-running/squatting risk** with the contract owner before live deployment. Verify chain events/owners instead of trusting browser submissions, and reconcile asynchronous backend writes.
 5. Enforce signed wallet owner identity for durable home creation and permission changes. The independent SEC-01 report in PR #4 currently proves a guest plaza-cookie bypass on the baseline.
 6. Keep owner/editor/admin ACL independent of tradeable membership keys. Handle network switching, rejected transactions, chain reorganizations, approve allowance, stale slippage/deadline, and unavailable RPC. Do not market testnet keys as production.
 7. Require full unit/API/browser tests and external security review before mainnet. There is no proof here of production safety or a deployment.
