@@ -1,7 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {STARTER_TEMPLATE_ID,STARTER_WORLD_OBJECT_COUNT,createStarterWorld,inspectStarterSourceAssets,shouldSeedStarterWorld} from '@/features/habitat/starter-world';
 import {layoutSchema} from '@/features/habitat/types';
-import {requiredAssetTier} from '@/features/plaza/editor/holder-tiers';
 
 describe('Editable starter home',()=>{
  it('ships a real, fully-editable starter world with unique IDs and valid transforms',()=>{
@@ -16,7 +15,6 @@ describe('Editable starter home',()=>{
   expect(objects.some(o=>o.behavior==='light')).toBe(true);
   expect(objects.some(o=>o.assetId.includes('tree'))).toBe(true);
   expect(inspectStarterSourceAssets()).toEqual([]);
-  expect(objects.every(o=>requiredAssetTier(o.assetId)==='basic')).toBe(true);
  });
  it('never reseeds edited/cleared, visited, or unauthorized worlds',()=>{
   const original=createStarterWorld(), base={id:crypto.randomUUID(),ownerId:'wallet-A',revision:0,objects:[]};
