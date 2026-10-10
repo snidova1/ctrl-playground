@@ -30,12 +30,25 @@ class ModelBoundary extends Component<{children:ReactNode;label:string},{error:b
       this.props.children;
   }
 }
-function AssetModel({asset}:{asset:BuildAsset}){
+function GLBAssetModel({asset}:{asset:BuildAsset}){
   const gltf=useGLTF(asset.url);
   const instance=useMemo(()=>gltf.scene.clone(true),[gltf.scene]);
   return <group position={[-asset.center[0],asset.groundOffset,-asset.center[2]]}>
     <primitive object={instance}/>
   </group>;
+}
+function ProceduralAssetModel({asset}:{asset:BuildAsset}){
+  const id=asset.id;
+  const color=id==='ctrl-lamp'?'#f8c86b':id==='ctrl-portal'?'#8cbacb':id==='ctrl-marker'?'#ddba56':'#d49f76';
+  if(id==='ctrl-portal')return <mesh position={[0,1,0]}><torusGeometry args={[.8,.11,10,40]}/><meshStandardMaterial color={color}/></mesh>;
+  if(id==='ctrl-lamp')return <group><mesh position={[0,.7,0]}><cylinderGeometry args={[.08,.18,1.4,14]}/><meshStandardMaterial color='#7b8a74'/></mesh><mesh position={[0,1.45,0]}><sphereGeometry args={[.38,16,16]}/><meshStandardMaterial color={color}/></mesh></group>;
+  if(id==='ctrl-seat')return <group><mesh position={[0,.45,0]}><boxGeometry args={[1.1,.15,.7]}/><meshStandardMaterial color={color}/></mesh><mesh position={[0,.75,-.32]}><boxGeometry args={[1.1,.65,.12]}/><meshStandardMaterial color={color}/></mesh></group>;
+  if(id==='ctrl-marker')return <mesh position={[0,.55,0]}><coneGeometry args={[.45,1.1,5]}/><meshStandardMaterial color={color}/></mesh>;
+  if(id==='ctrl-switch')return <mesh position={[0,.45,0]}><cylinderGeometry args={[.35,.35,.9,12]}/><meshStandardMaterial color={color}/></mesh>;
+  return <mesh position={[0,id==='ctrl-door'?1:.5,0]}><boxGeometry args={id==='ctrl-door'?[1,2,.15]:[1,1,1]}/><meshStandardMaterial color={color}/></mesh>;
+}
+function AssetModel({asset}:{asset:BuildAsset}){
+  return asset.url?<GLBAssetModel asset={asset}/>:<ProceduralAssetModel asset={asset}/>;
 }
 function EditorItem({item,asset,selected,tool,snap,preview,active,reached,onActivate,onSelect,onTransform}:{
   item:EditorObject;asset:BuildAsset;selected:boolean;tool:EditorTool;snap:boolean;
