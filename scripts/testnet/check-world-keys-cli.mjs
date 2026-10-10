@@ -33,7 +33,7 @@ try {
   const tokenAddress=receipt.contractAddress;
   await mkdir(join(workspace,'deployments'));
   const fixturePath=join(workspace,'deployments/robinhood-testnet.json');
-  const goodFixture=JSON.stringify({chainId:46630,testnetOnly:true,token:tokenAddress});
+  const goodFixture=JSON.stringify({chainId:46630,testnetOnly:true,token:tokenAddress,codeHash:keccak256(await reader.getCode({address:tokenAddress}))});
   await writeFile(fixturePath,goodFixture);
   const walletPath=join(workspace,'test-wallet.json');
   await writeFile(walletPath,JSON.stringify({address:account.address,privateKey:walletData[0].secretKey}),{mode:0o600});
@@ -54,6 +54,8 @@ try {
   await rejectWith(deployScript,[],'CTRL_TESTNET_WALLET_FILE_REQUIRED',{CTRL_TESTNET_WALLET_FILE:''});
   await writeFile(fixturePath,JSON.stringify({chainId:46630,testnetOnly:true,token:'0x0000000000000000000000000000000000001234'}));
   await rejectWith(deployScript,[],'TOKEN_CONTRACT_NOT_FOUND');
+  await writeFile(fixturePath,JSON.stringify({...JSON.parse(goodFixture),codeHash:'0x'+'bb'.repeat(32)}));
+  await rejectWith(deployScript,[],'TOKEN_FIXTURE_CODE_HASH_MISMATCH');
   await writeFile(fixturePath,goodFixture);
   otherServer=ganache.server({chain:{chainId:4663},logging:{quiet:true}});
   await otherServer.listen(0,'127.0.0.1');
