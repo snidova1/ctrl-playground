@@ -37,7 +37,7 @@ try {
   await writeFile(fixturePath,goodFixture);
   const walletPath=join(workspace,'test-wallet.json');
   await writeFile(walletPath,JSON.stringify({address:account.address,privateKey:walletData[0].secretKey}),{mode:0o600});
-  const env={...process.env,CTRL_TESTNET_RPC_URL:url,CTRL_TESTNET_WALLET_FILE:walletPath,CTRL_KEYS_TREASURY:treasury.address,CTRL_KEYS_CURVE_UNIT_WEI:'1000000000000000'};
+  const env={...process.env,CTRL_TESTNET_RPC_URL:url,CTRL_TESTNET_WALLET_FILE:walletPath,CTRL_KEYS_TREASURY:treasury.address,CTRL_KEYS_CURVE_UNIT_WEI:'1000000000000000',CTRL_KEYS_DEBUG:'1'};
   async function invoke(file,args=[],extra={}) {
     try {
       const r=await execFileAsync(process.execPath,[file,...args],{cwd:workspace,env:{...env,...extra},timeout:60000,maxBuffer:1000000});
