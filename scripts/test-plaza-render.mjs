@@ -114,7 +114,7 @@ await page.getByRole('button',{name:/Get a drink/}).click();await page.getByText
   await page.getByText('You · VRM preview',{exact:true}).waitFor({timeout:90000});
   await page.getByRole('button',{name:'Close panel',exact:true}).click();
   await page.screenshot({path:`test-results/${prefix}-quality-low.png`});
-  // Fail only the reviewed model fetch, prove MIO fallback and successful retry.
+  // Fail only the reviewed model fetch, prove the explicit VRoid error and successful retry.
   await page.route('**/plaza/characters/victoria-desktop.vrm',r=>r.fulfill({status:503,body:'QA unavailable'}));
   await page.getByRole('button',{name:'Settings',exact:true}).click();
   await page.getByRole('combobox',{name:/Graphics/}).selectOption('high');
@@ -125,9 +125,10 @@ await page.getByRole('button',{name:/Get a drink/}).click();await page.getByText
   await page.getByRole('button',{name:'Retry character',exact:true}).click();
   await page.getByText('You · VRM preview',{exact:true}).waitFor({timeout:90000});
  }
- if(preview){assert(assets.includes('/plaza/characters/victoria-'+(mobile?'mobile':'desktop')+'.vrm'));assert(assets.includes('/plaza/characters/humanoid-motions.glb'));}else assert.deepEqual(assets,[], 'Default Playground must not load the VRM candidate');
+ assert(assets.includes('/plaza/characters/victoria-'+(mobile?'mobile':'desktop')+'.vrm'));
+ assert(assets.includes('/plaza/characters/humanoid-motions.glb'));
  assert.deepEqual(errors,[]);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
- report.push({device:label,passed:true,checks:boundaryOnly?['WebGL render','quality switch','MIO fallback','successful retry','no runtime errors','no horizontal overflow']:['WebGL render',preview?'VRM avatar':'MIO avatar','guest session','build','test animation','place','reload persistence','independent visitor sharing','owner removal','no runtime errors','no horizontal overflow']});
+ report.push({device:label,passed:true,checks:boundaryOnly?['WebGL render','quality switch','explicit VRoid error','successful retry','no runtime errors','no horizontal overflow']:['WebGL render','VRoid avatar','guest session','build','test animation','place','reload persistence','independent visitor sharing','owner removal','no runtime errors','no horizontal overflow']});
  await context.close();console.log(`${label}: passed`);
 }}catch(error){for(const context of browser.contexts()){const p=context.pages()[0];if(p)await p.screenshot({path:`test-results/${prefix}-failure.png`}).catch(()=>{});}throw error;}finally{await browser.close();await writeFile(`test-results/${prefix}-render-report.json`,JSON.stringify(report,null,2));}

@@ -5,7 +5,7 @@
     "checks": [
       "WebGL render",
       "quality switch",
-      "MIO fallback",
+      "explicit VRoid error",
       "successful retry",
       "no runtime errors",
       "no horizontal overflow"

@@ -1,0 +1,53 @@
+name: CTRL Master Integration
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [work/master-integration]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ctrl-master-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  integrated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      WRANGLER_SEND_METRICS: 'false'
+      CTRL_TEST_PRODUCTION: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm build:next
+      - run: pnpm build
+      - run: node scripts/qa/check-build-assets.mjs
+      - run: node --test tests/qa/*.test.mjs tools/creative-assets/*.test.mjs
+      - run: node scripts/keys/check-contract.mjs
+      - run: node scripts/keys/check-service.mjs
+      - run: node scripts/testnet/check-world-keys.mjs
+      - run: node scripts/testnet/check-world-keys-cli.mjs
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright test --config playwright.editor.config.ts
+      - run: pnpm exec playwright test --config playwright.entry.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ctrl-integrated-browser-evidence
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

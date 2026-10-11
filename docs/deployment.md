@@ -12,6 +12,8 @@ Demo deployment needs no paid credentials. It uses `CTRL_MODE=mock` (default), r
 
 ## Live runtime values
 
+Reown/WalletConnect: supply `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` at build time and in Sites; ignored `.env.local` works in Next and Vinext. User's project configured locally/hosted. Keep values out of tracked source and allow the actual public origin in Reown dashboard. Injected wallets remain independent; real-phone QR pairing is not attested by isolated injected-wallet browser tests.
+
 | Variable | Purpose |
 | --- | --- |
 | `CTRL_MODE` | `mock`, `development`, or `production` |
