@@ -26,7 +26,7 @@ export const plazaActions=sqliteTable('plaza_actions',{id:text('id').primaryKey(
 
 export const habitatProfiles = sqliteTable('habitat_profiles', {
   id: text('id').primaryKey(), name: text('name').notNull(), character: text('character').notNull(),
-  variant: text('variant').notNull(), createdAt: integer('created_at').notNull(),
+  variant: text('variant').notNull(), appearance: text('appearance').notNull().default('{}'), createdAt: integer('created_at').notNull(),
 });
 export const habitatWorlds = sqliteTable('habitat_worlds', {
   id: text('id').primaryKey(), ownerId: text('owner_id').notNull().unique().references(() => habitatProfiles.id),

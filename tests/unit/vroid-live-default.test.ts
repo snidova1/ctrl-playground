@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {readFileSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 const read=(p:string)=>readFileSync(resolve(process.cwd(),p),'utf8');
 describe('Approved VRoid-only active avatar deployment',()=>{
@@ -21,5 +21,8 @@ describe('Approved VRoid-only active avatar deployment',()=>{
  });
  it('continues shipping the approved original VRM binaries on desktop and mobile',()=>{
   for(const asset of ['victoria-desktop.vrm','victoria-mobile.vrm','fumiriya-desktop.vrm','fumiriya-mobile.vrm'])expect(catalog).toContain(asset);
+ });
+ it('does not ship retired non-VRoid player assets or renderers',()=>{
+  for(const asset of ['features/plaza/avatar.tsx','public/plaza/models/mio.glb','public/plaza/models/maker.glb','public/plaza/models/worker.glb'])expect(existsSync(resolve(process.cwd(),asset)),asset).toBe(false);
  });
 });

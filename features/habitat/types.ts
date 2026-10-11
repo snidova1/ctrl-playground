@@ -1,4 +1,5 @@
 import {getBuildAsset} from '@/features/plaza/build-assets';
+import type {CharacterAppearance} from '@/features/plaza/characters/catalog';
 import {z} from 'zod';
 export const behaviorSchema=z.enum(['decoration','solid','seat','light','door','switch','spin','portal','checkpoint','finish']);
 export const worldObjectSchema=z.object({id:z.string().uuid(),assetId:z.string().min(1).max(100),name:z.string().trim().min(1).max(60),x:z.number().finite().min(-14).max(14),y:z.number().finite().min(0).max(8),z:z.number().finite().min(-8).max(12),rotation:z.number().finite().min(-100).max(100),scale:z.number().finite().min(.25).max(4),behavior:behaviorSchema,target:z.string().max(100).default('')}).strict();
@@ -6,7 +7,7 @@ export type WorldObject=z.infer<typeof worldObjectSchema>;
 export const layoutSchema=z.array(worldObjectSchema).max(120).superRefine((items,ctx)=>{const ids=new Set(items.map(o=>o.id));if(ids.size!==items.length)ctx.addIssue({code:'custom',message:'Duplicate object ID'});for(const o of items)if(o.behavior==='switch'&&o.target&&!ids.has(o.target))ctx.addIssue({code:'custom',message:'Switch target must exist in this world'});});
 export const motionSchema=z.object({running:z.boolean().default(false),airborne:z.boolean().default(false),jumpTime:z.number().min(0).max(.9).default(0),height:z.number().min(0).max(.8).default(0),landedAt:z.number().finite().default(0),sitting:z.boolean().default(false),celebrate:z.boolean().default(false),interactedAt:z.number().finite().default(0),moving:z.boolean().default(false)}).strict();
 export type WorldMotion=z.infer<typeof motionSchema>;
-export interface WorldProfile{id:string;name:string;character:string;variant:string;}
+export interface WorldProfile{id:string;name:string;character:string;variant:string;appearance?:CharacterAppearance;}
 export interface WorldRecord{id:string;ownerId:string;name:string;visibility:'public'|'private';revision:number;objects:WorldObject[];}
 export interface WorldPlayer extends WorldProfile{x:number;z:number;angle:number;motion:WorldMotion;}
 export interface WorldState{profile:WorldProfile|null;world:WorldRecord|null;homeId:string|null;canEdit:boolean;players:WorldPlayer[];states:Record<string,{active:boolean;usedAt:number}>;wallet:string|null;keyStatus:'not-deployed';worlds:{id:string;name:string;owner:string}[];}

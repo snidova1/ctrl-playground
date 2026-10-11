@@ -26,19 +26,19 @@ No paid credentials are needed to enter, walk, make/place/test objects or use th
 - Presence from actual independent sessions, shared persisted objects, owner-only deletion, interaction idempotency, server limits.
 - Public entry without a wallet; a holder passport and the existing signed EVM testnet wallet integration.
 - Server-only Orbio recipe endpoint, with strict schema validation, timeout and daily request limits. Missing credentials leave the free kit usable.
-- MIO: an animated adult toon explorer with a terracotta jacket, cobalt trousers, bob and crossbody satchel. [Asset pipeline and animation checks](docs/mio-avatar.md).
+- Victoria and Fumiriya VRoid characters with persistent, server-validated outfit, hair, eye and skin palettes.
 - Free CC0 Kenney and Quaternius assets, local files and documented provenance.
 
-## VRoid / VRM character study (not deployed)
+## VRoid / VRM characters
 
-The current default character remains MIO. A separate `/character-preview` uses the **same Playground**, camera, collision, workshop and API, with `@pixiv/three-vrm` and a licensed VRoid reference avatar. This candidate is not the approved final CTRL character.
+The active Common Ground and Habitat renderers use the approved Victoria and Fumiriya VRoid assets. Signed-wallet profiles persist an allowlisted appearance and replicate it to other visitors. The optional `/character-preview` route remains available for isolated renderer QA.
 
 ```sh
 CTRL_CHARACTER_PREVIEW=1 pnpm dev:next
 # Open http://localhost:3000/character-preview
 ```
 
-WASD/arrows walk, Shift runs, Space jumps; touch uses the existing joystick plus run/jump controls. E and the existing interaction buttons still work. The route returns 404 unless explicitly enabled. No public navigation or default avatar was replaced.
+WASD/arrows walk, Shift runs, Space jumps; touch uses the existing joystick plus run/jump controls. E and the existing interaction buttons still work. The route returns 404 unless explicitly enabled; the main application already uses VRoid.
 
 [VRoid pipeline, customization boundaries, tests and approval gate](docs/vrm-character-pipeline.md).
 

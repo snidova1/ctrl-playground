@@ -7,9 +7,9 @@ As of this change:
 - Common Ground previously used MIO on ordinary visits and for ALL remote visitors, even when preview mode demonstrated Victoria.
 - VrmAvatar previously rendered legacy MIO on VRM load failure. This change makes loading failures visible/retryable instead of deceptively switching visual identity.
 - Common Ground now renders VRM for own and remote visitors. Its standalone guest-session API still does not store each visitor's chosen gender/outfit. Remote guest users show the approved Victoria VRM, rather than inventing a profile API. The persistent Habitat uses the real per-player gender and colorway.
-- The original mio.glb and retired renderer may remain in the repository as a historical unreferenced asset for rollback/debugging; the playable player rendering paths do not import it. Removing binary files should be a separate explicitly-reviewed change.
+- The retired MIO, Maker and Worker binaries/renderers have been removed by explicit product-owner direction. They must not return as runtime assets or fallbacks.
 
-**Important limitations:** Proper hairstyle/outfit mesh swaps, VRM fitted garment assets and persisted wardrobe customization are **not implemented** by this patch. Current palette variants tint outfits; they are not distinct clothes. Use PR #10's reviewed research, check mesh binding/license compatibility and keep VRoid aesthetics.
+**Important limitations:** Profile appearance now persists the approved VRoid base plus allowlisted outfit, hair, eye and skin palettes. Palette variants tint authored materials; they are not distinct fitted clothes or hairstyle meshes. Any new binary from PR #10 research still needs license, mesh binding, optimization and mobile review.
 
 **QA/merge checklist:**
 1. Run `pnpm exec vitest run tests/unit/vroid-live-default.test.ts`; `pnpm lint`; `pnpm exec tsc --noEmit --target ES2020`.

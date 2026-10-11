@@ -1,26 +1,29 @@
 'use client';
-import {useEffect,useRef,useState,type MutableRefObject} from 'react';
+import {useEffect,useMemo,useRef,useState,type MutableRefObject} from 'react';
 import {Html} from '@react-three/drei';
 import {useFrame} from '@react-three/fiber';
 import {Group} from 'three';
 import type {Pose} from '../types';
 import {loadCharacter,disposeVrm,type LoadedCharacter} from './loader';
-import {previewCharacter,validVariant,type CharacterDefinition,type CharacterMotion,type CharacterQuality} from './catalog';
-import {applyCharacterColorway} from './appearance';
+import {maleCharacter,normalizeAppearance,previewCharacter,type CharacterAppearance,type CharacterDefinition,type CharacterMotion,type CharacterQuality} from './catalog';
+import {applyCharacterAppearance} from './appearance';
 import {HumanoidAnimator} from './animation';
-interface Props {definition?:CharacterDefinition;variant?:string;local?:boolean;htmlPortal?:MutableRefObject<HTMLDivElement|null>;name:string;pose:Pose;quality:CharacterQuality;motion:MutableRefObject<CharacterMotion>;sitting:boolean;celebrate:boolean;interactedAt:number;seatLift:number;}
+interface Props {definition?:CharacterDefinition;variant?:string;appearance?:CharacterAppearance;local?:boolean;htmlPortal?:MutableRefObject<HTMLDivElement|null>;name:string;pose:Pose;quality:CharacterQuality;motion:MutableRefObject<CharacterMotion>;sitting:boolean;celebrate:boolean;interactedAt:number;seatLift:number;}
 export default function VrmAvatar(props:Props) {
   const [character,setCharacter]=useState<LoadedCharacter|null>(null),[error,setError]=useState(''),[attempt,setAttempt]=useState(0);
   const firstFrame=useRef(true),[initialAngle]=useState(props.pose.angle);
   const root=useRef<Group>(null),animator=useRef<HumanoidAnimator|null>(null),[initial]=useState<[number,number,number]>([props.pose.x,0,props.pose.z]);
+  const definition=props.definition??previewCharacter;
+  const gender=props.appearance?.gender??(definition.id===maleCharacter.id?'male':'female');
+  const appearance=useMemo(()=>normalizeAppearance(props.appearance,gender,props.variant??'original'),[props.appearance,gender,props.variant]);
   useEffect(()=>{
     const abort=new AbortController();let loaded:LoadedCharacter|undefined;
-    loadCharacter(props.definition??previewCharacter,props.quality,abort.signal).then(result=>{
+    loadCharacter(definition,props.quality,abort.signal).then(result=>{
       if(abort.signal.aborted){disposeVrm(result.vrm);return;}
-      applyCharacterColorway(result.vrm,validVariant(props.variant??'original'));loaded=result;firstFrame.current=true;animator.current=new HumanoidAnimator(result);setCharacter(result);setError('');
+      applyCharacterAppearance(result.vrm,appearance);loaded=result;firstFrame.current=true;animator.current=new HumanoidAnimator(result);setCharacter(result);setError('');
     }).catch(e=>{if(!abort.signal.aborted)setError(e instanceof Error?e.message:'Character could not load.');});
     return()=>{abort.abort();animator.current?.dispose();animator.current=null;if(loaded)disposeVrm(loaded.vrm);};
-  },[props.quality,props.definition,props.variant,attempt]);
+  },[props.quality,definition,appearance,attempt]);
   useFrame((_,delta)=>{
     if(!character||!animator.current||!root.current)return;
     const dt=Math.min(delta,.05),r=root.current,p=props.pose;

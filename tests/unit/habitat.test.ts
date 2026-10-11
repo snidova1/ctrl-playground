@@ -4,6 +4,7 @@ import {handleApi} from '@/server/api';
 import {exec, one} from '@/db';
 import {BUILD_ASSETS} from '@/features/plaza/build-assets';
 import {motionSchema, type HabitatState, type WorldObject} from '@/domain/habitat';
+import {eyeVariants,hairVariants,outfitVariants,skinVariants} from '@/features/plaza/characters/catalog';
 
 const origin = 'http://localhost:3000';
 function call(path: string, cookie = '', data?: unknown, method = data === undefined ? 'GET' : 'POST', extra: Record<string, string> = {}) {
@@ -47,11 +48,24 @@ describe('persistent wallet worlds through real API and SQLite', () => {
     const updated = await call('habitat/profile', p.cookie, {name: 'Updated', character: 'male'});
     const state = await updated.json() as HabitatState;
     expect(state.homeId).toBe(p.world.id);
-    expect(state.profile?.variant).toBe(p.profile.variant);
+    expect(outfitVariants.map(v=>v.id)).toContain(state.profile?.appearance?.variantId);
+    expect(hairVariants.map(v=>v.id)).toContain(state.profile?.appearance?.hairId);
+    expect(eyeVariants.map(v=>v.id)).toContain(state.profile?.appearance?.eyeId);
+    expect(skinVariants.map(v=>v.id)).toContain(state.profile?.appearance?.skinId);
+    expect(state.profile?.appearance?.gender).toBe('male');
     expect(state.profile?.loadout.characterId).toBe('vroid-fumiriya');
+    expect(state.profile?.loadout.appearance).toEqual(state.profile?.appearance);
     expect((await load(p.cookie, p.world.id)).profile).toEqual(state.profile);
     expect((await one<{n: number}>('SELECT COUNT(*) AS n FROM habitat_worlds WHERE owner_id=?', p.id))?.n).toBe(1);
+    const chosen={version:1 as const,gender:'female' as const,variantId:'sage' as const,hairId:'auburn' as const,eyeId:'jade' as const,skinId:'warm' as const};
+    const saved=await (await call('habitat/profile',p.cookie,{name:'Styled',character:'female',variant:'sage',appearance:chosen})).json() as HabitatState;
+    expect(saved.profile?.appearance).toEqual(chosen);
+    expect((await load(p.cookie,p.world.id)).profile?.appearance).toEqual(chosen);
+    const randomized=await (await call('habitat/profile',p.cookie,{name:'Randomized',character:'female',randomize:true})).json() as HabitatState;
+    expect(randomized.profile?.appearance).not.toEqual(chosen);
+    expect(randomized.profile?.appearance?.gender).toBe('female');
     expect((await call('habitat/profile', p.cookie, {name: 'Invalid', character: 'male', variant: 'remote-url'})).status).toBe(422);
+    expect((await call('habitat/profile',p.cookie,{name:'Invalid',character:'female',appearance:{...chosen,hairId:'remote-url'}})).status).toBe(422);
     expect((await call('habitat/profile', p.cookie, {name: 'Invalid', character: 'male', ownerId: 'other'})).status).toBe(422);
   });
   it('hides private worlds, allows public visitors and separates editor from owner privileges', async () => {

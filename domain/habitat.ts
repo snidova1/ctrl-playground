@@ -28,6 +28,14 @@ export const characterProfileInputSchema = z.object({
   name: z.string().trim().min(2).max(20).regex(/^[\p{L}\p{N} _-]+$/u),
   character: z.enum(['female', 'male']),
   variant: z.enum(['original', 'sage', 'clay', 'slate']).optional(),
+  appearance: z.object({
+    version:z.literal(1),
+    gender:z.enum(['female','male']),
+    variantId:z.enum(['original','sage','clay','slate']),
+    hairId:z.enum(['source','espresso','ink','auburn','silver']),
+    eyeId:z.enum(['source','hazel','ocean','jade','violet']),
+    skinId:z.enum(['source','warm','rose','deep']),
+  }).strict().optional(),
   randomize: z.boolean().optional(),
 }).strict();
 export type CharacterProfileInput = z.infer<typeof characterProfileInputSchema>;

@@ -10,6 +10,7 @@ const baseline = [
   '0002_legal_madame_masque.sql', '0003_personal_worlds.sql',
 ];
 const upgrade = '0004_habitat_permissions.sql';
+const appearanceUpgrade = '0005_character_appearance.sql';
 const directories: string[] = [];
 const sql = (name: string) => readFileSync(path.join(process.cwd(), 'drizzle', name), 'utf8');
 const quote = (name: string) => `"${name.replaceAll('"', '""')}"`;
@@ -109,9 +110,34 @@ describe('Habitat 0004 existing-database SQLite migration rehearsal', () => {
         if (table.name === 'ctrl_migrations') continue;
         expect(db.prepare(`SELECT ${table.columns.map(quote).join(',')} FROM ${quote(table.name)} ORDER BY rowid`).all(), table.name).toEqual(table.rows);
       }
-      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 5});
+      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 6});
+      expect(columns(db,'habitat_profiles')).toEqual(expect.arrayContaining([expect.objectContaining({name:'appearance',type:'TEXT',notnull:1,dflt_value:"'{}'"})]));
+      expect(db.prepare('SELECT id,appearance FROM habitat_profiles ORDER BY id').all()).toEqual([
+        {id:'wallet-member',appearance:'{}'},{id:'wallet-owner',appearance:'{}'},
+      ]);
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
     } finally {db.close();}
+  });
+
+  it('adds appearance after 0004 without changing existing worlds, profiles or presence',()=>{
+    const db=open(existingDatabase());
+    try{
+      apply(db,upgrade);
+      const before=snapshot(db);
+      apply(db,appearanceUpgrade);
+      for(const table of before){
+        if(table.name==='ctrl_migrations'||table.name==='habitat_profiles')continue;
+        expect(db.prepare(`SELECT ${table.columns.map(quote).join(',')} FROM ${quote(table.name)} ORDER BY rowid`).all(),table.name).toEqual(table.rows);
+      }
+      expect(db.prepare('SELECT id,name,character,variant,created_at FROM habitat_profiles ORDER BY rowid').all()).toEqual(
+        before.find(table=>table.name==='habitat_profiles')!.rows,
+      );
+      expect(db.prepare('SELECT id,appearance FROM habitat_profiles ORDER BY id').all()).toEqual([
+        {id:'wallet-member',appearance:'{}'},{id:'wallet-owner',appearance:'{}'},
+      ]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      expect(db.prepare('PRAGMA integrity_check').all()).toEqual([{integrity_check:'ok'}]);
+    }finally{db.close();}
   });
   it('applies actual 0000-0003, reopens seeded DB, and transactionally preserves every existing row through 0004', () => {
     const filename = existingDatabase();

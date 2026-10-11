@@ -5,7 +5,7 @@ import {settings} from '@/server/env';
 import {AppError, safeError} from '@/server/errors';
 import {collideWorld, type WorldProfile, type WorldObject} from '@/features/habitat/types';
 import {getBuildAsset} from '@/features/plaza/build-assets';
-import {characterCatalog, outfitVariants, validVariant} from '@/features/plaza/characters/catalog';
+import {characterCatalog, normalizeAppearance, seededAppearance, validVariant, type CharacterAppearance, type CharacterGender} from '@/features/plaza/characters/catalog';
 import {
   layoutSchema, motionSchema, worldIdSchema, worldEditorSavePayloadSchema,
   characterProfileInputSchema, poseInputSchema, presenceInputSchema,
@@ -21,6 +21,7 @@ import {readWorldKeys, prepareOwnerClaim, verifyOwnerClaim} from '@/server/keys/
 interface Principal {id: string; wallet: string}
 interface Row {id: string; owner_id: string; name: string; visibility: 'public' | 'private'; revision: number; layout: string}
 interface Presence {world_id: string; x: number; z: number; seen_at: number; session_id: string; sequence: number}
+interface ProfileRow extends Omit<WorldProfile,'appearance'>{appearance?:string}
 const TTL = 15000;
 const builtins = new Set(['ctrl-block', 'ctrl-door', 'ctrl-switch', 'ctrl-lamp', 'ctrl-seat', 'ctrl-portal', 'ctrl-marker']);
 const reply = (v: unknown, status = 200) => Response.json(v, {status, headers: {'Cache-Control': 'no-store'}});
@@ -34,9 +35,15 @@ async function principal(r: Request): Promise<Principal> {
   if (!user || user.demo || !user.wallet) throw new AppError('WALLET_SESSION_REQUIRED', 401, 'Sign a wallet session to use persistent personal worlds.');
   return {id: user.id, wallet: user.wallet};
 }
-function appearance(profile: WorldProfile): CharacterProfile {
-  const gender = profile.character === 'male' ? 'male' : 'female';
-  return {...profile, loadout: {version: 1, characterId: characterCatalog[gender].id, variantId: validVariant(profile.variant), accessories: []}};
+function parsedAppearance(profile:ProfileRow):CharacterAppearance{
+  const gender:CharacterGender=profile.character==='male'?'male':'female';
+  let saved:unknown;
+  try{saved=profile.appearance?JSON.parse(profile.appearance):undefined;}catch{saved=undefined;}
+  return normalizeAppearance(saved,gender,profile.variant);
+}
+function appearance(profile: ProfileRow): CharacterProfile {
+  const saved=parsedAppearance(profile),gender=saved.gender;
+  return {...profile,appearance:saved,variant:saved.variantId,loadout:{version:1,characterId:characterCatalog[gender].id,variantId:saved.variantId,appearance:saved,accessories:[]}};
 }
 async function permissions(w: Row, user: string): Promise<WorldPermissions> {
   if (w.owner_id === user) return {role: 'owner', canVisit: true, canEdit: true, canManage: true};
@@ -51,7 +58,7 @@ async function readWorld(id: string, user: string) {
   return {world, access};
 }
 async function state(user: Principal, worldId?: string): Promise<HabitatState> {
-  const profile = await one<WorldProfile>('SELECT id,name,character,variant FROM habitat_profiles WHERE id=?', user.id);
+  const profile = await one<ProfileRow>('SELECT id,name,character,variant,appearance FROM habitat_profiles WHERE id=?', user.id);
   const home = await one<Row>('SELECT * FROM habitat_worlds WHERE owner_id=?', user.id);
   const location = await one<Presence>('SELECT * FROM habitat_presence WHERE profile_id=? AND seen_at>?', user.id, Date.now() - TTL);
   let selected: Awaited<ReturnType<typeof readWorld>> | null = null;
@@ -63,8 +70,8 @@ async function state(user: Principal, worldId?: string): Promise<HabitatState> {
   if (!selected && home) selected = await readWorld(home.id, user.id);
   const w = selected?.world;
   // Recheck private-world ACLs when reading presence, including after revocation.
-  const players = w ? await query<WorldProfile & {x: number; z: number; angle: number; motion: string}>(
-    `SELECT p.id,p.name,p.character,p.variant,s.x,s.z,s.angle,s.motion FROM habitat_presence s
+  const players = w ? await query<ProfileRow & {x: number; z: number; angle: number; motion: string}>(
+    `SELECT p.id,p.name,p.character,p.variant,p.appearance,s.x,s.z,s.angle,s.motion FROM habitat_presence s
      JOIN habitat_profiles p ON p.id=s.profile_id JOIN habitat_worlds w ON w.id=s.world_id
      WHERE s.world_id=? AND s.seen_at>? AND (w.visibility='public' OR w.owner_id=p.id OR EXISTS
        (SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=p.id))
@@ -143,18 +150,21 @@ export async function handleHabitat(r: Request, path: string[]) {
     if (r.method === 'GET' && p === 'state') return reply(await state(user));
     if (r.method === 'GET' && p === 'worlds') return reply({worlds: (await state(user)).worlds});
     if (r.method === 'GET' && p === 'profile') {
-      const profile = await one<WorldProfile>('SELECT id,name,character,variant FROM habitat_profiles WHERE id=?', user.id);
+      const profile = await one<ProfileRow>('SELECT id,name,character,variant,appearance FROM habitat_profiles WHERE id=?', user.id);
       return reply({profile: profile ? appearance(profile) : null});
     }
     if (r.method === 'POST' && p === 'profile') {
       const data = characterProfileInputSchema.parse(await body(r));
-      const previous = await one<WorldProfile>('SELECT * FROM habitat_profiles WHERE id=?', user.id);
-      const random = () => outfitVariants[crypto.getRandomValues(new Uint32Array(1))[0] % outfitVariants.length].id;
-      const variant = data.randomize ? random() : data.variant ?? (previous ? validVariant(previous.variant) : random());
+      const previous = await one<ProfileRow>('SELECT * FROM habitat_profiles WHERE id=?', user.id);
+      const gender:CharacterGender=data.character;
+      const randomized=()=>seededAppearance(crypto.randomUUID(),gender);
+      const saved=data.randomize?randomized():data.appearance?{...data.appearance,gender}:previous&&previous.character===gender?parsedAppearance(previous):seededAppearance(crypto.randomUUID(),gender);
+      const resolved:CharacterAppearance={...saved,variantId:data.variant?validVariant(data.variant):saved.variantId};
+      const variant = resolved.variantId;
       const now = Date.now();
       await batch([
-        statement(`INSERT INTO habitat_profiles(id,name,character,variant,created_at) VALUES(?,?,?,?,?)
-          ON CONFLICT(id) DO UPDATE SET name=excluded.name,character=excluded.character,variant=excluded.variant`, user.id, data.name, data.character, variant, now),
+        statement(`INSERT INTO habitat_profiles(id,name,character,variant,appearance,created_at) VALUES(?,?,?,?,?,?)
+          ON CONFLICT(id) DO UPDATE SET name=excluded.name,character=excluded.character,variant=excluded.variant,appearance=excluded.appearance`, user.id, data.name, data.character, variant, JSON.stringify({...resolved,variantId:variant}), now),
         statement(`INSERT OR IGNORE INTO habitat_worlds(id,owner_id,name,visibility,layout,created_at,updated_at)
           VALUES(?,?,?,'private','[]',?,?)`, crypto.randomUUID(), user.id, `${data.name}'s place`, now, now),
       ]);
