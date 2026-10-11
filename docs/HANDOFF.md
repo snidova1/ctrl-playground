@@ -31,4 +31,8 @@ Runtime checkpoint: `27b6daf6c0ca139640d7d8ddffc3ab540662a67e` on `work/visual-i
 - Current customization is approved VRoid material variation, not fitted modular garment meshes. New character meshes still require explicit license, VRM rig compatibility, optimization, and mobile testing.
 - No merge to `main`, public key deployment, mainnet action, or paid transaction has been performed.
 
+## Publication
+
+Public Site version **21** deploys source `7ef0dcb89ccc52935f4aa5941559cb671d4d553b`: https://ctrl-public-machine.raisecompanyro.chatgpt.site (deployment `appgdep_6acadb491cbc81919970ae100124c430`, status `succeeded`). A production smoke check confirmed the app shell, wallet state, onboarding copy, panels, and Common Ground entry render. The managed cloud browser exposes no WebGL device (`GL_RENDERER=Disabled`), so its canvas correctly showed the render fallback; desktop/mobile WebGL behavior is covered by the passing Playwright suites above.
+
 Next concrete task after review is to ingest additional approved fitted VRoid exports behind the existing stable appearance IDs, then extend the same persistence contract without accepting remote model URLs.
