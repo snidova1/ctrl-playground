@@ -43,6 +43,7 @@ jobs:
       - run: node scripts/testnet/check-world-keys-cli.mjs
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm exec playwright test --config playwright.editor.config.ts
+      - run: pnpm exec playwright test --config playwright.entry.config.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:

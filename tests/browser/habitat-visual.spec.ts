@@ -1,33 +1,12 @@
 import {test,expect,type Page,type Locator} from '@playwright/test';
-import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
-import type {Hex} from 'viem';
 import type {HabitatState} from '@/domain/habitat';
+import {installSignedWallet} from './helpers/wallet';
 
 /**
  * VISUAL acceptance test: valid GLB metadata + an HTML canvas are NOT enough.
  * Compare actual browser screenshots of VRM turning and furnished home versus
  * the exact same owned world after clearing its objects.
  */
-async function installSignedWallet(page:Page) {
-  const wallet=privateKeyToAccount(generatePrivateKey());
-  await page.exposeBinding('__visualSign',async (_source,raw:string)=>wallet.signMessage({message:{raw:raw as Hex}}));
-  await page.addInitScript(({address})=>{
-    const provider={
-      isMetaMask:true,on(){},removeListener(){},
-      async request({method,params}:{method:string;params?:string[]}){
-        if(method==='eth_chainId')return '0xb626';
-        if(method==='net_version')return '46630';
-        if(method==='eth_accounts'||method==='eth_requestAccounts')return [address];
-        if(method==='wallet_requestPermissions')return [{parentCapability:'eth_accounts'}];
-        if(method==='wallet_getPermissions')return [{parentCapability:'eth_accounts'}];
-        if(method==='personal_sign')return (window as unknown as {__visualSign:(raw:string)=>Promise<string>}).__visualSign(params![0]);
-        throw Error('Unsupported isolated wallet method: '+method);
-      }
-    };
-    Object.defineProperty(window,'ethereum',{value:provider,configurable:true});
-  },{address:wallet.address});
-  return wallet;
-}
 async function press(page:Page,locator:Locator) {
   if(await page.evaluate(()=>matchMedia('(pointer:coarse)').matches))await locator.tap();
   else await locator.click();
@@ -74,8 +53,8 @@ test('wallet player sees a rotating real VRoid preview and a visibly furnished, 
 
   await installSignedWallet(page);
   await page.goto('/worlds/editor');
-  await press(page,page.getByRole('button',{name:/INJECTED|METAMASK/i}));
-  await press(page,page.getByRole('button',{name:'SIGN SESSION CHALLENGE'}));
+  await press(page,page.locator('.wallet-options').getByRole('button',{name:'Connect wallet',exact:true}));
+  await press(page,page.getByRole('button',{name:'Sign in to Habitat',exact:true}));
   await expect(page.getByRole('button',{name:'Enter my world draft'})).toBeVisible({timeout:45000});
   const avatar=page.locator('.hb-avatar-preview canvas');
   await expect(avatar).toBeVisible({timeout:60000});

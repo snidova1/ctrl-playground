@@ -1,40 +1,16 @@
 import {test, expect, type Page, type Locator} from '@playwright/test';
-import {generatePrivateKey, privateKeyToAccount} from 'viem/accounts';
 import type {HabitatState} from '@/domain/habitat';
-
-// Only the isolated browser test provides this wallet. The real nonce and
-// signature endpoints validate every session; no auth or application routes are mocked.
-async function installWallet(page: Page) {
-  const account = privateKeyToAccount(generatePrivateKey());
-  await page.exposeBinding('__ctrlWalletSign', async (_source, raw: `0x${string}`) => account.signMessage({message: {raw}}));
-  await page.addInitScript(({wallet}) => {
-    const provider = {
-      isMetaMask: true,
-      on() {}, removeListener() {},
-      async request({method, params}: {method: string; params?: string[]}) {
-        if (method === 'eth_chainId') return '0xb626';
-        if (method === 'net_version') return '46630';
-        if (method === 'eth_accounts' || method === 'eth_requestAccounts') return [wallet];
-        if (method === 'wallet_requestPermissions') return [{parentCapability: 'eth_accounts'}];
-        if (method === 'wallet_getPermissions') return [{parentCapability: 'eth_accounts'}];
-        if (method === 'personal_sign') return (window as unknown as {__ctrlWalletSign: (raw: string) => Promise<string>}).__ctrlWalletSign(params![0]);
-        throw new Error(`Unsupported test-wallet method: ${method}`);
-      },
-    };
-    Object.defineProperty(window, 'ethereum', {value: provider, configurable: true});
-  }, {wallet: account.address});
-  return account;
-}
+import {installSignedWallet} from './helpers/wallet';
 async function pointer(page: Page, locator: Locator) {
   if (await page.evaluate(() => matchMedia('(pointer:coarse)').matches)) await locator.tap();
   else await locator.click();
 }
 async function openWorld(page: Page, route = '/worlds/editor', preserveStarter = false) {
-  await installWallet(page);
+  await installSignedWallet(page);
   await page.goto(route);
   await expect(page.locator('.hb-stage canvas')).toBeVisible({timeout: 60000});
-  await pointer(page, page.getByRole('button', {name: /INJECTED|METAMASK/i}));
-  await pointer(page, page.getByRole('button', {name: 'SIGN SESSION CHALLENGE'}));
+  await pointer(page, page.locator('.wallet-options').getByRole('button', {name: 'Connect wallet', exact: true}));
+  await pointer(page, page.getByRole('button', {name: 'Sign in to Habitat', exact: true}));
   await expect(page.getByRole('button', {name: 'Enter my world draft'})).toBeVisible({timeout: 30000});
   await page.getByRole('textbox', {name: 'Name', exact: true}).fill('CTRL Browser Builder');
   await expect(page.locator('.hb-avatar-preview canvas')).toBeVisible({timeout: 60000});
