@@ -19,7 +19,7 @@ jobs:
       NEXT_TELEMETRY_DISABLED: '1'
       CTRL_MODE: mock
       CTRL_BUILD_TARGET: node
-      APP_ORIGIN: http://127.0.0.1:3106
+      APP_ORIGIN: http://localhost:3106
       WRANGLER_SEND_METRICS: 'false'
     steps:
       - name: Checkout Hermes visual branch snapshot
@@ -47,7 +47,7 @@ jobs:
           nohup pnpm dev:next --port 3106 > test-results/server.log 2>&1 < /dev/null &
           echo $! > test-results/server.pid
           for i in $(seq 1 90); do
-            if curl --silent --fail --output /dev/null http://127.0.0.1:3106; then exit 0; fi
+            if curl --silent --fail --output /dev/null http://localhost:3106; then exit 0; fi
             sleep 2
           done
           tail -n 100 test-results/server.log
@@ -65,7 +65,7 @@ jobs:
             const messages=[];
             page.on('pageerror',e=>messages.push(e.message));
             try {
-              await page.goto('http://127.0.0.1:3106/',{waitUntil:'domcontentloaded',timeout:120000});
+              await page.goto('http://localhost:3106/',{waitUntil:'domcontentloaded',timeout:120000});
               const enter=page.getByRole('button',{name:'Enter guest workshop',exact:true});
               await enter.waitFor({timeout:60000});
               await enter.click();
