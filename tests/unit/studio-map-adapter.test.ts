@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import {describe,expect,it} from 'vitest';
 import {previewStudioImport} from '@/features/habitat/studio-map-adapter';
 
@@ -6,6 +7,15 @@ const site=(slug:string,x=0,z=0,rest:Record<string,unknown>={})=>({
 });
 
 describe('Three.js Assets Studio -> CTRL draft experiment',()=>{
+  it('imports the bundled 18-object Common Ground garden fixture',()=>{
+    const fixture=JSON.parse(readFileSync('examples/studio/ctrl-common-ground-garden.mapproj.json','utf8')) as unknown;
+    const result=previewStudioImport(fixture);
+    expect(result.total).toBe(18);
+    expect(result.objects).toHaveLength(18);
+    expect(result.skipped).toEqual([]);
+    expect(result.objects.every(o=>o.x>=-14&&o.x<=14&&o.z>=-8&&o.z<=12)).toBe(true);
+  });
+
   it('maps approved Studio JSON slugs to locally bundled assets',()=>{
     const result=previewStudioImport({
       format:'mapproj',version:1,placements:[
