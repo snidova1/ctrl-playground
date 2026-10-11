@@ -97,6 +97,11 @@ test('wallet player sees a rotating real VRoid preview and a visibly furnished, 
   console.log('VRM visible rotation pixel-change:',(rotationDelta*100).toFixed(2)+'%');
   expect(rotationDelta,'The avatar preview must visibly change when the 3D model rotates').toBeGreaterThan(.025);
 
+  await press(page,page.getByRole('button',{name:'Female',exact:true}));
+  await press(page,page.getByRole('button',{name:'Outfit: Sage'}));
+  await press(page,page.getByRole('button',{name:'Hair: Auburn'}));
+  await press(page,page.getByRole('button',{name:'Eyes: Jade'}));
+  await press(page,page.getByRole('button',{name:'Skin: Warm'}));
   await page.getByRole('textbox',{name:'Name',exact:true}).fill('Visible Home');
   await press(page,page.getByRole('button',{name:'Enter my world draft'}));
   await expect(page.getByRole('button',{name:'Build my world +'})).toBeVisible({timeout:45000});
@@ -105,6 +110,8 @@ test('wallet player sees a rotating real VRoid preview and a visibly furnished, 
   expect(response.status()).toBe(200);
   const initial=await response.json() as HabitatState;
   expect(initial.wallet).toMatch(/^0x/);
+  expect(initial.profile?.appearance).toEqual({version:1,gender:'female',variantId:'sage',hairId:'auburn',eyeId:'jade',skinId:'warm'});
+  expect(initial.profile?.loadout.appearance).toEqual(initial.profile?.appearance);
   expect(initial.world?.objects.length,'Starter layout must persist on wallet-owned home').toBeGreaterThan(20);
   expect(initial.world?.objects.some(o=>o.behavior==='seat')).toBe(true);
   expect(initial.world?.objects.some(o=>o.assetId.includes('tree'))).toBe(true);
@@ -125,6 +132,7 @@ test('wallet player sees a rotating real VRoid preview and a visibly furnished, 
   await expect(page.getByRole('button',{name:'Build my world +'})).toBeVisible({timeout:45000});
   const afterClear=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
   expect(afterClear.world?.objects).toHaveLength(0);
+  expect(afterClear.profile?.appearance).toEqual(initial.profile?.appearance);
   await page.waitForTimeout(1300);
   const emptyCanvas=page.locator('.hb-stage canvas').first();
   const emptyA=await emptyCanvas.screenshot({path:test.info().outputPath('intentionally-empty-control-world.png')});

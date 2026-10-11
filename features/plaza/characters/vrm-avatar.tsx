@@ -16,14 +16,17 @@ export default function VrmAvatar(props:Props) {
   const definition=props.definition??previewCharacter;
   const gender=props.appearance?.gender??(definition.id===maleCharacter.id?'male':'female');
   const appearance=useMemo(()=>normalizeAppearance(props.appearance,gender,props.variant??'original'),[props.appearance,gender,props.variant]);
+  const appearanceRef=useRef(appearance);
+  useEffect(()=>{appearanceRef.current=appearance;},[appearance]);
   useEffect(()=>{
     const abort=new AbortController();let loaded:LoadedCharacter|undefined;
     loadCharacter(definition,props.quality,abort.signal).then(result=>{
       if(abort.signal.aborted){disposeVrm(result.vrm);return;}
-      applyCharacterAppearance(result.vrm,appearance);loaded=result;firstFrame.current=true;animator.current=new HumanoidAnimator(result);setCharacter(result);setError('');
+      applyCharacterAppearance(result.vrm,appearanceRef.current);loaded=result;firstFrame.current=true;animator.current=new HumanoidAnimator(result);setCharacter(result);setError('');
     }).catch(e=>{if(!abort.signal.aborted)setError(e instanceof Error?e.message:'Character could not load.');});
     return()=>{abort.abort();animator.current?.dispose();animator.current=null;if(loaded)disposeVrm(loaded.vrm);};
-  },[props.quality,definition,appearance,attempt]);
+  },[props.quality,definition,attempt]);
+  useEffect(()=>{if(character)applyCharacterAppearance(character.vrm,appearance);},[character,appearance]);
   useFrame((_,delta)=>{
     if(!character||!animator.current||!root.current)return;
     const dt=Math.min(delta,.05),r=root.current,p=props.pose;
@@ -36,6 +39,6 @@ export default function VrmAvatar(props:Props) {
     animator.current.update(delta,{...props,moving:p.moving,motion:props.motion.current});
   });
   if(error)return <Html portal={props.htmlPortal?.current?{current:props.htmlPortal.current}:undefined} position={[props.pose.x,2.5,props.pose.z]} center><div className='pl-character-error' role='alert'><strong>VRoid character unavailable</strong><p>{error}</p><button onClick={()=>{setError('');setCharacter(null);setAttempt(v=>v+1);}}>Retry VRoid character</button></div></Html>;
-  if(!character)return <Html portal={props.htmlPortal?.current?{current:props.htmlPortal.current}:undefined} position={[props.pose.x,1.3,props.pose.z]} center><span className='pl-preview-label' role='status'>Preparing character…</span></Html>;
+  if(!character)return null;
   return <group ref={root} position={initial} rotation={[0,initialAngle,0]}><group scale={character.scale} position={[0,character.floor,0]}><primitive object={character.vrm.scene} dispose={null}/></group><Html portal={props.htmlPortal?.current?{current:props.htmlPortal.current}:undefined} position={[0,2.1,0]} center distanceFactor={9} zIndexRange={[10,0]} style={{pointerEvents:'none'}}><span className='pl-name'>{props.local===false?props.name:'You'}</span></Html></group>;
 }

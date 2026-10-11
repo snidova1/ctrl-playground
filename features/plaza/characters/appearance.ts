@@ -2,6 +2,8 @@ import {Color, Mesh, type ColorRepresentation} from 'three';
 import {MToonMaterial, type VRM} from '@pixiv/three-vrm';
 import {eyeVariants,hairVariants,outfitVariants,skinVariants,type CharacterAppearance,type OutfitVariantId} from './catalog';
 
+const materialBase=new WeakMap<MToonMaterial,{color:Color;shade:Color}>();
+
 /** Apply once to each freshly loaded VRM. Does not recolor skin/hair or mutate shared assets. */
 export function applyCharacterColorway(vrm: VRM, variantId: OutfitVariantId): void {
   applyCharacterAppearance(vrm,{version:1,gender:'female',variantId,hairId:'source',eyeId:'source',skinId:'source'});
@@ -19,6 +21,10 @@ export function applyCharacterAppearance(vrm:VRM,appearance:CharacterAppearance)
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
       if (!(material instanceof MToonMaterial) || visited.has(material)) continue;
       visited.add(material);
+      const base=materialBase.get(material)??{color:material.color.clone(),shade:material.shadeColorFactor.clone()};
+      materialBase.set(material,base);
+      material.color.copy(base.color);
+      material.shadeColorFactor.copy(base.shade);
       const source=/EyeIris/i.test(material.name)?eye.tint:/HAIR/i.test(material.name)?hair.tint:/SKIN/i.test(material.name)?skin.tint:/CLOTH/i.test(material.name)?outfit.clothTint:null;
       if(!source||source==='#ffffff')continue;
       const tint = new Color(source as ColorRepresentation);
