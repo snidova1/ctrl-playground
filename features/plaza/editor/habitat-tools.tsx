@@ -3,6 +3,7 @@
 import {useMemo,useState} from 'react';
 import {BUILD_ASSETS,BUILD_ASSET_CATEGORIES} from '@/features/plaza/build-assets';
 import {behaviorSchema,type WorldObject,type WorldState} from '@/features/habitat/types';
+import {previewStudioImport,type StudioImportPreview} from '@/features/habitat/studio-map-adapter';
 import {Copy,Grid2X2,Move3D,RotateCw,Scaling,Search,Trash2,Undo2,Redo2,Check, X} from 'lucide-react';
 import './habitat-tools.css';
 
@@ -23,6 +24,7 @@ interface Props {
   online:boolean;
   onSave:()=>void;
   onCancel:()=>void;
+  onImport:(objects:WorldObject[])=>void;
   tool:HabitatTool;
   onTool:(tool:HabitatTool)=>void;
   snap:boolean;
@@ -51,6 +53,8 @@ export default function HabitatBuilderTools(props:Props){
   const [category,setCategory]=useState('all');
   const [page,setPage]=useState(0);
   const [mobilePanel,setMobilePanel]=useState<'assets'|'inspect'>('assets');
+  const [studioPreview,setStudioPreview]=useState<StudioImportPreview|null>(null);
+  const [studioError,setStudioError]=useState('');
   const chosen=props.objects.find(o=>o.id===props.selectedId);
   const selectedAsset=chosen?BUILD_ASSETS.find(a=>a.id===chosen.assetId):null;
   const matches=useMemo(()=>BUILD_ASSETS.filter(a=>(category==='all'||a.category===category)&&(a.name+' '+a.id).toLowerCase().includes(query.trim().toLowerCase())),[category,query]);
@@ -84,6 +88,24 @@ export default function HabitatBuilderTools(props:Props){
       <div className='hb-advanced-heading'><small>OBJECTS / {BUILD_ASSETS.length}</small><h2>Build inside your world.</h2></div>
       <label className='hb-advanced-search'><Search size={16}/><input aria-label='Search world assets' placeholder='Search walls, trees, furniture...' value={query} onChange={e=>{setQuery(e.target.value);setPage(0);}}/></label>
       <div className='hb-advanced-categories'><button aria-pressed={category==='all'} onClick={()=>{setCategory('all');setPage(0);}}>All</button>{BUILD_ASSET_CATEGORIES.map(c=><button key={c} aria-pressed={category===c} onClick={()=>{setCategory(c);setPage(0);}}>{labels[c]??c}</button>)}</div>
+      <details className='hb-advanced-primitives'><summary>Import Three.js Assets Studio map (.json)</summary>
+        <p className='hb-small'>Studio mapproj v1 or WorldPlan v1. Imports reviewed local CTRL assets only; nothing is uploaded.</p>
+        <input aria-label='Import Studio map JSON' type='file' accept='.json,application/json' onChange={e=>{
+          const file=e.currentTarget.files?.[0];e.currentTarget.value='';if(!file)return;
+          setStudioPreview(null);setStudioError('');
+          void (async()=>{try{
+            if(file.size>128*1024)throw new Error('Studio file exceeds 128 KB safety limit.');
+            const data:unknown=JSON.parse(await file.text());
+            setStudioPreview(previewStudioImport(data));
+          }catch(error){setStudioError(error instanceof Error?error.message:'Could not parse Studio JSON.');}})();
+        }}/>
+        {studioError&&<p className='hb-small' role='alert'>{studioError}</p>}
+        {studioPreview&&<div className='hb-small' role='status'><strong>{studioPreview.objects.length}/{studioPreview.total} placements mapped</strong>
+          {studioPreview.skipped.length>0&&<p>{studioPreview.skipped.length} warning(s): {studioPreview.skipped.slice(0,3).join('; ')}{studioPreview.skipped.length>3?'…':''}</p>}
+          <button type='button' disabled={studioPreview.objects.length===0||props.busy} onClick={()=>{props.onImport(studioPreview.objects);setStudioPreview(null);setMobilePanel('inspect');}}>Replace unsaved draft with mapped objects</button>
+          <p>Use Save &amp; Play to persist. Your current draft is not touched until you confirm.</p>
+        </div>}
+      </details>
       <details className='hb-advanced-primitives'><summary>Interactive pieces</summary><div className='hb-primitives'>{primitives.map(([id,name,behavior])=><button key={id} onClick={()=>{props.onAdd(id,name,behavior);setMobilePanel('inspect');}}>{name} +</button>)}</div></details>
       <div className='hb-advanced-assets'>{shown.map(a=><button title={a.id} key={a.id} onClick={()=>{props.onAdd(a.id,a.name,a.collision==='solid'?'solid':'decoration');setMobilePanel('inspect');}}>
         <img src={a.thumbnailUrl} loading='lazy' alt=''/><span>{a.name}</span>
