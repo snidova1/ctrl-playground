@@ -332,3 +332,32 @@ test('VRoid model preview and furnished editable starter world persist on a fres
  expect(fresh.world?.objects.length).toBe(count);
  expect(errors).toEqual([]);
 });
+
+
+test('Three.js Assets Studio JSON imports 18 real objects as an undoable wallet-owned world draft', async ({page}) => {
+  await openWorld(page);
+  await build(page);
+  await catalog(page);
+  await pointer(page, page.getByText('Import Three.js Assets Studio map (.json)', {exact:true}));
+  await page.getByLabel('Import Studio map JSON').setInputFiles('examples/studio/ctrl-common-ground-garden.mapproj.json');
+  await expect(page.locator('.hb-advanced-primitives [role="status"]')).toContainText('18/18 placements mapped');
+  await pointer(page, page.getByRole('button', {name: 'Replace unsaved draft with mapped objects'}));
+  await inspector(page);
+  const placements = page.getByRole('combobox', {name:'Placed objects'}).locator('option');
+  await expect(placements).toHaveCount(19);
+  await pointer(page, page.getByRole('button', {name:'Undo',exact:true}));
+  await expect(placements).toHaveCount(1);
+  await pointer(page, page.getByRole('button', {name:'Redo',exact:true}));
+  await expect(placements).toHaveCount(19);
+  await pointer(page, page.getByRole('button', {name:'Save & Play',exact:true}));
+  await expect(page.getByRole('button', {name:'Build my world +'})).toBeVisible({timeout:30000});
+  const saved=await page.request.get('/api/habitat/state');
+  expect(saved.status()).toBe(200);
+  const state=await saved.json() as HabitatState;
+  expect(state.world?.objects).toHaveLength(18);
+  expect(state.profile?.character).toBe('male');
+  await page.reload();
+  await expect(page.getByRole('button', {name:'Build my world +'})).toBeVisible({timeout:30000});
+  const reloaded=await page.request.get('/api/habitat/state');
+  expect((await reloaded.json() as HabitatState).world?.objects).toHaveLength(18);
+});
