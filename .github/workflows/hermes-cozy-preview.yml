@@ -1,0 +1,95 @@
+name: Hermes Cozy Habitat Visual Preview
+
+on:
+  push:
+    branches:
+      - preview/hermes-cozy-20261012
+    paths:
+      - .github/workflows/hermes-cozy-preview.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CTRL_MODE: mock
+      CTRL_BUILD_TARGET: node
+      APP_ORIGIN: http://127.0.0.1:3106
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - name: Checkout Hermes visual branch snapshot
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Prepare isolated development database
+        run: |
+          echo "CTRL_LOCAL_DB=$RUNNER_TEMP/hermes-cozy.sqlite" >> "$GITHUB_ENV"
+          CTRL_LOCAL_DB="$RUNNER_TEMP/hermes-cozy.sqlite" pnpm db:local
+      - name: Start local preview server
+        run: |
+          mkdir -p test-results
+          nohup pnpm dev:next --port 3106 > test-results/server.log 2>&1 < /dev/null &
+          echo $! > test-results/server.pid
+          for i in $(seq 1 90); do
+            if curl --silent --fail --output /dev/null http://127.0.0.1:3106; then exit 0; fi
+            sleep 2
+          done
+          tail -n 100 test-results/server.log
+          exit 1
+      - name: Capture browser-rendered desktop and mobile
+        run: |
+          node --input-type=module <<'JS'
+          import { chromium } from '@playwright/test';
+          import { writeFile } from 'node:fs/promises';
+          const browser = await chromium.launch({headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
+          const results = [];
+          for (const [name, viewport] of [['desktop',{width:1440,height:960}],['mobile',{width:390,height:844}]]) {
+            const context=await browser.newContext({viewport});
+            const page=await context.newPage();
+            const messages=[];
+            page.on('pageerror',e=>messages.push(e.message));
+            try {
+              await page.goto('http://127.0.0.1:3106/',{waitUntil:'domcontentloaded',timeout:120000});
+              const enter=page.getByRole('button',{name:'Enter guest workshop',exact:true});
+              await enter.waitFor({timeout:60000});
+              await enter.click();
+              await page.getByLabel('Name',{exact:true}).fill('Hermes Cozy Preview');
+              await page.getByRole('button',{name:'Enter my world draft',exact:true}).click();
+              await page.locator('canvas').first().waitFor({timeout:90000});
+              await page.waitForTimeout(9500);
+              await page.screenshot({path:`test-results/hermes-cozy-${name}.png`,fullPage:true,timeout:30000});
+              results.push({name,rendered:true,pageErrors:messages});
+            } catch(e) {
+              results.push({name,rendered:false,error:String(e).slice(0,1000),pageErrors:messages});
+              await page.screenshot({path:`test-results/hermes-cozy-${name}-failure.png`,fullPage:true,timeout:30000}).catch(()=>{});
+            } finally { await context.close(); }
+          }
+          await browser.close();
+          await writeFile('test-results/hermes-preview-report.json',JSON.stringify(results,null,2));
+          console.log(results);
+          if(!results.every(x=>x.rendered)) process.exitCode=1;
+          JS
+      - name: Upload screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hermes-CTRL-Cozy-Visual-Preview
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 14
