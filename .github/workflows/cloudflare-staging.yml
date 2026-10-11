@@ -1,0 +1,89 @@
+name: Cloudflare Staging
+on:
+  pull_request:
+    branches: [work/master-integration, deploy/staging]
+  push:
+    branches: [deploy/staging]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cloudflare-staging-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node --test tests/cloudflare-*.test.mjs
+      - run: pnpm test
+      - run: pnpm typecheck
+      - name: Build existing Sites target
+        run: pnpm build
+      - name: Build standalone staging target (offline CI configuration, never deployed)
+        env:
+          CTRL_HOSTING_TARGET: cloudflare-staging
+          CTRL_STAGING_D1_ID: 22222222-2222-4222-8222-222222222222
+          CTRL_STAGING_R2_BUCKET: ctrl-staging-r2
+          CTRL_STAGING_ORIGIN: https://ctrl-staging.ci-example.workers.dev
+        run: pnpm build
+  deploy:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/deploy/staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 45
+    env:
+      CTRL_HOSTING_TARGET: cloudflare-staging
+      CTRL_DEPLOY_ENV: staging
+      CTRL_STAGING_D1_ID: ${{ vars.CTRL_STAGING_D1_ID }}
+      CTRL_STAGING_R2_BUCKET: ctrl-staging-r2
+      CTRL_STAGING_ORIGIN: ${{ vars.CTRL_STAGING_ORIGIN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ vars.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Require real staging configuration
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CTRL_STAGING_D1_ID"
+          test -n "$CTRL_STAGING_ORIGIN"
+          test -n "$NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Backup, tracked migrations, deploy staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/cloudflare-staging.mjs deploy
+      - name: Retain pre-migration backup even after failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrl-staging-d1-backup-${{ github.run_id }}
+          path: .cloudflare-staging/backups/
+          if-no-files-found: warn
+          retention-days: 30
