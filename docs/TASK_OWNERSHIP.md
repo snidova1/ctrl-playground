@@ -18,7 +18,7 @@ All endpoints below are under `/api/habitat`. JSON mutations require same-origin
 | GET `worlds` | none | `{worlds}` from visible state listing |
 | GET `worlds/:id/permissions` | none | `WorldPermissions` |
 | GET `profile` | none | `{profile:CharacterProfile|null}` |
-| POST `profile` | `CharacterProfileInput` | `HabitatState`; creates one durable home per verified wallet, not an onchain key |
+| POST `profile` | `CharacterProfileInput` | `HabitatState`; persists allowlisted VRoid appearance and creates one durable home per verified wallet, not an onchain key |
 | POST `save` or PUT `worlds/:id/objects` | `WorldEditorSavePayload` | `HabitatState` with incremented revision |
 | POST `worlds/:id/objects` | `{revision,object}` | `HabitatState` |
 | PATCH `worlds/:id/objects/:objectId` | `{revision,object:partial}` | `HabitatState` |
@@ -34,6 +34,8 @@ All endpoints below are under `/api/habitat`. JSON mutations require same-origin
 | POST `worlds/:id/keys/prepare` | `{}` | `PreparedOwnerClaim`; owner only, unsigned transaction |
 | POST `worlds/:id/keys/verify` | `{txHash:0x...64 hex}` | `VerifiedOwnerClaim`; owner only, confirmed canonical receipt |
 
-Legacy `visit` explicitly creates a compatibility session (`id:''`); `pose`, `settings`, `use` remain available. Sessionless pose cannot downgrade an active/expired modern session. New clients heartbeat at 700ms and leave on hiding/unmount; TTL15s. Join supersedes old sessions; stale clients stop and offer reconnect instead of fighting tabs. Players carry server-resolved loadouts; colorways are not garment meshes. Owner-managed ACL is independent of tradeable keys.
+`CharacterAppearance` v1 is `{version:1,gender,variantId,hairId,eyeId,skinId}`. Every ID is validated against `features/habitat/character-catalog.ts`; clients never submit model URLs, material names, or scripts. Existing rows default safely through migration `0005_character_appearance.sql`. These are VRoid material palettes, not fitted garment meshes; future meshes must retain stable server-approved IDs.
+
+Legacy `visit` explicitly creates a compatibility session (`id:''`); `pose`, `settings`, `use` remain available. Sessionless pose cannot downgrade an active/expired modern session. New clients heartbeat at 700ms and leave on hiding/unmount; TTL15s. Join supersedes old sessions; stale clients stop and offer reconnect instead of fighting tabs. Players carry server-resolved loadouts and appearance. Owner-managed ACL is independent of tradeable keys.
 
 Keys: `worldKeyId(trustedOwnerWallet)` matches Solidity `worldIdFor(address)`. Pass app UUID plus its database-resolved signed owner wallet and authenticated viewer/trader separately; never request-body owner bindings. Routes validate chain/deployment/receipt and never send transactions. Deployment configuration is fail-closed, disabled by default (`CTRL_KEYS_ENABLED=false`); reads return `not-deployed`, prepare/verify return 503. Do not enable public RPC/deployment without approval. Offchain drafts never claim an onchain key or grant member/admin roles from a receipt.
