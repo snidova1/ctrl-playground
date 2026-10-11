@@ -9,6 +9,7 @@ import type {ControlInput} from '@/features/plaza/scene';
 import type {Pose} from '@/features/plaza/types';
 import {behaviorSchema,type WorldState,type WorldObject} from './types';
 import './habitat.css';
+import './cozy.css';
 const Stage=dynamic(()=>import('./stage'),{ssr:false});
 async function api<T>(path:string,body?:unknown):Promise<T>{const r=await fetch(`/api/habitat/${path}`,{method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});const data=await r.json() as {detail?:string};if(!r.ok)throw new Error(data.detail||'World unavailable');return data as T;}
 class StageBoundary extends Component<{children:ReactNode},{failed:boolean}>{state={failed:false};static getDerivedStateFromError(){return {failed:true};}render(){return this.state.failed?<div className='hb-failure' role='alert'><h2>The world could not render.</h2><p>Your saved layout is safe. Try lighter graphics or reload.</p><button onClick={()=>location.reload()}>Reload world</button></div>:this.props.children;}}
@@ -35,6 +36,7 @@ export default function HabitatApp(){const [state,setState]=useState<WorldState|
  const chosen=draft.find(o=>o.id===selected),filtered=BUILD_ASSETS.filter(a=>(category==='all'||a.category===category)&&a.name.toLowerCase().includes(query.toLowerCase())),shown=filtered.slice(page*24,page*24+24);
  return <main className='hb-app' id='main'><div className='hb-stage'><StageBoundary><Stage state={state} pose={pose} input={input} motion={motion} editing={editing} locked={!!panel||!state?.profile} selected={selected} draft={draft} onSelect={setSelected} onUse={o=>void use(o)} sitting={sitting} celebrate={celebrate} interactedAt={interactedAt} quality={quality}/></StageBoundary></div>
  <header className='hb-top'><a href='/' className='hb-brand'><BrandMark/><strong>CTRL</strong><span>PLAYGROUND</span></a><div><span className='hb-status'>{online?'CONNECTED':'RECONNECTING'}</span><button onClick={()=>setPanel('worlds')}>Worlds</button><button onClick={()=>setPanel('wardrobe')}>Character</button><button onClick={()=>setPanel('keys')}>Keys</button><button onClick={()=>{setWorldName(state?.world?.name??'');setPanel('settings');}}>Settings</button></div></header>
+ {!editing&&!panel&&<nav className='hb-comparison' aria-label='Visual comparison'><span>HABITAT / COZY STUDY</span><a href='/courtyard'>Compare Common Ground ↗</a></nav>}
  {!editing&&!panel&&state?.world&&<div className='hb-title'><small>{state.canEdit?'YOUR PLACE':'VISITING'} / {state.world.visibility.toUpperCase()}</small><h1>{state.world.name}</h1><p>{state.world.objects.length} objects · {state.players.length} here</p><span className='hb-draft-label'>WORLD DRAFT · KEY CONTRACT NOT DEPLOYED</span></div>}
  {error&&<div className='hb-alert' role='alert'>{error}<button onClick={()=>setError('')}>Dismiss</button></div>}{message&&!error&&<div className='hb-message' role='status' onClick={()=>setMessage('')}>{message}</div>}
  {!loaded&&<div className='hb-panel'><h1>Opening your place.</h1><p>Reading your saved world…</p></div>}
