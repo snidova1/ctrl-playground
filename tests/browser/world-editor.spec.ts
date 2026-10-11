@@ -43,7 +43,7 @@ async function openWorld(page: Page, route = '/worlds/editor', preserveStarter =
   await expect(page.getByRole('button', {name: 'Build my world +'})).toBeVisible({timeout: 30000});
   const response = await page.request.get('/api/habitat/state');
   expect(response.status()).toBe(200);
-  const state = await response.json() as HabitatState;
+  let state = await response.json() as HabitatState;
   expect(state.wallet).toMatch(/^0x/);
   expect(state.profile?.character).toBe('male');
   expect(state.world?.objects.length).toBeGreaterThan(20);
@@ -55,6 +55,9 @@ async function openWorld(page: Page, route = '/worlds/editor', preserveStarter =
     expect(reset.status()).toBe(200);
     await page.reload();
     await expect(page.getByRole('button',{name:'Build my world +'})).toBeVisible({timeout:30000});
+    const refreshed=await page.request.get('/api/habitat/state');
+    expect(refreshed.status()).toBe(200);
+    state=await refreshed.json() as HabitatState;
   }
   return state;
 }
@@ -318,6 +321,7 @@ test('VRoid model preview and furnished editable starter world persist on a fres
  expect(state.world?.objects.some(o=>o.assetId.includes('tree'))).toBe(true);
  const count=state.world!.objects.length;
  await build(page);
+ await inspector(page);
  await expect(page.getByRole('combobox',{name:'Placed objects'}).locator('option')).toHaveCount(count+1);
  await pointer(page,page.getByRole('button',{name:'Cancel',exact:true}));
  await page.reload();
