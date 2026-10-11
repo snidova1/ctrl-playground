@@ -1,5 +1,5 @@
 import vinext from "vinext";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type PluginOption } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { createCloudflareBuildConfig } from "./build/cloudflare-config.mjs";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
@@ -34,7 +34,7 @@ export default defineConfig(async ({ command, mode }) => {
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
-  const plugins = [vinext()];
+  const plugins: PluginOption[] = [vinext()];
   if (cloudflareBuild.useSitesPlugin) {
     plugins.push(sites({ mockAuth: cloudflareBuild.sitesMockAuth }));
   }
