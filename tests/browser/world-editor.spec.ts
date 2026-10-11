@@ -143,11 +143,11 @@ test('Homepage editor enables Redo after Undo and persists the restored draft', 
 });
 
 test('Two verified wallets visit, exercise member permissions, leave and reconnect', async ({page, browser}) => {
-  // CI 38062342640 completed 9/10 journeys, but this desktop two-canvas flow
-  // reached Playwright's 4m whole-test ceiling while closing its second real
-  // browser context. Keep every functional wait bounded below and give the
-  // complete SwiftShader journey enough teardown budget on shared runners.
-  test.setTimeout(360000);
+  // CI 38165186029: 11/12 integrated editor journeys passed. The mobile
+  // dual-wallet flow hit the 360s *whole-test* ceiling at finally/context.close,
+  // not at a failed UI assertion. Reserve extra SwiftShader/mobile teardown
+  // time while keeping every functional assertion and per-action timeout intact.
+  test.setTimeout(test.info().project.name.includes('mobile') ? 480000 : 360000);
   const owner = await openWorld(page);
   const sharedName = `Browser Shared ${owner.homeId!.slice(0, 8)}`;
   await pointer(page, page.getByRole('button', {name: 'Settings', exact: true}));
