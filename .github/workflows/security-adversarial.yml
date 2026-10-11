@@ -1,7 +1,7 @@
 name: Security adversarial regression
 on:
   pull_request:
-    branches: [main]
+    branches: [main, work/master-integration]
     paths:
       - 'tests/unit/security/**'
       - '.github/workflows/security-adversarial.yml'

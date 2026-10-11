@@ -1,4 +1,5 @@
 import {handleHabitat} from './habitat/service';
+import {readApiJson as body} from './security/read-api-json';
 import {handlePlaza} from './plaza/service';
 import {launchStatus} from "./launch/status";
 import {deployment} from "@/config/deployment";
@@ -22,7 +23,6 @@ import {verifyReceipt} from "./receipts/generate";
 import { hash } from "./receipts/hash";
 const headers={"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
 function json(data:unknown,status=200,extra:Record<string,string>={}){return Response.json(data,{status,headers:{...headers,...extra}});}
-async function body(request:Request):Promise<unknown>{const length=Number(request.headers.get("content-length")??0);if(length>16000)throw new AppError("INPUT_TOO_LARGE",413);const text=await request.text();if(text.length>16000)throw new AppError("INPUT_TOO_LARGE",413);try{return JSON.parse(text) as unknown;}catch{throw new AppError("INVALID_JSON",400);}}
 function verifyOrigin(request:Request){const origin=request.headers.get("origin");const expected=settings().origin||new URL(request.url).origin;if(origin!==expected)throw new AppError("ORIGIN_NOT_ALLOWED",403);if(!request.headers.get("content-type")?.startsWith("application/json"))throw new AppError("JSON_REQUIRED",415);}
 async function permittedMission(request:Request,id:string){const mission=await getMission(id);if(!mission)throw new AppError("MISSION_NOT_FOUND",404);if(mission.visibility==="private"&&(await requireIdentity(request)).id!==mission.ownerId)throw new AppError("MISSION_NOT_FOUND",404);return mission;}
 export async function handleApi(request:Request,path:string[]):Promise<Response>{try{
