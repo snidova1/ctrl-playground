@@ -19,6 +19,7 @@ import {createStarterWorld,shouldSeedStarterWorld} from './starter-world';
 import HabitatMusic from './music-player';
 import HabitatBuilderTools,{type HabitatTool} from '@/features/plaza/editor/habitat-tools';
 import './habitat.css';
+import './cozy.css';
 const Stage=dynamic(()=>import('./stage'),{ssr:false});
 const CharacterCreatorPreview=dynamic(()=>import('./character-creator-preview'),{ssr:false});
 /** Seed only the signed-in owner's untouched home via normal revision-checked save. */
@@ -75,6 +76,7 @@ export default function HabitatApp({advancedBuilder=false}:{advancedBuilder?:boo
  async function save(){await action(async()=>{if(!state?.world)return;const s=await api<WorldState>('save',{worldId:state.world.id,revision:baseRevision.current,objects:draft});setState(s);latest.current=s;setEditing(false);setMessage('World saved. Visitors can see the changes.');});}
  const chosen=draft.find(o=>o.id===selected),filtered=BUILD_ASSETS.filter(a=>(category==='all'||a.category===category)&&a.name.toLowerCase().includes(query.toLowerCase())),shown=filtered.slice(page*24,page*24+24);
  return <main className={`hb-app${editing?' is-editing':''}${advancedBuilder?' is-advanced':''}${!state?.profile?' is-entry':''}`} id='main'><div className='hb-stage'><StageBoundary><Stage state={state} pose={pose} input={input} motion={motion} editing={editing} locked={!!panel||!state?.profile} selected={selected} draft={draft} onSelect={setSelected} onUse={o=>void use(o)} sitting={sitting} celebrate={celebrate} interactedAt={interactedAt} quality={quality} advancedBuilder={advancedBuilder} tool={advancedTool} snap={advancedSnap} onTransform={(id,values)=>change(draft.map(o=>o.id===id?{...o,...values}:o))}/></StageBoundary></div>
+ {!editing&&!panel&&<nav className='hb-comparison' aria-label='Visual comparison'><span>HABITAT / COZY STUDY</span><a href='/courtyard'>Compare Common Ground ↗</a></nav>}
  <header className='hb-top'><Link href='/habitat' className='hb-brand'><BrandMark/><strong>CTRL</strong><span>HABITAT</span></Link><div>
   {state?.profile&&<><span className='hb-status'>{online?state.profile.name:'Offline'}</span>{!online&&state.world&&<button onClick={()=>void action(async()=>{await connect(state.world!.id);})}>Reconnect</button>}<button className='hb-nav-worlds' onClick={()=>setPanel('worlds')}>Worlds</button><button className='hb-nav-character' onClick={()=>setPanel('wardrobe')}>Character</button></>}
   <button className='hb-nav-settings' onClick={()=>{settingsRevision.current=state?.world?.revision??0;setWorldName(state?.world?.name??'');setPanel('settings');}}>Settings</button>
