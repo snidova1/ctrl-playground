@@ -28,7 +28,7 @@ describe('Three.js Assets Studio -> CTRL draft experiment',()=>{
     expect(result.objects.map(o=>o.assetId)).toEqual([
       'nature-kit/tree_oak','furniture-kit/bench','furniture-kit/lampSquareFloor',
     ]);
-    expect(result.objects.map(o=>o.behavior)).toEqual(['decoration','seat','light']);
+    expect(result.objects.map(o=>o.behavior)).toEqual(['solid','seat','light']);
     expect(result.objects[0]).toMatchObject({x:-4,y:0,z:-3,rotation:1.2,scale:2,target:''});
     expect(result.skipped).toHaveLength(0);
     expect(new Set(result.objects.map(o=>o.id)).size).toBe(3);
