@@ -1,0 +1,84 @@
+name: CTRL Claude Full Repository Export
+
+on:
+  push:
+    branches:
+      - handoff/claude-full-export-20261011
+    paths:
+      - .github/workflows/claude-full-repo-export.yml
+
+permissions:
+  contents: read
+
+jobs:
+  package-source-and-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out full Git history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Package current source, every branch and Git history
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --force origin '+refs/heads/*:refs/remotes/origin/*' --tags
+          mkdir -p export/CTRL_PROJECT_SOURCE
+          git archive --format=tar origin/work/master-integration | tar -xf - -C export/CTRL_PROJECT_SOURCE
+          git for-each-ref --format='%(refname:short) %(objectname)' refs/remotes/origin/ | sort > export/BRANCH_HEADS.txt
+          git log -35 --date=iso-strict --pretty=format:'%h %ad %s' origin/work/master-integration > export/RECENT_INTEGRATION_COMMITS.txt
+          git bundle create export/CTRL_FULL_GIT_HISTORY.bundle --all
+          git bundle verify export/CTRL_FULL_GIT_HISTORY.bundle
+          git rev-parse origin/work/master-integration > export/SNAPSHOT_SHA.txt
+          cat > export/CLAUDE_START_HERE.md <<'EOF'
+          # CTRL | Complete Claude Handoff
+
+          This package is exported from the private GitHub repository `snidova1/ctrl-playground`.
+
+          ## Open this first
+          - `CTRL_PROJECT_SOURCE/`: FULL tracked source snapshot including 3D models, textures, character assets, code, tests, scripts, docs and example environment configuration from `work/master-integration`.
+          - `CTRL_FULL_GIT_HISTORY.bundle`: complete fetched Git history and refs across the repository's branches, including work not yet merged into main. This is a true Git bundle, not a set of fabricated code patches.
+          - `BRANCH_HEADS.txt`: exact branch refs and SHAs included at export time.
+          - `RECENT_INTEGRATION_COMMITS.txt`: latest commit messages from the integration branch.
+          - `SNAPSHOT_SHA.txt`: exact source snapshot commit.
+
+          ## Claude instructions
+          First read `CTRL_PROJECT_SOURCE/docs/HANDOFF.md`, `README.md`, `AGENTS.md` if present, and architecture/security docs. Treat the source snapshot as the working baseline, not GitHub's old `main`. Read the pending branch inventory before assuming an open PR is already merged. Preserve the VRoid/VRM character pipeline, signed wallet rules, starter Habitat furnishing, 3D world editing, asset license provenance, all tests and existing server contracts. Do not replace finished VRoid assets with placeholder avatars.
+
+          Run `pnpm install --frozen-lockfile`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, and appropriate build and browser tests after changes. Never put secrets in frontend code.
+
+          ## Restore all Git branches if needed
+          ```bash
+          mkdir ctrl-history && cd ctrl-history
+          git init
+          git bundle verify ../CTRL_FULL_GIT_HISTORY.bundle
+          git fetch ../CTRL_FULL_GIT_HISTORY.bundle '+refs/remotes/origin/*:refs/remotes/origin/*'
+          git fetch ../CTRL_FULL_GIT_HISTORY.bundle '+refs/heads/*:refs/heads/*'
+          git switch -c claude-work origin/work/master-integration
+          ```
+
+          ## Safety / scope
+          This ZIP does not include ignored local secrets, `node_modules`, hosted databases, cloud provider secrets or deployment credentials. It includes all files tracked in the exported integration source snapshot and an offline Git history bundle for the remote refs fetched. The GitHub Actions artifact may expire, but a locally saved copy will not.
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          root=Path('export/CTRL_PROJECT_SOURCE')
+          files=[p for p in root.rglob('*') if p.is_file()]
+          with open('export/SOURCE_MANIFEST_SHA256.txt','w') as f:
+              for p in sorted(files):
+                  f.write(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+str(p.relative_to(root))+'\n')
+          print('Included',len(files),'tracked source files,',sum(p.stat().st_size for p in files),'bytes')
+          PY
+          du -sh export
+
+      - name: Upload complete ZIP for Claude
+        uses: actions/upload-artifact@v4
+        with:
+          name: CTRL-CLAUDE-COMPLETE-2026-10-11
+          path: export/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
