@@ -9,7 +9,7 @@ interface Options {
   latest: MutableRefObject<HabitatState | null>;
   pose: MutableRefObject<Pose>;
   motion: MutableRefObject<CharacterMotion>;
-  flags: MutableRefObject<{sitting: boolean; celebrate: boolean; interactedAt: number}>;
+  flags: MutableRefObject<{sitting: boolean; celebrate: boolean; interactedAt: number;speech?:string;speechAt?:number}>;
   onState: (state: HabitatState | null) => void;
   onOnline: (online: boolean) => void;
 }
