@@ -56,7 +56,7 @@ function GreenBorder({quality}:{quality:'low'|'high'}){
  },[selected]);
  return <group>
   <instancedMesh ref={trunks} args={[undefined,undefined,selected.length]}><cylinderGeometry args={[1,1,1,6]}/><meshStandardMaterial color='#8c765e'/></instancedMesh>
-  <instancedMesh ref={canopies} args={[undefined,undefined,selected.length]} castShadow={quality==='high'}><icosahedronGeometry args={[1,1]}/><meshStandardMaterial vertexColors roughness={1}/></instancedMesh>
+  <instancedMesh ref={canopies} args={[undefined,undefined,selected.length]} castShadow={quality==='high'}><icosahedronGeometry args={[1,1]}/><meshStandardMaterial roughness={1}/></instancedMesh>
  </group>;
 }
 function RaisedGround(){
@@ -106,7 +106,7 @@ function Cobblestones({quality}:{quality:'low'|'high'}){
   if(ref.current){ref.current.instanceMatrix.needsUpdate=true;ref.current.instanceColor!.needsUpdate=true;}
  },[tiles]);
  return <instancedMesh ref={ref} args={[undefined,undefined,tiles.length]} receiveShadow>
-  <boxGeometry args={[1,1,1]}/><meshStandardMaterial vertexColors roughness={1}/>
+  <boxGeometry args={[1,1,1]}/><meshStandardMaterial roughness={1}/>
  </instancedMesh>;
 }
 function Bridge({x}:{x:number}){
