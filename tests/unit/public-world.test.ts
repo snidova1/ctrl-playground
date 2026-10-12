@@ -3,6 +3,8 @@ import {exec,one} from '@/db';
 import {handleApi} from '@/server/api';
 import {createSession} from '@/server/wallet/auth';
 import {PUBLIC_WORLD_ID,createPublicWorld} from '@/features/habitat/public-world';
+import {PUBLIC_WORLD_BOUNDS,isPublicWorldWalkable,navigatePublicWorld,PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_BRIDGES} from '@/features/habitat/public-world-geography';
+import {poseInputSchema} from '@/domain/habitat';
 import {createGuestState,randomGuestStyle} from '@/features/habitat/guest';
 import {getBuildAsset} from '@/features/plaza/build-assets';
 import {collideWorld} from '@/features/habitat/types';
@@ -47,6 +49,40 @@ describe('public world and guest boundary',()=>{
   expect(a.wallet).toBeNull();expect(a.presenceSession).toBeNull();expect(a.homeId).toBeNull();
   expect(a.profile?.id).not.toBe(b.profile?.id);
   const styles=Array.from({length:100},()=>JSON.stringify(randomGuestStyle()));expect(new Set(styles).size).toBe(100);
+ });
+ it('creates a navigable district map rather than an inaccessible background billboard',()=>{
+  expect(PUBLIC_WORLD_BOUNDS.maxX-PUBLIC_WORLD_BOUNDS.minX).toBeGreaterThan(60);
+  expect(PUBLIC_WORLD_BOUNDS.maxZ-PUBLIC_WORLD_BOUNDS.minZ).toBeGreaterThan(55);
+  expect(PUBLIC_WORLD_BUILDINGS.length).toBeGreaterThanOrEqual(6);
+  expect(PUBLIC_WORLD_BRIDGES).toHaveLength(2);
+  expect(isPublicWorldWalkable(0,6)).toBe(true);
+  // Homes and shops stop the player, but pavement beside them is usable.
+  expect(isPublicWorldWalkable(-23,2)).toBe(false);
+  expect(isPublicWorldWalkable(-23,11)).toBe(true);
+  expect(isPublicWorldWalkable(-8,-9)).toBe(false);
+  const wander=navigatePublicWorld({x:0,z:6},{x:19,z:9});
+  expect(wander.x).toBeGreaterThan(18);
+  expect(wander.z).toBeCloseTo(9,1);
+ });
+ it('blocks walking through the river except at authored bridges',()=>{
+  const denied=navigatePublicWorld({x:10,z:-15},{x:10,z:-25});
+  expect(denied.z).toBeGreaterThan(-17.1);
+  const crossed=navigatePublicWorld({x:-1.5,z:-15},{x:-1.5,z:-25});
+  expect(crossed.z).toBeLessThan(-24.7);
+  const eastBridge=navigatePublicWorld({x:20,z:-15},{x:20,z:-25});
+  expect(eastBridge.z).toBeLessThan(-24.7);
+  expect(isPublicWorldWalkable(0,-19)).toBe(true);
+  expect(isPublicWorldWalkable(9,-19)).toBe(false);
+ });
+ it('limits expanded pose coordinates to the shared public world, preserving private-home bounds',()=>{
+  const sample={x:25,z:21,worldId:PUBLIC_WORLD_ID,angle:0,motion:{},sessionId:crypto.randomUUID(),sequence:1};
+  expect(poseInputSchema.safeParse(sample).success).toBe(true);
+  expect(poseInputSchema.safeParse({...sample,worldId:crypto.randomUUID()}).success).toBe(false);
+  expect(poseInputSchema.safeParse({...sample,x:35}).success).toBe(false);
+  const scene=createPublicWorld();
+  const moved=collideWorld({x:14,z:9},{x:17,z:9},scene,{},PUBLIC_WORLD_ID);
+  expect(moved.x).toBeGreaterThan(15);
+  expect(collideWorld({x:14,z:9},{x:17,z:9},scene,{}).x).toBeLessThanOrEqual(15);
  });
  it('ships allowlisted models inside budget, a clear spawn and a blocked fountain',()=>{
   const layout=createPublicWorld();expect(layout.length).toBeLessThanOrEqual(120);
