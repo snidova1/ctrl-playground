@@ -75,7 +75,7 @@ function RaisedGround(){
   <mesh rotation-x={-Math.PI/2} position={[0,.025,1.5]} receiveShadow><planeGeometry args={[29,16]}/><meshStandardMaterial color='#ead6b6' roughness={1}/></mesh>
   {/* Slightly raised riverside grass behind the cottages makes the silhouette non-flat. */}
   {[[-39,-40,12,7],[-6,-46,22,10],[34,-42,15,8],[-50,22,18,9],[49,26,19,11]].map(([x,z,w,h],i)=>
-   <mesh key={i} position={[x,-h*.32,z]}><sphereGeometry args={[w,h,w*.6,12,6]}/><meshStandardMaterial color={i%2?'#749e75':'#84ad82'} roughness={1}/></mesh>)}
+   <mesh key={i} position={[x,-h*.32,z]} scale={[w,h,w*.6]}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial color={i%2?'#749e75':'#84ad82'} roughness={1}/></mesh>)}
   {/* Curving distant ridge silhouettes create depth even without downloadable assets. */}
   {[-55,-37,-18,5,25,49].map((x,i)=>
    <mesh key={i} position={[x,-9,-66]}><coneGeometry args={[14+(i%3)*3,27+(i%4)*5,5]}/><meshStandardMaterial color={i%2?'#92b6a5':'#a0beaf'} roughness={1}/></mesh>)}
