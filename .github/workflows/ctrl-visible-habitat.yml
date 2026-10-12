@@ -7,11 +7,15 @@ on:
     paths:
       - 'tests/browser/habitat-visual.spec.ts'
       - 'playwright.visual.config.ts'
+      - 'features/habitat/starter-world.ts'
+      - 'tests/unit/habitat-starter.test.ts'
       - '.github/workflows/ctrl-visible-habitat.yml'
   pull_request:
     paths:
       - 'tests/browser/habitat-visual.spec.ts'
       - 'playwright.visual.config.ts'
+      - 'features/habitat/starter-world.ts'
+      - 'tests/unit/habitat-starter.test.ts'
       - '.github/workflows/ctrl-visible-habitat.yml'
 
 permissions:
@@ -33,6 +37,10 @@ jobs:
           cache: pnpm
       - name: Install pinned dependencies
         run: pnpm install --frozen-lockfile
+      - name: Unit test starter cottage and walkable doorway
+        run: pnpm exec vitest run tests/unit/habitat-starter.test.ts
+      - name: TypeScript compile gate
+        run: pnpm typecheck
       - name: Install headless Chromium with SwiftShader
         run: pnpm exec playwright install --with-deps chromium
       - name: Real wallet + actual rendered 3D preview and starter home, desktop and mobile
