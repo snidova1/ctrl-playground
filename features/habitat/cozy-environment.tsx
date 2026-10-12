@@ -2,6 +2,7 @@
 
 import {useMemo} from 'react';
 import CozyVillage from './cozy-village';
+import type {HabitHouseSettings} from './habit-home';
 
 type Quality = 'low' | 'high';
 
@@ -57,7 +58,7 @@ function Flower({x, z, color}: {x: number; z: number; color: string}) {
   </group>;
 }
 
-export default function CozyEnvironment({editing, quality}: {editing: boolean; quality: Quality}) {
+export default function CozyEnvironment({editing, quality, houseSettings}: {editing: boolean; quality: Quality; houseSettings?: HabitHouseSettings}) {
   const trees = useMemo(() => quality === 'low' ? TREE_POSITIONS.filter((_, i) => i % 2 === 0) : TREE_POSITIONS, [quality]);
   return <group>
     <mesh rotation-x={-Math.PI / 2} receiveShadow position-y={-.02}>
@@ -96,7 +97,7 @@ export default function CozyEnvironment({editing, quality}: {editing: boolean; q
       </mesh>;
     })}
 
-    <CozyVillage/>
+    <CozyVillage houseSettings={houseSettings}/>
     {trees.map(([x, z, scale, turn]) => <SoftTree key={`${x}-${z}`} x={x} z={z} scale={scale} turn={turn}/>)}
     {quality === 'high' && FLOWERS.map(([x, z, color], i) => <Flower key={i} x={x} z={z} color={color}/>)}
 
