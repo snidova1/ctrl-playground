@@ -111,8 +111,8 @@ function Cobblestones({quality}:{quality:'low'|'high'}){
 }
 function Bridge({x}:{x:number}){
  return <group position={[x,0,-19.5]}>
-  <mesh position-y={.22} receiveShadow castShadow><boxGeometry args={[6.8,.32,6.8]}/><meshStandardMaterial color='#a27850'/></mesh>
-  {Array.from({length:11},(_,i)=><mesh key={i} position={[0,.44,-3.1+i*.62]}><boxGeometry args={[6.5,.055,.5]}/><meshStandardMaterial color={i%2?'#dbbd87':'#e9ca96'}/></mesh>)}
+  <mesh position-y={-.14} receiveShadow castShadow><boxGeometry args={[6.8,.3,6.8]}/><meshStandardMaterial color='#a27850'/></mesh>
+  {Array.from({length:11},(_,i)=><mesh key={i} position={[0,.045,-3.1+i*.62]}><boxGeometry args={[6.5,.055,.5]}/><meshStandardMaterial color={i%2?'#dbbd87':'#e9ca96'}/></mesh>)}
   {[-3.15,3.15].map(side=><group key={side}>
    <mesh position={[side,1.15,0]}><boxGeometry args={[.16,.15,6.8]}/><meshStandardMaterial color='#926b4e'/></mesh>
    {[-2.7,-.9,.9,2.7].map(z=><mesh key={z} position={[side,.69,z]}><boxGeometry args={[.16,1.15,.17]}/><meshStandardMaterial color='#987350'/></mesh>)}
@@ -120,6 +120,25 @@ function Bridge({x}:{x:number}){
  </group>;
 }
 type House=typeof PUBLIC_WORLD_BUILDINGS[number];
+function TownFountain(){
+ return <group position={[0,0,-3]}>
+  <mesh castShadow receiveShadow position-y={.42}><cylinderGeometry args={[2.25,2.05,.84,24]}/><meshStandardMaterial color='#d4c4a9' roughness={.85}/></mesh>
+  <mesh position-y={.87}><cylinderGeometry args={[1.96,1.96,.08,32]}/><meshStandardMaterial color='#72bdc7' metalness={.12} roughness={.2}/></mesh>
+  <mesh rotation-x={-Math.PI/2} position-y={.93}><torusGeometry args={[2.02,.1,8,32]}/><meshStandardMaterial color='#f1e4cc'/></mesh>
+  <mesh castShadow position-y={1.4}><cylinderGeometry args={[.34,.48,1.1,12]}/><meshStandardMaterial color='#f0e2c8'/></mesh>
+  <mesh castShadow position-y={2.04}><sphereGeometry args={[.52,12,8]}/><meshStandardMaterial color='#d8d0b7'/></mesh>
+  {[-1,1].map(side=><mesh key={side} position={[side*.85,1.24,0]} rotation-z={side*.45}>
+   <coneGeometry args={[.15,.95,8]}/><meshStandardMaterial color='#b5dde2' transparent opacity={.72}/>
+  </mesh>)}
+ </group>;
+}
+function CanalBoat({x,color}:{x:number;color:string}){
+ return <group position={[x,0,-19.5]}>
+  <mesh position-y={.07} rotation-y={.12}><boxGeometry args={[2.9,.38,1.16]}/><meshStandardMaterial color={color}/></mesh>
+  <mesh position-y={1.45}><cylinderGeometry args={[.055,.065,2.5,6]}/><meshStandardMaterial color='#866e56'/></mesh>
+  <mesh position={[.52,1.37,0]} rotation-z={-.12}><coneGeometry args={[.9,2.1,3]}/><meshStandardMaterial color='#fff4dc' side={2}/></mesh>
+ </group>;
+}
 function TownHouse({site,quality}:{site:House;quality:'low'|'high'}){
  const w=site.width,d=site.depth;
  return <group position={[site.x,0,site.z]}>
@@ -212,6 +231,8 @@ export default function TownScenery({quality,onDirectory}:{quality:'low'|'high';
   <GreenBorder quality={quality}/>
   {PUBLIC_WORLD_BRIDGES.map(bridge=><Bridge key={bridge.x} x={bridge.x}/>)}
   {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site} quality={quality}/>)}
+  <TownFountain/>
+  <CanalBoat x={-12} color='#b78c70'/><CanalBoat x={12} color='#82a495'/>
   <MarketFront x={-8} name='WILLOW CAFÉ' base='#f0d8b5' roof='#86a084'/>
   <MarketFront x={8} name='FLOWER MARKET' base='#e7c5ab' roof='#b98574'/>
   <LifestyleProps quality={quality}/>
