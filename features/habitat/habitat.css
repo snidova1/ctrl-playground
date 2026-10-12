@@ -157,3 +157,11 @@
  .hb-app.is-entry .hb-top>div{gap:2px}
  .hb-app.is-entry .hb-top button{padding:8px 6px;font-size:10px}
 }
+/* World destinations stay visible without covering the playable area. */
+.hb-top button[aria-pressed=true]{background:#354a3e;color:#fff;border-color:#354a3e}
+.hb-town-label{display:block;white-space:nowrap;background:#fff5df;color:#354a3e;padding:7px 12px;border:1px solid #9cab8b;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.08em}
+.hb-directory{white-space:nowrap;font-size:11px!important;pointer-events:auto}
+.hb-title p{max-width:280px;line-height:1.5}
+@media(max-width:760px){.hb-top{flex-wrap:wrap;background:#f1f1e9eb}.hb-top>div{flex:1;justify-content:flex-end;flex-wrap:wrap}.hb-top .hb-brand{display:none}.hb-top button{min-height:40px;padding:8px;font-size:11px}.hb-top .hb-nav-worlds,.hb-top .hb-nav-character{display:none}.hb-title{top:106px}.hb-title h1{font-size:25px}.hb-panel{top:104px;max-height:calc(100dvh - 124px)}.hb-top .hb-nav-settings{font-size:10px}.hb-bottom{max-width:180px}.hb-touch button{min-width:44px;min-height:44px}.hb-touch{grid-template-columns:repeat(3,44px)} }
+.hb-chat{position:absolute;left:24px;bottom:26px;display:flex;gap:6px;width:280px;z-index:12}.hb-chat input{min-width:0;background:#fffef4e8}.hb-speech{display:block;background:#fffef4;color:#263b30;padding:8px 12px;border:1px solid #9bad94;border-radius:10px;max-width:220px;min-width:70px;overflow-wrap:anywhere;font-size:12px;margin-top:5px;text-align:center}
+@media(max-width:760px){.hb-chat{left:12px;bottom:190px;width:calc(100% - 24px);max-width:310px}.hb-chat input{font-size:16px}.hb-chat button{min-width:44px}}

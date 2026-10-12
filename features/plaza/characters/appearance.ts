@@ -1,3 +1,4 @@
+import type {GuestStyle} from '@/features/habitat/guest';
 import {Color, Mesh, type ColorRepresentation} from 'three';
 import {MToonMaterial, type VRM} from '@pixiv/three-vrm';
 import {eyeVariants,hairVariants,outfitVariants,skinVariants,type CharacterAppearance,type OutfitVariantId} from './catalog';
@@ -10,7 +11,7 @@ export function applyCharacterColorway(vrm: VRM, variantId: OutfitVariantId): vo
 }
 
 /** Apply the persisted, allowlisted appearance to one freshly loaded VRM instance. */
-export function applyCharacterAppearance(vrm:VRM,appearance:CharacterAppearance):void{
+export function applyCharacterAppearance(vrm:VRM,appearance:CharacterAppearance,guestStyle?:GuestStyle):void{
   const outfit=outfitVariants.find(item=>item.id===appearance.variantId)??outfitVariants[0];
   const hair=hairVariants.find(item=>item.id===appearance.hairId)??hairVariants[0];
   const eye=eyeVariants.find(item=>item.id===appearance.eyeId)??eyeVariants[0];
@@ -25,7 +26,7 @@ export function applyCharacterAppearance(vrm:VRM,appearance:CharacterAppearance)
       materialBase.set(material,base);
       material.color.copy(base.color);
       material.shadeColorFactor.copy(base.shade);
-      const source=/EyeIris/i.test(material.name)?eye.tint:/HAIR/i.test(material.name)?hair.tint:/SKIN/i.test(material.name)?skin.tint:/CLOTH/i.test(material.name)?outfit.clothTint:null;
+      const source=/EyeIris/i.test(material.name)?(guestStyle?.eyes??eye.tint):/HAIR/i.test(material.name)?(guestStyle?.hair??hair.tint):/SKIN/i.test(material.name)?skin.tint:/CLOTH/i.test(material.name)?(guestStyle?.cloth??outfit.clothTint):null;
       if(!source||source==='#ffffff')continue;
       const tint = new Color(source as ColorRepresentation);
       material.color.multiply(tint);

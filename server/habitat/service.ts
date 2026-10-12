@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {PUBLIC_WORLD_ID,PUBLIC_WORLD_OWNER,createPublicWorld} from '@/features/habitat/public-world';
 import {one, query, exec, batch, statement} from '@/db';
 import {identity, rateLimit} from '@/server/wallet/auth';
 import {settings} from '@/server/env';
@@ -46,6 +47,7 @@ function appearance(profile: ProfileRow): CharacterProfile {
   return {...profile,appearance:saved,variant:saved.variantId,loadout:{version:1,characterId:characterCatalog[gender].id,variantId:saved.variantId,appearance:saved,accessories:[]}};
 }
 async function permissions(w: Row, user: string): Promise<WorldPermissions> {
+  if (w.id === PUBLIC_WORLD_ID) return {role:'visitor',canVisit:true,canEdit:false,canManage:false};
   if (w.owner_id === user) return {role: 'owner', canVisit: true, canEdit: true, canManage: true};
   const member = await one<{role: 'editor' | 'visitor'}>('SELECT role FROM habitat_members WHERE world_id=? AND profile_id=?', w.id, user);
   return {role: member?.role ?? 'visitor', canVisit: w.visibility === 'public' || !!member, canEdit: member?.role === 'editor', canManage: false};
@@ -147,6 +149,16 @@ export async function handleHabitat(r: Request, path: string[]) {
     }
     const user = await principal(r);
     if (r.method !== 'GET') await rateLimit(`habitat:${path[0]}:${user.id}`, ['pose', 'presence'].includes(p) ? 150 : 40);
+    if (r.method === 'POST' && p === 'public-world') {
+      z.object({}).strict().parse(await body(r));
+      if (!await one('SELECT id FROM habitat_profiles WHERE id=?',user.id)) throw new AppError('PROFILE_REQUIRED',409);
+      const now=Date.now();
+      await batch([
+        statement('INSERT OR IGNORE INTO habitat_profiles(id,name,character,variant,appearance,created_at) VALUES(?,?,?,?,?,?)',PUBLIC_WORLD_OWNER,'CTRL Town','female','sage','{}',now),
+        statement("INSERT OR IGNORE INTO habitat_worlds(id,owner_id,name,visibility,layout,created_at,updated_at) VALUES(?,?,?,'public',?,?,?)",PUBLIC_WORLD_ID,PUBLIC_WORLD_OWNER,'Willow Square',JSON.stringify(createPublicWorld()),now,now),
+      ]);
+      return reply({id:PUBLIC_WORLD_ID});
+    }
     if (r.method === 'GET' && p === 'state') return reply(await state(user));
     if (r.method === 'GET' && p === 'worlds') return reply({worlds: (await state(user)).worlds});
     if (r.method === 'GET' && p === 'profile') {
@@ -281,7 +293,7 @@ export async function handleHabitat(r: Request, path: string[]) {
         WHERE profile_id=? AND world_id=? AND session_id=? AND sequence=? AND EXISTS
         (SELECT 1 FROM habitat_worlds w WHERE w.id=habitat_presence.world_id AND
          (w.visibility='public' OR w.owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?)))`,
-      position.x, position.z, data.angle, JSON.stringify(data.motion), Date.now(), data.sequence ?? old.sequence + 1, user.id, data.worldId, old.session_id, old.sequence, user.id, user.id);
+      position.x, position.z, data.angle, JSON.stringify({...data.motion,speechAt:Math.min(data.motion.speechAt??0,Date.now())}), Date.now(), data.sequence ?? old.sequence + 1, user.id, data.worldId, old.session_id, old.sequence, user.id, user.id);
       if (!result.meta.changes) throw new AppError('STALE_PRESENCE', 409);
       return reply({...await state(user, data.worldId), accepted: position});
     }
