@@ -7,7 +7,8 @@ await mkdir('test-results',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:960}});
- const errors=[],api=[];
+ const errors=[],api=[],models=new Set(),assetFailures=[];
+ page.on('response',r=>{if(r.url().includes('/assets/fantasy-town/')){if(r.status()>=400)assetFailures.push(r.url());else if(r.url().endsWith('.glb'))models.add(r.url().split('/').at(-1));}});
  page.on('pageerror',e=>errors.push(e.message));
  page.on('request',r=>{if(new URL(r.url()).pathname.startsWith('/api/'))api.push(r.url());});
  const response=await page.goto(`${origin}/preview`,{waitUntil:'domcontentloaded',timeout:60000});
@@ -18,7 +19,12 @@ try{
  assert.equal(await page.getByRole('navigation',{name:'Machine rooms'}).count(),0,'Global navigation must not overlap preview');
  assert.equal(await page.getByRole('alert').count(),0,'WebGL scene must not hit error boundary');
  await page.keyboard.down('w');await page.waitForTimeout(750);await page.keyboard.up('w');
+ await page.mouse.move(720,480);await page.mouse.wheel(0,350);await page.waitForTimeout(1500);
  await page.screenshot({path:'test-results/wallet-free-preview.png'});
+ assert(models.has('wall-door.glb'),'Actual modular house doors must load');
+ assert(models.has('roof-gable.glb'),'Actual modular house roofs must load');
+ assert(models.has('stall-red.glb'),'Village market assets must load');
+ assert.deepEqual(assetFailures,[],'No missing village models or textures');
  assert.deepEqual(api,[],'Preview must never call wallet or personal-world APIs');
  assert.deepEqual(errors,[],'Preview must not throw browser runtime errors');
  await writeFile('test-results/preview-smoke.json',JSON.stringify({url:`${origin}/preview`,http:200,canvas:true,noWalletApiRequests:true,pageErrors:errors},null,2));

@@ -1,8 +1,7 @@
 'use client';
 
 import {useMemo} from 'react';
-import {RoundedBox} from '@react-three/drei';
-import {DoubleSide} from 'three';
+import CozyVillage from './cozy-village';
 
 type Quality = 'low' | 'high';
 
@@ -41,40 +40,6 @@ function SoftTree({x, z, scale, turn}: {x: number; z: number; scale: number; tur
   </group>;
 }
 
-function Cottage({position, roof, accent, rotation = 0}: {position: [number, number, number]; roof: string; accent: string; rotation?: number}) {
-  return <group position={position} rotation-y={rotation}>
-    <RoundedBox args={[4.4, 2.8, 3.45]} radius={.22} smoothness={3} castShadow receiveShadow position-y={1.4}>
-      <meshStandardMaterial color='#fff5dd' roughness={.95}/>
-    </RoundedBox>
-    <mesh castShadow position-y={3.25} rotation-y={Math.PI / 4} scale={[1, .72, 1]}>
-      <coneGeometry args={[3.2, 2.25, 4]}/>
-      <meshStandardMaterial color={roof} roughness={.9}/>
-    </mesh>
-    <mesh castShadow position={[0, 1.15, 1.76]}>
-      <boxGeometry args={[.9, 1.8, .12]}/>
-      <meshStandardMaterial color={accent} roughness={.85}/>
-    </mesh>
-    {[-1.35, 1.35].map(x => <group key={x} position={[x, 1.65, 1.78]}>
-      <mesh castShadow>
-        <boxGeometry args={[.92, .92, .1]}/>
-        <meshStandardMaterial color='#cce8e8' roughness={.55}/>
-      </mesh>
-      <mesh position-z={.07}>
-        <boxGeometry args={[.07, .98, .05]}/>
-        <meshStandardMaterial color={accent}/>
-      </mesh>
-      <mesh position-z={.07} rotation-z={Math.PI / 2}>
-        <boxGeometry args={[.07, .98, .05]}/>
-        <meshStandardMaterial color={accent}/>
-      </mesh>
-    </group>)}
-    <mesh castShadow position={[1.25, 3.75, -.55]}>
-      <boxGeometry args={[.45, 1.55, .55]}/>
-      <meshStandardMaterial color='#d8906d' roughness={.95}/>
-    </mesh>
-  </group>;
-}
-
 function Flower({x, z, color}: {x: number; z: number; color: string}) {
   return <group position={[x, 0, z]}>
     <mesh position-y={.22} castShadow>
@@ -89,35 +54,6 @@ function Flower({x, z, color}: {x: number; z: number; color: string}) {
       <sphereGeometry args={[1, 8, 6]}/>
       <meshStandardMaterial color='#f8d96f'/>
     </mesh>
-  </group>;
-}
-
-function Workshop() {
-  return <group position={[-19, 0, 3.8]} rotation-y={.5}>
-    <mesh receiveShadow position-y={.12}>
-      <cylinderGeometry args={[3.15, 3.35, .24, 20]}/>
-      <meshStandardMaterial color='#e9d7b5' roughness={1}/>
-    </mesh>
-    {[-2.35, 2.35].map(x => <mesh key={x} castShadow position={[x, 1.55, 0]}>
-      <cylinderGeometry args={[.17, .21, 3.1, 8]}/>
-      <meshStandardMaterial color='#8b5f43' roughness={1}/>
-    </mesh>)}
-    <mesh castShadow position={[0, 3.05, 0]} rotation-z={Math.PI / 2}>
-      <cylinderGeometry args={[.2, .2, 5.1, 8]}/>
-      <meshStandardMaterial color='#8b5f43' roughness={1}/>
-    </mesh>
-    <mesh castShadow position={[0, 3.25, 0]} rotation-z={Math.PI / 2} rotation-x={Math.PI / 2} scale={[1, 1, .8]}>
-      <coneGeometry args={[2.85, 5.8, 4]}/>
-      <meshStandardMaterial color='#efad74' roughness={.9} side={DoubleSide}/>
-    </mesh>
-    <mesh castShadow position={[0, .62, .25]}>
-      <boxGeometry args={[3.5, .18, 1.05]}/>
-      <meshStandardMaterial color='#bf8055' roughness={1}/>
-    </mesh>
-    {[-1.45, 1.45].map(x => <mesh key={x} castShadow position={[x, .34, .25]}>
-      <boxGeometry args={[.16, .68, .8]}/>
-      <meshStandardMaterial color='#8b5f43'/>
-    </mesh>)}
   </group>;
 }
 
@@ -148,21 +84,19 @@ export default function CozyEnvironment({editing, quality}: {editing: boolean; q
     })}
 
     {/* Pond and stone rim. */}
-    <mesh rotation-x={-Math.PI / 2} position={[8.8, .035, -3.65]} scale={[1.55, 1, 1]}>
+    <mesh rotation-x={-Math.PI / 2} position={[15.8, .035, -3.65]} scale={[1.55, 1, 1]}>
       <circleGeometry args={[2.25, 48]}/>
       <meshPhysicalMaterial color='#78c8cf' roughness={.18} metalness={0} transmission={quality === 'high' ? .16 : 0} transparent opacity={.9}/>
     </mesh>
     {Array.from({length: 16}, (_, i) => {
       const a = i / 16 * Math.PI * 2;
-      return <mesh key={i} castShadow receiveShadow position={[8.8 + Math.cos(a) * 3.45, .08, -3.65 + Math.sin(a) * 2.3]} rotation-y={-a} scale={[.7 + (i % 3) * .08, .22, .42]}>
+      return <mesh key={i} castShadow receiveShadow position={[15.8 + Math.cos(a) * 3.45, .08, -3.65 + Math.sin(a) * 2.3]} rotation-y={-a} scale={[.7 + (i % 3) * .08, .22, .42]}>
         <dodecahedronGeometry args={[.62, 0]}/>
         <meshStandardMaterial color={i % 2 ? '#d7d0ae' : '#c8c7a5'} roughness={1}/>
       </mesh>;
     })}
 
-    <Cottage position={[-10.4, 0, -12.5]} roof='#db8e6a' accent='#73a990' rotation={.18}/>
-    <Cottage position={[19, 0, 6.3]} roof='#7fa58a' accent='#d67f62' rotation={-.38}/>
-    <Workshop/>
+    <CozyVillage/>
     {trees.map(([x, z, scale, turn]) => <SoftTree key={`${x}-${z}`} x={x} z={z} scale={scale} turn={turn}/>)}
     {quality === 'high' && FLOWERS.map(([x, z, color], i) => <Flower key={i} x={x} z={z} color={color}/>)}
 

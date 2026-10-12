@@ -1,0 +1,7 @@
+Kenney Fantasy Town Kit 2.0
+Source: https://kenney.nl/assets/fantasy-town-kit
+Downloaded archive: https://kenney.nl/media/pages/assets/fantasy-town-kit/efe948d309-1754222374/kenney_fantasy-town-kit_2.0.zip
+License: CC0 (see LICENSE.txt).
+Selected GLB models and their external Textures/colormap.png are shipped together.
+House prefabs are assembled in features/habitat/cozy-village.tsx.
+Animal Crossing and Tiny Glade are composition references only; no assets from those games are included.

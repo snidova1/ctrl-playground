@@ -6,7 +6,7 @@ import {createCharacterMotion} from '@/features/plaza/characters/catalog';
 import type {ControlInput} from '@/features/plaza/scene';
 import type {Pose} from '@/features/plaza/types';
 import type {WorldState} from '@/features/habitat/types';
-import {createStarterWorld} from '@/features/habitat/starter-world';
+
 const Stage=dynamic(()=>import('@/features/habitat/stage'),{ssr:false});
 class Boundary extends Component<{children:ReactNode},{failed:boolean}>{
  state={failed:false};
@@ -21,7 +21,7 @@ export default function Preview(){
  // Deliberately browser-only demo state. No wallet, session, API calls or saved-world writes.
  const [state]=useState<WorldState>(()=>({
   profile:{id:'local-preview',name:'Visitor',character:'female',variant:'original'},
-  world:{id:'local-preview-world',ownerId:'local-preview',name:'Cozy Habitat Preview',visibility:'public',revision:0,objects:createStarterWorld()},
+  world:{id:'local-preview-world',ownerId:'local-preview',name:'Cozy Habitat Preview',visibility:'public',revision:0,objects:[]},
   homeId:null,canEdit:false,players:[],states:{},wallet:null,keyStatus:'not-deployed',worlds:[],
  }));
  const hold=(x:number,z:number)=>{input.current={x,z};};
