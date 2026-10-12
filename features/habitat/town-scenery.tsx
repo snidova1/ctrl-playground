@@ -39,7 +39,7 @@ const leafSeeds=Array.from({length:72},(_,i)=>{
 });
 function GreenBorder({quality}:{quality:'low'|'high'}){
  const trunks=useRef<InstancedMesh>(null),canopies=useRef<InstancedMesh>(null);
- const selected=quality==='low'?leafSeeds.filter((_,i)=>i%2===0):leafSeeds;
+ const selected=useMemo(()=>quality==='low'?leafSeeds.filter((_,i)=>i%2===0):leafSeeds,[quality]);
  useLayoutEffect(()=>{
   const mat=new Matrix4(),color=new Color();
   selected.forEach((p,i)=>{
@@ -53,7 +53,7 @@ function GreenBorder({quality}:{quality:'low'|'high'}){
   });
   if(trunks.current)trunks.current.instanceMatrix.needsUpdate=true;
   if(canopies.current){canopies.current.instanceMatrix.needsUpdate=true;canopies.current.instanceColor!.needsUpdate=true;}
- },[selected.length]);
+ },[selected]);
  return <group>
   <instancedMesh ref={trunks} args={[undefined,undefined,selected.length]}><cylinderGeometry args={[1,1,1,6]}/><meshStandardMaterial color='#8c765e'/></instancedMesh>
   <instancedMesh ref={canopies} args={[undefined,undefined,selected.length]} castShadow={quality==='high'}><icosahedronGeometry args={[1,1]}/><meshStandardMaterial vertexColors roughness={1}/></instancedMesh>
