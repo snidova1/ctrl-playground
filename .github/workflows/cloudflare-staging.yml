@@ -79,6 +79,18 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: node scripts/cloudflare-staging.mjs deploy
+      - name: Install browser for live visual preview smoke
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Verify wallet-free preview on live staging
+        run: node scripts/qa/preview-smoke.mjs
+      - name: Upload live preview screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrl-preview-evidence-${{ github.run_id }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 7
       - name: Retain pre-migration backup even after failure
         if: always()
         uses: actions/upload-artifact@v4
