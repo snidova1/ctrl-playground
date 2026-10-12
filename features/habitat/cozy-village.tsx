@@ -1,6 +1,7 @@
 'use client';
-import {Suspense,useMemo} from 'react';
-import {useGLTF,Text} from '@react-three/drei';
+import {Suspense,useMemo,useEffect} from 'react';
+import {useGLTF} from '@react-three/drei';
+import {CanvasTexture} from 'three';
 import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type {Mesh} from 'three';
 
@@ -11,9 +12,14 @@ function Model({name,position=[0,0,0],rotation=0,scale=1}:{name:string;position?
  const instance=useMemo(()=>{const c=clone(scene);c.traverse(o=>{if((o as Mesh).isMesh){o.castShadow=true;o.receiveShadow=true;}});return c;},[scene]);
  return <group position={position} rotation-y={rotation} scale={scale}><primitive object={instance}/></group>;
 }
+function LocalLabel({text}:{text:string}){
+ const texture=useMemo(()=>{const canvas=document.createElement('canvas');canvas.width=640;canvas.height=128;const c=canvas.getContext('2d')!;c.fillStyle='#6b4b37';c.fillRect(0,0,640,128);c.fillStyle='#fff3cf';c.font='bold 46px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(text,320,64,610);return new CanvasTexture(canvas);},[text]);
+ useEffect(()=>()=>texture.dispose(),[texture]);
+ return <mesh position-z={.105}><planeGeometry args={[2.25,.46]}/><meshBasicMaterial map={texture} toneMapped={false}/></mesh>;
+}
 function Sign({label}:{label:string}){return <group position={[0,2.18,2.35]}>
  <mesh castShadow><boxGeometry args={[2.3,.5,.16]}/><meshStandardMaterial color='#6b4b37'/></mesh>
- <Text fontSize={.23} maxWidth={2.1} color='#fff3cf' position-z={.1} anchorX='center' anchorY='middle'>{label}</Text>
+ <LocalLabel text={label}/>
 </group>;}
 export const VILLAGE_HOMES=[
  {x:-8,z:-4,rotation:0,label:'Fern Cottage',timber:false,tall:false},
@@ -49,9 +55,11 @@ function Market(){return <group position={[3.2,0,-.1]}>
  <Model name='stall-red' position={[0,0,0]} rotation={Math.PI/2} scale={2.8}/>
  <Model name='stall-green' position={[0,0,-2.15]} rotation={Math.PI/2} scale={2.8}/>
  <Model name='cart' position={[2.2,0,-.7]} scale={1.6}/>
- <group position={[0,2.25,1.5]}><mesh castShadow><boxGeometry args={[2.3,.5,.16]}/><meshStandardMaterial color='#866548'/></mesh><Text fontSize={.24} position-z={.1} color='#fff6dc'>LITTLE MARKET</Text></group>
+ <group position={[0,2.25,1.5]}><mesh castShadow><boxGeometry args={[2.3,.5,.16]}/><meshStandardMaterial color='#866548'/></mesh><LocalLabel text='LITTLE MARKET'/></group>
 </group>;}
+function Ready(){useEffect(()=>{document.documentElement.dataset.ctrlVillageReady="true";return()=>{delete document.documentElement.dataset.ctrlVillageReady;};},[]);return null;}
 export default function CozyVillage(){return <Suspense fallback={null}>
+ <Ready/>
  {VILLAGE_HOMES.map(h=><House key={h.label} {...h}/>)}
  <Path from={[0,11]} to={[0,-5.6]}/>
  <Path from={[-8,-1.4]} to={[8,-1.4]}/>

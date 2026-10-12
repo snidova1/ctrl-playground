@@ -15,7 +15,8 @@ try{
  assert.equal(response.status(),200);
  await page.getByText('NO WALLET · VISUAL PREVIEW',{exact:true}).waitFor();
  await page.locator('canvas').waitFor({timeout:60000});
- await page.waitForTimeout(15000);
+ await page.waitForFunction(()=>document.documentElement.dataset.ctrlVillageReady==="true",{},{timeout:60000});
+ await page.waitForTimeout(3000);
  assert.equal(await page.getByRole('navigation',{name:'Machine rooms'}).count(),0,'Global navigation must not overlap preview');
  assert.equal(await page.getByRole('alert').count(),0,'WebGL scene must not hit error boundary');
  await page.keyboard.down('w');await page.waitForTimeout(750);await page.keyboard.up('w');
