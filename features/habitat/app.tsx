@@ -67,6 +67,7 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
   }finally{setLoaded(true);}
  },[connect,leave]);
  useEffect(()=>{const timer=setTimeout(()=>{setGuestState(createGuestState());setGuestStyle(randomGuestStyle());if(requested.current==='common'){setPanel(null);setLoaded(true);}else void refresh();},0);return()=>clearTimeout(timer);},[refresh]);useEffect(()=>{if(!celebrate)return;const t=setTimeout(()=>setCelebrate(false),2500);return()=>clearTimeout(t);},[celebrate]);
+ useEffect(()=>{if(!town||!message)return;const t=setTimeout(()=>setMessage(''),4500);return()=>clearTimeout(t);},[town,message]);
  async function action(fn:()=>Promise<void>){if(busy)return;setBusy(true);setError('');try{await fn();}catch(e){setError(e instanceof Error?e.message:'Operation failed.');}finally{setBusy(false);}}
  function commonGround(){if(busy)return;window.history.replaceState(null,'','/');setOnline(true);refreshEpoch.current++;leave();latest.current=null;setState(null);requested.current='common';setDestination('common');setPanel(null);setEditing(false);setSitting(false);setError('');setMessage('');Object.assign(pose.current,{x:0,z:6,angle:Math.PI,moving:false});}
  async function chooseDestination(next:'habitat'|'public'){if(busy)return;window.history.replaceState(null,'',next==='public'?'/public-world':'/habitat');setBusy(true);requested.current=next;setDestination(next);setEditing(false);setSitting(false);setPanel('entry');try{await refresh();}finally{setBusy(false);}}
