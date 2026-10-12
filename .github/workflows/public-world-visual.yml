@@ -1,0 +1,53 @@
+name: Public World is an Actual Place
+on:
+  pull_request:
+    branches:
+      - feat/public-world-and-guest-play
+      - work/master-integration
+    paths:
+      - 'features/habitat/public-world-geography.ts'
+      - 'features/habitat/town-scenery.tsx'
+      - 'features/habitat/stage.tsx'
+      - 'features/habitat/types.ts'
+      - 'domain/habitat.ts'
+      - 'server/habitat/service.ts'
+      - 'tests/unit/public-world.test.ts'
+      - 'tests/browser/public-world-visual.spec.ts'
+      - 'playwright.public-world.config.ts'
+      - '.github/workflows/public-world-visual.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-world:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Public World API/geometry/bounds regression
+        run: pnpm exec vitest run tests/unit/public-world.test.ts
+      - name: Strict project typecheck
+        run: pnpm typecheck
+      - name: Public World scoped lint
+        run: pnpm exec eslint features/habitat/town-scenery.tsx features/habitat/public-world-geography.ts features/habitat/types.ts domain/habitat.ts tests/browser/public-world-visual.spec.ts
+      - name: Install headless Chromium with software WebGL
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Capture actual desktop and mobile world pixels using a signed wallet
+        run: pnpm exec playwright test --config playwright.public-world.config.ts
+      - name: Preserve screenshots and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrl-real-town-screenshots
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: warn
