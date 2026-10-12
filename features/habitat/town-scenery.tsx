@@ -158,7 +158,6 @@ function TownHouse({site,quality}:{site:House;quality:'low'|'high'}){
   </group>)}
   <mesh position={[0,.16,d/2+1.1]} receiveShadow><boxGeometry args={[w*.56,.24,2.2]}/><meshStandardMaterial color='#c6a781'/></mesh>
   <mesh position={[0,3.72,d/2+.22]}><boxGeometry args={[Math.min(w-1,4.9),.48,.27]}/><meshStandardMaterial color='#f5ead5'/></mesh>
-  <Html center position={[0,6.25,d/2]} distanceFactor={27}><span className='hb-town-label'>{site.name}</span></Html>
  </group>;
 }
 function MarketFront({x,name,base,roof}:{x:number;name:string;base:string;roof:string}){
@@ -240,7 +239,7 @@ export default function TownScenery({quality,onDirectory}:{quality:'low'|'high';
       This facade surrounds them with streets, districts and actual landmarks. */}
   <Html center position={[0,3.1,15]} distanceFactor={20}><span className='hb-town-label'>WILLOW SQUARE • TOWN PARK</span></Html>
   <Html center position={[0,2,-13.4]} distanceFactor={22}><span className='hb-town-label'>THE WILLOW WATERFRONT</span></Html>
-  <Html position={[3,1.7,6]} center distanceFactor={10}><button className='hb-directory' onClick={onDirectory}>Visit habitats ↗</button></Html>
+  <Html position={[1.5,1.8,2.5]} center distanceFactor={11}><button className='hb-directory' onClick={onDirectory}>Visit habitats ↗</button></Html>
   {Array.from({length:quality==='low'?2:4},(_,i)=><Resident key={i} index={i}/>)}
  </group>;
 }
