@@ -288,7 +288,7 @@ export async function handleHabitat(r: Request, path: string[]) {
       if (data.sessionId && (data.sessionId !== old.session_id || data.sequence! <= old.sequence)) throw new AppError('STALE_PRESENCE', 409);
       const limit = Math.min(10, Math.max(1, (Date.now() - old.seen_at) / 1000 * 4));
       if (Math.hypot(data.x - old.x, data.z - old.z) > limit) throw new AppError('MOVE_TOO_FAST', 422);
-      const position = collideWorld(old, data, current.world.objects, current.states);
+      const position = collideWorld(old, data, current.world.objects, current.states, data.worldId);
       const result = await exec(`UPDATE habitat_presence SET x=?,z=?,angle=?,motion=?,seen_at=?,sequence=?
         WHERE profile_id=? AND world_id=? AND session_id=? AND sequence=? AND EXISTS
         (SELECT 1 FROM habitat_worlds w WHERE w.id=habitat_presence.world_id AND
