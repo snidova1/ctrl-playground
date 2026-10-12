@@ -1,6 +1,6 @@
 import {layoutSchema,type WorldObject} from './types';
 
-export const PUBLIC_WORLD_ID='cf000000-0000-4000-8000-000000000001';
+export {PUBLIC_WORLD_ID} from './public-world-geography';
 export const PUBLIC_WORLD_OWNER='ctrl-public-world';
 export const COMMON_GROUND_ID='cf000000-0000-4000-8000-000000000002';
 export type WorldDestination='common'|'habitat'|'public';

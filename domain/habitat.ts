@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {PUBLIC_WORLD_ID,PUBLIC_WORLD_BOUNDS} from '@/features/habitat/public-world-geography';
 import {layoutSchema, motionSchema, worldObjectSchema} from '@/features/habitat/types';
 import type {WorldRecord, WorldState, WorldProfile} from '@/features/habitat/types';
 import type {CharacterLoadout as CatalogLoadout} from '@/features/plaza/characters/catalog';
@@ -41,11 +42,12 @@ export const characterProfileInputSchema = z.object({
 export type CharacterProfileInput = z.infer<typeof characterProfileInputSchema>;
 export const poseInputSchema = z.object({
   worldId: worldIdSchema,
-  x: z.number().finite().min(-15).max(15), z: z.number().finite().min(-9).max(13),
+  x: z.number().finite().min(PUBLIC_WORLD_BOUNDS.minX).max(PUBLIC_WORLD_BOUNDS.maxX), z: z.number().finite().min(PUBLIC_WORLD_BOUNDS.minZ).max(PUBLIC_WORLD_BOUNDS.maxZ),
   angle: z.number().finite().min(-100).max(100), motion: motionSchema,
   moving: z.boolean().optional(),
   sessionId: z.string().uuid().optional(), sequence: revisionSchema.optional(),
-}).strict().refine(v => (v.sessionId === undefined) === (v.sequence === undefined), 'Session and sequence must be supplied together');
+}).strict().refine(v => (v.sessionId === undefined) === (v.sequence === undefined), 'Session and sequence must be supplied together')
+ .refine(v=>v.worldId===PUBLIC_WORLD_ID||(v.x>=-15&&v.x<=15&&v.z>=-9&&v.z<=13),'Personal worlds retain their original movement bounds');
 export const presenceInputSchema = poseInputSchema.refine(v => v.sessionId !== undefined, 'Join before sending presence');
 export type PresenceInput = z.infer<typeof presenceInputSchema>;
 export const objectCreateSchema = z.object({revision: revisionSchema, object: worldObjectSchema}).strict();
