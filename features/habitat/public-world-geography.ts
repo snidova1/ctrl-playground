@@ -6,9 +6,11 @@
 export const PUBLIC_WORLD_ID='cf000000-0000-4000-8000-000000000001';
 export const PUBLIC_WORLD_BOUNDS={minX:-32,maxX:32,minZ:-30,maxZ:31} as const;
 export const PUBLIC_WORLD_CANAL={north:-22,south:-17} as const;
+export const PUBLIC_WORLD_BRIDGE={halfWidth:3.4,halfLength:3.4,railX:3.15,railHalfWidth:.08} as const;
+export const PUBLIC_WORLD_PLAYER_RADIUS=.34;
 export const PUBLIC_WORLD_BRIDGES=[
- {x:-1.5,halfWidth:3.6},
- {x:20,halfWidth:3.5},
+ {x:-1.5,halfWidth:PUBLIC_WORLD_BRIDGE.halfWidth},
+ {x:20,halfWidth:PUBLIC_WORLD_BRIDGE.halfWidth},
 ] as const;
 export const PUBLIC_WORLD_BUILDINGS=[
  {x:-23,z:2,width:7,depth:6,levels:2,color:'#e9c69e',roof:'#8d7c67',name:'WILLOW BAKERY'},
@@ -22,11 +24,17 @@ export const PUBLIC_WORLD_SHOPS=[
  {x:-8,z:-9,width:9,depth:3.8},
  {x:8,z:-9,width:9,depth:3.8},
 ] as const;
-const walkableBridge=(x:number)=>PUBLIC_WORLD_BRIDGES.some(b=>Math.abs(x-b.x)<b.halfWidth);
+const bridgeCenterZ=(PUBLIC_WORLD_CANAL.north+PUBLIC_WORLD_CANAL.south)/2;
+const bridgeClearWidth=PUBLIC_WORLD_BRIDGE.railX-PUBLIC_WORLD_BRIDGE.railHalfWidth-PUBLIC_WORLD_PLAYER_RADIUS;
+const walkableBridge=(x:number)=>PUBLIC_WORLD_BRIDGES.some(b=>Math.abs(x-b.x)<bridgeClearWidth);
 /** Exterior structures have their own footprints, not just decorative meshes. */
 export function isPublicWorldWalkable(x:number,z:number){
  if(x<PUBLIC_WORLD_BOUNDS.minX||x>PUBLIC_WORLD_BOUNDS.maxX||z<PUBLIC_WORLD_BOUNDS.minZ||z>PUBLIC_WORLD_BOUNDS.maxZ)return false;
- if(z>PUBLIC_WORLD_CANAL.north&&z<PUBLIC_WORLD_CANAL.south&&!walkableBridge(x))return false;
+ // Stop the whole avatar before the bank, not just its origin. Rails continue
+ // past the water, so stepping sideways off an approach is blocked too.
+ if(z>PUBLIC_WORLD_CANAL.north-PUBLIC_WORLD_PLAYER_RADIUS&&z<PUBLIC_WORLD_CANAL.south+PUBLIC_WORLD_PLAYER_RADIUS&&!walkableBridge(x))return false;
+ if(Math.abs(z-bridgeCenterZ)<PUBLIC_WORLD_BRIDGE.halfLength+PUBLIC_WORLD_PLAYER_RADIUS&&PUBLIC_WORLD_BRIDGES.some(b=>Math.abs(Math.abs(x-b.x)-PUBLIC_WORLD_BRIDGE.railX)<PUBLIC_WORLD_BRIDGE.railHalfWidth+PUBLIC_WORLD_PLAYER_RADIUS))return false;
+ if(Math.hypot(x,z+3)<2.25+PUBLIC_WORLD_PLAYER_RADIUS)return false;
  return ![...PUBLIC_WORLD_BUILDINGS,...PUBLIC_WORLD_SHOPS].some(h=>Math.abs(x-h.x)<h.width/2+.34&&Math.abs(z-h.z)<h.depth/2+.34);
 }
 /** Small swept steps prevent running through the riverbanks or home walls. */
