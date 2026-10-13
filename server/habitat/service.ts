@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import {PUBLIC_WORLD_ID,PUBLIC_WORLD_OWNER,createPublicWorld} from '@/features/habitat/public-world';
+import {getTownActivity} from '@/features/habitat/town-districts';
 import {one, query, exec, batch, statement} from '@/db';
 import {identity, rateLimit} from '@/server/wallet/auth';
 import {settings} from '@/server/env';
@@ -296,6 +297,26 @@ export async function handleHabitat(r: Request, path: string[]) {
       position.x, position.z, data.angle, JSON.stringify({...data.motion,speechAt:Math.min(data.motion.speechAt??0,Date.now())}), Date.now(), data.sequence ?? old.sequence + 1, user.id, data.worldId, old.session_id, old.sequence, user.id, user.id);
       if (!result.meta.changes) throw new AppError('STALE_PRESENCE', 409);
       return reply({...await state(user, data.worldId), accepted: position});
+    }
+    // Shared Townies-style field work: authenticated, proximity-gated and persistent.
+    // This never trusts a client-supplied position, reward amount or world identifier.
+    if (r.method === 'POST' && p === 'town-activity') {
+      const {id} = z.object({id:z.string().min(2).max(50)}).strict().parse(await body(r));
+      const activity = getTownActivity(id);
+      if (!activity) throw new AppError('ACTIVITY_NOT_FOUND', 404);
+      const location = await one<{x:number;z:number;world_id:string;seen_at:number}>(
+        'SELECT x,z,world_id,seen_at FROM habitat_presence WHERE profile_id=?',user.id);
+      if (!location || location.world_id !== PUBLIC_WORLD_ID || location.seen_at < Date.now()-TTL)
+        throw new AppError('PUBLIC_WORLD_REQUIRED',409,'Enter the Public World to help your neighbors.');
+      if (Math.hypot(location.x-activity.x,location.z-activity.z)>4.25)
+        throw new AppError('COME_CLOSER',422,'Walk to the activity marker first.');
+      const now=Date.now();
+      const result=await exec(`INSERT INTO habitat_object_state(world_id,object_id,active,used_at)
+        SELECT ?,?,1,? WHERE EXISTS (SELECT 1 FROM habitat_worlds WHERE id=? AND visibility='public')
+        ON CONFLICT(world_id,object_id) DO UPDATE SET active=1,used_at=excluded.used_at
+        WHERE habitat_object_state.used_at<=?`,PUBLIC_WORLD_ID,activity.objectId,now,PUBLIC_WORLD_ID,now-activity.cooldownMs);
+      if (!result.meta.changes) throw new AppError('ACTIVITY_RESTING',409,'Your neighbors finished this recently. Come back soon.');
+      return reply({activity:activity.id,message:activity.result,updatedAt:now,state:await state(user,PUBLIC_WORLD_ID)});
     }
     if (r.method === 'POST' && (p === 'settings' || p === 'use')) {
       const current = await state(user);
