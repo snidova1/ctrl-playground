@@ -1,5 +1,24 @@
 # REA-assisted Public World implementation evidence
 
+## Latest correction: keep Common Ground's visual identity
+
+User review rejected the garden checkpoint's pale cream paving, mint glazing and pastel foliage as disconnected from Common Ground. Renderer commit **`19cd2fd2ae67f1e666a8e206ffd0c170f6326990`** corrects the dominant palette instead of redesigning the approved landing.
+
+- `town-palette.ts` records the existing Common Ground terracotta floor colors (`#b9846a`, `#c99175`, `#bb8364`, `#cb977c`), cream plaster, terracotta roofs, dark forest glazing and sage trim from `features/plaza/architecture.tsx`.
+- The town's locally painted paving now has straight rectangular brick courses, warm terracotta variation and subtle joints, rather than pale rounded stone. Cream café/cottage walls, dark green windows, shutters and foliage inherit the same dominant colors. Flower accents no longer define a separate pink/mint theme.
+- Public World sky and light settings align with the Common Ground branch of `stage.tsx`; town fog distances remain appropriate to its larger geography. Common Ground source, personal Habitat material/camera behavior, geometry, collision, signing and permissions remain unchanged.
+- `tests/unit/town-palette.test.ts` verifies that floor and dominant architecture/foliage values actually exist in the approved Common Ground renderer. It is a palette continuity gate, not a subjective art-quality assertion.
+
+REA **6.4.0** captured the clean correction commit at **2026-10-13T07:50:36.152Z**, with zero page errors. Inspection evidence `ev_0aeb0232a8e07e5999d197914a8cdc2b7107d1a46c2f0e42cf93d403c4ab3dba`; desktop `ev_fca48834d4205dfd9e3abdbe58a29098f273a77afbbe2028de2874afe6cb32b0`; mobile-sized `ev_0eedf166b51783ee038702d96057133dedf8438206b30d5c69e0a4d541aa0b68`. Raw evidence remains ignored under `outputs/rea-ctrl-palette/`.
+
+Current actual renders, **not generated artwork**: [desktop 1440×900](palette-evidence/desktop.png) · [mobile-sized 390×844](palette-evidence/mobile.png). Historical garden images below remain intact for review of the rejected palette. The current screenshots use the approved female VRoid with normal randomized appearance; no character anatomy or model asset was changed.
+
+![Public World with Common Ground's terracotta / cream / forest palette](palette-evidence/desktop.png)
+
+Verification: **193/193 unit/API tests**, 35 files; targeted palette + Public World **15/15**; typecheck, scoped ESLint and production Next build PASS (known ox/viem warning only). Production desktop/mobile browser results and the final evidence-only head are recorded in PR #29. Physical-device graphics profiling remains unverified. No production deployment or main merge.
+
+---
+
 ## Garden visual follow-up — 2026-10-13
 
 This section supersedes the earlier visual checkpoint, not its historical test record. Branch `feat/public-world-garden-life` starts at PR #28's exact head `2d25912d01cd986ce5a28ea26fc53dcbeb27efbe`. Tested renderer/code commit: **`bb3be94e090646de452905a9edcfad4f16c81707`**. The subsequent evidence-only commit adds this report and unretouched PNGs; it does not change the renderer. No main/production mutation or deployment.
