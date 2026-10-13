@@ -303,7 +303,7 @@ test('complete character selection changes the rendered model and persists it ac
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await enterTown(page,'Wardrobe Traveler');
  await press(page,page.locator('.hb-top').getByRole('button',{name:'Settings',exact:true}));
- await press(page,page.getByRole('button',{name:'Edit character',exact:true}));
+ await press(page,page.getByRole('button',{name:'Change character',exact:true}));
  await press(page,page.getByRole('button',{name:'Victoria · Free',exact:true}));
  await expect(page.locator('.hb-preview-loading')).toHaveCount(0,{timeout:60000});
  const preview=page.locator('.hb-avatar-preview canvas');
@@ -320,6 +320,6 @@ test('complete character selection changes the rendered model and persists it ac
  await page.reload();
  await expect(page.getByRole('heading',{name:'Willow Square',exact:true})).toBeVisible({timeout:45000});
  const state=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
- expect(state.profile?.appearance?.characterId).toBe('vroid-fumiriya-preview');
+ expect(state.profile?.appearance?.characterId).toBe('vroid-fumiriya');
  expect(errors).toEqual([]);
 });

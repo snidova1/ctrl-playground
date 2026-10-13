@@ -10,6 +10,9 @@ on:
       - '.github/workflows/ctrl-visible-habitat.yml'
   pull_request:
     paths:
+      - 'features/habitat/**'
+      - 'features/plaza/characters/**'
+      - 'public/plaza/characters/**'
       - 'tests/browser/habitat-visual.spec.ts'
       - 'playwright.visual.config.ts'
       - '.github/workflows/ctrl-visible-habitat.yml'
@@ -35,7 +38,11 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Install headless Chromium with SwiftShader
         run: pnpm exec playwright install --with-deps chromium
+      - name: Build production application
+        run: pnpm build:next
       - name: Real wallet + actual rendered 3D preview and starter home, desktop and mobile
+        env:
+          CTRL_TEST_PRODUCTION: '1'
         run: pnpm exec playwright test --config playwright.visual.config.ts
       - name: Preserve visual screenshots and failing traces
         if: always()
