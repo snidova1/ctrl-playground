@@ -2,6 +2,7 @@ name: Public World is an Actual Place
 on:
   pull_request:
     branches:
+      - feat/public-world-garden-life
       - feat/public-world-real-neighborhood
       - feat/public-world-and-guest-play
       - work/master-integration
