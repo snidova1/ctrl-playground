@@ -1,8 +1,10 @@
 import type {VRMHumanBoneName} from '@pixiv/three-vrm';
+import {INSTALLED_CHARACTER_ASSETS} from './ready-character-assets';
 export type CharacterQuality = 'low' | 'high';
 export interface CharacterDefinition {
   id: string;
   name: string;
+  gender: 'female'|'male';
   assets: Record<CharacterQuality, string>;
   height: number;
   license: {name: string; author: string; source: string};
@@ -16,13 +18,13 @@ export interface CharacterDefinition {
 }
 /** Approved female reference; retained export for preview compatibility. */
 export const previewCharacter: CharacterDefinition = {
-  id: 'vroid-victoria-preview', name: 'Victoria', height: 1.88,
+  id: 'vroid-victoria-preview', name: 'Victoria', gender:'female', height: 1.88,
   assets: {high: '/plaza/characters/victoria-desktop.vrm', low: '/plaza/characters/victoria-mobile.vrm'},
   license: {name: 'CC0', author: 'VRoid Project / pixiv', source: 'https://vroid.pixiv.help/hc/en-us/articles/360014900233'},
   customization: {hairstyle: 'wavy-blonde', outfit: 'victoria-original', bodyProfile: 'source-proportions', strategy: 'authored-vrm-variants', accessoryBones: ['head', 'chest', 'hips', 'leftHand', 'rightHand']},
 };
 export const maleCharacter: CharacterDefinition = {
-  id: 'vroid-fumiriya', name: 'Fumiriya', height: 1.9,
+  id: 'vroid-fumiriya', name: 'Fumiriya', gender:'male', height: 1.9,
   assets: {high: '/plaza/characters/fumiriya-desktop.vrm', low: '/plaza/characters/fumiriya-mobile.vrm'},
   license: {name: 'CC0', author: 'VRoid Project / pixiv', source: 'https://vroid.pixiv.help/hc/en-us/articles/360014788554'},
   customization: {hairstyle: 'blonde-layered', outfit: 'fumiriya-original', bodyProfile: 'source-proportions', strategy: 'authored-vrm-variants', accessoryBones: ['head', 'chest', 'hips', 'leftHand', 'rightHand']},
@@ -35,7 +37,15 @@ export const characterCatalog: Readonly<Record<CharacterGender, CharacterDefinit
  * The 16 requested mixed-style character sources are NOT placed here until their
  * self-contained binaries and real-animation tests pass.
  */
-export const AVAILABLE_CHARACTER_DEFINITIONS: readonly CharacterDefinition[] = [previewCharacter,maleCharacter];
+export const AVAILABLE_CHARACTER_DEFINITIONS: readonly CharacterDefinition[] = [
+  previewCharacter,maleCharacter,
+  ...INSTALLED_CHARACTER_ASSETS.map(asset=>({
+    id:asset.id,name:asset.name,gender:asset.gender,height:asset.height,
+    assets:{high:asset.modelUrl,low:asset.modelUrl},
+    license:{name:asset.license,author:asset.creator,source:asset.sourceUrl},
+    customization:{hairstyle:'authored',outfit:'complete',bodyProfile:'source-proportions',strategy:'authored-vrm-variants' as const,accessoryBones:[]},
+  }))
+];
 export function getAvailableCharacter(id:unknown):CharacterDefinition|undefined {
   return typeof id==='string'?AVAILABLE_CHARACTER_DEFINITIONS.find(character=>character.id===id):undefined;
 }
@@ -100,12 +110,13 @@ export function seededAppearance(seed: string, gender: CharacterGender): Charact
 export function normalizeAppearance(value:unknown,gender:CharacterGender,variantId:string):CharacterAppearance{
   if(isCharacterAppearance(value)) {
     const chosen=getAvailableCharacter(value.characterId);
-    return {...value,gender,...(value.characterId!==undefined?{characterId:chosen && characterCatalog[gender].id===chosen.id?chosen.id:characterCatalog[gender].id}:{})};
+    return {...value,gender,...(value.characterId!==undefined?{characterId:chosen && chosen.gender===gender?chosen.id:characterCatalog[gender].id}:{})};
   }
   return {...seededAppearance(`${gender}:${variantId}`,gender),variantId:validVariant(variantId)};
 }
 export function resolveCharacter(appearance: CharacterAppearance): CharacterDefinition {
-  return getAvailableCharacter(appearance.characterId)??characterCatalog[appearance.gender];
+  const candidate=getAvailableCharacter(appearance.characterId);
+  return candidate?.gender===appearance.gender?candidate:characterCatalog[appearance.gender];
 }
 export const characterBudgets = {maxAssetBytes: 20 * 1024 * 1024, maxDelta: .05, fixedStep: 1 / 60, maxSteps: 3} as const;
 export interface CharacterMotion {
