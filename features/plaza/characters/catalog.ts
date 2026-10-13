@@ -100,7 +100,7 @@ export function seededAppearance(seed: string, gender: CharacterGender): Charact
 export function normalizeAppearance(value:unknown,gender:CharacterGender,variantId:string):CharacterAppearance{
   if(isCharacterAppearance(value)) {
     const chosen=getAvailableCharacter(value.characterId);
-    return {...value,gender,characterId:chosen && characterCatalog[gender].id===chosen.id?chosen.id:characterCatalog[gender].id};
+    return {...value,gender,...(value.characterId!==undefined?{characterId:chosen && characterCatalog[gender].id===chosen.id?chosen.id:characterCatalog[gender].id}:{})};
   }
   return {...seededAppearance(`${gender}:${variantId}`,gender),variantId:validVariant(variantId)};
 }
