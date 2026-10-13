@@ -36,7 +36,7 @@ export type TownActivity={id:TownActivityId;objectId:string;district:TownDistric
 export const TOWN_ACTIVITIES:readonly TownActivity[]=[
  {id:'cafe-supplies',objectId:'cf220000-0000-4000-8000-000000000001',district:'center',x:4,z:5,name:'Café supplies',verb:'Restock café',result:'Café supplies are ready for the neighborhood.',cooldownMs:30000},
  {id:'neighborhood-post',objectId:'cf220000-0000-4000-8000-000000000002',district:'residential',x:78,z:27,name:'Neighborhood post',verb:'Deliver letters',result:'The neighborhood mail route is complete.',cooldownMs:45000},
- {id:'community-garden',objectId:'cf220000-0000-4000-8000-000000000003',district:'garden',x:-75,z:46,name:'Community flower bed',verb:'Water shared garden',result:'You watered Fernwood Park. Everyone can see it bloom.',cooldownMs:45000},
+ {id:'community-garden',objectId:'cf220000-0000-4000-8000-000000000003',district:'garden',x:-75,z:46,name:'Community flower bed',verb:'Water shared garden',result:'The community garden in Fernwood Park is watered. Everyone can see it bloom.',cooldownMs:45000},
  {id:'harbor-cleanup',objectId:'cf220000-0000-4000-8000-000000000004',district:'harbor',x:5,z:-76,name:'Harbor maintenance',verb:'Tidy the dock',result:'The docks are sparkling clean.',cooldownMs:45000},
  {id:'artisan-project',objectId:'cf220000-0000-4000-8000-000000000005',district:'workshop',x:-75,z:-52,name:'Community workshop',verb:'Help town workshop',result:'The creative quarter got another helping hand.',cooldownMs:45000},
  {id:'festival-stage',objectId:'cf220000-0000-4000-8000-000000000006',district:'festival',x:77,z:-73,name:'Festival preparations',verb:'Prepare the stage',result:'The festival stage is ready to welcome neighbors.',cooldownMs:45000},
