@@ -1,58 +1,55 @@
-# CTRL PR #30 — PREMIUM-QUALITY COMPLETE AVATARS, FREE FOR EVERY PLAYER
+# CTRL PR #30 — Whole-character playable roster implementation
 
-**Updated:** 2026-10-14 (WIB)  
-**Current status:** source discovery/visual research, **NO APPROVED NEW ROSTER**. Do not claim assets imported, UI shipped, browser quality approved, or PR ready.
+Updated: 2026-10-14 (WIB)
 
-## OWNER'S LATEST DECISION — THIS OVERRIDES ALL PRIOR ROSTER / TOKEN IDEAS
+## Final owner decision
 
-1. **REMOVE THE PREVIOUS PROPOSED CHARACTER ROSTER FROM THE BUILD PLAN.** All earlier named candidates in `docs/CTRL_FREE_CHARACTER_SOURCES_FOR_TOKEN_UNLOCKS.md` are now withdrawn and are **NOT approved or queued for import**. Do not silently re-add them as an automatic shortlist.
-2. Find **genuinely premium-looking, fully modeled, ready-made** 3D avatars **male AND female, in roughly equal variety**, not obviously dated free/preset/default-looking assets.
-3. Every available character is **FREE to select and use by every CTRL player**, even if the finished model looks premium. **No token purchases, no premium price tags, no holders-only character tiers, no unlocking, no marketplace, no NFT and no character paywall.**
-4. **Developer spends $0 on model acquisition**. Research assets with no mandatory model acquisition fee and licenses compatible with embedding/distributing models in a public commercial WebGL game. Do not take paid or restricted models without permission.
-5. **No character customization.** Players select a **complete authored avatar**. No modular hair, clothes, face, body, slider, palette or procedural geometry.
-6. CTRL must **not ship an empty selector** while scouting. Existing Victoria/Fumiriya VRMs remain **temporary technical fallback** until a visually approved replacement roster is available, **not** the final art roster. Never delete working production model files before replacements are validated.
-7. The game's world, Habitat, signed-wallet profile, existing social animations, saved character selection and multiplayer must keep working. Do not add XP/rewards or change existing economics.
+**All sixteen previously researched models are accepted as future CTRL character choices, even across different art styles.** Variety is intentional. No anime-only rule and no extra art-direction veto merely because a source is realistic or film-cartoon. Every character is **FREE to every player**, with no token unlock, purchase, customization or wardrobe parts.
 
-## ART DIRECTOR GATE: "PREMIUM-LOOKING", NOT "MARKED PREMIUM"
+1. Blender Studio: **Rain, Snow, Ellie, Jay, Victoria, Rex, Phil, Einar, Vincent, Lunte**.
+2. BOOTH: **Haku, Shikk/Sick, Akane, Satake Nagisa, Summer-Chan, Donut-Chan**.
 
-Target is a single coherent **high-polish, playful/cozy, modern social-life-sim** aesthetic complementary to CTRL/Common Ground; no cyberpunk/neon-tech/futuristic-tech default.
+**IMPORTANT: Request to make them PLAYABLE, not a documentation-only task.** Every completed import should end with a valid local VRM, a visible entry in the whole-character selector, persisted wallet/profile selection, working multiplayer rendering and full animation/QA.
 
-**Every proposed avatar must be examined in-engine before nomination:**
-- Finished full-body character with deliberately styled silhouette, face and polished facial expression; hair is an authored mesh with appropriate alpha/physics, not procedural cylinders/spheres.
-- Real finished outfit with proper garment construction and weight/skin deformation; aesthetically cohesive shoes, accessories and materials **integral to the one complete model**.
-- Variation includes actual distinct male and female identities and silhouettes (e.g. smart-casual, relaxed streetwear, cute weekend, fashionable elegant, warm outdoors), not recolors or five outfits of one face counted as five characters.
-- No obviously flat/prototype VRoid preset, amateur blockout, AI-looking art mismatch, low-poly toy character when rest of world uses polished VRM, or inappropriate extreme fantasy look.
-- Real 3D **front, side and back** screenshots, idle, walking, sitting and dancing under CTRL's actual world lighting, not just sales-page renders.
-- High fidelity while practical for iOS Safari: verified optimized textures/LODs, clean humanoid rig, correct MToon/material, readable mobile silhouette, hair sorting, spring-bone performance.
-- **Selection rule:** curate quality *before quantity*. Seek a broad mixed-gender discovery pool, then select the **best coherent** subset only after visual QA. Equal priority to men and women; cannot claim "roster complete" if male selection is an afterthought.
+## Code already implemented in PR #30
 
-## RESEARCH POOLS (NOT A CHARACTER ROSTER OR IMPORT AUTHORIZATION)
+- `features/plaza/characters/requested-sources.ts`: all 16 source links with license/dependency flags and honest import status.
+- `features/plaza/characters/ready-character-assets.ts`: audited imported binary manifest. Initially **empty** for these 16. Unlike research sources, this is consumed by the actual production runtime.
+- `features/plaza/characters/catalog.ts`: resolved full-character IDs + automatic import from installed manifest.
+- `server/habitat/service.ts`, `domain/habitat.ts`: wallet profile accepts and replicates a validated whole-character ID. Unauthorized/uninstalled IDs are rejected.
+- `features/habitat/app.tsx`: whole-character selector, Surprise me, no outfit/hair/skin sliders.
+- `features/plaza/characters/vrm-avatar.tsx` and `features/habitat/character-creator-preview.tsx`: removed rendering of procedural wardrobe parts.
+- `scripts/ingest-character-vrm.mjs`: **one-command ingest** of each complete audited **self-contained VRM** file; validates GLB/VRM magic, embedded resources, 20MiB browser budget, provenance and SHA-256, and automatically enables character selection in game.
+- Regression tests: `tests/unit/character-source-roster.test.ts`, `tests/unit/character-appearance.test.ts`, character-selection browser journeys.
 
-| Pool | Primary source | Current state / release caution |
-| --- | --- | --- |
-| BOOTH VRM/CC0 category | https://booth.pm/en/browse/3D%20Characters?q=cc0&tags%5B%5D=VRM | Large discoverable list of VRM CC0 tagged content. Search filters do **not** guarantee full models, original author permission, male/female balance, or quality. Manually review originals, visuals, exact license and binary. |
-| **Haku** CC0 creator source, higher-detail discovery lead **(not roster-approved)** | https://booth.pm/en/items/8214054 | **¥0**, author explicitly states **CC0 + redistribution allowed**, Unity Humanoid, ~45,262 PC triangles and ~11,726 Quest triangles, many expressions. Has full original package and lightweight fallback. This is a **visual audition lead only**, not an automatically approved character. Need inspect complete outfit, real world style, licensed subcomponents and actual VRM export; Unity VRChat dependencies/lilToon are **not part of CC0**. |
-| Independent public-domain VRMs | https://karindou.itch.io/vroid | Shikigami Collection declares **CC0**, download bundle and includes different fantasy presentations. **Art-direction inspiration / QA lead only**; fantasy theme may fail modern cozy requirement. |
-| Premium-looking mixed stylization reference | https://booth.pm/ja/items/5452012 | Free red/white two-character VRoid example by Pike, **but plain redistribution is forbidden** by creator; use **visual research only** unless explicitly cleared for hosting full binary on CTRL. |
-| Premium-looking fantasy reference | https://booth.pm/ja/items/5578944 | Free light/dark Wing avatar example by Pike, but plain redistribution prohibited and general commercial usage requests consultation; **reference only, NOT approved game asset**. |
-| Full styled 4-model art direction reference | https://booth.pm/ja/items/4939358 | Free prebuilt VRMs by MillyDusa, commercial video-game usage mentioned, **redistribution of reusable models restricted**. Visual reference only until public browser-delivery permission verified. |
-| Official VRoid sample model rights | https://vroid.pixiv.help/hc/en-us/articles/4402614652569-Do-VRoid-Studio-s-sample-models-come-with-conditions-of-use | Some beta files CC0, later preset models have their own restrictions. They are **functional fallbacks, not assumed premium art**. |
-| General VRM permission definitions | https://developer.vroid.com/en/guidelines/conditions_of_use.html | Commercial and redistributable are distinct flags. A ¥0 download is **not** license to publish and distribute the .vrm in public WebGL. |
+### How to actually import an available finished VRM
 
-**License rule:** Source creator's explicit CC0/commercial game/public-binary redistribution rights and *VRM embedded metadata* must agree. Check derivative parts, textures, third-party clothing, attribution, and web delivery. A model requiring purchase, credit negotiation beyond published permission, no redistribution, or incompatible license stays **research-only**; do not silently ship it.
+Example only after obtaining a source-licensed file and checking it:
 
-## IMPLEMENTATION PLAN — AFTER VISUAL SIGN-OFF, NOT BEFORE
+```bash
+node scripts/ingest-character-vrm.mjs \
+  --id booth-akane --file /tmp/Akane.vrm --name Akane --gender female \
+  --creator minto_akayama --license CC0 \
+  --source-url https://booth.pm/en/items/8861598 \
+  --height 1.75 --rights-confirmed
+```
 
-1. Produce a **visual audition board** of many distinct male and female fully authored free-source avatars, with exact download, creator, license and direct thumbnails.
-2. Visually veto weak models first. Get approval on a balanced, coherent final selection; **until then the approved roster = none**.
-3. Download only approved ¥0/US$0 authorized assets from original publisher; per-model provenance including SHA256, VRM license metadata and redistribution rights.
-4. Retain existing `features/plaza/characters/loader.ts`, `HumanoidAnimator` and wallet/presence plumbing. Use `characterId` of one complete preset; keep backward compatible existing profiles. `ModularWardrobe` must stop rendering when replacement is proven.
-5. Replace parts editor with **pick one full character** gallery, real rotatable preview and optional "Surprise me" **whole-character randomizer**. All characters show **FREE** (or no price label at all).
-6. Screenshot and measure actual WebGL in desktop/mobile and two-player Common Ground + Habitat, identity persistence and high-level existing actions. Reconcile fixes, rerun CI.
-7. Do NOT merge/deploy or mark avatars complete until both visual gate and functional build gate pass.
+The committed local binary autoappears in the selector because `ready-character-assets.ts` is runtime-wired. The game does not need new character per-ID source-code patches.
 
-### Explicit supersession and non-claims
+## BLOCKERS AND HONEST PLAYABLE STATUS
 
-Earlier documents or PR comments recommending **Ameko, Himiko, Syaoty, Kin, Shapell Maid, Neku Shiro, Bunny-Kun, Kai, Kiichi, Chunen, Vita/Shino** or other starter/premium candidate names are **WITHDRAWN and not approved for selection**. This does not assert all those models are inherently bad; owner rejected using an unreviewed shortlist. We are starting the aesthetic selection again.
+**Currently in repo:** two original working full VRMs, Victoria and Fumiriya. **New 16 imported: 0/16 as of this update.** A source filename in TypeScript is NOT a playable imported model.
 
-**No new character model was imported in this documentation update. No token/checkout changes. Production runtime's old avatar files must not be removed without a working replacement.**
+Why not all sixteen immediately: BOOTH free downloads route through mandatory **pixiv sign-in**, and none of those original downloadable package files was provided in this task. Blender Studio rigs are distributed as **.blend** projects (often tens of megabytes) that require **baking/retarget/export to humanoid VRM** in a functioning Blender/Unity exporter runtime; the currently available GitHub connector can edit repository code but does not run Blender, sign into BOOTH, or transfer these authenticated binary archives. Do not substitute some other unrelated VRM and label it as Rain/Akane/etc.
+
+**To finish**: obtain legal source binaries, convert Blender rigs in a proper 3D authoring runtime, run the importer, test animations and mobile, record authentic screenshots, then merge when all release gates pass. Do not claim green tests/screenshots unless actually run. Existing 2-avatar fallback remains intentionally usable until replacement files arrive.
+
+### License constraints
+- Blender Studio CC-BY materials require attribution in CTRL and corresponding derivative documentation.
+- BOOTH license policies vary. Satake Nagisa, Summer-Chan, Donut-Chan require individualized public-game redistribution authorization and/or derivative ingredient checks.
+- Source is `¥0` or free to browse; do not assume it grants hosting commercial downloadable VRM assets. Only import with distribution rights and creator-specified conditions observed.
+- Do not buy 3D avatar assets. Do not invent XP, tokens, price tags, token shop or other economy.
+
+## Completion definition
+
+All 16 are *actually available in browser player picker*, each using its original authorized 3D model; full-body rotates, is visible in worlds for all players, animates, persists after re-login, and mobile runs. Signed server allowlist rejects arbitrary IDs, source credit and exact binary checksums are retained. CI, browser tests and visual screenshots pass on exact final SHA. Until the binary ingestion happens, **16/16 playable must not be claimed**.
