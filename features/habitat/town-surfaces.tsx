@@ -38,13 +38,14 @@ export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'){
    ctx.strokeStyle='#ddcfb230';ctx.lineWidth=1;ctx.stroke();
   }
   for(let i=0;i<800;i++){
-   const x=(i*73)%256,y=(i*137)%256;
+   const hash=(seed:number)=>{const n=Math.sin(i*127.1+seed*311.7)*43758.5453;return n-Math.floor(n);};
+   const x=hash(1)*256,y=hash(2)*256;
    ctx.fillStyle=kind==='grass'?(i%2?'#3c504920':'#69836c30'):'#665c4812';
    ctx.fillRect(x,y,kind==='grass'?2:1,kind==='grass'?5:1);
   }
  }
  const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;
- if(kind!=='shadow'){texture.wrapS=texture.wrapT=RepeatWrapping;texture.repeat.set(kind==='grass'?20:1,kind==='grass'?20:1);texture.anisotropy=4;}
+ if(kind!=='shadow'){texture.wrapS=texture.wrapT=RepeatWrapping;texture.repeat.set(kind==='grass'?20:kind==='roof'?3:1,kind==='grass'?20:kind==='roof'?3:1);texture.anisotropy=4;}
  textures.set(kind,texture);return texture;
 }
 export function GroundShadow({x=0,z=0,width=2,depth=2}:{x?:number;z?:number;width?:number;depth?:number}){

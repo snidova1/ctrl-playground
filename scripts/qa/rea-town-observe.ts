@@ -82,7 +82,7 @@ try{
   const detail=await rea('capture-web-screenshot',[cdp,id]);
   const detailPng=pngData(detail);if(!detailPng)throw Error('REA desktop detail screenshot missing');
   writeFileSync(path.join(output,'rea-desktop-detail.png'),Buffer.from(detailPng,'base64'));details.detailScreenshotEvidence=detail.evidence_id;
-  const position=async()=>{const s=await (await page.request.get(origin+'/api/habitat/state')).json();return s.players.find((p:{id:string})=>p.id===s.profile.id) as {x:number;z:number};};
+  const position=async()=>{const s=await (await page.request.get(origin+'/api/habitat/state')).json();const p=s.players.find((p:{id:string})=>p.id===s.profile.id) as {x:number;z:number};return {x:p.x,z:p.z};};
   await page.keyboard.down('KeyD');
   try{await expect.poll(async()=>(await position()).x,{timeout:90000}).toBeGreaterThan(16);}finally{await page.keyboard.up('KeyD');}
   await page.keyboard.down('KeyW');

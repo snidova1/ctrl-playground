@@ -1,7 +1,9 @@
 'use client';
 import {useMemo} from 'react';
 import {Html,RoundedBox} from '@react-three/drei';
-import {Shape} from 'three';
+import {BoxGeometry,BufferGeometry,Matrix4,Shape} from 'three';
+import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import {useEffect} from 'react';
 import {PUBLIC_WORLD_BUILDINGS} from './public-world-geography';
 import {TOWN_PALETTE as P} from './town-palette';
 import {GroundShadow,paintedTexture} from './town-surfaces';
@@ -27,15 +29,20 @@ function GableRoof({width,depth,base,rise=1.5,color}:{width:number;depth:number;
  </group>;
 }
 function ShutterWindow({x,y,z,width=1.25,height=1.4,flowers=false}:{x:number;y:number;z:number;width?:number;height?:number;flowers?:boolean}){
+ const geometry=useMemo(()=>{
+  const box=(x:number,y:number,z:number,w:number,h:number,d:number,rx=0)=>new BoxGeometry(w,h,d).applyMatrix4(new Matrix4().makeRotationX(rx).setPosition(x,y,z));
+  const merge=(parts:BufferGeometry[])=>{const combined=mergeGeometries(parts)!;parts.forEach(part=>part.dispose());return combined;};
+  const frame=merge([box(-width/2-.04,0,.09,.08,height+.16,.12),box(width/2+.04,0,.09,.08,height+.16,.12),box(0,-height/2-.04,.09,width+.16,.08,.12),box(0,height/2+.04,.09,width+.16,.08,.12),box(0,0,.13,.055,height,.05),box(0,0,.13,width,.055,.05)]);
+  const boards=merge([-1,1].map(side=>box(side*(width/2+.28),0,.07,.34,height+.12,.12)));
+  const slats=merge([-1,1].flatMap(side=>Array.from({length:6},(_,i)=>box(side*(width/2+.28),-height*.4+i*height*.16,.15,.3,.055,.07,-.15))));
+  return {frame,boards,slats};
+ },[width,height]);
+ useEffect(()=>()=>Object.values(geometry).forEach(g=>g.dispose()),[geometry]);
  return <group position={[x,y,z]}>
-  <RoundedBox args={[width+.2,height+.2,.14]} radius={.025} smoothness={1}><meshStandardMaterial color={P.trim}/></RoundedBox>
   <mesh position-z={.09}><boxGeometry args={[width,height,.05]}/><meshStandardMaterial color={P.forest} roughness={.5}/></mesh>
-  <mesh position-z={.13}><boxGeometry args={[.06,height,.06]}/><meshStandardMaterial color={P.cream}/></mesh>
-  <mesh position-z={.13}><boxGeometry args={[width,.06,.06]}/><meshStandardMaterial color={P.cream}/></mesh>
-  {[-1,1].map(side=><group key={side} position={[side*(width/2+.28),0,.08]} rotation-y={side*.13}>
-   <mesh><boxGeometry args={[.34,height+.12,.12]}/><meshStandardMaterial color={P.shutter}/></mesh>
-   {Array.from({length:6},(_,i)=><mesh key={i} position={[0,-height*.4+i*height*.16,.07]} rotation-x={-.15}><boxGeometry args={[.3,.055,.07]}/><meshStandardMaterial color={P.sage}/></mesh>)}
-  </group>)}
+  <mesh geometry={geometry.frame} dispose={null}><meshStandardMaterial color={P.trim}/></mesh>
+  <mesh geometry={geometry.boards} dispose={null}><meshStandardMaterial color={P.shutter}/></mesh>
+  <mesh geometry={geometry.slats} dispose={null}><meshStandardMaterial color={P.sage}/></mesh>
   {flowers&&<group position={[0,-height/2-.17,.15]}>
    <mesh><boxGeometry args={[width+.25,.22,.42]}/><meshStandardMaterial color={P.wood}/></mesh>
    {[-.42,0,.42].map((dx,i)=><TownAsset key={dx} id={i%2?'nature-kit/flower_yellowB':'nature-kit/flower_redA'} size={.35} x={dx} y={.12}/>)}
@@ -62,6 +69,9 @@ export function TownHouse({site}:{site:typeof PUBLIC_WORLD_BUILDINGS[number]}){
   <mesh position={[w*.27,5.87,-d*.22]}><boxGeometry args={[.76,.14,.76]}/><meshStandardMaterial color={P.pot}/></mesh>
   <ArchedDoor z={d/2+.08}/>
   {[-w*.29,w*.29].map(x=><ShutterWindow key={x} x={x} y={2.4} z={d/2+.07} flowers/>)}
+  {[-1,1].map(side=><group key={side} position={[side*(w/2+.07),0,0]} rotation-y={side*Math.PI/2}>
+   {[-d*.24,d*.24].map(dx=><ShutterWindow key={dx} x={dx} y={2.4} z={0}/>)}
+  </group>)}
   <mesh position={[0,.12,d/2+.55]}><boxGeometry args={[2.1,.2,.95]}/><meshStandardMaterial color={P.pot}/></mesh>
   {[-w/2+.12,w/2-.12].map(x=><mesh key={x} position={[x,2.06,d/2+.06]}><boxGeometry args={[.2,4.12,.14]}/><meshStandardMaterial color={P.trim}/></mesh>)}
   <mesh position={[0,3.74,d/2+.12]}><boxGeometry args={[Math.min(w-1,4.9),.42,.16]}/><meshStandardMaterial color={P.trim}/></mesh>
