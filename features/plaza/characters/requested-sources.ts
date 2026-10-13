@@ -103,9 +103,9 @@ export const REQUESTED_CHARACTER_SOURCES: CharacterSource[] = SOURCE_DEFINITIONS
   const installed=INSTALLED_CHARACTER_ASSETS.find(asset=>asset.id===source.id);
   return {
     ...source,
-    importState:installed?'ready':'pending-binary-and-visual-validation',
+    importState:(installed?'ready':'pending-binary-and-visual-validation') as CharacterSource['importState'],
     assetPaths:installed?{high:installed.modelUrl,low:installed.modelUrl}:null,
-    freeForAllPlayers:true,
+    freeForAllPlayers:true as const,
     gameUseRightsConfirmed:!!installed || source.license==='CC0'||source.license==='CC-BY'
   };
 });
