@@ -30,7 +30,7 @@ export interface CharacterSource {
   engineeringNote: string;
 }
 
-export const REQUESTED_CHARACTER_SOURCES = [
+const SOURCE_DEFINITIONS = [
   {
     id:'blender-rain',name:'Rain',creator:'Blender Studio / Blender Foundation',presentation:'female',format:'blender-rig',license:'CC-BY',
     sourceUrl:'https://studio.blender.org/characters/rain/v3/',engineeringNote:'CloudRig/Blender 4.1: bake deformation and expressions, optimize, retarget to VRM. Credit required.'
@@ -95,13 +95,15 @@ export const REQUESTED_CHARACTER_SOURCES = [
     id:'blender-lunte',name:'Lunte',creator:'Blender Studio / Blender Foundation',presentation:'male',format:'blender-rig',license:'CC-BY',
     sourceUrl:'https://studio.blender.org/characters/lunte/v4/',engineeringNote:'Settlers masked character. Bake rig to VRM, attribute Blender Studio, check mobile materials.'
   },
-].map(source=>({
+] as const;
+
+export const REQUESTED_CHARACTER_SOURCES: CharacterSource[] = SOURCE_DEFINITIONS.map(source=>({
   ...source,
   importState:'pending-binary-and-visual-validation' as const,
   assetPaths:null,
   freeForAllPlayers:true as const,
   gameUseRightsConfirmed:source.license==='CC0'||source.license==='CC-BY'
-})) satisfies CharacterSource[];
+}));
 
 /** NO candidates are runtime-ready without audited, local .vrm binaries. */
 export const READY_REQUESTED_CHARACTER_SOURCES = REQUESTED_CHARACTER_SOURCES.filter(source=>source.assetPaths!==null && source.gameUseRightsConfirmed);
