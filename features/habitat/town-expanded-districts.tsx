@@ -5,6 +5,8 @@ import {Group} from 'three';
 import type {Pose} from '@/features/plaza/types';
 import {TOWN_ACTIVITIES,TOWN_DISTRICTS,TOWN_DISTRICT_BUILDINGS,type TownDistrict,type TownDistrictBuilding} from './town-districts';
 import {TownAssetInstances} from './town-assets';
+import {TownWindGrass} from './town-stylized-grass';
+import TownStylizedWater from './town-stylized-water';
 
 /** Larger physical map composed of separately visible districts; not background billboards. */
 type Quality='low'|'high';
@@ -78,10 +80,11 @@ function RemoteZone({district,quality,pose}:{district:TownDistrict;quality:Quali
   <ScenicRoad ax={district.x} az={district.z-44} bx={district.x} bz={district.z+44} width={4.4}/>
   {houses.map(h=><DistrictCottage key={h.id} site={h}/>)}
   <DistrictTrees district={district} quality={quality}/>
+  <TownWindGrass district={district} quality={quality}/>
   {activity&&<ActivityStation x={activity.x} z={activity.z} type={activity.id}/>}
   {district.id==='festival'&&<FestivalPlatform x={district.x} z={district.z}/>}
   {district.id==='harbor'&&<group position={[district.x,0,district.z+20]}>
-    <mesh position-y={.015} rotation-x={-Math.PI/2}><planeGeometry args={[95,13]}/><meshStandardMaterial color='#86b9c1' roughness={.2}/></mesh>
+    <TownStylizedWater x={0} y={.015} z={0} width={95} depth={13}/>
     {[-21,-7,7,21].map(x=><mesh key={x} position={[x,.2,3]}><boxGeometry args={[4,.42,17]}/><meshStandardMaterial color='#b6926d'/></mesh>)}
   </group>}
   {district.id==='garden'&&[-16,16].map(x=><group key={x} position={[district.x+x,0,district.z+20]}>
