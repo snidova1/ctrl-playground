@@ -2,10 +2,10 @@
 import {useEffect,useState,type MutableRefObject} from 'react';
 import type {Pose} from '@/features/plaza/types';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_BRIDGES} from './public-world-geography';
-import {TOWN_ACTIVITIES,TOWN_DISTRICTS,getNearestTownActivity,getTownDistrict,type TownActivityId} from './town-districts';
+import {TOWN_ACTIVITIES,TOWN_DISTRICTS,getNearestTownActivity,getTownDistrict,type TownActivityId,type TownDistrictKind} from './town-districts';
 
 type SharedStates=Record<string,{active:boolean;usedAt:number}>;
-export default function TownGuide({pose,onDirectory,onActivity,states,busy=false}:{pose:MutableRefObject<Pose>;onDirectory:()=>void;onActivity:(id:TownActivityId)=>void;states:SharedStates;busy?:boolean}){
+export default function TownGuide({pose,onDirectory,onActivity,onTravel,states,busy=false}:{pose:MutableRefObject<Pose>;onDirectory:()=>void;onActivity:(id:TownActivityId)=>void;onTravel:(id:TownDistrictKind)=>void;states:SharedStates;busy?:boolean}){
  const [open,setOpen]=useState(false),[position,setPosition]=useState({x:0,z:6}),[now,setNow]=useState(0);
  useEffect(()=>{const timer=setInterval(()=>{setPosition({x:pose.current.x,z:pose.current.z});setNow(Date.now());},400);return()=>clearInterval(timer);},[pose]);
  const nearest=getNearestTownActivity(position.x,position.z);
@@ -41,6 +41,7 @@ export default function TownGuide({pose,onDirectory,onActivity,states,busy=false
     {TOWN_DISTRICTS.map(d=><div key={d.id}>
      <strong>{d.name}</strong>
      <small>{Math.round(Math.hypot(position.x-d.x,position.z-d.z))} m away · {d.description}</small>
+     <button disabled={busy||district.id===d.id&&Math.hypot(position.x-d.x,position.z-d.z)<10} onClick={()=>{onTravel(d.id);setOpen(false);}}>Travel here ↗</button>
     </div>)}
    </div>
    <small>Walk to the colored activity stations to help your town. Green markers were completed recently. Activities are shared by actual players, not NPCs.</small>
