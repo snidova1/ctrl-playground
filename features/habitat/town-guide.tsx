@@ -20,7 +20,7 @@ export default function TownGuide({pose,onDirectory,onActivity,onTravel,states,b
    <button aria-expanded={open} aria-controls='town-map' onClick={()=>setOpen(v=>!v)}>{open?'Close map':'Town map'}</button>
    <button onClick={onDirectory}>Visit habitats ↗</button>
   </div>
-  {open&&<section id='town-map' aria-label='Willow Town districts and activities'>
+  {open&&<section id='town-map' aria-label='Willow Square map'>
    <div className='hb-row'><strong>{district.name}</strong><span aria-hidden='true'>N ↑</span></div>
    <p>{district.description}</p>
    <svg className='hb-district-map' viewBox='-124 -113 248 226' role='img' aria-label='Seven physical town districts with your current position and shared activity markers'>
