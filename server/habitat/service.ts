@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import {PUBLIC_WORLD_ID,PUBLIC_WORLD_OWNER,createPublicWorld} from '@/features/habitat/public-world';
-import {getTownActivity} from '@/features/habitat/town-districts';
+import {getTownActivity,TOWN_DISTRICTS} from '@/features/habitat/town-districts';
+import {isPublicWorldWalkable} from '@/features/habitat/public-world-geography';
 import {one, query, exec, batch, statement} from '@/db';
 import {identity, rateLimit} from '@/server/wallet/auth';
 import {settings} from '@/server/env';
@@ -297,6 +298,19 @@ export async function handleHabitat(r: Request, path: string[]) {
       position.x, position.z, data.angle, JSON.stringify({...data.motion,speechAt:Math.min(data.motion.speechAt??0,Date.now())}), Date.now(), data.sequence ?? old.sequence + 1, user.id, data.worldId, old.session_id, old.sequence, user.id, user.id);
       if (!result.meta.changes) throw new AppError('STALE_PRESENCE', 409);
       return reply({...await state(user, data.worldId), accepted: position});
+    }
+    // Server-owned destination travel; not an untrusted client teleport coordinate.
+    if (r.method === 'POST' && p === 'town-travel') {
+      const data = z.object({id:z.string().max(40),sessionId:z.string().uuid()}).strict().parse(await body(r));
+      const destination = TOWN_DISTRICTS.find(d=>d.id===data.id);
+      if (!destination || !isPublicWorldWalkable(destination.x,destination.z))
+        throw new AppError('INVALID_TOWN_DESTINATION',422);
+      const now=Date.now();
+      const moved=await exec(`UPDATE habitat_presence SET x=?,z=?,seen_at=?
+        WHERE profile_id=? AND world_id=? AND session_id=? AND seen_at>?`,
+        destination.x,destination.z,now,user.id,PUBLIC_WORLD_ID,data.sessionId,now-TTL);
+      if (!moved.meta.changes) throw new AppError('WORLD_SESSION_EXPIRED',409);
+      return reply({...await state(user,PUBLIC_WORLD_ID),accepted:{x:destination.x,z:destination.z}});
     }
     // Shared Townies-style field work: authenticated, proximity-gated and persistent.
     // This never trusts a client-supplied position, reward amount or world identifier.
