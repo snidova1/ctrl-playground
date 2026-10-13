@@ -317,4 +317,7 @@
  .hb-app:not(.is-public-world) .hb-top button{flex-shrink:0;}
  .hb-app:not(.is-public-world) .hb-top .hb-nav-worlds,
  .hb-app:not(.is-public-world) .hb-top .hb-nav-character{display:inline-flex;align-items:center;}
+ .hb-app:not(.is-public-world) .hb-message,
+ .hb-app:not(.is-public-world) .hb-alert{bottom:calc(280px + env(safe-area-inset-bottom,0px));box-sizing:border-box;}
+ .hb-app:not(.is-public-world) .hb-life-dock{top:calc(200px + env(safe-area-inset-top,0px));}
 }
