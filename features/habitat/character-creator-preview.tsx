@@ -5,7 +5,6 @@ import {OrbitControls} from '@react-three/drei';
 import {ACESFilmicToneMapping} from 'three';
 import {resolveCharacter,type CharacterAppearance} from '@/features/plaza/characters/catalog';
 import {loadCharacter,disposeVrm,type LoadedCharacter} from '@/features/plaza/characters/loader';
-import {applyCharacterAppearance} from '@/features/plaza/characters/appearance';
 import {HumanoidAnimator} from '@/features/plaza/characters/animation';
 
 type PreviewStatus={kind:'loading'|'ready'|'error';message?:string};
@@ -13,21 +12,18 @@ function PreviewModel({appearance,onStatus}:{appearance:CharacterAppearance;onSt
  const [character,setCharacter]=useState<LoadedCharacter|null>(null);
  const [error,setError]=useState('');
  const animator=useRef<HumanoidAnimator|null>(null);
- const appearanceRef=useRef(appearance);
  const definition=resolveCharacter(appearance);
- useEffect(()=>{appearanceRef.current=appearance;},[appearance]);
  useEffect(()=>{
   onStatus({kind:'loading'});
   const controller=new AbortController();let current:LoadedCharacter|null=null;
   loadCharacter(definition,'low',controller.signal)
    .then(result=>{
     if(controller.signal.aborted){disposeVrm(result.vrm);return;}
-    try{applyCharacterAppearance(result.vrm,appearanceRef.current);animator.current=new HumanoidAnimator(result);current=result;setCharacter(result);setError('');onStatus({kind:'ready'});}
+    try{animator.current=new HumanoidAnimator(result);current=result;setCharacter(result);setError('');onStatus({kind:'ready'});}
     catch(e){disposeVrm(result.vrm);const message=e instanceof Error?e.message:'Unable to initialize preview.';setError(message);onStatus({kind:'error',message});}
    }).catch(reason=>{if(!controller.signal.aborted){const message=reason instanceof Error?reason.message:'Could not load the VRM.';setError(message);onStatus({kind:'error',message});}});
   return ()=>{controller.abort();animator.current?.dispose();animator.current=null;if(current)disposeVrm(current.vrm);};
  },[definition,onStatus]);
- useEffect(()=>{if(character)applyCharacterAppearance(character.vrm,appearance);},[character,appearance]);
  useFrame((_,dt)=>{animator.current?.update(Math.min(dt,.05),{moving:false,sitting:false,celebrate:false,interactedAt:0});});
  if(error||!character)return null;
  return <group scale={character.scale} position={[0,character.floor,0]}><primitive object={character.vrm.scene} dispose={null}/></group>;
