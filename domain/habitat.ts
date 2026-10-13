@@ -2,7 +2,7 @@ import {z} from 'zod';
 import {PUBLIC_WORLD_ID,PUBLIC_WORLD_BOUNDS} from '@/features/habitat/public-world-geography';
 import {layoutSchema, motionSchema, worldObjectSchema} from '@/features/habitat/types';
 import type {WorldRecord, WorldState, WorldProfile} from '@/features/habitat/types';
-import type {CharacterLoadout as CatalogLoadout} from '@/features/plaza/characters/catalog';
+import {getAvailableCharacter,type CharacterLoadout as CatalogLoadout} from '@/features/plaza/characters/catalog';
 
 // Keep the existing flat transform wire format used by the courtyard renderer.
 export {worldObjectSchema, layoutSchema, motionSchema};
@@ -33,6 +33,7 @@ export const characterProfileInputSchema = z.object({
   appearance: z.object({
     version:z.literal(1),
     gender:z.enum(['female','male']),
+    characterId:z.string().max(80).refine(value=>getAvailableCharacter(value)!==undefined,'Unknown or not-yet-imported character').optional(),
     variantId:z.enum(['original','sage','clay','slate']),
     hairId:z.enum(['source','espresso','ink','auburn','silver']),
     eyeId:z.enum(['source','hazel','ocean','jade','violet']),
