@@ -33,7 +33,7 @@ export default function TownGuide({pose,onDirectory,onActivity,onTravel,states,b
      <circle cx={d.x} cy={d.z} r='11' fill={d.color} stroke='#fff5e7' strokeWidth='1.5'/>
      <text x={d.x} y={d.z+16} textAnchor='middle'>{d.name.toUpperCase()}</text>
     </g>)}
-    {TOWN_ACTIVITIES.map(a=><circle key={a.id} cx={a.x} cy={a.z} r='3.3' stroke='#fff9e8' strokeWidth='1' fill={now-(states[a.objectId]?.usedAt??0)<a.cooldownMs?'#77a87b':'#d29a69'}/>)}
+    {TOWN_ACTIVITIES.map(a=><circle key={a.id} cx={a.x} cy={a.z} r='3.3' stroke='#fff9e8' strokeWidth='1' fill={states[a.objectId]?.usedAt&&now-states[a.objectId].usedAt<a.cooldownMs?'#77a87b':'#d29a69'}/>)}
     <circle cx={position.x} cy={position.z} r='4.3' fill='#d75e43' stroke='#fff9e8' strokeWidth='2'/>
    </svg>
    <div className='hb-town-progress'><strong>Town life</strong><span>{recent}/{TOWN_ACTIVITIES.length} activities helped recently</span></div>
