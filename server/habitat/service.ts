@@ -8,7 +8,7 @@ import {settings} from '@/server/env';
 import {AppError, safeError} from '@/server/errors';
 import {collideWorld, type WorldProfile, type WorldObject} from '@/features/habitat/types';
 import {getBuildAsset} from '@/features/plaza/build-assets';
-import {characterCatalog, normalizeAppearance, seededAppearance, validVariant, type CharacterAppearance, type CharacterGender} from '@/features/plaza/characters/catalog';
+import {resolveCharacter, normalizeAppearance, seededAppearance, validVariant, type CharacterAppearance, type CharacterGender} from '@/features/plaza/characters/catalog';
 import {
   layoutSchema, motionSchema, worldIdSchema, worldEditorSavePayloadSchema,
   characterProfileInputSchema, poseInputSchema, presenceInputSchema,
@@ -46,8 +46,8 @@ function parsedAppearance(profile:ProfileRow):CharacterAppearance{
   return normalizeAppearance(saved,gender,profile.variant);
 }
 function appearance(profile: ProfileRow): CharacterProfile {
-  const saved=parsedAppearance(profile),gender=saved.gender;
-  return {...profile,appearance:saved,variant:saved.variantId,loadout:{version:1,characterId:characterCatalog[gender].id,variantId:saved.variantId,appearance:saved,accessories:[]}};
+  const saved=parsedAppearance(profile);
+  return {...profile,appearance:saved,variant:saved.variantId,loadout:{version:1,characterId:resolveCharacter(saved).id,variantId:saved.variantId,appearance:saved,accessories:[]}};
 }
 async function permissions(w: Row, user: string): Promise<WorldPermissions> {
   if (w.id === PUBLIC_WORLD_ID) return {role:'visitor',canVisit:true,canEdit:false,canManage:false};
