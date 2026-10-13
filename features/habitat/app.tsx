@@ -6,7 +6,7 @@ import {PUBLIC_WORLD_ID,type WorldDestination} from './public-world';
 import {createGuestState,randomGuestStyle,type GuestStyle} from './guest';
 import {Component,useCallback,useEffect,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import TownGuide from './town-guide';
-import type {TownActivityId} from './town-districts';
+import type {TownActivityId,TownDistrictKind} from './town-districts';
 import {BrandMark} from '@/components/brand';
 import WalletConnection from '@/features/wallet/wallet-connect';
 import {createCharacterMotion,defaultAppearance,eyeVariants,hairVariants,normalizeAppearance,outfitVariants,seededAppearance,skinVariants,type CharacterAppearance} from '@/features/plaza/characters/catalog';
@@ -50,7 +50,7 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
  const pose=useRef<Pose>({x:0,z:6,angle:Math.PI,moving:false}),input=useRef<ControlInput>({x:0,z:0}),motion=useRef(createCharacterMotion()),latest=useRef(state),flags=useRef({sitting,celebrate,interactedAt,speech,speechAt}),history=useRef<WorldObject[][]>([]),future=useRef<WorldObject[][]>([]),startTime=useRef<number|null>(null),baseRevision=useRef(0),settingsRevision=useRef(0);
  useEffect(()=>{latest.current=state;},[state]);useEffect(()=>{flags.current={sitting,celebrate,interactedAt,speech,speechAt};},[sitting,celebrate,interactedAt,speech,speechAt]);
  const acceptPresence=useCallback((next:WorldState|null)=>{latest.current=next;setState(next);if(!next?.canEdit)setEditing(false);if(!next){setPanel('entry');setMessage('Your wallet session expired. Verify again to continue.');}else if(!next.world){setPanel('worlds');setMessage('World access is no longer available. Choose another place or go home.');}else if(editing&&!next.canEdit){setMessage('Editing access was revoked. Your local draft was not saved.');}},[editing]);
- const {connect,sync,leave}=useWorldPresence({latest,pose,motion,flags,onState:acceptPresence,onOnline:setOnline});
+ const {connect,sync,leave,travel}=useWorldPresence({latest,pose,motion,flags,onState:acceptPresence,onOnline:setOnline});
  const refresh=useCallback(async()=>{
   const epoch=++refreshEpoch.current;setError('');setMessage('');
   try{
@@ -82,6 +82,9 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
  const guestLatest=useRef(guestState);useEffect(()=>{guestLatest.current=guestState;},[guestState]);
  const useRefLatest=useRef(use);useEffect(()=>{useRefLatest.current=use;});
  useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return;if(e.code==='Escape'){if(requested.current==='common'){setPanel(null);return;}setPanel(latest.current?.profile?(latest.current.world?null:'worlds'):latest.current?'wardrobe':'entry');setSitting(false);}if(['KeyW','KeyA','KeyS','KeyD'].includes(e.code))setSitting(false);if(e.code==='KeyE'){const near=(requested.current==='common'?guestLatest.current:latest.current)?.world?.objects.filter(o=>Math.hypot(pose.current.x-o.x,pose.current.z-o.z)<3.5).sort((a,b)=>Math.hypot(a.x-pose.current.x,a.z-pose.current.z)-Math.hypot(b.x-pose.current.x,b.z-pose.current.z))[0];if(near)void useRefLatest.current(near);}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[]);
+ async function townTravel(id:TownDistrictKind){if(!town||busy||panel)return;await action(async()=>{
+   setSitting(false);await travel(id);setMessage('Arrived at your destination. Explore and help your neighbors!');
+ });}
  async function townActivity(id:TownActivityId){if(!town||busy||panel)return;await action(async()=>{
   await sync();
   const result=await api<{activity:TownActivityId;message:string;state:WorldState}>('town-activity',{id});
@@ -104,7 +107,7 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
  </div></header>
  {viewState&&<HabitatMusic/>}
  {!editing&&!panel&&viewState?.world&&<div className='hb-title'><small>{common?'PLAY BEFORE YOU CONNECT':town?'PUBLIC WORLD':'YOUR HABITAT'}</small><h1>{viewState.world.name}</h1><p>{common?'Explore. Build. Make yourself at home.':town?`${state?.players.length??0} players online · ${quality==='low'?2:4} local NPCs`:'Your own corner of CTRL.'}</p>{common&&<small>Your demo changes last for this visit.</small>}</div>}
- {town&&!panel&&<TownGuide pose={pose} onDirectory={()=>setPanel('worlds')} onActivity={id=>void townActivity(id)} states={viewState?.states??{}} busy={busy}/>}
+ {town&&!panel&&<TownGuide pose={pose} onDirectory={()=>setPanel('worlds')} onActivity={id=>void townActivity(id)} onTravel={id=>void townTravel(id)} states={viewState?.states??{}} busy={busy}/>}
  {error&&panel!=='entry'&&<div className='hb-alert' role='alert'>{error}<button onClick={()=>setError('')}>Dismiss</button></div>}{message&&!error&&panel!=='entry'&&<div className='hb-message' role='status' onClick={()=>setMessage('')}>{message}</div>}
  {!state&&panel==='entry'&&<div className='hb-entry-caption'><strong>Starter garden</strong><span>Yours to rebuild.</span></div>}
  {panel==='entry'&&<section className='hb-panel hb-entry' aria-labelledby='habitat-entry-title'><h1 id='habitat-entry-title'>Enter {destination==='public'?'Public World':'Habitat'}.</h1><p>Create a character. Build your place. Invite your people.</p>{message&&!error&&<p className='hb-entry-note' role='status'>{message}</p>}{error&&<p className='form-error' role='alert'>{error}</p>}<WalletConnection onVerified={()=>void refresh()}/>{!loaded&&<small role='status'>Checking your saved session…</small>}{error&&<button onClick={()=>void refresh()}>Retry connection</button>}<div className='hb-entry-guest'><span>Just looking around?</span><button onClick={commonGround} disabled={busy}>{busy?'Opening Common Ground…':'Enter Common Ground'}</button><small>Explore and try building without a wallet.</small></div></section>}
