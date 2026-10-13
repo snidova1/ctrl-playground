@@ -19,7 +19,7 @@ const server=spawn(process.execPath,[path.resolve('node_modules/next/dist/bin/ne
 let log='';server.stdout.on('data',b=>{log+=b;});server.stderr.on('data',b=>{log+=b;});
 let browser:Awaited<ReturnType<typeof chromium.launch>>|undefined;
 async function rea(name:string,args:string[]){
- const result=await run('npx',['-y','rea-agents@6.4.0',name,...args,'--json'],{timeout:120000,maxBuffer:32*1024*1024});
+ const result=await run(process.env.CTRL_REA_BIN?process.execPath:'npx',process.env.CTRL_REA_BIN?[process.env.CTRL_REA_BIN,name,...args,'--json']:['-y','rea-agents@6.4.0',name,...args,'--json'],{timeout:120000,maxBuffer:32*1024*1024});
  const value=JSON.parse(result.stdout);
  writeFileSync(path.join(output,name+'.json'),JSON.stringify(value));
  return value;

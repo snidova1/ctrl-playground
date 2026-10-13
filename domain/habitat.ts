@@ -16,6 +16,7 @@ export interface WorldMember {worldId: string; profileId: string; role: 'editor'
 export interface WorldPermissions {role: 'owner' | 'editor' | 'visitor'; canVisit: boolean; canEdit: boolean; canManage: boolean}
 export interface PresenceSession {id: string; worldId: string; sequence: number; expiresAt: number}
 export interface HabitatState extends WorldState {
+  town?: import('./town').TownLifeState;
   profile: CharacterProfile | null;
   players: (WorldState['players'][number] & {loadout: CharacterLoadout})[];
   permissions: WorldPermissions | null;
@@ -36,6 +37,7 @@ export const characterProfileInputSchema = z.object({
     hairId:z.enum(['source','espresso','ink','auburn','silver']),
     eyeId:z.enum(['source','hazel','ocean','jade','violet']),
     skinId:z.enum(['source','warm','rose','deep']),
+    geometry:z.object({hair:z.enum(['original','bob','ponytail']),outfit:z.enum(['original','cape','apron']),footwear:z.enum(['original','boots']),accessory:z.enum(['none','beret','glasses','satchel'])}).strict().optional(),
   }).strict().optional(),
   randomize: z.boolean().optional(),
 }).strict();

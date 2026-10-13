@@ -1,21 +1,22 @@
 'use client';
-import {useMemo,useRef,useEffect,useState,type MutableRefObject} from 'react';
-import {useFrame} from '@react-three/fiber';
-import {Group} from 'three';
+import {useMemo,useEffect,useState,type MutableRefObject} from 'react';
 import type {Pose} from '@/features/plaza/types';
 import type {WorldState} from './types';
-import {TOWN_ACTIVITIES,TOWN_DISTRICTS,TOWN_DISTRICT_BUILDINGS,type TownDistrict,type TownDistrictBuilding} from './town-districts';
+import {TOWN_ACTIVITIES,TOWN_DISTRICTS,TOWN_DISTRICT_BUILDINGS,type TownDistrict} from './town-districts';
 import {TownAssetInstances} from './town-assets';
 import {TownWindGrass} from './town-stylized-grass';
 import TownStylizedWater from './town-stylized-water';
+import TownRegionArchitecture from './town-region-architecture';
+import {GroundShadow,paintedTexture} from './town-surfaces';
 
 /** Larger physical map composed of separately visible districts; not background billboards. */
 type Quality='low'|'high';
 function ScenicRoad({ax,az,bx,bz,width=4.8}:{ax:number;az:number;bx:number;bz:number;width?:number}){
  const dx=bx-ax,dz=bz-az,length=Math.hypot(dx,dz);
+ const texture=useMemo(()=>paintedTexture('stone'),[]);
  return <group position={[(ax+bx)/2,.024,(az+bz)/2]} rotation-y={Math.atan2(dx,dz)}>
   <mesh rotation-x={-Math.PI/2} receiveShadow><planeGeometry args={[width,length]}/><meshStandardMaterial color='#d8bea0' roughness={1}/></mesh>
-  <mesh rotation-x={-Math.PI/2} position-y={.009}><planeGeometry args={[width*.72,length]}/><meshStandardMaterial color='#ead3b4' roughness={1}/></mesh>
+  <mesh rotation-x={-Math.PI/2} position-y={.009}><planeGeometry args={[width*.72,length]}/><meshStandardMaterial color='#ead3b4' map={texture} roughness={1}/></mesh>
  </group>;
 }
 const CONNECTIONS=[
@@ -23,21 +24,6 @@ const CONNECTIONS=[
  [-1.5,-29,-1.5,-76],[-32,-12,-75,-12],[-75,-12,-75,-52],
  [78,27,76,80],[78,27,78,-73],[0,-76,78,-76],[0,34,0,98],
 ] as const;
-function DistrictCottage({site}:{site:TownDistrictBuilding}){
- const {width:w,depth:d,levels,roof,wall}=site;
- return <group position={[site.x,0,site.z]}>
-  <mesh castShadow receiveShadow position-y={levels===3?3.4:2.5}><boxGeometry args={[w,levels===3?6.8:5,d]}/><meshStandardMaterial color={wall} roughness={1}/></mesh>
-  {[-1,1].map(side=><mesh castShadow key={side} rotation-z={side*.47} position={[side*w*.26,levels===3?7.35:5.48,0]}>
-   <boxGeometry args={[w*.59,.25,d+.65]}/><meshStandardMaterial color={roof} roughness={1}/></mesh>)}
-  <mesh position={[0,1.26,d/2+.14]}><boxGeometry args={[1,2.35,.22]}/><meshStandardMaterial color='#789e90'/></mesh>
-  {[-w*.27,w*.27].map(x=><group key={x}>
-    <mesh position={[x,2.4,d/2+.12]}><boxGeometry args={[1.05,1.2,.14]}/><meshStandardMaterial color='#e9f1d4' emissive='#f4d5a1' emissiveIntensity={.12}/></mesh>
-    <mesh position={[x,2.4,d/2+.23]}><boxGeometry args={[.08,1.23,.08]}/><meshStandardMaterial color='#e6d9c3'/></mesh>
-    <mesh position={[x,1.68,d/2+.27]}><boxGeometry args={[1.25,.12,.4]}/><meshStandardMaterial color='#bd9f7b'/></mesh>
-  </group>)}
-  <mesh position={[0,.12,d/2+1.1]} receiveShadow><boxGeometry args={[2.5,.14,2.1]}/><meshStandardMaterial color='#cbb395'/></mesh>
- </group>;
-}
 function DistrictTrees({district,quality}:{district:TownDistrict;quality:Quality}){
  const places=useMemo(()=>{
   const count=quality==='high'?24:12;
@@ -54,6 +40,7 @@ function ActivityStation({type,x,z,usedAt,cooldownMs}:{type:string;x:number;z:nu
  const recent=usedAt>0&&now-usedAt<cooldownMs;
  const base=recent?'#95b98c':type==='community-garden'?'#839d74':type==='harbor-cleanup'?'#82acb3':type==='festival-stage'?'#cb967d':'#bea786';
  return <group position={[x,0,z]}>
+  <GroundShadow width={4.2} depth={4.2}/>
   <mesh receiveShadow position-y={.09}><cylinderGeometry args={[2.3,2.3,.18,12]}/><meshStandardMaterial color={base}/></mesh>
   <mesh castShadow position-y={.6}><boxGeometry args={[1.8,.8,1.3]}/><meshStandardMaterial color='#cfb28e'/></mesh>
   {[-.55,.55].map(px=><mesh key={px} position={[px,1.14,0]} castShadow>
@@ -73,17 +60,17 @@ function FestivalPlatform({x,z}:{x:number;z:number}){
  </group>;
 }
 function RemoteZone({district,quality,pose,states}:{district:TownDistrict;quality:Quality;pose:MutableRefObject<Pose>;states:WorldState['states']}){
- const root=useRef<Group>(null);
- useFrame(()=>{if(root.current)root.current.visible=Math.hypot(pose.current.x-district.x,pose.current.z-district.z)<77;});
- const houses=TOWN_DISTRICT_BUILDINGS.filter(h=>h.district===district.id);
+ const [visible,setVisible]=useState(()=>Math.hypot(pose.current.x-district.x,pose.current.z-district.z)<82);
+ useEffect(()=>{const timer=setInterval(()=>setVisible(Math.hypot(pose.current.x-district.x,pose.current.z-district.z)<90),200);return()=>clearInterval(timer);},[pose,district]);
  const activity=TOWN_ACTIVITIES.find(a=>a.district===district.id);
- return <group ref={root}>
+ if(!visible)return null;
+ return <group>
   <mesh rotation-x={-Math.PI/2} position={[district.x,-.082,district.z]} receiveShadow>
    <planeGeometry args={[110,105]}/><meshStandardMaterial color={district.id==='harbor'?'#b6cfc2':district.id==='garden'||district.id==='orchard'?'#a3c18b':'#b6c79a'} roughness={1}/></mesh>
   {/* Each region has its own through-street, not just scenic facades. */}
   <ScenicRoad ax={district.x-48} az={district.z} bx={district.x+48} bz={district.z} width={5.2}/>
   <ScenicRoad ax={district.x} az={district.z-44} bx={district.x} bz={district.z+44} width={4.4}/>
-  {houses.map(h=><DistrictCottage key={h.id} site={h}/>)}
+  <TownRegionArchitecture district={district.id}/>
   <DistrictTrees district={district} quality={quality}/>
   <TownWindGrass district={district} quality={quality}/>
   {activity&&<ActivityStation x={activity.x} z={activity.z} type={activity.id} usedAt={states[activity.objectId]?.usedAt??0} cooldownMs={activity.cooldownMs}/>}

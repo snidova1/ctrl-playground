@@ -7,7 +7,7 @@ const port=new URL(origin).port||'3147';
 const production=process.env.CTRL_TEST_PRODUCTION==='1';
 const database=path.join(mkdtempSync(path.join(tmpdir(),'ctrl-browser-')),'worlds.sqlite');
 export default defineConfig({
-  testDir:'tests/browser',testMatch:'world-editor.spec.ts',timeout:90000,workers:1,
+  testDir:'tests/browser',outputDir:'test-results/world-builder',testMatch:'world-editor.spec.ts',timeout:90000,workers:1,
   use:{
     baseURL:origin,
     trace:'retain-on-failure',screenshot:'only-on-failure',

@@ -19,6 +19,7 @@ import {
 import {readHabitatJson} from './read-json';
 import {resolveHabitatAssets} from './asset-resolver';
 import {keysConfig} from '@/server/keys/config';
+import {readTownLife,recordContribution,townLifeAction,townLifePaths} from './town-life';
 import {readWorldKeys, prepareOwnerClaim, verifyOwnerClaim} from '@/server/keys/service';
 
 interface Principal {id: string; wallet: string}
@@ -74,9 +75,10 @@ async function state(user: Principal, worldId?: string): Promise<HabitatState> {
   if (!selected && home) selected = await readWorld(home.id, user.id);
   const w = selected?.world;
   // Recheck private-world ACLs when reading presence, including after revocation.
-  const players = w ? await query<ProfileRow & {x: number; z: number; angle: number; motion: string}>(
-    `SELECT p.id,p.name,p.character,p.variant,p.appearance,s.x,s.z,s.angle,s.motion FROM habitat_presence s
+  const players = w ? await query<ProfileRow & {x: number; z: number; angle: number; motion: string;workUntil:number|null}>(
+    `SELECT p.id,p.name,p.character,p.variant,p.appearance,s.x,s.z,s.angle,s.motion,j.ready_at AS workUntil FROM habitat_presence s
      JOIN habitat_profiles p ON p.id=s.profile_id JOIN habitat_worlds w ON w.id=s.world_id
+     LEFT JOIN town_jobs j ON j.profile_id=p.id AND j.completed_at=0 AND j.expires_at>${Date.now()}
      WHERE s.world_id=? AND s.seen_at>? AND (w.visibility='public' OR w.owner_id=p.id OR EXISTS
        (SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=p.id))
      ORDER BY s.seen_at DESC LIMIT 64`, w.id, Date.now() - TTL) : [];
@@ -84,10 +86,11 @@ async function state(user: Principal, worldId?: string): Promise<HabitatState> {
   if (w) for (const s of await query<{object_id: string; active: number; used_at: number}>(
     'SELECT * FROM habitat_object_state WHERE world_id=?', w.id)) states[s.object_id] = {active: !!s.active, usedAt: s.used_at};
   return {
+    town: profile ? await readTownLife(user.id) : undefined,
     profile: profile ? appearance(profile) : null, homeId: home?.id ?? null,
     world: w ? {id: w.id, ownerId: w.owner_id, name: w.name, visibility: w.visibility, revision: w.revision, objects: layoutSchema.parse(JSON.parse(w.layout))} : null,
     canEdit: selected?.access.canEdit ?? false, permissions: selected?.access ?? null,
-    players: players.map(p => ({...appearance(p), x: p.x, z: p.z, angle: p.angle, motion: motionSchema.parse(JSON.parse(p.motion))})),
+    players: players.map(p => ({...appearance(p), x: p.x, z: p.z, angle: p.angle, workUntil:p.workUntil??0, motion: motionSchema.parse(JSON.parse(p.motion))})),
     presenceSession: location && location.world_id === w?.id ? {id: location.session_id, worldId: location.world_id, sequence: location.sequence, expiresAt: location.seen_at + TTL} : null,
     states, wallet: user.wallet, keyStatus: 'not-deployed',
     worlds: await query<{id: string; name: string; owner: string}>(
@@ -151,6 +154,10 @@ export async function handleHabitat(r: Request, path: string[]) {
     }
     const user = await principal(r);
     if (r.method !== 'GET') await rateLimit(`habitat:${path[0]}:${user.id}`, ['pose', 'presence'].includes(p) ? 150 : 40);
+    if (r.method === 'POST' && townLifePaths.has(p)) {
+      if (!await one('SELECT id FROM habitat_profiles WHERE id=?',user.id)) throw new AppError('PROFILE_REQUIRED',409);
+      return reply(await townLifeAction(user,p,await body(r)));
+    }
     if (r.method === 'POST' && p === 'public-world') {
       z.object({}).strict().parse(await body(r));
       if (!await one('SELECT id FROM habitat_profiles WHERE id=?',user.id)) throw new AppError('PROFILE_REQUIRED',409);
@@ -325,11 +332,14 @@ export async function handleHabitat(r: Request, path: string[]) {
       if (Math.hypot(location.x-activity.x,location.z-activity.z)>4.25)
         throw new AppError('COME_CLOSER',422,'Walk to the activity marker first.');
       const now=Date.now();
-      const result=await exec(`INSERT INTO habitat_object_state(world_id,object_id,active,used_at)
+      const results=await batch([statement(`INSERT INTO habitat_object_state(world_id,object_id,active,used_at)
         SELECT ?,?,1,? WHERE EXISTS (SELECT 1 FROM habitat_worlds WHERE id=? AND visibility='public')
+        AND EXISTS (SELECT 1 FROM habitat_presence WHERE profile_id=? AND world_id=? AND seen_at>?
+         AND (x-?)*(x-?)+(z-?)*(z-?)<=18.0625)
         ON CONFLICT(world_id,object_id) DO UPDATE SET active=1,used_at=excluded.used_at
-        WHERE habitat_object_state.used_at<=?`,PUBLIC_WORLD_ID,activity.objectId,now,PUBLIC_WORLD_ID,now-activity.cooldownMs);
-      if (!result.meta.changes) throw new AppError('ACTIVITY_RESTING',409,'Your neighbors finished this recently. Come back soon.');
+        WHERE habitat_object_state.used_at<=?`,PUBLIC_WORLD_ID,activity.objectId,now,PUBLIC_WORLD_ID,user.id,PUBLIC_WORLD_ID,now-TTL,activity.x,activity.x,activity.z,activity.z,now-activity.cooldownMs),
+        ...recordContribution(user,crypto.randomUUID(),activity.id,now)]);
+      if (!results[0]?.meta.changes) throw new AppError('ACTIVITY_RESTING',409,'Your neighbors finished this recently. Come back soon.');
       return reply({activity:activity.id,message:activity.result,updatedAt:now,state:await state(user,PUBLIC_WORLD_ID)});
     }
     if (r.method === 'POST' && (p === 'settings' || p === 'use')) {

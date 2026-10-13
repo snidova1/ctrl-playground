@@ -62,16 +62,24 @@ export type OutfitVariantId = typeof outfitVariants[number]['id'];
 export type HairVariantId = typeof hairVariants[number]['id'];
 export type EyeVariantId = typeof eyeVariants[number]['id'];
 export type SkinVariantId = typeof skinVariants[number]['id'];
-export interface CharacterAppearance {version: 1; gender: CharacterGender; variantId: OutfitVariantId; hairId: HairVariantId; eyeId: EyeVariantId; skinId: SkinVariantId}
+export interface CharacterGeometry {hair:'original'|'bob'|'ponytail';outfit:'original'|'cape'|'apron';footwear:'original'|'boots';accessory:'none'|'beret'|'glasses'|'satchel'}
+export const defaultGeometry:CharacterGeometry={hair:'original',outfit:'original',footwear:'original',accessory:'none'};
+export interface CharacterAppearance {version: 1; gender: CharacterGender; variantId: OutfitVariantId; hairId: HairVariantId; eyeId: EyeVariantId; skinId: SkinVariantId;geometry?:CharacterGeometry}
 export const defaultAppearance: CharacterAppearance = {version: 1, gender: 'female', variantId: 'original', hairId: 'source', eyeId: 'source', skinId: 'source'};
 export function isCharacterAppearance(value: unknown): value is CharacterAppearance {
   if (!value || typeof value !== 'object') return false;
   const appearance = value as Record<string, unknown>;
   return appearance.version === 1 && (appearance.gender === 'male' || appearance.gender === 'female')
+    && (appearance.geometry===undefined || isCharacterGeometry(appearance.geometry))
     && outfitVariants.some(variant => variant.id === appearance.variantId)
     && hairVariants.some(variant => variant.id === appearance.hairId)
     && eyeVariants.some(variant => variant.id === appearance.eyeId)
     && skinVariants.some(variant => variant.id === appearance.skinId);
+}
+export function isCharacterGeometry(value:unknown):value is CharacterGeometry{
+ if(!value||typeof value!=='object')return false;
+ const g=value as Record<string,unknown>;
+ return ['original','bob','ponytail'].includes(String(g.hair))&&['original','cape','apron'].includes(String(g.outfit))&&['original','boots'].includes(String(g.footwear))&&['none','beret','glasses','satchel'].includes(String(g.accessory));
 }
 /** Stable across server/client; persist this result instead of rerolling on login. */
 export function seededAppearance(seed: string, gender: CharacterGender): CharacterAppearance {

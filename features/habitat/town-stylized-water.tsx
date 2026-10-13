@@ -28,6 +28,8 @@ const fragment=`
    vec3 color=mix(deep,pale,smoothstep(-.9,.8,a));
    color=mix(color,foam,stripe*.37+sparkle*.26);
    gl_FragColor=vec4(color,1.0);
+   #include <tonemapping_fragment>
+   #include <colorspace_fragment>
  }
 `;
 /** Cheap three-tone animated water shared by central canal and remote harbor. */

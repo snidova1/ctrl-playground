@@ -6,6 +6,7 @@ import {ACESFilmicToneMapping} from 'three';
 import {resolveCharacter,type CharacterAppearance} from '@/features/plaza/characters/catalog';
 import {loadCharacter,disposeVrm,type LoadedCharacter} from '@/features/plaza/characters/loader';
 import {applyCharacterAppearance} from '@/features/plaza/characters/appearance';
+import ModularWardrobe from '@/features/plaza/characters/modular-wardrobe';
 import {HumanoidAnimator} from '@/features/plaza/characters/animation';
 
 type PreviewStatus={kind:'loading'|'ready'|'error';message?:string};
@@ -30,7 +31,7 @@ function PreviewModel({appearance,onStatus}:{appearance:CharacterAppearance;onSt
  useEffect(()=>{if(character)applyCharacterAppearance(character.vrm,appearance);},[character,appearance]);
  useFrame((_,dt)=>{animator.current?.update(Math.min(dt,.05),{moving:false,sitting:false,celebrate:false,interactedAt:0});});
  if(error||!character)return null;
- return <group scale={character.scale} position={[0,character.floor,0]}><primitive object={character.vrm.scene} dispose={null}/></group>;
+ return <group scale={character.scale} position={[0,character.floor,0]}><primitive object={character.vrm.scene} dispose={null}/><ModularWardrobe vrm={character.vrm} appearance={appearance}/></group>;
 }
 export default function CharacterCreatorPreview({appearance}:{appearance:CharacterAppearance}){
  const [status,setStatus]=useState<PreviewStatus>({kind:'loading'});

@@ -1,0 +1,122 @@
+import {describe,it,expect} from 'vitest';
+import {exec,one} from '@/db';
+import {actor,api,error} from './security/habitat-fixtures';
+import {PUBLIC_WORLD_ID} from '@/features/habitat/public-world';
+import type {HabitatState} from '@/domain/habitat';
+import {CROP_GROW_MS} from '@/domain/town';
+async function enter(name:string,district='garden'){
+ const player=await actor(name);
+ expect((await api('habitat/public-world',{},player.cookie)).status).toBe(200);
+ const state=await (await api('habitat/join',{id:PUBLIC_WORLD_ID},player.cookie)).json() as HabitatState;
+ const sessionId=state.presenceSession!.id;
+ expect((await api('habitat/town-travel',{id:district,sessionId},player.cookie)).status).toBe(200);
+ return {...player,sessionId};
+}
+const latest=async(cookie:string)=>(await (await api('habitat/state',undefined,cookie)).json()) as HabitatState;
+describe('persistent town life without a new economy',()=>{
+ it('persists world-scoped conversation history and rejects stale sessions and private-home leaks',async()=>{
+  const a=await enter('Conversation Sender','center'),b=await enter('Conversation Reader','center');
+  expect((await api('habitat/town-chat',{text:'See you by the café.',sessionId:a.sessionId},a.cookie)).status).toBe(200);
+  expect((await latest(b.cookie)).town?.chat).toContainEqual(expect.objectContaining({player:a.id,text:'See you by the café.'}));
+  await error(await api('habitat/town-chat',{text:'Forged',sessionId:crypto.randomUUID()},a.cookie),409);
+  const joined=await (await api('habitat/join',{id:a.worldId},a.cookie)).json() as HabitatState;
+  expect((await api('habitat/town-chat',{text:'Private household message.',sessionId:joined.presenceSession!.id},a.cookie)).status).toBe(200);
+  expect((await latest(b.cookie)).town?.chat.some(m=>m.text==='Private household message.')).toBe(false);
+  const restored=await (await api('habitat/join',{id:a.worldId},a.cookie)).json() as HabitatState;
+  expect(restored.town?.chat).toContainEqual(expect.objectContaining({text:'Private household message.'}));
+ });
+ it('saves allowlisted modular geometry and synchronizes it to another signed player',async()=>{
+  const a=await enter('Wardrobe Owner','center'),b=await enter('Wardrobe Observer','center');
+  const geometry={hair:'bob',outfit:'cape',footwear:'boots',accessory:'glasses'};
+  const appearance={...a.state.profile!.appearance!,geometry};
+  const response=await api('habitat/profile',{name:'Wardrobe Owner',character:'female',appearance},a.cookie);
+  expect(response.status).toBe(200);
+  const fresh=await latest(a.cookie);
+  expect(fresh.profile?.appearance?.geometry).toEqual(geometry);
+  expect((await latest(b.cookie)).players.find(p=>p.id===a.id)?.appearance?.geometry).toEqual(geometry);
+  await error(await api('habitat/profile',{name:'Wardrobe Owner',character:'female',appearance:{...appearance,geometry:{...geometry,hair:'https://untrusted/model.glb'}}},a.cookie),422);
+ });
+ it('requires real wallet signatures, a fresh session, physical proximity and server elapsed time',async()=>{
+  const player=await enter('Gardener');
+  await error(await api('habitat/town-job/start',{id:'community-garden',sessionId:player.sessionId}),401);
+  await error(await api('habitat/town-job/start',{id:'community-garden',sessionId:crypto.randomUUID()},player.cookie),409);
+  await error(await api('habitat/town-job/start',{id:'harbor-cleanup',sessionId:player.sessionId},player.cookie),422);
+  expect((await api('habitat/town-job/start',{id:'community-garden',sessionId:player.sessionId},player.cookie)).status).toBe(200);
+  const job=(await latest(player.cookie)).town!.job!;
+  await error(await api('habitat/town-job/finish',{jobId:job.id,sessionId:player.sessionId},player.cookie),409,'JOB_NOT_READY');
+  await error(await api('habitat/town-job/start',{id:'community-garden',sessionId:player.sessionId,xp:999},player.cookie),422);
+ });
+ it('finishes once across races, keeps activity records after rejoin, and shares the world change',async()=>{
+  const a=await enter('Dock Helper','harbor'),b=await enter('Dock Neighbor','harbor');
+  expect((await api('habitat/town-job/start',{id:'harbor-cleanup',sessionId:a.sessionId},a.cookie)).status).toBe(200);
+  const job=(await latest(a.cookie)).town!.job!;
+  await exec('UPDATE town_jobs SET ready_at=? WHERE id=?',Date.now()-1,job.id);
+  const rejoined=await (await api('habitat/join',{id:PUBLIC_WORLD_ID},a.cookie)).json() as HabitatState;
+  a.sessionId=rejoined.presenceSession!.id;
+  expect(rejoined.town?.job?.id).toBe(job.id);
+  await api('habitat/town-travel',{id:'harbor',sessionId:a.sessionId},a.cookie);
+  const results=await Promise.all([1,2].map(()=>api('habitat/town-job/finish',{jobId:job.id,sessionId:a.sessionId},a.cookie)));
+  expect(results.filter(r=>r.status===200)).toHaveLength(1);
+  expect((await latest(a.cookie)).town?.progress).toEqual({completed:1});
+  expect((await latest(b.cookie)).town?.contributions['harbor-cleanup']).toEqual({count:1,neighbors:1});
+  const count=await one<{n:number}>('SELECT COUNT(*) AS n FROM town_contributions WHERE id=?',job.id);
+  expect(count?.n).toBe(1);
+  expect(JSON.stringify((await latest(a.cookie)).town)).not.toMatch(/"(?:xp|level|coins|tokens|balance)":/);
+ });
+ it('rejects a job claimed by another player, moving away, expiry and a superseded presence session',async()=>{
+  const a=await enter('Post Helper','residential'),b=await enter('Other Helper','residential');
+  await api('habitat/town-job/start',{id:'neighborhood-post',sessionId:a.sessionId},a.cookie);
+  const job=(await latest(a.cookie)).town!.job!;
+  await exec('UPDATE town_jobs SET ready_at=? WHERE id=?',Date.now()-1,job.id);
+  await error(await api('habitat/town-job/finish',{jobId:job.id,sessionId:b.sessionId},b.cookie),409,'JOB_NOT_ACTIVE');
+  await api('habitat/town-travel',{id:'center',sessionId:a.sessionId},a.cookie);
+  await error(await api('habitat/town-job/finish',{jobId:job.id,sessionId:a.sessionId},a.cookie),422,'COME_CLOSER');
+  await exec('UPDATE town_jobs SET expires_at=? WHERE id=?',Date.now()-1,job.id);
+  await error(await api('habitat/town-job/finish',{jobId:job.id,sessionId:a.sessionId},a.cookie),409,'JOB_EXPIRED');
+ });
+ it('lets independent players plant, water, harvest and replant with guarded revisions',async()=>{
+  const a=await enter('Seed Planter'),b=await enter('Flower Waterer');
+  const action=(player:typeof a,action:string,revision:number)=>api('habitat/town-garden',{id:'fern-bed-1',action,revision,sessionId:player.sessionId},player.cookie);
+  expect((await action(a,'plant',0)).status).toBe(200);
+  await error(await action(b,'water',0),409,'GARDEN_CHANGED');
+  expect((await action(b,'water',1)).status).toBe(200);
+  await error(await action(a,'harvest',2),409,'GARDEN_CHANGED');
+  await exec('UPDATE town_garden SET watered_at=? WHERE id=?',Date.now()-CROP_GROW_MS-1000,'fern-bed-1');
+  const results=await Promise.all([action(a,'harvest',2),action(b,'harvest',2)]);
+  expect(results.filter(r=>r.status===200)).toHaveLength(1);
+  const bed=(await latest(a.cookie)).town!.garden.find(b=>b.id==='fern-bed-1');
+  expect(bed).toMatchObject({crop:null,revision:3});
+  expect((await action(b,'plant',3)).status).toBe(200);
+  expect((await latest(a.cookie)).town!.garden.find(b=>b.id==='fern-bed-1')).toMatchObject({crop:'marigold',revision:4});
+ });
+ it('persists reciprocal friends while keeping private Habitat permissions independent',async()=>{
+  const a=await enter('Friend Sender'),b=await enter('Friend Recipient');
+  expect((await api('habitat/town-friend',{id:b.id,action:'request'},a.cookie)).status).toBe(200);
+  expect((await latest(b.cookie)).town?.friends).toContainEqual(expect.objectContaining({id:a.id,status:'pending',incoming:true,homeId:null}));
+  await api('habitat/town-friend',{id:b.id,action:'accept'},a.cookie);
+  expect((await latest(a.cookie)).town?.friends.find(f=>f.id===b.id)?.status).toBe('pending');
+  expect((await api('habitat/town-friend',{id:a.id,action:'accept'},b.cookie)).status).toBe(200);
+  expect((await latest(a.cookie)).town?.friends.find(f=>f.id===b.id)?.status).toBe('accepted');
+  await error(await api('habitat/town-invite',{id:b.id,destination:a.worldId},a.cookie),403,'INVITEE_ACCESS_REQUIRED');
+  expect((await api(`habitat/worlds/${a.worldId}/members`,{wallet:b.wallet,role:'visitor'},a.cookie)).status).toBe(200);
+  expect((await api('habitat/town-invite',{id:b.id,destination:a.worldId},a.cookie)).status).toBe(200);
+  const invite=(await latest(b.cookie)).town!.invites[0];
+  expect(invite.destination).toBe(a.worldId);
+  await api(`habitat/worlds/${a.worldId}/members/${b.id}`,{},a.cookie,'DELETE');
+  expect((await latest(b.cookie)).town!.invites).toHaveLength(0);
+  expect((await api(`habitat/worlds/${a.worldId}`,undefined,b.cookie)).status).toBe(404);
+ });
+ it('requires two nearby signed participants to consent to a synchronized interaction',async()=>{
+  const a=await enter('Dance Initiator'),b=await enter('Dance Partner');
+  expect((await api('habitat/town-social',{id:b.id,kind:'dance',sessionId:a.sessionId},a.cookie)).status).toBe(200);
+  const proposal=(await latest(b.cookie)).town!.social[0];
+  expect(proposal.acceptedAt).toBe(0);
+  await error(await api('habitat/town-social/accept',{id:proposal.id,sessionId:a.sessionId},a.cookie),409);
+  expect((await api('habitat/town-social/accept',{id:proposal.id,sessionId:b.sessionId},b.cookie)).status).toBe(200);
+  const first=(await latest(a.cookie)).town!.social[0],second=(await latest(b.cookie)).town!.social[0];
+  expect(first.acceptedAt).toBe(second.acceptedAt);expect(first.acceptedAt).toBeGreaterThan(Date.now());
+  await error(await api('habitat/town-social/accept',{id:proposal.id,sessionId:b.sessionId},b.cookie),409);
+  await api('habitat/town-travel',{id:'harbor',sessionId:b.sessionId},b.cookie);
+  await error(await api('habitat/town-social',{id:b.id,kind:'high-five',sessionId:a.sessionId},a.cookie),422);
+ });
+});

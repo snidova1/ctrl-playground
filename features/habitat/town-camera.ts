@@ -1,10 +1,11 @@
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS} from './public-world-geography';
+import {TOWN_DISTRICT_BUILDINGS} from './town-districts';
 
 type Point3={x:number;y:number;z:number};
 /** Conservative roof/awning volumes. Camera-only: does not change walking ACLs. */
 export function townCameraFraction(target:Point3,desired:Point3){
  let nearest=1;
- for(const house of [...PUBLIC_WORLD_BUILDINGS,...PUBLIC_WORLD_SHOPS]){
+ for(const house of [...PUBLIC_WORLD_BUILDINGS,...PUBLIC_WORLD_SHOPS,...TOWN_DISTRICT_BUILDINGS]){
   const min={x:house.x-house.width/2-.65,y:-.2,z:house.z-house.depth/2-.8};
   const max={x:house.x+house.width/2+.65,y:6.2,z:house.z+house.depth/2+1.2};
   let enter=0,exit=1;

@@ -5,7 +5,7 @@ import {Color,DirectionalLight,HemisphereLight} from 'three';
 
 /** Shared visual clock: 48 real minutes per stylized town day, inspired by summer-cycle's golden-hour progression. */
 const DAY_MS=48*60*1000;
-const skyDay=new Color('#c8e2e5'),skyDusk=new Color('#eab99e'),skyNight=new Color('#788e9b');
+const skyDay=new Color('#c8e2e5'),skyDusk=new Color('#eab99e'),skyNight=new Color('#a8becb');
 const sunDay=new Color('#fff3db'),sunDusk=new Color('#ffd0a0');
 export default function TownDaylight({quality}:{quality:'low'|'high'}){
  const sun=useRef<DirectionalLight>(null),hemi=useRef<HemisphereLight>(null),last=useRef(-1);
@@ -17,16 +17,16 @@ export default function TownDaylight({quality}:{quality:'low'|'high'}){
   const dusk=Math.max(0,1-Math.abs(Math.sin(phase))*2);
   if(sun.current){
    sun.current.position.set(Math.cos(phase)*50,14+Math.max(0,Math.sin(phase))*55,36);
-   sun.current.intensity=.75+1.1*daylight+.32*dusk;
+   sun.current.intensity=1.1+1.1*daylight+.32*dusk;
    sun.current.color.copy(sunDay).lerp(sunDusk,dusk*.75);
   }
-  if(hemi.current)hemi.current.intensity=.88+.28*daylight;
+  if(hemi.current)hemi.current.intensity=1.15+.28*daylight;
   const sky=skyNight.clone().lerp(skyDusk,Math.min(1,daylight*.9+dusk*.6)).lerp(skyDay,daylight*.72);
   if(scene.background instanceof Color)scene.background.copy(sky);
   if(scene.fog)scene.fog.color.copy(sky);
  });
  return <>
-  <ambientLight intensity={.53}/>
+  <ambientLight intensity={.7}/>
   <hemisphereLight ref={hemi} args={['#fff0d6','#829577',.88]}/>
   <directionalLight ref={sun} position={[30,50,20]} intensity={1.8} color='#fff0db' castShadow={quality==='high'}
    shadow-mapSize={quality==='high'?[1024,1024]:[512,512]}

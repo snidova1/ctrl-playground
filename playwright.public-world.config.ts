@@ -7,7 +7,7 @@ const origin='http://127.0.0.1:3187';
 const production=process.env.CTRL_QA_PRODUCTION==='1';
 const database=path.join(mkdtempSync(path.join(tmpdir(),'ctrl-town-')),'worlds.sqlite');
 export default defineConfig({
- testDir:'tests/browser',testMatch:'public-world-visual.spec.ts',workers:1,timeout:210000,
+ testDir:'tests/browser',outputDir:'test-results/public-world',testMatch:'public-world-visual.spec.ts',workers:1,timeout:210000,
  use:{
   baseURL:origin,trace:{mode:'retain-on-failure',screenshots:false,snapshots:true,sources:true},screenshot:'only-on-failure',
   launchOptions:{executablePath:process.env.CTRL_CHROMIUM_PATH,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']}

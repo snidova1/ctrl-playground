@@ -83,7 +83,7 @@ test('signed player enters a rendered walkable multiplayer neighborhood, not a b
  expect(nearBlack,'Town paths/trees must not render as black untextured instancing squares').toBeLessThan(.045);
  await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  const hud=await page.evaluate(()=>{
-  const selectors=['.hb-top','.hb-title','.hb-bottom','.hb-touch','.hb-chat-toggle','.hb-music-player','.hb-town-guide'];
+  const selectors=['.hb-top','.hb-title','.hb-bottom','.hb-touch','.hb-chat-toggle','.hb-music-player','.hb-town-guide','.hb-life-dock'];
   const rects=selectors.flatMap(s=>[...document.querySelectorAll(s)].map(el=>el.getBoundingClientRect())).filter(r=>r.width&&r.height);
   let covered=0,total=0;
   for(let y=0;y<innerHeight;y+=8)for(let x=0;x<innerWidth;x+=8){total++;if(rects.some(r=>x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom))covered++;}
@@ -150,12 +150,14 @@ test('a signed player can travel across genuinely rendered remote districts and 
   {id:'residential',x:78,z:27,activity:'neighborhood-post'},
   {id:'harbor',x:5,z:-76,activity:'harbor-cleanup'},
   {id:'festival',x:77,z:-73,activity:'festival-stage'},
+  {id:'workshop',x:-75,z:-52,activity:'artisan-project'},
+  {id:'orchard',x:76,z:80,activity:'orchard-harvest'},
  ] as const;
  for(const target of journeys){
   await press(page,page.getByRole('button',{name:'Town map',exact:true}));
   const destinations=page.locator('.hb-town-destinations');
   await expect(destinations).toBeVisible();
-  const name={garden:'Fernwood Park',residential:'Clover Neighborhood',harbor:'Tidewater Harbor',festival:'Sunset Meadow'}[target.id];
+  const name={garden:'Fernwood Park',residential:'Clover Neighborhood',harbor:'Tidewater Harbor',festival:'Sunset Meadow',workshop:'Artisan Row',orchard:'Applehill Orchard'}[target.id];
   await press(page,destinations.locator('div').filter({hasText:name}).getByRole('button',{name:'Travel here ↗'}));
   await expect.poll(async()=>{
    const response=await page.request.get('/api/habitat/state');const s=await response.json() as HabitatState;
@@ -236,4 +238,90 @@ test('two signed neighbors share speech and waves, visit a permitted home and ke
   expect(returned.profile).toEqual(friend.profile);expect(returned.homeId).toBe(friend.homeId);
   expect(errors).toEqual([]);
  }finally{await neighborBrowser.close();}
+});
+
+test('persistent activity, friendship and consented dance work across two signed devices',async({page,baseURL})=>{
+ test.setTimeout(300000);
+ const peerBrowser=await chromium.launch(test.info().project.use.launchOptions);
+ const peerContext=await peerBrowser.newContext({baseURL,viewport:page.viewportSize()!});
+ const peer=await peerContext.newPage();
+ const errors:string[]=[];for(const p of [page,peer])p.on('pageerror',e=>errors.push(e.message));
+ try{
+  await enterTown(page,'Café Contributor');await enterTown(peer,'Garden Companion');
+  const original=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
+  const companion=await (await peer.request.get('/api/habitat/state')).json() as HabitatState;
+  const start=page.waitForResponse(r=>r.url().endsWith('/api/habitat/town-job/start'));
+  await press(page,page.locator('.hb-town-action'));
+  expect((await start).status()).toBe(200);
+  const active=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
+  expect(active.town?.job?.activityId).toBe('cafe-supplies');
+  await page.reload();
+  await expect(page.getByRole('heading',{name:'Willow Square',exact:true})).toBeVisible({timeout:45000});
+  const restored=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
+  expect(restored.town?.job?.id).toBe(active.town?.job?.id);
+  await expect(page.getByRole('button',{name:'Finish activity',exact:true})).toBeEnabled({timeout:15000});
+  const finished=page.waitForResponse(r=>r.url().endsWith('/api/habitat/town-job/finish'));
+  await press(page,page.getByRole('button',{name:'Finish activity',exact:true}));
+  expect((await finished).status()).toBe(200);
+  await expect.poll(async()=>((await (await peer.request.get('/api/habitat/state')).json()) as HabitatState).town?.contributions['cafe-supplies']?.neighbors).toBeGreaterThan(0);
+  await press(page,page.getByRole('button',{name:/^Town life/}));
+  const contributorRow=page.locator('.hb-life-row').filter({has:page.getByText('Garden Companion',{exact:true})});
+  await expect(contributorRow).toBeVisible({timeout:15000});
+  await press(page,contributorRow.getByRole('button',{name:'Add friend',exact:true}));
+  await press(peer,peer.getByRole('button',{name:/^Town life/}));
+  const incoming=peer.locator('.hb-life-row').filter({has:peer.getByText('Café Contributor',{exact:true})});
+  await expect(incoming.getByRole('button',{name:'Accept friend',exact:true})).toBeVisible({timeout:15000});
+  await press(peer,incoming.getByRole('button',{name:'Accept friend',exact:true}));
+  await expect.poll(async()=>((await (await page.request.get('/api/habitat/state')).json()) as HabitatState).town?.friends.find(f=>f.id===companion.profile!.id)?.status).toBe('accepted');
+  await press(page,contributorRow.getByRole('button',{name:'Invite dance',exact:true}));
+  await expect(peer.getByRole('button',{name:'Join dance',exact:true})).toBeVisible({timeout:10000});
+  const accepted=peer.waitForResponse(r=>r.url().endsWith('/api/habitat/town-social/accept'));
+  await press(peer,peer.getByRole('button',{name:'Join dance',exact:true}));
+  expect((await accepted).status()).toBe(200);
+  const first=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
+  const second=await (await peer.request.get('/api/habitat/state')).json() as HabitatState;
+  expect(first.town!.social[0].acceptedAt).toBeGreaterThan(0);
+  expect(first.town!.social[0].acceptedAt).toBe(second.town!.social[0].acceptedAt);
+  await press(page,page.getByRole('button',{name:'Close town life',exact:true}));
+  await press(peer,peer.getByRole('button',{name:'Close town life',exact:true}));
+  await page.waitForTimeout(1500);
+  await page.screenshot({path:test.info().outputPath('two-player-consented-dance.png'),scale:'css'});
+  await page.reload();
+  await expect(page.getByRole('heading',{name:'Willow Square',exact:true})).toBeVisible({timeout:45000});
+  const persistent=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
+  expect(persistent.town!.progress.completed).toBe(1);
+  expect(persistent.town!.friends.find(f=>f.id===companion.profile!.id)?.status).toBe('accepted');
+  expect(persistent.profile).toEqual(original.profile);
+  expect(persistent.homeId).toBe(original.homeId);
+  expect(JSON.stringify(persistent.town)).not.toMatch(/"(?:xp|level|coins|tokens|balance)":/);
+  expect(errors).toEqual([]);
+ }finally{await peerBrowser.close();}
+});
+
+test('character creator renders modular geometry and persists it across reload',async({page})=>{
+ test.setTimeout(210000);
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await enterTown(page,'Wardrobe Traveler');
+ await press(page,page.locator('.hb-top').getByRole('button',{name:'Settings',exact:true}));
+ await press(page,page.getByRole('button',{name:'Edit character',exact:true}));
+ await press(page,page.getByRole('button',{name:'Female',exact:true}));
+ await expect(page.locator('.hb-preview-loading')).toHaveCount(0,{timeout:60000});
+ const preview=page.locator('.hb-avatar-preview canvas');
+ const before=await preview.screenshot({path:test.info().outputPath('avatar-original.png'),scale:'css'});
+ await page.getByRole('combobox',{name:'Hairstyle',exact:true}).selectOption('bob');
+ await page.getByRole('combobox',{name:'Garment',exact:true}).selectOption('cape');
+ await page.getByRole('combobox',{name:'Footwear',exact:true}).selectOption('boots');
+ await page.getByRole('combobox',{name:'Accessory',exact:true}).selectOption('glasses');
+ await page.waitForTimeout(1200);
+ const after=await preview.screenshot({path:test.info().outputPath('avatar-modular.png'),scale:'css'});
+ expect(after.equals(before),'Changing wardrobe must change real rendered pixels').toBe(false);
+ const saved=page.waitForResponse(r=>r.url().endsWith('/api/habitat/profile')&&r.request().method()==='POST');
+ await press(page,page.getByRole('button',{name:'Save character',exact:true}));
+ expect((await saved).status()).toBe(200);
+ await expect(page.getByRole('heading',{name:'Willow Square',exact:true})).toBeVisible({timeout:45000});
+ await page.reload();
+ await expect(page.getByRole('heading',{name:'Willow Square',exact:true})).toBeVisible({timeout:45000});
+ const state=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
+ expect(state.profile?.appearance?.geometry).toEqual({hair:'bob',outfit:'cape',footwear:'boots',accessory:'glasses'});
+ expect(errors).toEqual([]);
 });

@@ -20,6 +20,7 @@ export function useWorldPresence(options: Options) {
   const generation = useRef(0);
   const syncing = useRef(false);
   const travelling = useRef(false);
+  const joining = useRef<number | null>(null);
   const superseded = useRef(false);
   const leave = useCallback(() => {
     const old = connection.current;
@@ -31,7 +32,10 @@ export function useWorldPresence(options: Options) {
   const connect = useCallback(async (id: string) => {
     leave();
     const epoch = generation.current;
-    const state = await habitatApi<HabitatState>('join', {id});
+    joining.current = epoch;
+    let state: HabitatState;
+    try {state = await habitatApi<HabitatState>('join', {id});}
+    finally {if (joining.current === epoch) joining.current = null;}
     if (epoch !== generation.current) throw new HabitatApiError('PRESENCE_SESSION_STALE', 409, 'This join was superseded by a newer connection.');
     connection.current = state.presenceSession;
     superseded.current = false;
@@ -44,7 +48,7 @@ export function useWorldPresence(options: Options) {
   const sync = useCallback(async () => {
     const {latest, pose, motion, flags, onState, onOnline} = handlers.current;
     const world = latest.current?.world;
-    if (!world || !latest.current?.profile || syncing.current || travelling.current || superseded.current) return;
+    if (!world || !latest.current?.profile || syncing.current || joining.current !== null || travelling.current || superseded.current) return;
     syncing.current = true;
     let epoch = generation.current;
     try {

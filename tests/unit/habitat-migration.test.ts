@@ -110,7 +110,12 @@ describe('Habitat 0004 existing-database SQLite migration rehearsal', () => {
         if (table.name === 'ctrl_migrations') continue;
         expect(db.prepare(`SELECT ${table.columns.map(quote).join(',')} FROM ${quote(table.name)} ORDER BY rowid`).all(), table.name).toEqual(table.rows);
       }
-      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 6});
+      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 7});
+      for(const name of ['town_progress','town_jobs','town_contributions','town_garden','town_friendships','town_invites','town_social_actions','town_chat']){
+        expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)).toEqual({name});
+        expect(db.prepare(`SELECT COUNT(*) AS count FROM ${name}`).get()).toEqual({count:0});
+      }
+      expect(columns(db,'town_progress').map(column=>column.name)).toEqual(['profile_id','completed','updated_at']);
       expect(columns(db,'habitat_profiles')).toEqual(expect.arrayContaining([expect.objectContaining({name:'appearance',type:'TEXT',notnull:1,dflt_value:"'{}'"})]));
       expect(db.prepare('SELECT id,appearance FROM habitat_profiles ORDER BY id').all()).toEqual([
         {id:'wallet-member',appearance:'{}'},{id:'wallet-owner',appearance:'{}'},

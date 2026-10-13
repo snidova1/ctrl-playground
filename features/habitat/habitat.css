@@ -295,3 +295,19 @@
 .hb-town-guide .hb-town-destinations>div{display:flex;flex-direction:column;border-bottom:1px solid #aebba18c;padding-bottom:5px}
 .hb-town-guide .hb-town-destinations small{font-size:10px;line-height:1.4}
 @media(max-width:760px){.hb-app.is-public-world .hb-town-guide .hb-town-guide-actions{max-width:150px;align-items:stretch}.hb-app.is-public-world .hb-town-guide section{max-height:50dvh}}
+/* Persistent activity/social tools stay collapsed while exploring. */
+.hb-life-dock{position:absolute;left:20px;top:192px;z-index:24;max-width:330px;font-size:12px;}
+.hb-life-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.hb-life-dock button{border:1px solid #cbbc9f;border-radius:10px;background:#fff6e4;color:#374d40;padding:9px 12px;cursor:pointer;min-height:40px;}
+.hb-life-dock button:disabled{opacity:.55;cursor:default;}
+.hb-life-panel{margin-top:6px;padding:16px;background:#fff8ebf5;border:1px solid #dbc9aa;border-radius:16px;max-height:calc(100dvh - 285px);overflow:auto;box-shadow:0 10px 35px #324c3925;}
+.hb-life-panel h2{font-size:18px;margin:0 0 8px;}
+.hb-life-panel details{border-top:1px solid #dfd3bf;padding:12px 0;}
+.hb-life-panel summary{cursor:pointer;font-weight:700;}
+.hb-life-row{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0;}
+.hb-life-row>strong,.hb-life-row>span,.hb-life-row>small{width:100%;}
+.hb-life-row select{width:100%;padding:8px;border-radius:8px;border:1px solid #cbbc9f;}
+.hb-creator-geometry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}
+.hb-creator-geometry label{font-size:12px;}
+.hb-creator-geometry select{display:block;width:100%;padding:8px;background:#fff8ec;border:1px solid #cab998;border-radius:8px;}
+@media(max-width:600px){.hb-life-dock{left:12px;top:136px;max-width:calc(100vw - 24px);}.hb-life-actions>button{font-size:11px;padding:7px 10px;min-height:34px;}.hb-life-panel{max-width:300px;max-height:calc(100dvh - 280px);}}

@@ -9,13 +9,17 @@ async function openWorld(page: Page, route = '/worlds/editor', preserveStarter =
   await installSignedWallet(page);
   await page.goto(route);
   await expect(page.locator('.hb-stage canvas')).toBeVisible({timeout: 60000});
+  if(route==='/'){
+    await expect(page.getByRole('heading',{name:'Common Ground',exact:true})).toBeVisible();
+    await pointer(page,page.locator('.hb-top').getByRole('button',{name:'Habitat',exact:true}));
+  }
   await pointer(page, page.locator('.wallet-options').getByRole('button', {name: 'Connect wallet', exact: true}));
   await pointer(page, page.getByRole('button', {name: 'Sign in to Habitat', exact: true}));
-  await expect(page.getByRole('button', {name: 'Enter my world draft'})).toBeVisible({timeout: 30000});
+  await expect(page.getByRole('button', {name: 'Enter Habitat', exact: true})).toBeVisible({timeout: 30000});
   await page.getByRole('textbox', {name: 'Name', exact: true}).fill('CTRL Browser Builder');
   await expect(page.locator('.hb-avatar-preview canvas')).toBeVisible({timeout: 60000});
   await pointer(page, page.getByRole('button', {name: 'Male', exact: true}));
-  await pointer(page, page.getByRole('button', {name: 'Enter my world draft'}));
+  await pointer(page, page.getByRole('button', {name: 'Enter Habitat', exact: true}));
   await expect(page.getByRole('button', {name: 'Build my world +'})).toBeVisible({timeout: 30000});
   const response = await page.request.get('/api/habitat/state');
   expect(response.status()).toBe(200);
@@ -55,7 +59,9 @@ test('Verified wallet opens the original VRM Habitat canvas; guests stay in Comm
   await expect(page.getByRole('button', {name: 'Enter Common Ground'})).toBeVisible({timeout: 60000});
   expect((await page.request.post('/api/habitat/profile', {headers: {Origin: new URL(page.url()).origin}, data: {name: 'Unsigned', character: 'female'}})).status()).toBe(401);
   await pointer(page, page.getByRole('button', {name: 'Enter Common Ground'}));
-  await expect(page).toHaveURL(/\/courtyard$/, {timeout: 30000});
+  // The public entry moved to the root route; preserve the full guest boundary checks.
+  await expect(page).toHaveURL(new URL('/',page.url()).toString(), {timeout: 30000});
+  await expect(page.getByRole('heading',{name:'Common Ground',exact:true})).toBeVisible();
   expect((await page.request.get('/api/habitat/state')).status()).toBe(401);
   await openWorld(page);
   await build(page);
@@ -121,7 +127,7 @@ test('Homepage editor enables Redo after Undo and persists the restored draft', 
   await expect(undo).toBeDisabled();
   await expect(redo).toBeDisabled();
   await pointer(page, page.getByText('Interactive pieces', {exact:true}));
-  await pointer(page, page.getByRole('button', {name: 'Block +', exact: true}));
+  await pointer(page, page.getByRole('button', {name: 'Building block +', exact: true}));
   await expect(placed.locator('option')).toHaveCount(2);
   await pointer(page, undo);
   await expect(placed.locator('option')).toHaveCount(1);
@@ -130,7 +136,7 @@ test('Homepage editor enables Redo after Undo and persists the restored draft', 
   await pointer(page, redo);
   await expect(placed.locator('option')).toHaveCount(2);
   await expect(redo).toBeDisabled();
-  await pointer(page, page.getByRole('button', {name: 'Save & Play', exact: true}));
+  await pointer(page, page.getByRole('button', {name: 'Save & play', exact: true}));
   await expect(page.getByRole('button', {name: 'Build my world +'})).toBeVisible();
   await page.reload();
   await expect(page.getByRole('button', {name: 'Build my world +'})).toBeVisible();
