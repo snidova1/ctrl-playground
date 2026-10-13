@@ -10,8 +10,8 @@ export default function TownGuide({pose,onDirectory,onActivity,states,busy=false
  useEffect(()=>{const timer=setInterval(()=>{setPosition({x:pose.current.x,z:pose.current.z});setNow(Date.now());},400);return()=>clearInterval(timer);},[pose]);
  const nearest=getNearestTownActivity(position.x,position.z);
  const district=getTownDistrict(position.x,position.z);
- const recent=TOWN_ACTIVITIES.filter(a=>now-(states[a.objectId]?.usedAt??0)<a.cooldownMs).length;
- const cooling=nearest?Math.max(0,Math.ceil(((states[nearest.objectId]?.usedAt??0)+nearest.cooldownMs-now)/1000)):0;
+ const recent=TOWN_ACTIVITIES.filter(a=>!!states[a.objectId]?.usedAt&&now-states[a.objectId].usedAt<a.cooldownMs).length;
+ const cooling=nearest&&states[nearest.objectId]?.usedAt?Math.max(0,Math.ceil((states[nearest.objectId].usedAt+nearest.cooldownMs-now)/1000)):0;
  return <aside className='hb-town-guide' aria-label='Public World travel and activities'>
   <div className='hb-town-guide-actions'>
    {nearest&&<button className='hb-town-action' disabled={busy||cooling>0} onClick={()=>onActivity(nearest.id)}>
