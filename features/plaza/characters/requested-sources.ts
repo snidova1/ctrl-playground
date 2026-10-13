@@ -10,6 +10,8 @@
  * Visual variety is intentional: anime, film-cartoon, stylized and realistic.
  * No modular wardrobe or appearance editing.
  */
+import {INSTALLED_CHARACTER_ASSETS} from './ready-character-assets';
+
 export type SourceAvatarFormat = 'blender-rig' | 'unity-humanoid' | 'vrm-in-archive';
 export type SourceAvatarLicense = 'CC-BY' | 'CC0' | 'creator-restrictions' | 'third-party-review';
 export type AvatarPresentation = 'female' | 'male' | 'unspecified';
@@ -22,9 +24,9 @@ export interface CharacterSource {
   license: SourceAvatarLicense;
   sourceUrl: string;
   /** Explicit pending review avoids advertising broken previews to players. */
-  importState: 'pending-binary-and-visual-validation';
+  importState: 'pending-binary-and-visual-validation'|'ready';
   /** Future audited local runtime paths only; never a remote hotlink. */
-  assetPaths: null;
+  assetPaths: null | {high:string; low:string};
   freeForAllPlayers: true;
   gameUseRightsConfirmed: boolean;
   engineeringNote: string;
@@ -97,13 +99,16 @@ const SOURCE_DEFINITIONS = [
   },
 ] as const;
 
-export const REQUESTED_CHARACTER_SOURCES: CharacterSource[] = SOURCE_DEFINITIONS.map(source=>({
-  ...source,
-  importState:'pending-binary-and-visual-validation' as const,
-  assetPaths:null,
-  freeForAllPlayers:true as const,
-  gameUseRightsConfirmed:source.license==='CC0'||source.license==='CC-BY'
-}));
+export const REQUESTED_CHARACTER_SOURCES: CharacterSource[] = SOURCE_DEFINITIONS.map(source=>{
+  const installed=INSTALLED_CHARACTER_ASSETS.find(asset=>asset.id===source.id);
+  return {
+    ...source,
+    importState:installed?'ready':'pending-binary-and-visual-validation',
+    assetPaths:installed?{high:installed.modelUrl,low:installed.modelUrl}:null,
+    freeForAllPlayers:true,
+    gameUseRightsConfirmed:!!installed || source.license==='CC0'||source.license==='CC-BY'
+  };
+});
 
 /** NO candidates are runtime-ready without audited, local .vrm binaries. */
 export const READY_REQUESTED_CHARACTER_SOURCES = REQUESTED_CHARACTER_SOURCES.filter(source=>source.assetPaths!==null && source.gameUseRightsConfirmed);
