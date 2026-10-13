@@ -51,3 +51,27 @@ next-env.d.ts
 /test-results/
 /ctrl-local.sqlite*
 /tsconfig.tsbuildinfo
+
+# Private credentials and signing material: never publish.
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+credentials.json
+credentials.*.json
+service-account*.json
+*wallet-key*.json
+*keystore*.json
+*.tfstate
+*.tfstate.*
+/secrets/
+/.secrets/
