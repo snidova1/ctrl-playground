@@ -1,12 +1,14 @@
 'use client';
-import {useLayoutEffect,useMemo,useRef,useState} from 'react';
+import {useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
 import {useFrame} from '@react-three/fiber';
 import {Html} from '@react-three/drei';
+import {TownGardens} from './town-gardens';
+import {GroundShadow,paintedTexture,TownFootShadow} from './town-surfaces';
 import {Color,Group,InstancedMesh,Matrix4,Shape} from 'three';
 import {createCharacterMotion,resolveCharacter,seededAppearance} from '@/features/plaza/characters/catalog';
 import VrmAvatar from '@/features/plaza/characters/vrm-avatar';
 import type {Pose} from '@/features/plaza/types';
-import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_BRIDGES,PUBLIC_WORLD_BRIDGE,PUBLIC_WORLD_CANAL} from './public-world-geography';
+import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_BRIDGES,PUBLIC_WORLD_BRIDGE} from './public-world-geography';
 import {residentPose} from './town-residents';
 
 /** An authored neighborhood made from reusable, lightweight Three geometry.
@@ -57,16 +59,19 @@ function GreenBorder({quality}:{quality:'low'|'high'}){
  },[selected]);
  return <group>
   <instancedMesh ref={trunks} args={[undefined,undefined,selected.length]}><cylinderGeometry args={[1,1,1,6]}/><meshStandardMaterial color='#8c765e'/></instancedMesh>
-  <instancedMesh ref={canopies} args={[undefined,undefined,selected.length]} castShadow={quality==='high'}><icosahedronGeometry args={[1,1]}/><meshStandardMaterial roughness={1}/></instancedMesh>
+  <instancedMesh ref={canopies} args={[undefined,undefined,selected.length]} castShadow={quality==='high'}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial roughness={1}/></instancedMesh>
  </group>;
 }
 function RaisedGround(){
+ const grass=useMemo(()=>paintedTexture('grass'),[]),stone=useMemo(()=>paintedTexture('stone'),[]);
+ const roadMaps=useMemo(()=>ROADS.map(road=>{const map=stone.clone();map.repeat.set(road.w*.6,road.d*.6);return map;}),[stone]);
+ useEffect(()=>()=>roadMaps.forEach(map=>map.dispose()),[roadMaps]);
  const quays=useMemo(()=>{
   const edges=[-37.5,...PUBLIC_WORLD_BRIDGES.flatMap(b=>[b.x-PUBLIC_WORLD_BRIDGE.halfWidth,b.x+PUBLIC_WORLD_BRIDGE.halfWidth]),37.5];
   return edges.filter((_,i)=>i%2===0).map((x,i)=>({x:(x+edges[i*2+1])/2,width:edges[i*2+1]-x}));
  },[]);
  return <>
-  <mesh rotation-x={-Math.PI/2} position-y={-.1} receiveShadow><planeGeometry args={[150,150]}/><meshStandardMaterial color='#a4c48f' roughness={1}/></mesh>
+  <mesh rotation-x={-Math.PI/2} position-y={-.1} receiveShadow><planeGeometry args={[150,150]}/><meshStandardMaterial map={grass} roughness={1}/></mesh>
   <mesh rotation-x={-Math.PI/2} position={[0,-.065,-19.5]}><planeGeometry args={[78,5]}/><meshStandardMaterial color='#75bdc8' roughness={.22} metalness={.05}/></mesh>
   {/* Both quays have visible stone retaining walls and a safe road behind them. */}
   {[-16.7,-22.3].flatMap(z=>quays.map(quay=><group key={`${z}:${quay.x}`}>
@@ -74,10 +79,10 @@ function RaisedGround(){
    <mesh position={[quay.x,.14,z]}><boxGeometry args={[quay.width,.09,.18]}/><meshStandardMaterial color='#eee1cb'/></mesh>
   </group>))}
   {ROADS.map((road,i)=><mesh key={i} rotation-x={-Math.PI/2} position={[road.x,.015,road.z]} receiveShadow>
-   <planeGeometry args={[road.w,road.d]}/><meshStandardMaterial color={i%3===0?'#e4cda9':'#d8c3a3'} roughness={1}/>
+   <planeGeometry args={[road.w,road.d]}/><meshStandardMaterial map={roadMaps[i]} roughness={1}/>
   </mesh>)}
   {/* A clear, generous market square in the middle of the town. */}
-  <mesh rotation-x={-Math.PI/2} position={[0,.025,1.5]} receiveShadow><planeGeometry args={[29,16]}/><meshStandardMaterial color='#ead6b6' roughness={1}/></mesh>
+  <mesh rotation-x={-Math.PI/2} position={[0,.025,1.5]} receiveShadow><circleGeometry args={[7.8,64]}/><meshStandardMaterial map={stone} roughness={1}/></mesh>
   {/* Slightly raised riverside grass behind the cottages makes the silhouette non-flat. */}
   {[[-39,-40,12,7],[-6,-46,22,10],[34,-42,15,8],[-50,22,18,9],[49,26,19,11]].map(([x,z,w,h],i)=>
    <mesh key={i} position={[x,-h*.32,z]} scale={[w,h,w*.6]}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial color={i%2?'#749e75':'#84ad82'} roughness={1}/></mesh>)}
@@ -85,34 +90,6 @@ function RaisedGround(){
   {[-55,-37,-18,5,25,49].map((x,i)=>
    <mesh key={i} position={[x,-7,-66]} scale={[20,14+(i%3)*3,14]}><sphereGeometry args={[1,16,10]}/><meshStandardMaterial color={i%2?'#92b6a5':'#a0beaf'} roughness={1}/></mesh>)}
  </>;
-}
-function Cobblestones({quality}:{quality:'low'|'high'}){
- const ref=useRef<InstancedMesh>(null);
- const tiles=useMemo(()=>{
-  const res:{x:number;z:number;shade:number}[]=[];
-  const step=quality==='low'?1.42:1.0;
-  // Sample only within the explicit town paths and leave the actual canal clear.
-  for(let x=-31;x<32;x+=step){
-   for(let z=-29;z<31;z+=step){
-    if(z>PUBLIC_WORLD_CANAL.north&&z<PUBLIC_WORLD_CANAL.south)continue;
-    const road=ROADS.some(p=>Math.abs(x-p.x)<p.w/2-.26&&Math.abs(z-p.z)<p.d/2-.26);
-    const square=Math.abs(x)<13.9&&z>-6&&z<9.2;
-    if(!road&&!square)continue;
-    const seed=Math.abs(Math.sin(x*12.13+z*7.19));
-    if(seed>.91)continue;
-    res.push({x:x+(seed-.5)*.12,z:z+(seed-.5)*.08,shade:Math.floor(seed*4)});
-   }
-  }
-  return res;
- },[quality]);
- useLayoutEffect(()=>{
-  const m=new Matrix4(),c=new Color();
-  tiles.forEach((p,i)=>{m.makeScale(.8,.035,.64);m.setPosition(p.x,.038,p.z);ref.current?.setMatrixAt(i,m);c.set(['#d8bea0','#ead8bb','#d5b799','#e2c9a8'][p.shade]);ref.current?.setColorAt(i,c);});
-  if(ref.current){ref.current.instanceMatrix.needsUpdate=true;ref.current.instanceColor!.needsUpdate=true;}
- },[tiles]);
- return <instancedMesh ref={ref} args={[undefined,undefined,tiles.length]} receiveShadow>
-  <boxGeometry args={[1,1,1]}/><meshStandardMaterial roughness={1}/>
- </instancedMesh>;
 }
 function Bridge({x}:{x:number}){
  return <group position={[x,0,-19.5]}>
@@ -150,6 +127,7 @@ function TownHouse({site,quality}:{site:House;quality:'low'|'high'}){
  const w=site.width,d=site.depth;
  const roof=useMemo(()=>new Shape().moveTo(-w/2-.4,0).lineTo(0,1.65).lineTo(w/2+.4,0).closePath(),[w]);
  return <group position={[site.x,0,site.z]}>
+  <GroundShadow width={w+3} depth={d+3}/>
   <mesh castShadow={quality==='high'} receiveShadow position-y={2.06}><boxGeometry args={[w,4.12,d]}/><meshStandardMaterial color={site.color} roughness={1}/></mesh>
   {/* Closed gable: no inverted slopes or open daylight seam at the ridge. */}
   <mesh castShadow={quality==='high'} position={[0,4.08,-d/2-.4]}><extrudeGeometry args={[roof,{depth:d+.8,bevelEnabled:false}]}/><meshStandardMaterial color={site.roof} roughness={.96}/></mesh>
@@ -163,21 +141,35 @@ function TownHouse({site,quality}:{site:House;quality:'low'|'high'}){
    <mesh position={[x,1.62,d/2+.32]}><boxGeometry args={[1.48,.12,.48]}/><meshStandardMaterial color='#ddcbad'/></mesh>
   </group>)}
   <mesh position={[0,.16,d/2+1.1]} receiveShadow><boxGeometry args={[w*.56,.24,2.2]}/><meshStandardMaterial color='#c6a781'/></mesh>
+  {[-w/2+.13,w/2-.13].map(x=><mesh key={x} position={[x,2.06,d/2+.08]}><boxGeometry args={[.22,4.12,.18]}/><meshStandardMaterial color='#f7e8ca'/></mesh>)}
+  <mesh position={[0,4.12,d/2+.42]}><boxGeometry args={[w+.85,.16,.18]}/><meshStandardMaterial color='#f8e7ce'/></mesh>
+  {[-w*.29,w*.29].map(x=><group key={x} position={[x,0,d/2+.26]}>
+   {[-.83,.83].map(dx=><mesh key={dx} position={[dx,2.4,0]}><boxGeometry args={[.32,1.48,.14]}/><meshStandardMaterial color='#7e9a85'/></mesh>)}
+   <mesh position={[0,1.51,.12]}><boxGeometry args={[1.5,.28,.42]}/><meshStandardMaterial color='#8d9d76'/></mesh>
+   {[-.5,0,.5].map((dx,i)=><mesh key={dx} position={[dx,1.76,.15]}><sphereGeometry args={[.21,8,6]}/><meshStandardMaterial color={i%2?'#e9b6ac':'#f3d98d'}/></mesh>)}
+  </group>)}
   <mesh position={[0,3.72,d/2+.22]}><boxGeometry args={[Math.min(w-1,4.9),.48,.27]}/><meshStandardMaterial color='#f5ead5'/></mesh>
   <Html transform center occlude position={[0,3.72,d/2+.37]} distanceFactor={8} zIndexRange={[5,0]}><span className='hb-town-label'>{site.name}</span></Html>
  </group>;
 }
 function MarketFront({x,name,base,roof}:{x:number;name:string;base:string;roof:string}){
+ const gable=useMemo(()=>new Shape().moveTo(-4.7,0).lineTo(0,1.1).lineTo(4.7,0).closePath(),[]);
  return <group position={[x,0,-9]}>
-  <mesh castShadow position={[0,2.5,0]}><boxGeometry args={[9,5,3.8]}/><meshStandardMaterial color={base}/></mesh>
-  <mesh castShadow position={[0,5.2,0]}><boxGeometry args={[9.5,.42,4.35]}/><meshStandardMaterial color={roof}/></mesh>
+  <GroundShadow width={11} depth={7}/>
+  <mesh castShadow position={[0,2.3,0]}><boxGeometry args={[9,4.6,3.8]}/><meshStandardMaterial color={base}/></mesh>
+  <mesh castShadow position={[0,4.56,-2.2]}><extrudeGeometry args={[gable,{depth:4.4,bevelEnabled:true,bevelSize:.04,bevelThickness:.04,bevelSegments:1}]}/><meshStandardMaterial color={roof}/></mesh>
+  <mesh position={[0,4.57,2.22]}><boxGeometry args={[9.5,.16,.2]}/><meshStandardMaterial color='#f6e9d2'/></mesh>
+  {[-4.35,4.35].map(side=><mesh key={side} position={[side,2.3,1.99]}><boxGeometry args={[.24,4.6,.19]}/><meshStandardMaterial color='#f7ead0'/></mesh>)}
   {[-2.7,0,2.7].map(x=><group key={x}>
-   <mesh position={[x,2.7,1.96]}><boxGeometry args={[1.5,2.2,.1]}/><meshStandardMaterial color='#fff0bf' emissive='#b98955' emissiveIntensity={.25}/></mesh>
+   <mesh position={[x,2.3,1.96]}><boxGeometry args={[1.9,2.3,.1]}/><meshStandardMaterial color='#759fa3' roughness={.3}/></mesh>
    <mesh position={[x,2.7,2.08]}><boxGeometry args={[.08,2.2,.13]}/><meshStandardMaterial color='#e2d2b6'/></mesh>
   </group>)}
-  {Array.from({length:9},(_,i)=><mesh key={i} castShadow position={[-4.4+i*1.1,4.6,2.35]} rotation-x={-.13}><boxGeometry args={[1.1,.16,2.65]}/><meshStandardMaterial color={i%2?roof:'#f2e6c9'}/></mesh>)}
-  <mesh position={[0,4.24,3.72]}><boxGeometry args={[5,.75,.13]}/><meshStandardMaterial color='#f1e1c7'/></mesh>
-  <Html transform center occlude position={[0,4.24,3.81]} distanceFactor={10} zIndexRange={[5,0]}><span className='hb-town-label'>{name}</span></Html>
+  {Array.from({length:9},(_,i)=><group key={i}>
+   <mesh castShadow position={[-4.4+i*1.1,3.7,2.35]} rotation-x={.14}><boxGeometry args={[1.1,.12,2.65]}/><meshStandardMaterial color={i%2?roof:'#f2e6c9'}/></mesh>
+   <mesh position={[-4.4+i*1.1,3.36,3.64]}><boxGeometry args={[1.1,.35,.08]}/><meshStandardMaterial color={i%2?roof:'#f2e6c9'}/></mesh>
+  </group>)}
+  <mesh position={[0,4.14,2.24]}><boxGeometry args={[5,.52,.13]}/><meshStandardMaterial color='#f1e1c7'/></mesh>
+  <Html transform center occlude position={[0,4.14,2.33]} distanceFactor={10} zIndexRange={[5,0]}><span className='hb-town-label'>{name}</span></Html>
  </group>;
 }
 function TownLantern({x,z}:{x:number;z:number}){
@@ -227,7 +219,7 @@ function Resident({index}:{index:number}){
   Object.assign(pose.current,next);
   if(wavingRef.current!==next.waving){wavingRef.current=next.waving;setWaving(next.waving);}
  });
- return <VrmAvatar definition={resolveCharacter(appearance)} appearance={appearance} name={['Mira','Theo','June','Kai'][index]+' · NPC'} local={false} pose={initial} poseRef={pose} motion={motion} quality='low' sitting={index===1} celebrate={waving} interactedAt={0} seatLift={0}/>;
+ return <><TownFootShadow pose={pose}/><VrmAvatar definition={resolveCharacter(appearance)} appearance={appearance} name={['Mira','Theo','June','Kai'][index]+' · NPC'} local={false} pose={initial} poseRef={pose} motion={motion} quality='low' sitting={index===1} celebrate={waving} interactedAt={0} seatLift={0}/></>;
 }
 function WaterfrontRipples(){
  const water=useRef<Group>(null);
@@ -240,7 +232,7 @@ export default function TownScenery({quality,onDirectory}:{quality:'low'|'high';
  return <group>
   <RaisedGround/>
   <WaterfrontRipples/>
-  <Cobblestones quality={quality}/>
+  <TownGardens/>
   <GreenBorder quality={quality}/>
   {PUBLIC_WORLD_BRIDGES.map(bridge=><Bridge key={bridge.x} x={bridge.x}/>)}
   {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site} quality={quality}/>)}
