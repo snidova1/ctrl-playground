@@ -1,13 +1,12 @@
 'use client';
-import {useEffect,useMemo,useRef,useState,type MutableRefObject} from 'react';
+import {useEffect,useRef,useState,type MutableRefObject} from 'react';
 import {Html} from '@react-three/drei';
 import {useFrame} from '@react-three/fiber';
 import {Group} from 'three';
 import type {GuestStyle} from '@/features/habitat/guest';
 import type {Pose} from '../types';
 import {loadCharacter,disposeVrm,type LoadedCharacter} from './loader';
-import {maleCharacter,normalizeAppearance,previewCharacter,type CharacterAppearance,type CharacterDefinition,type CharacterMotion,type CharacterQuality} from './catalog';
-import {applyCharacterAppearance} from './appearance';
+import {previewCharacter,type CharacterAppearance,type CharacterDefinition,type CharacterMotion,type CharacterQuality} from './catalog';
 import {HumanoidAnimator,type SocialAnimation} from './animation';
 interface Props {workUntil?:number;socialAction?:SocialAnimation;poseRef?:MutableRefObject<Pose>;speech?:string;speechAt?:number;guestStyle?:GuestStyle;definition?:CharacterDefinition;variant?:string;appearance?:CharacterAppearance;local?:boolean;htmlPortal?:MutableRefObject<HTMLDivElement|null>;name:string;pose:Pose;quality:CharacterQuality;motion:MutableRefObject<CharacterMotion>;sitting:boolean;celebrate:boolean;interactedAt:number;seatLift:number;}
 function SpeechBubble({text,at}:{text:string;at:number}){const [visible,setVisible]=useState(true);useEffect(()=>{const timer=setTimeout(()=>setVisible(false),Math.max(0,8000-(Date.now()-at)));return()=>clearTimeout(timer);},[at]);return visible?<span className='hb-speech'>{text}</span>:null;}
@@ -16,19 +15,14 @@ export default function VrmAvatar(props:Props) {
   const firstFrame=useRef(true),[initialAngle]=useState(props.pose.angle);
   const root=useRef<Group>(null),animator=useRef<HumanoidAnimator|null>(null),[initial]=useState<[number,number,number]>([props.pose.x,0,props.pose.z]);
   const definition=props.definition??previewCharacter;
-  const gender=props.appearance?.gender??(definition.id===maleCharacter.id?'male':'female');
-  const appearance=useMemo(()=>normalizeAppearance(props.appearance,gender,props.variant??'original'),[props.appearance,gender,props.variant]);
-  const appearanceRef=useRef(appearance);
-  useEffect(()=>{appearanceRef.current=appearance;},[appearance]);
   useEffect(()=>{
     const abort=new AbortController();let loaded:LoadedCharacter|undefined;
     loadCharacter(definition,props.quality,abort.signal).then(result=>{
       if(abort.signal.aborted){disposeVrm(result.vrm);return;}
-      applyCharacterAppearance(result.vrm,appearanceRef.current);loaded=result;firstFrame.current=true;animator.current=new HumanoidAnimator(result);setCharacter(result);setError('');
+      loaded=result;firstFrame.current=true;animator.current=new HumanoidAnimator(result);setCharacter(result);setError('');
     }).catch(e=>{if(!abort.signal.aborted)setError(e instanceof Error?e.message:'Character could not load.');});
     return()=>{abort.abort();animator.current?.dispose();animator.current=null;if(loaded)disposeVrm(loaded.vrm);};
   },[props.quality,definition,attempt]);
-  useEffect(()=>{if(character)applyCharacterAppearance(character.vrm,appearance,props.guestStyle);},[character,appearance,props.guestStyle]);
   useFrame((_,delta)=>{
     if(!character||!animator.current||!root.current)return;
     const dt=Math.min(delta,.05),r=root.current,p=props.poseRef?.current??props.pose;
