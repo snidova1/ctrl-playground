@@ -1,5 +1,9 @@
 # REA-assisted Public World implementation evidence
 
+## Current renderer: full licensed-asset/environment polish
+
+The latest complete pass is renderer **`628302676996efba889c9abfcf22a4c3137e0589`**. See [PUBLIC_WORLD_ASSET_POLISH.md](PUBLIC_WORLD_ASSET_POLISH.md) for the 19-model CC0 selection, scene-wide fixes, actual desktop/mobile/district REA captures and **200 tests + 4 production browser tests PASS**. Prior palette/garden checkpoints below remain historical comparison evidence, not the current renderer. Common Ground and personal Habitat rendering remain guarded and unchanged; no production deployment.
+
 ## Latest correction: keep Common Ground's visual identity
 
 User review rejected the garden checkpoint's pale cream paving, mint glazing and pastel foliage as disconnected from Common Ground. Renderer commit **`19cd2fd2ae67f1e666a8e206ffd0c170f6326990`** corrects the dominant palette instead of redesigning the approved landing.
