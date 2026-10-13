@@ -55,7 +55,7 @@ test('wallet player sees a rotating real VRoid preview and a visibly furnished, 
   await page.goto('/worlds/editor');
   await press(page,page.locator('.wallet-options').getByRole('button',{name:'Connect wallet',exact:true}));
   await press(page,page.getByRole('button',{name:'Sign in to Habitat',exact:true}));
-  await expect(page.getByRole('button',{name:'Enter my world draft'})).toBeVisible({timeout:45000});
+  await expect(page.getByRole('button',{name:'Enter Habitat'})).toBeVisible({timeout:45000});
   const avatar=page.locator('.hb-avatar-preview canvas');
   await expect(avatar).toBeVisible({timeout:60000});
   await expect(page.locator('.hb-preview-loading')).toHaveCount(0,{timeout:60000});
@@ -76,20 +76,16 @@ test('wallet player sees a rotating real VRoid preview and a visibly furnished, 
   console.log('VRM visible rotation pixel-change:',(rotationDelta*100).toFixed(2)+'%');
   expect(rotationDelta,'The avatar preview must visibly change when the 3D model rotates').toBeGreaterThan(.025);
 
-  await press(page,page.getByRole('button',{name:'Female',exact:true}));
-  await press(page,page.getByRole('button',{name:'Outfit: Sage'}));
-  await press(page,page.getByRole('button',{name:'Hair: Auburn'}));
-  await press(page,page.getByRole('button',{name:'Eyes: Jade'}));
-  await press(page,page.getByRole('button',{name:'Skin: Warm'}));
+  await press(page,page.getByRole('button',{name:'Victoria · Free',exact:true}));
   await page.getByRole('textbox',{name:'Name',exact:true}).fill('Visible Home');
-  await press(page,page.getByRole('button',{name:'Enter my world draft'}));
+  await press(page,page.getByRole('button',{name:'Enter Habitat'}));
   await expect(page.getByRole('button',{name:'Build my world +'})).toBeVisible({timeout:45000});
 
   const response=await page.request.get('/api/habitat/state');
   expect(response.status()).toBe(200);
   const initial=await response.json() as HabitatState;
   expect(initial.wallet).toMatch(/^0x/);
-  expect(initial.profile?.appearance).toEqual({version:1,gender:'female',variantId:'sage',hairId:'auburn',eyeId:'jade',skinId:'warm'});
+  expect(initial.profile?.appearance).toMatchObject({version:1,gender:'female',characterId:'vroid-victoria-preview',variantId:'original',hairId:'source',eyeId:'source',skinId:'source'});
   expect(initial.profile?.loadout.appearance).toEqual(initial.profile?.appearance);
   expect(initial.world?.objects.length,'Starter layout must persist on wallet-owned home').toBeGreaterThan(20);
   expect(initial.world?.objects.some(o=>o.behavior==='seat')).toBe(true);
