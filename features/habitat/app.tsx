@@ -12,7 +12,7 @@ import {TOWN_DISTRICTS} from './town-districts';
 import type {TownActivityId,TownDistrictKind} from './town-districts';
 import {BrandMark} from '@/components/brand';
 import WalletConnection from '@/features/wallet/wallet-connect';
-import {AVAILABLE_CHARACTER_DEFINITIONS,createCharacterMotion,defaultAppearance,maleCharacter,normalizeAppearance,resolveCharacter,type CharacterAppearance} from '@/features/plaza/characters/catalog';
+import {AVAILABLE_CHARACTER_DEFINITIONS,createCharacterMotion,defaultAppearance,normalizeAppearance,resolveCharacter,type CharacterAppearance} from '@/features/plaza/characters/catalog';
 import {BUILD_ASSETS,BUILD_ASSET_CATEGORIES} from '@/features/plaza/build-assets';
 import type {ControlInput} from '@/features/plaza/scene';
 import type {Pose} from '@/features/plaza/types';
@@ -140,9 +140,9 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
     <h1>Choose your character.</h1>
     <p>Pick one complete character, then give your profile a name. Every available character is free. More whole-character models will join once their actual game-ready files pass checks.</p>
     <div className='hb-creator-gender' role='group' aria-label='Available complete characters'>
-     {AVAILABLE_CHARACTER_DEFINITIONS.map(character=><button type='button' aria-pressed={selectedCharacter.id===character.id} className={selectedCharacter.id===character.id?'hb-primary':''} key={character.id} onClick={()=>setAppearance({...defaultAppearance,gender:character.id===maleCharacter.id?'male':'female',characterId:character.id})}>{character.name} · Free</button>)}
+     {AVAILABLE_CHARACTER_DEFINITIONS.map(character=><button type='button' aria-pressed={selectedCharacter.id===character.id} className={selectedCharacter.id===character.id?'hb-primary':''} key={character.id} onClick={()=>setAppearance({...defaultAppearance,gender:character.gender,characterId:character.id})}>{character.name} · Free</button>)}
     </div>
-    <button type='button' className='hb-creator-random' onClick={()=>{const index=crypto.getRandomValues(new Uint32Array(1))[0]%AVAILABLE_CHARACTER_DEFINITIONS.length;const chosen=AVAILABLE_CHARACTER_DEFINITIONS[index];setAppearance({...defaultAppearance,gender:chosen.id===maleCharacter.id?'male':'female',characterId:chosen.id});}}>↻ Surprise me</button>
+    <button type='button' className='hb-creator-random' onClick={()=>{const index=crypto.getRandomValues(new Uint32Array(1))[0]%AVAILABLE_CHARACTER_DEFINITIONS.length;const chosen=AVAILABLE_CHARACTER_DEFINITIONS[index];setAppearance({...defaultAppearance,gender:chosen.gender,characterId:chosen.id});}}>↻ Surprise me</button>
     <label>Character name<input aria-label='Name' value={name} onChange={e=>setName(e.target.value)} maxLength={20} placeholder='Your name'/></label>
     <p className='hb-small'>Your character selection is saved with your wallet.</p>
     <button className='hb-primary hb-creator-enter' disabled={busy||!state||name.trim().length<2} onClick={()=>void profile()}>{busy?'Saving avatar…':state?.profile?'Save character':destination==='public'?'Enter Public World':'Enter Habitat'}</button>
