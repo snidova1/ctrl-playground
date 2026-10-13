@@ -83,10 +83,13 @@ try{
   const detailPng=pngData(detail);if(!detailPng)throw Error('REA desktop detail screenshot missing');
   writeFileSync(path.join(output,'rea-desktop-detail.png'),Buffer.from(detailPng,'base64'));details.detailScreenshotEvidence=detail.evidence_id;
   const position=async()=>{const s=await (await page.request.get(origin+'/api/habitat/state')).json();const p=s.players.find((p:{id:string})=>p.id===s.profile.id) as {x:number;z:number};return {x:p.x,z:p.z};};
-  await page.keyboard.down('KeyD');
-  try{await expect.poll(async()=>(await position()).x,{timeout:90000}).toBeGreaterThan(16);}finally{await page.keyboard.up('KeyD');}
-  await page.keyboard.down('KeyW');
-  try{await expect.poll(async()=>(await position()).z,{timeout:60000}).toBeLessThan(3.6);}finally{await page.keyboard.up('KeyW');}
+  // Use the actual destination UI instead of walking directly into cafe furniture.
+  await page.getByRole('button',{name:'Town map',exact:true}).click();
+  const destination=page.locator('.hb-town-destinations>div').filter({has:page.getByText('Tidewater Harbor',{exact:true})});
+  const travelled=page.waitForResponse(r=>r.url().endsWith('/api/habitat/town-travel')&&r.request().method()==='POST');
+  await destination.getByRole('button',{name:'Travel here ↗',exact:true}).click();
+  expect((await travelled).status()).toBe(200);
+  await expect.poll(position,{timeout:45000}).toEqual({x:5,z:-76});
   await page.mouse.move(720,400);await page.mouse.down();await page.mouse.move(870,400,{steps:10});await page.mouse.up();
   await page.waitForTimeout(1200);
   const district=await rea('capture-web-screenshot',[cdp,id]);

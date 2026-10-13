@@ -311,3 +311,10 @@
 .hb-creator-geometry label{font-size:12px;}
 .hb-creator-geometry select{display:block;width:100%;padding:8px;background:#fff8ec;border:1px solid #cab998;border-radius:8px;}
 @media(max-width:600px){.hb-life-dock{left:12px;top:136px;max-width:calc(100vw - 24px);}.hb-life-actions>button{font-size:11px;padding:7px 10px;min-height:34px;}.hb-life-panel{max-width:300px;max-height:calc(100dvh - 280px);}}
+/* Keep home visits and character controls reachable on touch screens. */
+@media(max-width:760px){
+ .hb-app:not(.is-public-world) .hb-top>div{min-width:0;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:thin;}
+ .hb-app:not(.is-public-world) .hb-top button{flex-shrink:0;}
+ .hb-app:not(.is-public-world) .hb-top .hb-nav-worlds,
+ .hb-app:not(.is-public-world) .hb-top .hb-nav-character{display:inline-flex;align-items:center;}
+}
