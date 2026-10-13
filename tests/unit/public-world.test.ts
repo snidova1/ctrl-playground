@@ -9,6 +9,9 @@ import {createGuestState,randomGuestStyle} from '@/features/habitat/guest';
 import {getBuildAsset} from '@/features/plaza/build-assets';
 import {collideWorld} from '@/features/habitat/types';
 import type {HabitatState} from '@/domain/habitat';
+import {townCameraFraction} from '@/features/habitat/town-camera';
+import {residentPose} from '@/features/habitat/town-residents';
+import {actor,api as signedApi} from './security/habitat-fixtures';
 const origin='http://localhost:3000';
 const wallets=['0x00000000000000000000000000000000000000e1','0x00000000000000000000000000000000000000e2'];
 const cookies:string[]=[];
@@ -90,5 +93,72 @@ describe('public world and guest boundary',()=>{
   expect(createPublicWorld()).toEqual(layout);
   expect(collideWorld({x:0,z:6},{x:0,z:5},layout,{}).z).toBeCloseTo(5);
   expect(collideWorld({x:0,z:0},{x:0,z:-3},layout,{}).z).toBeGreaterThan(-2);
+ });
+});
+
+describe('Public World polish: physical edges and original local ambience',()=>{
+ it('keeps avatar shoulders inside both rails and outside waterbanks',()=>{
+  for(const bridge of PUBLIC_WORLD_BRIDGES){
+   expect(isPublicWorldWalkable(bridge.x+2.7,-19)).toBe(true);
+   expect(isPublicWorldWalkable(bridge.x+2.9,-19)).toBe(false);
+   expect(isPublicWorldWalkable(bridge.x+3.15,-16.2)).toBe(false);
+   const slide=navigatePublicWorld({x:bridge.x,z:-19},{x:bridge.x+8,z:-19});
+   expect(slide.x).toBeLessThan(bridge.x+2.74);
+  }
+  expect(isPublicWorldWalkable(10,-16.8)).toBe(false);
+  expect(isPublicWorldWalkable(10,-22.2)).toBe(false);
+  expect(isPublicWorldWalkable(2,-3)).toBe(false);
+ });
+ it('resolves static geography and object walls in the same swept step',()=>{
+  const layout=createPublicWorld();
+  const moved=collideWorld({x:3,z:0},{x:0,z:-6},layout,{},PUBLIC_WORLD_ID);
+  expect(Math.hypot(moved.x,moved.z+3)).toBeGreaterThanOrEqual(2.59);
+  for(const h of PUBLIC_WORLD_BUILDINGS){
+   const result=collideWorld({x:h.x,z:h.z+h.depth/2+2},{x:h.x,z:h.z},layout,{},PUBLIC_WORLD_ID);
+   expect(result.z).toBeGreaterThanOrEqual(h.z+h.depth/2+.34);
+  }
+ });
+ it('shortens camera rays at houses, keeps open views unchanged',()=>{
+  expect(townCameraFraction({x:0,y:1.25,z:6},{x:0,y:5,z:17})).toBe(1);
+  expect(townCameraFraction({x:-23,y:1.25,z:7},{x:-23,y:4,z:0})).toBeLessThan(.4);
+  expect(townCameraFraction({x:8,y:1.25,z:-5},{x:8,y:4,z:-12})).toBeLessThan(.5);
+ });
+ it('keeps deterministic NPC routes walkable with walking and rest phases',()=>{
+  for(let index=0;index<4;index++){
+   for(let time=0;time<120;time+=.5){
+    const p=residentPose(index,time);
+    expect(isPublicWorldWalkable(p.x,p.z)).toBe(true);
+    expect(residentPose(index,time)).toEqual(p);
+   }
+  }
+  expect(residentPose(0,0)).toMatchObject({moving:false,waving:true});
+  expect(residentPose(0,6).moving).toBe(true);
+  expect(residentPose(1,20)).toMatchObject({sitting:true,moving:false});
+ });
+ it('walks a signed round trip across both bridges; preserves private-home access',async()=>{
+  const owner=await actor('Cozy Owner'),visitor=await actor('Cozy Visitor');
+  expect((await signedApi('habitat/public-world',{},visitor.cookie)).status).toBe(200);
+  let state=await (await signedApi('habitat/join',{id:PUBLIC_WORLD_ID},visitor.cookie)).json() as HabitatState;
+  let position={x:0,z:6},sequence=0;
+  const sessionId=state.presenceSession!.id;
+  const points=[[17,6],[17,-14],[20,-14],[20,-23.5],[-1.5,-23.5],[-1.5,-14],[0,-14],[0,-6],[3,-6],[3,6],[0,6]];
+  for(const [x,z] of points){
+   const start={...position},steps=Math.ceil(Math.hypot(x-start.x,z-start.z)/.95);
+   for(let i=1;i<=steps;i++){
+    const next={x:start.x+(x-start.x)*i/steps,z:start.z+(z-start.z)*i/steps};
+    const response=await signedApi('habitat/presence',{worldId:PUBLIC_WORLD_ID,sessionId,sequence:++sequence,...next,angle:0,motion:{moving:true}},visitor.cookie);
+    expect(response.status).toBe(200);
+    const body=await response.json() as HabitatState&{accepted:{x:number;z:number}};
+    expect(body.accepted.x).toBeCloseTo(next.x,3);expect(body.accepted.z).toBeCloseTo(next.z,3);
+    position=body.accepted;state=body;
+   }
+  }
+  expect((await signedApi('habitat/join',{id:owner.worldId},visitor.cookie)).status).toBe(404);
+  expect((await signedApi(`habitat/worlds/${owner.worldId}/members`,{wallet:visitor.wallet,role:'visitor'},owner.cookie)).status).toBe(200);
+  const permitted=await signedApi('habitat/join',{id:owner.worldId},visitor.cookie);
+  expect(permitted.status).toBe(200);
+  expect((await permitted.json() as HabitatState).permissions?.canEdit).toBe(false);
+  const back=await (await signedApi('habitat/join',{id:PUBLIC_WORLD_ID},visitor.cookie)).json() as HabitatState;
+  expect(back.profile).toEqual(state.profile);expect(back.homeId).toBe(visitor.worldId);
  });
 });
