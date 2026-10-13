@@ -19,6 +19,7 @@ export function useWorldPresence(options: Options) {
   const connection = useRef<PresenceSession | null>(null);
   const generation = useRef(0);
   const syncing = useRef(false);
+  const travelling = useRef(false);
   const superseded = useRef(false);
   const leave = useCallback(() => {
     const old = connection.current;
@@ -43,7 +44,7 @@ export function useWorldPresence(options: Options) {
   const sync = useCallback(async () => {
     const {latest, pose, motion, flags, onState, onOnline} = handlers.current;
     const world = latest.current?.world;
-    if (!world || !latest.current?.profile || syncing.current || superseded.current) return;
+    if (!world || !latest.current?.profile || syncing.current || travelling.current || superseded.current) return;
     syncing.current = true;
     let epoch = generation.current;
     try {
@@ -92,6 +93,24 @@ export function useWorldPresence(options: Options) {
       }
     } finally {syncing.current = false;}
   }, [connect, leave]);
+  const travel = useCallback(async (id:string) => {
+    const current=connection.current;
+    if(!current || superseded.current)throw new HabitatApiError('WORLD_SESSION_EXPIRED',409,'Rejoin the world before travelling.');
+    // Serialize against presence heartbeats so a slow reply never restores the old position.
+    travelling.current=true;
+    const generationAtStart=generation.current;
+    try{
+      for(let tries=0;syncing.current&&tries<30;tries++)await new Promise<void>(resolve=>setTimeout(resolve,60));
+      if(syncing.current)throw new Error('Please wait for your connection to catch up.');
+      const next=await habitatApi<HabitatState&{accepted:{x:number;z:number}}>('town-travel',{id,sessionId:current.id});
+      if(generation.current!==generationAtStart)return;
+      Object.assign(handlers.current.pose.current,{x:next.accepted.x,z:next.accepted.z,moving:false});
+      handlers.current.latest.current=next;
+      connection.current=next.presenceSession;
+      handlers.current.onState(next);
+      handlers.current.onOnline(true);
+    }finally{travelling.current=false;}
+  },[]);
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
@@ -118,5 +137,5 @@ export function useWorldPresence(options: Options) {
     return () => {active = false; clearTimeout(timer); window.removeEventListener('pagehide', leave);
       document.removeEventListener('visibilitychange', visibility); leave();};
   }, [sync, connect, leave]);
-  return {connect, sync, leave};
+  return {connect, sync, leave, travel};
 }
