@@ -141,6 +141,42 @@ test('signed player enters a rendered walkable multiplayer neighborhood, not a b
  expect(errors).toEqual([]);
 });
 
+test('a signed player can travel across genuinely rendered remote districts and complete shared work',async({page})=>{
+ test.setTimeout(210000);
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await enterTown(page,'District Explorer');
+ const journeys=[
+  {id:'garden',x:-75,z:46,activity:'community-garden'},
+  {id:'residential',x:78,z:27,activity:'neighborhood-post'},
+  {id:'harbor',x:5,z:-76,activity:'harbor-cleanup'},
+  {id:'festival',x:77,z:-73,activity:'festival-stage'},
+ ] as const;
+ for(const target of journeys){
+  await press(page,page.getByRole('button',{name:'Town map',exact:true}));
+  const destinations=page.locator('.hb-town-destinations');
+  await expect(destinations).toBeVisible();
+  const name={garden:'Fernwood Park',residential:'Clover Neighborhood',harbor:'Tidewater Harbor',festival:'Sunset Meadow'}[target.id];
+  await press(page,destinations.locator('div').filter({hasText:name}).getByRole('button',{name:'Travel here ↗'}));
+  await expect.poll(async()=>{
+   const response=await page.request.get('/api/habitat/state');const s=await response.json() as HabitatState;
+   const p=s.players.find(p=>p.id===s.profile?.id);
+   return p?Math.hypot(p.x-target.x,p.z-target.z):999;
+  },{timeout:12000}).toBeLessThan(.15);
+  await page.waitForTimeout(850);
+  const canvas=page.locator('.hb-stage canvas').first();
+  const png=await canvas.screenshot({path:test.info().outputPath(`district-${target.id}.png`),scale:'css'});
+  const metric=await diversity(page,png);
+  expect(metric.colors,target.id+' must contain nonempty rendered scenery').toBeGreaterThan(24);
+  expect(metric.nearBlack,target.id+' must not render black WebGL placeholder').toBeLessThan(.08);
+  await expect(page.locator('.hb-town-action')).toBeVisible();
+  const work=await page.request.post('/api/habitat/town-activity',{headers:{Origin:'http://127.0.0.1:3187'},data:{id:target.activity}});
+  expect(work.status(),target.id).toBe(200);
+  const result=await work.json() as {state:HabitatState;message:string};
+  expect(result.message.length).toBeGreaterThan(12);
+ }
+ expect(errors).toEqual([]);
+});
+
 test('two signed neighbors share speech and waves, visit a permitted home and keep their character',async({page,baseURL})=>{
  // Independent browser processes model two devices and avoid serializing both
  // software-WebGL views onto a single headless GPU process.
