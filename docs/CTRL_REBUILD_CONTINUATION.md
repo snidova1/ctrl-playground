@@ -22,6 +22,8 @@ Follow-up verification fixes: Public World fixture must use **Change character**
 
 New QA command: `pnpm exec playwright test --config playwright.civic.config.ts`; preinstalled Chromium uses `CTRL_CHROMIUM_PATH`. Browser installation may produce truncated downloads in this execution environment; a legitimate local Chromium/SwiftShader binary was used, not browser mocking. Temporary wallet databases stay isolated from production.
 
+Follow-up at `eadb1b50a08d22edbfb397e496611e4b2f658074`: production Visible Habitat passed **2/2 desktop/mobile**, unchanged rotation threshold 2.5%, measured **6.97% / 5.49%**, furnished-vs-empty **9.26% / 19.04%**; civic browser passed again. CI then exposed a real startup race in the Node-only database adapter: simultaneous Next page-data workers initialized WAL without a lock wait. `platform-node-lock.test.ts` reproduces this with a second process under an exclusive SQLite lock (red before fix); install bounded `busy_timeout=5000` **before** WAL initialization. This does not modify production Cloudflare D1 or retry/ignore invalid activity writes. Rebuild against a fresh database and rerun exact-head CI; do not hide the failure by serializing builds or disabling assertions.
+
 Still NOT complete: authored varied terrain, truly playable building interiors, wider route/multistation jobs and gatherings, richer NPC routines, world art polish, foot IK, full avatar source acceptance, load/performance at scale and physical mobile GPU testing. Polling remains the transport, not new socket architecture. Staging has not been published; production/merge remains protected. PR #30 remains the only integration PR.
 
 ## Implemented code
