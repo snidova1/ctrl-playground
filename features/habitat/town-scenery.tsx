@@ -74,9 +74,9 @@ function RaisedGround(){
   {/* Slightly raised riverside grass behind the cottages makes the silhouette non-flat. */}
   {TOWN_HILLS.map(([x,z,w,h],i)=>
    <mesh key={i} position={[x,-h*.32,z]} scale={[w,h,w*.6]}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial color={i%2?P.shutter:P.sage} roughness={1}/></mesh>)}
-  {/* Curving distant ridge silhouettes create depth even without downloadable assets. */}
+  {/* The old z=-66 ridge crossed the expanded Harbor and occluded its camera. */}
   {[-55,-37,-18,5,25,49].map((x,i)=>
-   <mesh key={i} position={[x,-7,-66]} scale={[20,14+(i%3)*3,14]}><sphereGeometry args={[1,16,10]}/><meshStandardMaterial color={i%2?P.shutter:P.grass} roughness={1}/></mesh>)}
+   <mesh key={i} position={[x,-7,-154]} scale={[20,14+(i%3)*3,14]}><sphereGeometry args={[1,16,10]}/><meshStandardMaterial color={i%2?P.shutter:P.grass} roughness={1}/></mesh>)}
  </>;
 }
 function Bridge({x}:{x:number}){
