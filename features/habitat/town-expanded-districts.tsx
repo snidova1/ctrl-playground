@@ -90,7 +90,23 @@ function RemoteZone({district,quality,pose,states}:{district:TownDistrict;qualit
   {district.id==='festival'&&<FestivalPlatform x={district.x} z={district.z}/>}
   {district.id==='harbor'&&<group position={[district.x,0,district.z+20]}>
     <TownStylizedWater x={0} y={.015} z={0} width={95} depth={13}/>
-    {[-21,-7,7,21].map(x=><mesh key={x} position={[x,.2,3]}><boxGeometry args={[4,.42,17]}/><meshStandardMaterial color='#b6926d'/></mesh>)}
+    {[-21,-7,7,21].map((x,i)=><group key={x}>
+      <mesh castShadow position={[x,.27,3]}><boxGeometry args={[4,.54,17]}/><meshStandardMaterial color='#d7b996' emissive='#624d36' emissiveIntensity={.16}/></mesh>
+      {[-5,0,5].map(z=><group key={z}>
+        <mesh castShadow position={[x-1.8,-.65,z+3]}><cylinderGeometry args={[.17,.17,1.9,7]}/><meshStandardMaterial color='#9e806b'/></mesh>
+        <mesh castShadow position={[x+1.8,-.65,z+3]}><cylinderGeometry args={[.17,.17,1.9,7]}/><meshStandardMaterial color='#9e806b'/></mesh>
+      </group>)}
+      <group position={[x,i%2===0?0:0,12]}>
+        <mesh castShadow position={[0,.52,0]}><boxGeometry args={[2.7,.65,4.3]}/><meshStandardMaterial color={i%2?'#ecc7ad':'#e0d8bc'}/></mesh>
+        <mesh castShadow position={[0,1.15,0]} rotation-z={i%2?.08:-.06}><boxGeometry args={[3.3,.14,4.7]}/><meshStandardMaterial color={i%2?'#b37c71':'#86aaa0'}/></mesh>
+        <mesh position={[0,2.55,0]}><cylinderGeometry args={[.05,.05,3,6]}/><meshStandardMaterial color='#bda183'/></mesh>
+        <mesh position={[.1,2.45,0]} rotation-y={Math.PI/2}><coneGeometry args={[1.3,2.2,3]}/><meshStandardMaterial color='#fff1d3' side={2}/></mesh>
+      </group>
+    </group>)}
+    {[-35,-27,-12,1,17,30,38].map((x,i)=><group key={x} position={[x,.04,-7.5]}>
+      <mesh position-y={.7} castShadow><cylinderGeometry args={[.12,.15,1.4,6]}/><meshStandardMaterial color='#856e58'/></mesh>
+      <mesh position-y={1.58}><sphereGeometry args={[.3,8,6]}/><meshBasicMaterial color={i%2===0?'#ffe3a6':'#ffd0b5'}/></mesh>
+    </group>)}
   </group>}
   {district.id==='garden'&&[-16,16].map(x=><group key={x} position={[district.x+x,0,district.z+20]}>
     <mesh position-y={.32}><cylinderGeometry args={[6,6,.32,16]}/><meshStandardMaterial color='#e0bc8e'/></mesh>
