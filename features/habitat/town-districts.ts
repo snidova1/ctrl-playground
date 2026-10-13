@@ -25,7 +25,7 @@ for(const [id,cx,cz,wall,roof] of [
 ] as const){
  for(let i=0;i<10;i++){
   const row=Math.floor(i/5),col=i%5;
-  const x=cx+(col-2)*9.2,z=cz+(row===0?-14:15);
+  const x=cx+[-25,-16,-7,7,16][col],z=cz+(row===0?-14:15);
   homes.push({id:`${id}-building-${i}`,district:id,x,z,width:5.8,depth:5.9,wall:i%3===0?'#f6e9d2':wall,roof:i%2===0?roof:'#8da68a',levels:i%5===0?3:2});
  }
 }
