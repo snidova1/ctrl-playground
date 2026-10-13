@@ -12,7 +12,7 @@ import {TOWN_DISTRICTS} from './town-districts';
 import type {TownActivityId,TownDistrictKind} from './town-districts';
 import {BrandMark} from '@/components/brand';
 import WalletConnection from '@/features/wallet/wallet-connect';
-import {createCharacterMotion,defaultAppearance,normalizeAppearance,type CharacterAppearance} from '@/features/plaza/characters/catalog';
+import {AVAILABLE_CHARACTER_DEFINITIONS,createCharacterMotion,defaultAppearance,maleCharacter,normalizeAppearance,resolveCharacter,type CharacterAppearance} from '@/features/plaza/characters/catalog';
 import {BUILD_ASSETS,BUILD_ASSET_CATEGORIES} from '@/features/plaza/build-assets';
 import type {ControlInput} from '@/features/plaza/scene';
 import type {Pose} from '@/features/plaza/types';
@@ -46,7 +46,7 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
  const requested=useRef(initialDestination),refreshEpoch=useRef(0);
  const common=destination==='common',viewState=common?guestState:state;
  const town=viewState?.world?.id===PUBLIC_WORLD_ID;
- const gender=appearance.gender,variant=appearance.variantId;
+ const gender=appearance.gender,variant=appearance.variantId,selectedCharacter=resolveCharacter(appearance);
  const pose=useRef<Pose>({x:0,z:6,angle:Math.PI,moving:false}),input=useRef<ControlInput>({x:0,z:0}),motion=useRef(createCharacterMotion()),latest=useRef(state),flags=useRef({sitting,celebrate,interactedAt,speech,speechAt}),history=useRef<WorldObject[][]>([]),future=useRef<WorldObject[][]>([]),startTime=useRef<number|null>(null),baseRevision=useRef(0),settingsRevision=useRef(0);
  useEffect(()=>{latest.current=state;},[state]);useEffect(()=>{flags.current={sitting,celebrate,interactedAt,speech,speechAt};},[sitting,celebrate,interactedAt,speech,speechAt]);
  const acceptPresence=useCallback((next:WorldState|null)=>{latest.current=next;setState(next);if(!next?.canEdit)setEditing(false);if(!next){setPanel('entry');setMessage('Your wallet session expired. Verify again to continue.');}else if(!next.world){setPanel('worlds');setMessage('World access is no longer available. Choose another place or go home.');}else if(editing&&!next.canEdit){setMessage('Editing access was revoked. Your local draft was not saved.');}},[editing]);
@@ -61,7 +61,7 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
    if(epoch!==refreshEpoch.current){leave();return;}
    latest.current=s;setState(s);setPanel(s.profile?(s.world?null:'worlds'):'wardrobe');
    if(s.profile){setName(s.profile.name);setAppearance(normalizeAppearance(s.profile.appearance,s.profile.character==='male'?'male':'female',s.profile.variant));}
-   else setAppearance({...defaultAppearance,gender:crypto.getRandomValues(new Uint32Array(1))[0]%2===0?'female':'male'});
+   else setAppearance({...defaultAppearance,gender:'female',characterId:AVAILABLE_CHARACTER_DEFINITIONS[0].id});
    setOnline(true);
   }catch(reason){
    if(epoch!==refreshEpoch.current)return;
@@ -134,15 +134,15 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
  {panel==='wardrobe'&&<section className='hb-panel hb-character-creator' aria-label='Complete character selection'>
    <div className='hb-creator-visual'>
     <CharacterCreatorPreview appearance={appearance}/>
-    <div className='hb-creator-identity'><strong>{gender==='female'?'Victoria':'Fumiriya'}</strong><span>Drag to rotate</span></div>
+    <div className='hb-creator-identity'><strong>{selectedCharacter.name}</strong><span>Drag to rotate</span></div>
    </div>
    <div className='hb-creator-controls'>
     <h1>Choose your character.</h1>
     <p>Pick one complete character, then give your profile a name. Every available character is free. More whole-character models will join once their actual game-ready files pass checks.</p>
     <div className='hb-creator-gender' role='group' aria-label='Available complete characters'>
-     {(['female','male'] as const).map(g=><button type='button' aria-pressed={gender===g} className={gender===g?'hb-primary':''} key={g} onClick={()=>setAppearance({...defaultAppearance,gender:g})}>{g==='female'?'Victoria':'Fumiriya'} · Free</button>)}
+     {AVAILABLE_CHARACTER_DEFINITIONS.map(character=><button type='button' aria-pressed={selectedCharacter.id===character.id} className={selectedCharacter.id===character.id?'hb-primary':''} key={character.id} onClick={()=>setAppearance({...defaultAppearance,gender:character.id===maleCharacter.id?'male':'female',characterId:character.id})}>{character.name} · Free</button>)}
     </div>
-    <button type='button' className='hb-creator-random' onClick={()=>{const g=crypto.getRandomValues(new Uint32Array(1))[0]%2===0?'female':'male';setAppearance({...defaultAppearance,gender:g});}}>↻ Surprise me</button>
+    <button type='button' className='hb-creator-random' onClick={()=>{const index=crypto.getRandomValues(new Uint32Array(1))[0]%AVAILABLE_CHARACTER_DEFINITIONS.length;const chosen=AVAILABLE_CHARACTER_DEFINITIONS[index];setAppearance({...defaultAppearance,gender:chosen.id===maleCharacter.id?'male':'female',characterId:chosen.id});}}>↻ Surprise me</button>
     <label>Character name<input aria-label='Name' value={name} onChange={e=>setName(e.target.value)} maxLength={20} placeholder='Your name'/></label>
     <p className='hb-small'>Your character selection is saved with your wallet.</p>
     <button className='hb-primary hb-creator-enter' disabled={busy||!state||name.trim().length<2} onClick={()=>void profile()}>{busy?'Saving avatar…':state?.profile?'Save character':destination==='public'?'Enter Public World':'Enter Habitat'}</button>
