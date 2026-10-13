@@ -1,11 +1,17 @@
 'use client';
 import {TOWN_PALETTE as P} from './town-palette';
-import {useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
+import {useMemo,useRef,useState} from 'react';
 import {useFrame} from '@react-three/fiber';
 import {Html} from '@react-three/drei';
 import {TownGardens} from './town-gardens';
-import {GroundShadow,paintedTexture,TownFootShadow} from './town-surfaces';
-import {Color,Group,InstancedMesh,Matrix4,Shape} from 'three';
+import {paintedTexture,TownFootShadow} from './town-surfaces';
+import {Group} from 'three';
+import {TownAssetInstances} from './town-assets';
+import {TownHouse,MarketFront} from './town-architecture';
+import {TownDailyProps} from './town-daily-props';
+import {TownPaving} from './town-paving';
+import {TownFountain,CanalBoat} from './town-waterfront';
+import {TOWN_HILLS,townTerrainHeight} from './town-terrain';
 import {createCharacterMotion,resolveCharacter,seededAppearance} from '@/features/plaza/characters/catalog';
 import VrmAvatar from '@/features/plaza/characters/vrm-avatar';
 import type {Pose} from '@/features/plaza/types';
@@ -33,7 +39,6 @@ const LAMPS:[number,number][]= [
  [-24,-12],[-12,-12],[12,-12],[25,-12],
  [-3,23],[3,23],[-20,28],[20,28],
 ];
-const ROOT_COLORS=P.foliage;
 const leafSeeds=[...Array.from({length:72},(_,i)=>{
  const side=i%4;
  const p=i%18;
@@ -42,31 +47,11 @@ const leafSeeds=[...Array.from({length:72},(_,i)=>{
  return {x:x+Math.sin(i*19)*1.6,z:z+Math.cos(i*23)*2.4,h:3+(i%5)*.7};
 }),...[[-11,-6],[11,-6],[-12,8],[12,8],[-4,-7],[4,-7]].map(([x,z])=>({x,z,h:4.1}))];
 function GreenBorder({quality}:{quality:'low'|'high'}){
- const trunks=useRef<InstancedMesh>(null),canopies=useRef<InstancedMesh>(null);
- const selected=useMemo(()=>quality==='low'?leafSeeds.filter((_,i)=>i>=72||i%2===0):leafSeeds,[quality]);
- useLayoutEffect(()=>{
-  const mat=new Matrix4(),color=new Color();
-  selected.forEach((p,i)=>{
-   mat.makeScale(.27,p.h*.55,.27);
-   mat.setPosition(p.x,p.h*.275,p.z);
-   trunks.current?.setMatrixAt(i,mat);
-   mat.makeScale(1.25+(i%4)*.16,1.25+(i%5)*.18,1.2+(i%3)*.16);
-   mat.setPosition(p.x,p.h*.64,p.z);
-   canopies.current?.setMatrixAt(i,mat);
-   color.set(ROOT_COLORS[i%ROOT_COLORS.length]);canopies.current?.setColorAt(i,color);
-  });
-  if(trunks.current)trunks.current.instanceMatrix.needsUpdate=true;
-  if(canopies.current){canopies.current.instanceMatrix.needsUpdate=true;canopies.current.instanceColor!.needsUpdate=true;}
- },[selected]);
- return <group>
-  <instancedMesh ref={trunks} args={[undefined,undefined,selected.length]}><cylinderGeometry args={[1,1,1,6]}/><meshStandardMaterial color='#8c765e'/></instancedMesh>
-  <instancedMesh ref={canopies} args={[undefined,undefined,selected.length]} castShadow={quality==='high'}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial roughness={1}/></instancedMesh>
- </group>;
+ const selected=useMemo(()=>(quality==='low'?leafSeeds.filter((_,i)=>i>=72||i%2===0):leafSeeds).map((p,i)=>({x:p.x,z:p.z,y:Math.max(0,townTerrainHeight(p.x,p.z)),size:p.h,yaw:i*.73})),[quality]);
+ return <TownAssetInstances id='nature-kit/tree_detailed' placements={selected} castShadow={quality==='high'}/>;
 }
 function RaisedGround(){
- const grass=useMemo(()=>paintedTexture('grass'),[]),stone=useMemo(()=>paintedTexture('stone'),[]);
- const roadMaps=useMemo(()=>ROADS.map(road=>{const map=stone.clone();map.repeat.set(road.w*.6,road.d*.6);return map;}),[stone]);
- useEffect(()=>()=>roadMaps.forEach(map=>map.dispose()),[roadMaps]);
+ const grass=useMemo(()=>paintedTexture('grass'),[]);
  const quays=useMemo(()=>{
   const edges=[-37.5,...PUBLIC_WORLD_BRIDGES.flatMap(b=>[b.x-PUBLIC_WORLD_BRIDGE.halfWidth,b.x+PUBLIC_WORLD_BRIDGE.halfWidth]),37.5];
   return edges.filter((_,i)=>i%2===0).map((x,i)=>({x:(x+edges[i*2+1])/2,width:edges[i*2+1]-x}));
@@ -79,13 +64,11 @@ function RaisedGround(){
    <mesh position={[quay.x,-.05,z]} receiveShadow><boxGeometry args={[quay.width,.38,.65]}/><meshStandardMaterial color='#c9b9a0'/></mesh>
    <mesh position={[quay.x,.14,z]}><boxGeometry args={[quay.width,.09,.18]}/><meshStandardMaterial color='#eee1cb'/></mesh>
   </group>))}
-  {ROADS.map((road,i)=><mesh key={i} rotation-x={-Math.PI/2} position={[road.x,.015,road.z]} receiveShadow>
-   <planeGeometry args={[road.w,road.d]}/><meshStandardMaterial map={roadMaps[i]} roughness={1}/>
-  </mesh>)}
+  {ROADS.map((road,i)=><TownPaving key={i} x={road.x} z={road.z} w={road.w} d={road.d}/>)}
   {/* A clear, generous market square in the middle of the town. */}
-  <mesh rotation-x={-Math.PI/2} position={[0,.025,1.5]} receiveShadow><circleGeometry args={[7.8,64]}/><meshStandardMaterial map={stone} roughness={1}/></mesh>
+  <TownPaving x={0} z={1.5} w={15.6} d={15.6} round height={.025}/>
   {/* Slightly raised riverside grass behind the cottages makes the silhouette non-flat. */}
-  {[[-39,-40,12,7],[-6,-46,22,10],[34,-42,15,8],[-50,22,18,9],[49,26,19,11]].map(([x,z,w,h],i)=>
+  {TOWN_HILLS.map(([x,z,w,h],i)=>
    <mesh key={i} position={[x,-h*.32,z]} scale={[w,h,w*.6]}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial color={i%2?P.shutter:P.sage} roughness={1}/></mesh>)}
   {/* Curving distant ridge silhouettes create depth even without downloadable assets. */}
   {[-55,-37,-18,5,25,49].map((x,i)=>
@@ -93,121 +76,27 @@ function RaisedGround(){
  </>;
 }
 function Bridge({x}:{x:number}){
+ const grain=useMemo(()=>paintedTexture('wood'),[]);
  return <group position={[x,0,-19.5]}>
   <mesh position-y={-.14} receiveShadow castShadow><boxGeometry args={[PUBLIC_WORLD_BRIDGE.halfWidth*2,.3,PUBLIC_WORLD_BRIDGE.halfLength*2]}/><meshStandardMaterial color='#a27850'/></mesh>
-  {Array.from({length:11},(_,i)=><mesh key={i} position={[0,.045,-3.1+i*.62]}><boxGeometry args={[6.5,.055,.5]}/><meshStandardMaterial color={i%2?'#dbbd87':'#e9ca96'}/></mesh>)}
+  {Array.from({length:11},(_,i)=><mesh key={i} position={[0,.045,-3.1+i*.62]}><boxGeometry args={[6.5,.055,.5]}/><meshStandardMaterial color={i%2?P.wood:P.pot} map={grain}/></mesh>)}
   {[-PUBLIC_WORLD_BRIDGE.railX,PUBLIC_WORLD_BRIDGE.railX].map(side=><group key={side}>
    <mesh position={[side,1.15,0]}><boxGeometry args={[.16,.15,6.8]}/><meshStandardMaterial color='#926b4e'/></mesh>
    {[-2.7,-.9,.9,2.7].map(z=><mesh key={z} position={[side,.69,z]}><boxGeometry args={[.16,1.15,.17]}/><meshStandardMaterial color='#987350'/></mesh>)}
   </group>)}
  </group>;
 }
-type House=typeof PUBLIC_WORLD_BUILDINGS[number];
-function TownFountain(){
- return <group position={[0,0,-3]}>
-  <mesh castShadow receiveShadow position-y={.42}><cylinderGeometry args={[2.25,2.05,.84,24]}/><meshStandardMaterial color={P.pot} roughness={.85}/></mesh>
-  <mesh position-y={.87}><cylinderGeometry args={[1.96,1.96,.08,32]}/><meshStandardMaterial color={P.water} metalness={.12} roughness={.2}/></mesh>
-  <mesh rotation-x={-Math.PI/2} position-y={.93}><torusGeometry args={[2.02,.1,8,32]}/><meshStandardMaterial color={P.cream}/></mesh>
-  <mesh castShadow position-y={1.4}><cylinderGeometry args={[.34,.48,1.1,12]}/><meshStandardMaterial color={P.trim}/></mesh>
-  <mesh castShadow position-y={2.04}><sphereGeometry args={[.52,12,8]}/><meshStandardMaterial color='#d8d0b7'/></mesh>
-  {[-1,1].map(side=><mesh key={side} position={[side*.85,1.24,0]} rotation-z={side*.45}>
-   <coneGeometry args={[.15,.95,8]}/><meshStandardMaterial color='#b5dde2' transparent opacity={.72}/>
-  </mesh>)}
- </group>;
-}
-function CanalBoat({x,color}:{x:number;color:string}){
- const boat=useRef<Group>(null);
- useFrame(({clock})=>{if(boat.current){boat.current.position.y=Math.sin(clock.elapsedTime*.8+x)*.035;boat.current.rotation.z=Math.sin(clock.elapsedTime*.6+x)*.015;}});
- return <group ref={boat} position={[x,0,-19.5]}>
-  <mesh position-y={.07} rotation-y={.12}><boxGeometry args={[2.9,.38,1.16]}/><meshStandardMaterial color={color}/></mesh>
-  <mesh position-y={1.45}><cylinderGeometry args={[.055,.065,2.5,6]}/><meshStandardMaterial color='#866e56'/></mesh>
-  <mesh position={[.52,1.37,0]} rotation-z={-.12}><coneGeometry args={[.9,2.1,3]}/><meshStandardMaterial color='#fff4dc' side={2}/></mesh>
- </group>;
-}
-function TownHouse({site,quality}:{site:House;quality:'low'|'high'}){
- const w=site.width,d=site.depth;
- const roof=useMemo(()=>new Shape().moveTo(-w/2-.4,0).lineTo(0,1.65).lineTo(w/2+.4,0).closePath(),[w]);
- return <group position={[site.x,0,site.z]}>
-  <GroundShadow width={w+3} depth={d+3}/>
-  <mesh castShadow={quality==='high'} receiveShadow position-y={2.06}><boxGeometry args={[w,4.12,d]}/><meshStandardMaterial color={site.name==='ART STUDIO'?P.wall:P.cream} roughness={1}/></mesh>
-  {/* Closed gable: no inverted slopes or open daylight seam at the ridge. */}
-  <mesh castShadow={quality==='high'} position={[0,4.08,-d/2-.4]}><extrudeGeometry args={[roof,{depth:d+.8,bevelEnabled:false}]}/><meshStandardMaterial color={P.terracotta} roughness={.96}/></mesh>
-  <mesh position={[w*.27,5.3,-d*.22]}><boxGeometry args={[.65,1.3,.65]}/><meshStandardMaterial color='#cfae90'/></mesh>
-  <mesh position={[0,1.3,d/2+.12]}><boxGeometry args={[1.18,2.35,.12]}/><meshStandardMaterial color={P.sage}/></mesh>
-  <mesh position={[0,1.42,d/2+.2]}><boxGeometry args={[.04,.09,.06]}/><meshStandardMaterial color='#f8d58a' emissive='#efbc5e' emissiveIntensity={.35}/></mesh>
-  {[-w*.29,w*.29].map((x,i)=><group key={i}>
-   <mesh position={[x,2.4,d/2+.10]}><boxGeometry args={[1.25,1.4,.15]}/><meshStandardMaterial color='#fff0c8' emissive='#e3ad66' emissiveIntensity={.28}/></mesh>
-   <mesh position={[x,2.4,d/2+.2]}><boxGeometry args={[.08,1.4,.09]}/><meshStandardMaterial color='#e7e1d3'/></mesh>
-   <mesh position={[x,2.4,d/2+.2]}><boxGeometry args={[1.25,.08,.09]}/><meshStandardMaterial color='#e7e1d3'/></mesh>
-   <mesh position={[x,1.62,d/2+.32]}><boxGeometry args={[1.48,.12,.48]}/><meshStandardMaterial color='#ddcbad'/></mesh>
-  </group>)}
-  <mesh position={[0,.16,d/2+1.1]} receiveShadow><boxGeometry args={[w*.56,.24,2.2]}/><meshStandardMaterial color='#c6a781'/></mesh>
-  {[-w/2+.13,w/2-.13].map(x=><mesh key={x} position={[x,2.06,d/2+.08]}><boxGeometry args={[.22,4.12,.18]}/><meshStandardMaterial color='#f7e8ca'/></mesh>)}
-  <mesh position={[0,4.12,d/2+.42]}><boxGeometry args={[w+.85,.16,.18]}/><meshStandardMaterial color='#f8e7ce'/></mesh>
-  {[-w*.29,w*.29].map(x=><group key={x} position={[x,0,d/2+.26]}>
-   {[-.83,.83].map(dx=><mesh key={dx} position={[dx,2.4,0]}><boxGeometry args={[.32,1.48,.14]}/><meshStandardMaterial color={P.shutter}/></mesh>)}
-   <mesh position={[0,1.51,.12]}><boxGeometry args={[1.5,.28,.42]}/><meshStandardMaterial color={P.sage}/></mesh>
-   {[-.5,0,.5].map((dx,i)=><mesh key={dx} position={[dx,1.76,.15]}><sphereGeometry args={[.21,8,6]}/><meshStandardMaterial color={i%2?'#e9b6ac':'#f3d98d'}/></mesh>)}
-  </group>)}
-  <mesh position={[0,3.72,d/2+.22]}><boxGeometry args={[Math.min(w-1,4.9),.48,.27]}/><meshStandardMaterial color='#f5ead5'/></mesh>
-  <Html transform center occlude position={[0,3.72,d/2+.37]} distanceFactor={8} zIndexRange={[5,0]}><span className='hb-town-label'>{site.name}</span></Html>
- </group>;
-}
-function MarketFront({x,name,base,roof}:{x:number;name:string;base:string;roof:string}){
- const gable=useMemo(()=>new Shape().moveTo(-4.7,0).lineTo(0,1.1).lineTo(4.7,0).closePath(),[]);
- return <group position={[x,0,-9]}>
-  <GroundShadow width={11} depth={7}/>
-  <mesh castShadow position={[0,2.3,0]}><boxGeometry args={[9,4.6,3.8]}/><meshStandardMaterial color={base}/></mesh>
-  <mesh castShadow position={[0,4.56,-2.2]}><extrudeGeometry args={[gable,{depth:4.4,bevelEnabled:true,bevelSize:.04,bevelThickness:.04,bevelSegments:1}]}/><meshStandardMaterial color={roof}/></mesh>
-  <mesh position={[0,4.57,2.22]}><boxGeometry args={[9.5,.16,.2]}/><meshStandardMaterial color='#f6e9d2'/></mesh>
-  {[-4.35,4.35].map(side=><mesh key={side} position={[side,2.3,1.99]}><boxGeometry args={[.24,4.6,.19]}/><meshStandardMaterial color='#f7ead0'/></mesh>)}
-  {[-2.7,0,2.7].map(x=><group key={x}>
-   <mesh position={[x,2.3,1.96]}><boxGeometry args={[1.9,2.3,.1]}/><meshStandardMaterial color={P.forest} roughness={.3}/></mesh>
-   <mesh position={[x,2.7,2.08]}><boxGeometry args={[.08,2.2,.13]}/><meshStandardMaterial color='#e2d2b6'/></mesh>
-  </group>)}
-  {Array.from({length:9},(_,i)=><group key={i}>
-   <mesh castShadow position={[-4.4+i*1.1,3.7,2.35]} rotation-x={.14}><boxGeometry args={[1.1,.12,2.65]}/><meshStandardMaterial color={i%2?roof:'#f2e6c9'}/></mesh>
-   <mesh position={[-4.4+i*1.1,3.36,3.64]}><boxGeometry args={[1.1,.35,.08]}/><meshStandardMaterial color={i%2?roof:'#f2e6c9'}/></mesh>
-  </group>)}
-  <mesh position={[0,4.14,2.24]}><boxGeometry args={[5,.52,.13]}/><meshStandardMaterial color='#f1e1c7'/></mesh>
-  <Html transform center occlude position={[0,4.14,2.33]} distanceFactor={10} zIndexRange={[5,0]}><span className='hb-town-label'>{name}</span></Html>
- </group>;
-}
 function TownLantern({x,z}:{x:number;z:number}){
  return <group position={[x,0,z]}>
   <mesh castShadow position-y={1.55}><cylinderGeometry args={[.065,.1,3.1,7]}/><meshStandardMaterial color={P.forest}/></mesh>
   <mesh position-y={3.22}><boxGeometry args={[.75,.54,.75]}/><meshStandardMaterial color='#f9dba0' emissive='#e6b974' emissiveIntensity={.32}/></mesh>
+  {[-.35,.35].flatMap(dx=>[-.35,.35].map(dz=><mesh key={`${dx}:${dz}`} position={[dx,3.22,dz]}><boxGeometry args={[.055,.62,.055]}/><meshStandardMaterial color={P.forest}/></mesh>))}
+  <mesh position-y={2.94}><boxGeometry args={[.79,.07,.79]}/><meshStandardMaterial color={P.forest}/></mesh>
   <mesh position-y={3.62}><coneGeometry args={[.57,.46,4]}/><meshStandardMaterial color={P.forest}/></mesh>
  </group>;
 }
-function Planter({x,z,i}:{x:number;z:number;i:number}){
- return <group position={[x,0,z]}>
-  <mesh castShadow position-y={.28}><cylinderGeometry args={[.46,.36,.56,8]}/><meshStandardMaterial color={i%2?'#c38a72':'#e0b38f'}/></mesh>
-  <mesh position-y={.84}><icosahedronGeometry args={[.63,1]}/><meshStandardMaterial color={P.foliage[i%P.foliage.length]}/></mesh>
-  {[0,1,2].map(j=><mesh key={j} position={[Math.sin(j*2.5)*.34,1.26,Math.cos(j*2.5)*.32]}>
-   <icosahedronGeometry args={[.17,0]}/><meshStandardMaterial color={P.blossoms[(i+j)%P.blossoms.length]}/>
-  </mesh>)}
- </group>;
-}
 function LifestyleProps({quality}:{quality:'low'|'high'}){
- return <>
-  {LAMPS.filter((_,i)=>quality==='high'||i%2===0).map(([x,z],i)=><TownLantern key={i} x={x} z={z}/>)}
-  {Array.from({length:quality==='low'?24:48},(_,i)=>{
-   const side=i%4,along=(i*7)%28;
-   const x=side===0?-29:side===1?29:side===2?-15+along:15-along;
-   const z=side<2?-9+along:side===2?13.4:25.4;
-   return <Planter key={i} x={x} z={z} i={i}/>;
-  })}
-  {/* Everyday picnic and public seating areas supply social spaces beyond NPCs. */}
-  {[-11,11].map(x=><group key={x} position={[x,0,17]}>
-   <mesh castShadow position-y={.62}><cylinderGeometry args={[1.1,1.1,.12,10]}/><meshStandardMaterial color='#d3b08b'/></mesh>
-   <mesh position-y={.31}><cylinderGeometry args={[.14,.16,.6,8]}/><meshStandardMaterial color='#796851'/></mesh>
-   {[-1,1].map(side=><group key={side} position={[side*1.65,0,0]}>
-    <mesh position-y={.47}><boxGeometry args={[.95,.16,.55]}/><meshStandardMaterial color='#c68d70'/></mesh>
-    <mesh position-y={.25}><boxGeometry args={[.1,.5,.5]}/><meshStandardMaterial color='#77614c'/></mesh>
-   </group>)}
-  </group>)}
- </>;
+ return <>{LAMPS.filter((_,i)=>quality==='high'||i%2===0).map(([x,z],i)=><TownLantern key={i} x={x} z={z}/>)}<TownDailyProps/></>;
 }
 function Resident({index}:{index:number}){
  const appearance=useMemo(()=>seededAppearance('town-resident-'+index,index%2?'male':'female'),[index]);
@@ -233,10 +122,10 @@ export default function TownScenery({quality,onDirectory}:{quality:'low'|'high';
  return <group>
   <RaisedGround/>
   <WaterfrontRipples/>
-  <TownGardens/>
+  <TownGardens quality={quality}/>
   <GreenBorder quality={quality}/>
   {PUBLIC_WORLD_BRIDGES.map(bridge=><Bridge key={bridge.x} x={bridge.x}/>)}
-  {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site} quality={quality}/>)}
+  {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site}/>)}
   <TownFountain/>
   <CanalBoat x={-12} color='#b78c70'/><CanalBoat x={12} color='#82a495'/>
   <MarketFront x={-8} name='WILLOW CAFÉ' base={P.cream} roof={P.sage}/>

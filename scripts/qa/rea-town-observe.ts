@@ -70,8 +70,31 @@ try{
  writeFileSync(path.join(output,'rea-mobile.json'),JSON.stringify(mobile));
  const mobilePng=pngData(mobile);if(!mobilePng)throw Error('REA mobile screenshot artifact missing');
  writeFileSync(path.join(output,'rea-mobile.png'),Buffer.from(mobilePng,'base64'));
+ const details:Record<string,unknown>={};
+ if(process.argv.includes('--details')){
+  await page.setViewportSize({width:1440,height:900});
+  await page.locator('.hb-top').getByRole('button',{name:'Settings',exact:true}).click();
+  await page.getByLabel('Graphics').selectOption('high');
+  await page.locator('.hb-panel').getByRole('button',{name:'Close',exact:true}).click();
+  await expect(page.locator('.pl-name').filter({hasText:/^You$/})).toBeVisible({timeout:60000});
+  await page.mouse.move(720,400);await page.mouse.down();await page.mouse.move(720,475,{steps:10});await page.mouse.up();
+  await page.waitForTimeout(1200);
+  const detail=await rea('capture-web-screenshot',[cdp,id]);
+  const detailPng=pngData(detail);if(!detailPng)throw Error('REA desktop detail screenshot missing');
+  writeFileSync(path.join(output,'rea-desktop-detail.png'),Buffer.from(detailPng,'base64'));details.detailScreenshotEvidence=detail.evidence_id;
+  const position=async()=>{const s=await (await page.request.get(origin+'/api/habitat/state')).json();return s.players.find((p:{id:string})=>p.id===s.profile.id) as {x:number;z:number};};
+  await page.keyboard.down('KeyD');
+  try{await expect.poll(async()=>(await position()).x,{timeout:90000}).toBeGreaterThan(16);}finally{await page.keyboard.up('KeyD');}
+  await page.keyboard.down('KeyW');
+  try{await expect.poll(async()=>(await position()).z,{timeout:60000}).toBeLessThan(3.6);}finally{await page.keyboard.up('KeyW');}
+  await page.mouse.move(720,400);await page.mouse.down();await page.mouse.move(870,400,{steps:10});await page.mouse.up();
+  await page.waitForTimeout(1200);
+  const district=await rea('capture-web-screenshot',[cdp,id]);
+  const districtPng=pngData(district);if(!districtPng)throw Error('REA district screenshot missing');
+  writeFileSync(path.join(output,'rea-district.png'),Buffer.from(districtPng,'base64'));details.districtScreenshotEvidence=district.evidence_id;details.signedDistrictPosition=await position();
+ }
  expect(errors).toEqual([]);
- const summary={sourceSha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),dirty:!!execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim(),observedAt:new Date().toISOString(),origin,reaVersion:'6.4.0',discoveryEvidence:discovery.evidence_id,inspectionEvidence:inspection.evidence_id,screenshotEvidence:shot.evidence_id,mobileScreenshotEvidence:mobile.evidence_id,errors};
+ const summary={sourceSha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),dirty:!!execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim(),observedAt:new Date().toISOString(),origin,reaVersion:'6.4.0',discoveryEvidence:discovery.evidence_id,inspectionEvidence:inspection.evidence_id,screenshotEvidence:shot.evidence_id,mobileScreenshotEvidence:mobile.evidence_id,...details,errors};
  writeFileSync(path.join(output,'summary.json'),JSON.stringify(summary,null,2));
  console.log(JSON.stringify(summary));
 }finally{

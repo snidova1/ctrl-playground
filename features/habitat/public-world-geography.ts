@@ -3,6 +3,7 @@
  * Habitat layouts. The renderer and movement rules consume these same shapes.
  * All measurements are metres in the existing Three.js world coordinate frame.
  */
+import {TOWN_PROP_OBSTACLES} from './town-prop-layout';
 export const PUBLIC_WORLD_ID='cf000000-0000-4000-8000-000000000001';
 export const PUBLIC_WORLD_BOUNDS={minX:-32,maxX:32,minZ:-30,maxZ:31} as const;
 export const PUBLIC_WORLD_CANAL={north:-22,south:-17} as const;
@@ -35,7 +36,7 @@ export function isPublicWorldWalkable(x:number,z:number){
  if(z>PUBLIC_WORLD_CANAL.north-PUBLIC_WORLD_PLAYER_RADIUS&&z<PUBLIC_WORLD_CANAL.south+PUBLIC_WORLD_PLAYER_RADIUS&&!walkableBridge(x))return false;
  if(Math.abs(z-bridgeCenterZ)<PUBLIC_WORLD_BRIDGE.halfLength+PUBLIC_WORLD_PLAYER_RADIUS&&PUBLIC_WORLD_BRIDGES.some(b=>Math.abs(Math.abs(x-b.x)-PUBLIC_WORLD_BRIDGE.railX)<PUBLIC_WORLD_BRIDGE.railHalfWidth+PUBLIC_WORLD_PLAYER_RADIUS))return false;
  if(Math.hypot(x,z+3)<2.25+PUBLIC_WORLD_PLAYER_RADIUS)return false;
- return ![...PUBLIC_WORLD_BUILDINGS,...PUBLIC_WORLD_SHOPS].some(h=>Math.abs(x-h.x)<h.width/2+.34&&Math.abs(z-h.z)<h.depth/2+.34);
+ return ![...PUBLIC_WORLD_BUILDINGS,...PUBLIC_WORLD_SHOPS,...TOWN_PROP_OBSTACLES].some(h=>Math.abs(x-h.x)<h.width/2+.34&&Math.abs(z-h.z)<h.depth/2+.34);
 }
 /** Small swept steps prevent running through the riverbanks or home walls. */
 export function navigatePublicWorld(from:{x:number;z:number},to:{x:number;z:number}){
