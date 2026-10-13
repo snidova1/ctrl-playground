@@ -69,7 +69,7 @@ test('a signed wallet completes setup and signs back into the same Habitat witho
   await press(page, page.locator('.wallet-options').getByRole('button', {name: 'Connect wallet', exact: true}));
   await signIn(page);
 
-  const creator = page.getByRole('region', {name: '3D character creator'});
+  const creator = page.getByRole('region', {name: 'Complete character selection'});
   await expect(creator).toBeVisible({timeout: 30000});
   await page.keyboard.press('Escape');
   await expect(creator).toBeVisible();
@@ -77,7 +77,7 @@ test('a signed wallet completes setup and signs back into the same Habitat witho
   await press(page, page.getByRole('button', {name: 'Close', exact: true}));
   await expect(creator).toBeVisible();
   await page.getByRole('textbox', {name: 'Name', exact: true}).fill('Returning Habitat');
-  await press(page, page.getByRole('button', {name: 'Enter my world draft', exact: true}));
+  await press(page, page.getByRole('button', {name: 'Enter Habitat', exact: true}));
   await expect(page.getByRole('button', {name: 'Build my world +', exact: true})).toBeVisible({timeout: 30000});
 
   const initialResponse = await page.request.get('/api/habitat/state');
