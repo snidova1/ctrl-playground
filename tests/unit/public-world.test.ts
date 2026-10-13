@@ -5,6 +5,7 @@ import {createSession} from '@/server/wallet/auth';
 import {PUBLIC_WORLD_ID,createPublicWorld} from '@/features/habitat/public-world';
 import {PUBLIC_WORLD_BOUNDS,isPublicWorldWalkable,navigatePublicWorld,PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_BRIDGES} from '@/features/habitat/public-world-geography';
 import {poseInputSchema} from '@/domain/habitat';
+import {TOWN_ACTIVITIES,TOWN_DISTRICTS,TOWN_DISTRICT_BUILDINGS,getNearestTownActivity} from '@/features/habitat/town-districts';
 import {createGuestState,randomGuestStyle} from '@/features/habitat/guest';
 import {getBuildAsset} from '@/features/plaza/build-assets';
 import {collideWorld} from '@/features/habitat/types';
@@ -45,6 +46,44 @@ describe('public world and guest boundary',()=>{
   expect((await request(`worlds/${PUBLIC_WORLD_ID}/members`,{wallet:wallets[1],role:'editor'})).status).toBe(403);
   expect((await one<{name:string}>('SELECT name FROM habitat_worlds WHERE id=?',PUBLIC_WORLD_ID))?.name).toBe('Willow Square');
  });
+ it('has a fully reachable original seven-district geography with safe activity stations',()=>{
+  expect(TOWN_DISTRICTS).toHaveLength(7);
+  expect(TOWN_DISTRICT_BUILDINGS.length).toBeGreaterThanOrEqual(44);
+  expect(PUBLIC_WORLD_BOUNDS.maxX-PUBLIC_WORLD_BOUNDS.minX).toBeGreaterThanOrEqual(240);
+  expect(PUBLIC_WORLD_BOUNDS.maxZ-PUBLIC_WORLD_BOUNDS.minZ).toBeGreaterThanOrEqual(220);
+  for(const district of TOWN_DISTRICTS){
+    expect(isPublicWorldWalkable(district.x,district.z),district.name).toBe(true);
+    const activity=TOWN_ACTIVITIES.find(a=>a.district===district.id);
+    expect(activity,district.name).toBeDefined();
+    expect(getNearestTownActivity(activity!.x,activity!.z)?.id).toBe(activity!.id);
+    expect(isPublicWorldWalkable(activity!.x,activity!.z),activity!.name).toBe(true);
+    expect(poseInputSchema.safeParse({x:district.x,z:district.z,worldId:PUBLIC_WORLD_ID,angle:0,motion:{},sessionId:crypto.randomUUID(),sequence:1}).success).toBe(true);
+  }
+  for(const house of TOWN_DISTRICT_BUILDINGS)expect(isPublicWorldWalkable(house.x,house.z)).toBe(false);
+ });
+ it('accepts shared field work only when signed, near the real station, and ready again',async()=>{
+  // No guest action, no remote button cheating and no cross-home activity claims.
+  expect((await request('town-activity',{id:'community-garden'},'')).status).toBe(401);
+  const first=await (await request('join',{id:PUBLIC_WORLD_ID})).json() as HabitatState;
+  expect(first.world?.id).toBe(PUBLIC_WORLD_ID);
+  const blocked=await request('town-activity',{id:'community-garden'});
+  expect(blocked.status).toBe(422);
+  const activity=TOWN_ACTIVITIES.find(a=>a.id==='community-garden')!;
+  await exec('UPDATE habitat_presence SET x=?,z=?,seen_at=? WHERE profile_id=? AND world_id=?',activity.x,activity.z,Date.now(),first.profile!.id,PUBLIC_WORLD_ID);
+  const done=await request('town-activity',{id:activity.id});
+  expect(done.status).toBe(200);
+  const completed=await done.json() as {state:HabitatState;message:string};
+  expect(completed.state.states[activity.objectId]?.active).toBe(true);
+  expect(completed.message).toMatch(/garden/i);
+  const second=await (await request('join',{id:PUBLIC_WORLD_ID},cookies[1])).json() as HabitatState;
+  expect(second.states[activity.objectId]?.active).toBe(true);
+  await exec('UPDATE habitat_presence SET x=?,z=?,seen_at=? WHERE profile_id=? AND world_id=?',activity.x,activity.z,Date.now(),second.profile!.id,PUBLIC_WORLD_ID);
+  expect((await request('town-activity',{id:activity.id},cookies[1])).status).toBe(409);
+  // Reset the world-owned cooldown, then another neighbor can help.
+  await exec('UPDATE habitat_object_state SET used_at=? WHERE world_id=? AND object_id=?',Date.now()-activity.cooldownMs-2000,PUBLIC_WORLD_ID,activity.objectId);
+  expect((await request('town-activity',{id:activity.id},cookies[1])).status).toBe(200);
+  expect((await request('town-activity',{id:'made-up-task'},cookies[1])).status).toBe(404);
+ });
  it('keeps guest builds isolated from each other and the persistent shared layout',()=>{
   const a=createGuestState(),b=createGuestState();
   a.world!.objects=[];
@@ -81,7 +120,7 @@ describe('public world and guest boundary',()=>{
   const sample={x:25,z:21,worldId:PUBLIC_WORLD_ID,angle:0,motion:{},sessionId:crypto.randomUUID(),sequence:1};
   expect(poseInputSchema.safeParse(sample).success).toBe(true);
   expect(poseInputSchema.safeParse({...sample,worldId:crypto.randomUUID()}).success).toBe(false);
-  expect(poseInputSchema.safeParse({...sample,x:35}).success).toBe(false);
+  expect(poseInputSchema.safeParse({...sample,x:125}).success).toBe(false);
   const scene=createPublicWorld();
   const moved=collideWorld({x:14,z:9},{x:17,z:9},scene,{},PUBLIC_WORLD_ID);
   expect(moved.x).toBeGreaterThan(15);
