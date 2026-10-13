@@ -3,6 +3,7 @@ import {useMemo,useRef,type MutableRefObject} from 'react';
 import {useFrame} from '@react-three/fiber';
 import {Group} from 'three';
 import type {Pose} from '@/features/plaza/types';
+import type {WorldState} from './types';
 import {TOWN_ACTIVITIES,TOWN_DISTRICTS,TOWN_DISTRICT_BUILDINGS,type TownDistrict,type TownDistrictBuilding} from './town-districts';
 import {TownAssetInstances} from './town-assets';
 import {TownWindGrass} from './town-stylized-grass';
@@ -47,14 +48,15 @@ function DistrictTrees({district,quality}:{district:TownDistrict;quality:Quality
  },[district,quality]);
  return <TownAssetInstances id='nature-kit/tree_detailed' placements={places} castShadow={quality==='high'}/>;
 }
-function ActivityStation({type,x,z}:{type:string;x:number;z:number}){
- const base=type==='community-garden'?'#839d74':type==='harbor-cleanup'?'#82acb3':type==='festival-stage'?'#cb967d':'#bea786';
+function ActivityStation({type,x,z,recent}:{type:string;x:number;z:number;recent:boolean}){
+ const base=recent?'#95b98c':type==='community-garden'?'#839d74':type==='harbor-cleanup'?'#82acb3':type==='festival-stage'?'#cb967d':'#bea786';
  return <group position={[x,0,z]}>
   <mesh receiveShadow position-y={.09}><cylinderGeometry args={[2.3,2.3,.18,12]}/><meshStandardMaterial color={base}/></mesh>
   <mesh castShadow position-y={.6}><boxGeometry args={[1.8,.8,1.3]}/><meshStandardMaterial color='#cfb28e'/></mesh>
   {[-.55,.55].map(px=><mesh key={px} position={[px,1.14,0]} castShadow>
     <icosahedronGeometry args={[.38,1]}/><meshStandardMaterial color={type==='community-garden'||type==='orchard-harvest'?'#dfab8c':'#f0d8aa'} roughness={1}/>
   </mesh>)}
+  {recent&&Array.from({length:8},(_,i)=><mesh key={i} position={[Math.sin(i*Math.PI/4)*1.75,.5+Math.abs(Math.sin(i*2))*1.6,Math.cos(i*Math.PI/4)*1.75]}><icosahedronGeometry args={[.18,0]}/><meshBasicMaterial color={i%2?'#f2cf8e':'#e7b1ba'}/></mesh>)}
   <mesh position-y={2.35}><cylinderGeometry args={[.055,.055,2,6]}/><meshStandardMaterial color='#88725e'/></mesh>
   <mesh position={[.55,3.2,0]}><boxGeometry args={[1.25,.55,.12]}/><meshStandardMaterial color='#f2e0b9'/></mesh>
  </group>;
@@ -67,7 +69,7 @@ function FestivalPlatform({x,z}:{x:number;z:number}){
   {[-4,0,4].map(v=><mesh key={v} position={[v,7.0,-3.95]}><coneGeometry args={[1.3,1.7,3]}/><meshStandardMaterial color='#dfb58a'/></mesh>)}
  </group>;
 }
-function RemoteZone({district,quality,pose}:{district:TownDistrict;quality:Quality;pose:MutableRefObject<Pose>}){
+function RemoteZone({district,quality,pose,states}:{district:TownDistrict;quality:Quality;pose:MutableRefObject<Pose>;states:WorldState['states']}){
  const root=useRef<Group>(null);
  useFrame(()=>{if(root.current)root.current.visible=Math.hypot(pose.current.x-district.x,pose.current.z-district.z)<77;});
  const houses=TOWN_DISTRICT_BUILDINGS.filter(h=>h.district===district.id);
@@ -81,7 +83,7 @@ function RemoteZone({district,quality,pose}:{district:TownDistrict;quality:Quali
   {houses.map(h=><DistrictCottage key={h.id} site={h}/>)}
   <DistrictTrees district={district} quality={quality}/>
   <TownWindGrass district={district} quality={quality}/>
-  {activity&&<ActivityStation x={activity.x} z={activity.z} type={activity.id}/>}
+  {activity&&<ActivityStation x={activity.x} z={activity.z} type={activity.id} recent={Boolean(states[activity.objectId]?.usedAt&&Date.now()-states[activity.objectId].usedAt<activity.cooldownMs)}/>}
   {district.id==='festival'&&<FestivalPlatform x={district.x} z={district.z}/>}
   {district.id==='harbor'&&<group position={[district.x,0,district.z+20]}>
     <TownStylizedWater x={0} y={.015} z={0} width={95} depth={13}/>
@@ -95,10 +97,10 @@ function RemoteZone({district,quality,pose}:{district:TownDistrict;quality:Quali
  </group>;
 }
 /** Static links are always drawn; remote scenery is visibility-culled per player's current position. */
-export default function TownExpandedDistricts({pose,quality}:{pose:MutableRefObject<Pose>;quality:Quality}){
+export default function TownExpandedDistricts({pose,quality,states}:{pose:MutableRefObject<Pose>;quality:Quality;states:WorldState['states']}){
  return <group>
   <mesh rotation-x={-Math.PI/2} position-y={-.13} receiveShadow><planeGeometry args={[248,228]}/><meshStandardMaterial color='#a7c395' roughness={1}/></mesh>
   {CONNECTIONS.map(([ax,az,bx,bz],i)=><ScenicRoad key={i} ax={ax} az={az} bx={bx} bz={bz}/>)}
-  {TOWN_DISTRICTS.filter(d=>d.id!=='center').map(d=><RemoteZone key={d.id} district={d} quality={quality} pose={pose}/>)}
+  {TOWN_DISTRICTS.filter(d=>d.id!=='center').map(d=><RemoteZone key={d.id} district={d} quality={quality} pose={pose} states={states}/>)}
  </group>;
 }
