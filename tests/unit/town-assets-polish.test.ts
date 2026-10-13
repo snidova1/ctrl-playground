@@ -59,7 +59,7 @@ describe('complete Public World asset polish',()=>{
   expect(isPublicWorldWalkable(0,6)).toBe(true);expect(isPublicWorldWalkable(17,6)).toBe(true);
  });
  it('grounds decorative hill trees without raising any walkable terrain',()=>{
-  expect(townTerrainHeight(-10.744031378109902,-36.663242656681156)).toBeCloseTo(1.8691947443,3);
+  expect(townTerrainHeight(-10.744031378109902,-36.663242656681156)).toBeLessThanOrEqual(0); // Old backdrop moved outside the expanded playable world.
   for(let x=-32;x<=32;x+=2)for(let z=-30;z<=31;z+=2)expect(townTerrainHeight(x,z)).toBeLessThanOrEqual(0);
   for(const [x,z,,height] of TOWN_HILLS)expect(townTerrainHeight(x,z)).toBeGreaterThanOrEqual(height*.68-.001);
  });
