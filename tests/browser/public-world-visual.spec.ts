@@ -1,4 +1,4 @@
-import {test,expect,type Page,type Locator} from '@playwright/test';
+import {test,expect,chromium,type Page,type Locator} from '@playwright/test';
 import {installSignedWallet} from './helpers/wallet';
 import {PUBLIC_WORLD_ID} from '@/features/habitat/public-world-geography';
 import type {HabitatState} from '@/domain/habitat';
@@ -112,13 +112,18 @@ test('signed player enters a rendered walkable multiplayer neighborhood, not a b
  // teleport refs or mock the presence API to make movement assertions pass.
  const originState=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
  const initial=originState.players.find(p=>p.id===originState.profile!.id)!;
+ const displacement=async()=>{
+  const s=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
+  const p=s.players.find(p=>p.id===s.profile!.id)!;
+  return Math.hypot(p.x-initial.x,p.z-initial.z);
+ };
  if(test.info().project.name==='town-mobile'){
   const cdp=await page.context().newCDPSession(page);
   const button=await page.getByRole('button',{name:'Move →',exact:true}).boundingBox();
   expect(button).not.toBeNull();
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:button!.x+button!.width/2,y:button!.y+button!.height/2}]});
-  await page.waitForTimeout(1200);
-  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  try{await expect.poll(displacement,{timeout:20000}).toBeGreaterThan(.35);}
+  finally{await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
   const label=page.locator('.pl-name').filter({hasText:/^You$/});
   const before=await label.boundingBox();
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:140,y:300},{id:1,x:240,y:300}]});
@@ -126,20 +131,21 @@ test('signed player enters a rendered walkable multiplayer neighborhood, not a b
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await expect.poll(async()=>((await label.boundingBox())?.width??0)/(before?.width??1),{timeout:5000}).toBeGreaterThan(1.1);
  }else{
-  await page.keyboard.down('KeyD');await page.waitForTimeout(1200);await page.keyboard.up('KeyD');
+  await page.keyboard.down('KeyD');
+  try{await expect.poll(displacement,{timeout:20000}).toBeGreaterThan(.35);}
+  finally{await page.keyboard.up('KeyD');}
   await page.mouse.move(850,350);await page.mouse.down();await page.mouse.move(980,380,{steps:10});await page.mouse.up();
   await page.mouse.wheel(0,-350);
  }
- await expect.poll(async()=>{
-  const s=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
-  const p=s.players.find(p=>p.id===s.profile!.id)!;
-  return Math.hypot(p.x-initial.x,p.z-initial.z);
- },{timeout:7000}).toBeGreaterThan(.35);
+ await expect.poll(displacement,{timeout:7000}).toBeGreaterThan(.35);
  expect(errors).toEqual([]);
 });
 
-test('two signed neighbors share speech and waves, visit a permitted home and keep their character',async({page,browser,baseURL})=>{
- const neighborContext=await browser.newContext({baseURL,viewport:page.viewportSize()!});
+test('two signed neighbors share speech and waves, visit a permitted home and keep their character',async({page,baseURL})=>{
+ // Independent browser processes model two devices and avoid serializing both
+ // software-WebGL views onto a single headless GPU process.
+ const neighborBrowser=await chromium.launch(test.info().project.use.launchOptions);
+ const neighborContext=await neighborBrowser.newContext({baseURL,viewport:page.viewportSize()!});
  const neighbor=await neighborContext.newPage();
  const errors:string[]=[];
  for(const p of [page,neighbor])p.on('pageerror',e=>errors.push(e.message));
@@ -177,7 +183,7 @@ test('two signed neighbors share speech and waves, visit a permitted home and ke
   const ownerHome=await (await page.request.get(`/api/habitat/worlds/${owner.homeId}`)).json() as HabitatState;
   await expect(neighbor.locator('.hb-world-row').filter({hasText:ownerHome.world!.name})).toBeVisible({timeout:10000});
   await press(neighbor,neighbor.locator('.hb-world-row').filter({hasText:ownerHome.world!.name}));
-  await expect(neighbor).toHaveURL(/\/habitat$/);
+  await expect(neighbor).toHaveURL(/\/habitat$/,{timeout:30000});
   await expect(neighbor.locator('.hb-title h1')).toHaveText(ownerHome.world!.name,{timeout:30000});
   await expect(neighbor.getByRole('button',{name:'Build my world +',exact:true})).toHaveCount(0);
   // Revocation hides the private home and clears its active scene.
@@ -193,5 +199,5 @@ test('two signed neighbors share speech and waves, visit a permitted home and ke
   const returned=await (await neighbor.request.get('/api/habitat/state')).json() as HabitatState;
   expect(returned.profile).toEqual(friend.profile);expect(returned.homeId).toBe(friend.homeId);
   expect(errors).toEqual([]);
- }finally{await neighborContext.close();}
+ }finally{await neighborBrowser.close();}
 });
