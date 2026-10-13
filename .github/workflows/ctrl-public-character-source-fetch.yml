@@ -1,0 +1,54 @@
+name: CTRL Public Character Source Download
+
+on:
+  push:
+    paths:
+      - '.github/workflows/ctrl-public-character-source-fetch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-public-rain-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Download published Rain v2.6 character source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p character-sources/rain
+          curl --fail --location --retry 3 --max-time 180 \
+            'https://raw.githubusercontent.com/PacktPublishing/Realizing-3D-Animation-in-Blender/main/rain_v2_6_packt.zip' \
+            -o character-sources/rain/rain_v2_6_packt.zip
+          file character-sources/rain/rain_v2_6_packt.zip
+          unzip -t character-sources/rain/rain_v2_6_packt.zip | tail -n 3
+          sha256sum character-sources/rain/rain_v2_6_packt.zip | tee character-sources/rain/SHA256SUMS.txt
+          test "$(stat -c %s character-sources/rain/rain_v2_6_packt.zip)" -gt 10000000
+
+      - name: Document provenance and source license
+        shell: bash
+        run: |
+          cat > character-sources/rain/PROVENANCE.md <<'EOF'
+          # Rain v2.6 (Blender Studio character, Packt training archive)
+
+          - Original Blender character: Rain, Blender Studio / Blender Foundation
+          - License: CC BY 4.0; attribution required
+          - Source: https://github.com/PacktPublishing/Realizing-3D-Animation-in-Blender/blob/main/rain_v2_6_packt.zip
+          - Publisher's asset page: https://studio.blender.org/characters/rain/v2/
+          - Downloaded via publicly accessible training repository, NOT via BOOTH/Pixiv
+          - Format: source ZIP containing .blend rig. **NOT a browser-ready VRM**
+          - For eventual CTRL usage: unpack, bake/retarget the original Blender armature to VRM
+            humanoid, ensure textures/expression intact, optimize under 20 MiB and pass
+            animation/mobile/WebGL checks BEFORE listing as playable.
+          - Attribution: Rain Rig © Blender Foundation | https://studio.blender.org
+          EOF
+
+      - name: Upload retrieved character source as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrl-public-rain-v2-source
+          path: character-sources/rain/
+          retention-days: 30
+          if-no-files-found: error
