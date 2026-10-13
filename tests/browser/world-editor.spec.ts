@@ -127,7 +127,7 @@ test('Homepage editor enables Redo after Undo and persists the restored draft', 
   await expect(undo).toBeDisabled();
   await expect(redo).toBeDisabled();
   await pointer(page, page.getByText('Interactive pieces', {exact:true}));
-  await pointer(page, page.getByRole('button', {name: 'Building block +', exact: true}));
+  await pointer(page, page.getByRole('button', {name: 'Block +', exact: true}));
   await expect(placed.locator('option')).toHaveCount(2);
   await pointer(page, undo);
   await expect(placed.locator('option')).toHaveCount(1);
@@ -136,7 +136,7 @@ test('Homepage editor enables Redo after Undo and persists the restored draft', 
   await pointer(page, redo);
   await expect(placed.locator('option')).toHaveCount(2);
   await expect(redo).toBeDisabled();
-  await pointer(page, page.getByRole('button', {name: 'Save & play', exact: true}));
+  await pointer(page, page.getByRole('button', {name: 'Save & Play', exact: true}));
   await expect(page.getByRole('button', {name: 'Build my world +'})).toBeVisible();
   await page.reload();
   await expect(page.getByRole('button', {name: 'Build my world +'})).toBeVisible();

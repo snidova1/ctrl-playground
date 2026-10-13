@@ -17,7 +17,7 @@ Persist activities, contributions, shared world changes, houses and social inter
 - `town-region-architecture.tsx`: original closed gables, roof textures, plinths, shutter/window frames, side windows, doors, steps, chimneys and flower boxes. Geometry is normalized to non-indexed attributes before batching; a real browser failure exposed incompatible box/extrude attributes and is now covered by executable geometry tests. Each district uses fewer than 20 material batches.
 - Distant region meshes now mount/unmount with a distance margin. Camera collision includes all 44 district buildings and snaps after long district travel. Day/night light minima and water output color conversion address dark renders.
 - `modular-wardrobe.tsx`: original optional hair/garment/accessory/footwear geometry attached to the approved VRM skeleton, strict appearance allowlists, creator preview, persisted identity and remote replication. Existing Victoria/Fumiriya exports remain the base avatars. These additions are **not** a finished set of new original character models or fitted skinned garment exports.
-- World Builder browser fixtures now follow the actual root Common Ground entry and `Enter Habitat`/`Building block +` labels while preserving signed-wallet, persistence, revision-conflict, ACL and pointer/touch assertions. Browser output folders are separate to preserve evidence.
+- World Builder browser fixtures now follow the actual root Common Ground entry and `Enter Habitat` and the native advanced-builder labels labels while preserving signed-wallet, persistence, revision-conflict, ACL and pointer/touch assertions. Browser output folders are separate to preserve evidence.
 
 ## Upstream source inspection and architectural choices
 
@@ -40,8 +40,8 @@ All sources were cloned and implementation files inspected, not just README file
 
 ## Verification ledger at the functional checkpoint
 
-- Full preceding unit/API run: 211/211, 38 files. Latest targeted API/avatar/migration suites after adding durable conversation history: 35/35. Run the full final suite after the last source edit.
-- TypeScript, global lint and Next production build passed earlier source iterations; repeat them for the final pushed source.
+- Final full unit/API run for code checkpoint `76b647d0dba3442ebce94705805a97ce353f62e8`: 212/212, 38 files. Latest targeted API/avatar/migration suites: 35/35.
+- TypeScript, global lint and Next production build passed for code checkpoint `76b647d0dba3442ebce94705805a97ce353f62e8`.
 - Existing catalog integrity: 991 GLBs, 991 WebPs, 13.10 MiB. No asset binaries or dependency lockfiles changed.
 - Actual production WebGL browser iteration: 9/10 Public World tests passed, including desktop/mobile walking, all six remote districts, two signed players chatting/waving, private-home grant/visit/revoke/return, and modular creator save/reload. The remaining desktop dance test read state before the asynchronous accept response; its fixture now waits for and asserts the real HTTP 200 response.
 - Builder iteration proved desktop transforms/duplicate/delete/undo/redo/save/reload and two-wallet ACL journeys. Remaining root-entry fixture and mobile chat-overlap failures were identified and fixed. Final complete rerun is required; do not present the preceding partial run as green.
