@@ -35,3 +35,38 @@ jobs:
         run: pnpm exec tsc --noEmit --target ES2020
       - name: Next production build
         run: pnpm build:next
+
+
+  public-rain-source:
+    # One public Blender character source (Rain v2.6) available without Pixiv.
+    # Independent from CTRL tests so source download does not hide QA failures.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Fetch original CC-BY Rain source archive
+        run: |
+          set -euo pipefail
+          mkdir -p character-sources/rain
+          curl --fail --location --retry 3 --max-time 240 \
+            'https://raw.githubusercontent.com/PacktPublishing/Realizing-3D-Animation-in-Blender/main/rain_v2_6_packt.zip' \
+            -o character-sources/rain/rain_v2_6_packt.zip
+          unzip -t character-sources/rain/rain_v2_6_packt.zip | tail -n 2
+          sha256sum character-sources/rain/rain_v2_6_packt.zip > character-sources/rain/SHA256SUMS.txt
+          test "$(stat -c %s character-sources/rain/rain_v2_6_packt.zip)" -gt 10000000
+      - name: Preserve original creator attribution
+        run: |
+          cat > character-sources/rain/PROVENANCE.md <<'EOF'
+          Rain v2.6 production character source, original creator: Blender Studio / Blender Foundation.
+          License CC BY 4.0 (attribution required).
+          Download: https://github.com/PacktPublishing/Realizing-3D-Animation-in-Blender/blob/main/rain_v2_6_packt.zip
+          Official original: https://studio.blender.org/characters/rain/v2/
+          Raw rig archive only, NOT a CTRL-playable VRM yet.
+          EOF
+      - name: Upload downloaded Rain files
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrl-rain-public-source
+          path: character-sources/rain/
+          retention-days: 30
+          if-no-files-found: error
