@@ -1,7 +1,7 @@
 'use client';
 import {useMemo,useRef,type MutableRefObject} from 'react';
 import {useFrame} from '@react-three/fiber';
-import {InstancedMesh,Matrix4,Color,Group} from 'three';
+import {Group} from 'three';
 import type {Pose} from '@/features/plaza/types';
 import {TOWN_ACTIVITIES,TOWN_DISTRICTS,TOWN_DISTRICT_BUILDINGS,type TownDistrict,type TownDistrictBuilding} from './town-districts';
 import {TownAssetInstances} from './town-assets';
