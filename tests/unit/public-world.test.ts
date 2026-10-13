@@ -84,6 +84,26 @@ describe('public world and guest boundary',()=>{
   expect((await request('town-activity',{id:activity.id},cookies[1])).status).toBe(200);
   expect((await request('town-activity',{id:'made-up-task'},cookies[1])).status).toBe(404);
  });
+ it('only travels to signed server-allowlisted district coordinates',async()=>{
+  const first=await (await request('join',{id:PUBLIC_WORLD_ID})).json() as HabitatState;
+  const sessionId=first.presenceSession!.id;
+  expect((await request('town-travel',{id:'garden',sessionId},'')).status).toBe(401);
+  expect((await request('town-travel',{id:'space',sessionId})).status).toBe(422);
+  expect((await request('town-travel',{id:'garden',sessionId:crypto.randomUUID()})).status).toBe(409);
+  const moved=await request('town-travel',{id:'garden',sessionId});
+  expect(moved.status).toBe(200);
+  const state=await moved.json() as HabitatState&{accepted:{x:number;z:number}};
+  const garden=TOWN_DISTRICTS.find(d=>d.id==='garden')!;
+  expect(state.accepted).toEqual({x:garden.x,z:garden.z});
+  const actor=state.players.find(p=>p.id===first.profile?.id)!;
+  expect(actor.x).toBe(garden.x);expect(actor.z).toBe(garden.z);
+  expect(state.presenceSession?.id).toBe(sessionId);
+  expect((await request('town-travel',{id:'harbor',sessionId})).status).toBe(200);
+  const second=await (await request('join',{id:PUBLIC_WORLD_ID},cookies[1])).json() as HabitatState;
+  expect(second.world?.id).toBe(PUBLIC_WORLD_ID);
+  expect((await request('town-travel',{id:'orchard',sessionId:second.presenceSession!.id},cookies[1])).status).toBe(200);
+  expect((await request('town-travel',{id:'orchard',sessionId:sessionId},cookies[1])).status).toBe(409);
+ });
  it('keeps guest builds isolated from each other and the persistent shared layout',()=>{
   const a=createGuestState(),b=createGuestState();
   a.world!.objects=[];
