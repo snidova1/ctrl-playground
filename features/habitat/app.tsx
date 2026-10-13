@@ -142,6 +142,7 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
     <div className='hb-creator-gender' role='group' aria-label='Available complete characters'>
      {AVAILABLE_CHARACTER_DEFINITIONS.map(character=><button type='button' aria-pressed={selectedCharacter.id===character.id} className={selectedCharacter.id===character.id?'hb-primary':''} key={character.id} onClick={()=>setAppearance({...defaultAppearance,gender:character.gender,characterId:character.id})}>{character.name} · Free</button>)}
     </div>
+    <p className='hb-small'>Model by {selectedCharacter.license.author} · {selectedCharacter.license.name} · <a href={selectedCharacter.license.source} target='_blank' rel='noopener noreferrer'>Source / license ↗</a></p>
     <button type='button' className='hb-creator-random' onClick={()=>{const index=crypto.getRandomValues(new Uint32Array(1))[0]%AVAILABLE_CHARACTER_DEFINITIONS.length;const chosen=AVAILABLE_CHARACTER_DEFINITIONS[index];setAppearance({...defaultAppearance,gender:chosen.gender,characterId:chosen.id});}}>↻ Surprise me</button>
     <label>Character name<input aria-label='Name' value={name} onChange={e=>setName(e.target.value)} maxLength={20} placeholder='Your name'/></label>
     <p className='hb-small'>Your character selection is saved with your wallet.</p>
