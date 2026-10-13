@@ -284,3 +284,14 @@
  .hb-app.is-public-world .hb-touch button{height:44px;min-height:44px}
  .hb-app.is-public-world .hb-top{max-height:none}
 }
+
+/* Multi-district social game guide. Keep the map scrollable on small phones. */
+.hb-town-guide .hb-town-action{background:#d7e8bf;font-weight:700;border-color:#a3b98a}
+.hb-town-guide .hb-town-action:disabled{opacity:.72}
+.hb-town-guide .hb-district-map{aspect-ratio:248/226;background:#a9c598;max-height:280px}
+.hb-town-guide .hb-district-map text{font:600 5.5px/1.15 var(--font-sans,Arial,sans-serif);fill:#405b45;letter-spacing:0}
+.hb-town-guide .hb-town-progress{display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:11px;margin:8px 0}
+.hb-town-guide .hb-town-destinations{max-height:160px;overflow-y:auto;display:grid;gap:6px;margin:8px 0;padding-right:4px}
+.hb-town-guide .hb-town-destinations>div{display:flex;flex-direction:column;border-bottom:1px solid #aebba18c;padding-bottom:5px}
+.hb-town-guide .hb-town-destinations small{font-size:10px;line-height:1.4}
+@media(max-width:760px){.hb-app.is-public-world .hb-town-guide .hb-town-guide-actions{max-width:150px;align-items:stretch}.hb-app.is-public-world .hb-town-guide section{max-height:50dvh}}
