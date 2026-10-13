@@ -1,5 +1,5 @@
 'use client';
-import {useMemo,useRef,type MutableRefObject} from 'react';
+import {useMemo,useRef,useEffect,useState,type MutableRefObject} from 'react';
 import {useFrame} from '@react-three/fiber';
 import {Group} from 'three';
 import type {Pose} from '@/features/plaza/types';
@@ -48,7 +48,10 @@ function DistrictTrees({district,quality}:{district:TownDistrict;quality:Quality
  },[district,quality]);
  return <TownAssetInstances id='nature-kit/tree_detailed' placements={places} castShadow={quality==='high'}/>;
 }
-function ActivityStation({type,x,z,recent}:{type:string;x:number;z:number;recent:boolean}){
+function ActivityStation({type,x,z,usedAt,cooldownMs}:{type:string;x:number;z:number;usedAt:number;cooldownMs:number}){
+ const [now,setNow]=useState(0);
+ useEffect(()=>{const t=setInterval(()=>setNow(Date.now()),950);return()=>clearInterval(t);},[]);
+ const recent=usedAt>0&&now-usedAt<cooldownMs;
  const base=recent?'#95b98c':type==='community-garden'?'#839d74':type==='harbor-cleanup'?'#82acb3':type==='festival-stage'?'#cb967d':'#bea786';
  return <group position={[x,0,z]}>
   <mesh receiveShadow position-y={.09}><cylinderGeometry args={[2.3,2.3,.18,12]}/><meshStandardMaterial color={base}/></mesh>
@@ -83,7 +86,7 @@ function RemoteZone({district,quality,pose,states}:{district:TownDistrict;qualit
   {houses.map(h=><DistrictCottage key={h.id} site={h}/>)}
   <DistrictTrees district={district} quality={quality}/>
   <TownWindGrass district={district} quality={quality}/>
-  {activity&&<ActivityStation x={activity.x} z={activity.z} type={activity.id} recent={Boolean(states[activity.objectId]?.usedAt&&Date.now()-states[activity.objectId].usedAt<activity.cooldownMs)}/>}
+  {activity&&<ActivityStation x={activity.x} z={activity.z} type={activity.id} usedAt={states[activity.objectId]?.usedAt??0} cooldownMs={activity.cooldownMs}/>}
   {district.id==='festival'&&<FestivalPlatform x={district.x} z={district.z}/>}
   {district.id==='harbor'&&<group position={[district.x,0,district.z+20]}>
     <TownStylizedWater x={0} y={.015} z={0} width={95} depth={13}/>
