@@ -1,12 +1,15 @@
 # CTRL — REA-Assisted Public World Polish (execution order)
 
+> **13 October 2026 scope upgrade:** Read [REA_IMVU_SINGLE_TARGET.md](REA_IMVU_SINGLE_TARGET.md) before touching code. **It supersedes the P0/P1/P2 limited-town wording below.** The current ~64×61 shared square is not enough. The release target is one large connected, six-or-more-district, playable social world, with server-validated travel, interactive gameplay in each district, synchronized two-player social actions, home visits, mobile streaming/LOD and screenshots from distant districts. REA deeply examines ONE legally accessible reference, IMVU Web 3D Rooms, for both **map/room architecture and gameplay**, then CTRL implements a coherent original equivalent. No “more props around plaza” shortcut and no claim that REA has actually run yet.
+
+
 **Status:** prepared handoff; this document does **not** claim that REA was installed, that Heartopia was inspected, or that a new game build was released.
 
 **Source branch:** `feat/public-world-real-neighborhood` (PR #26, itself layered on Public World PR #25). This handoff branch contains its code plus instructions. Do not work on `main`, `work/master-integration`, `work/integration`, PR #24's cottage branch, or other workers' branches.
 
 ## Mission, in one line
 
-Make CTRL's **Public World** feel like a coherent, populated, explorable, cozy 3D multiplayer neighborhood, not a sparse canvas with NPCs and scattered props. Use REA to inspect **CTRL's own authorized JavaScript/web runtime** and diagnose flow/render issues; use publicly available gameplay footage and permissioned observation for inspiration, but implement original mechanics, art, and code. **Deliver and verify changes**; do not stop at a report.
+Make CTRL's **Public World** an expansive, populated, explorable, **multi-district** 3D social multiplayer game, not a tiny square or sparse canvas with NPCs and scattered props. Implement ALL relevant player-facing social game loops observed from one reference, with independent original code, assets, actual gameplay and full world coverage. Use REA to observe IMVU Web 3D Rooms where legitimately accessible and inspect CTRL's own authorized runtime to diagnose behavior and rendering. Follow the ONE-reference evidence-to-implementation matrix and complete-map acceptance in `docs/REA_IMVU_SINGLE_TARGET.md`; use public documentation for inaccessible target behavior, without inventing findings. **Deliver and verify changes**; do not stop at a report.
 
 ## Non-negotiable product flow
 
@@ -81,21 +84,21 @@ Log findings in `docs/qa/REA_PUBLIC_WORLD_FINDINGS.md` with:
 
 ### 2. Implement three user-visible improvements
 
-**P0: A world, not a blank floor**
-- Preserve the new town streets, plaza, six neighborhood homes, storefronts, waterfront, two bridges, terrain silhouettes, foliage and landmark from PR #26.
+**P0: FULL multi-district world, not a blank floor or one town square**
+- Use the PR #26 square as only the **spawn district**. Expand to 6+ distinct, connected, genuinely traversable and visibly different districts, initial target ~300×300 metres (subject to performance). Every district needs original scenery, landmarks, routes, one real activity and space for multiple live players.
 - Fix remaining obvious seams: floating facades and signage, incorrect waterbank collisions, harsh/unlit instanced materials, empty horizons, poor depth/composition, and excessive UI overlays.
 - Improve environment structure with recognizable destinations: a central square, café/market, garden, waterfront/bridges, residential paths. Prefer instancing and existing legal/CC0 assets to expensive downloads.
 - The exact same footprint/bounds rules must run server-side and client-side. No new free-walk boundaries for personal Habitat.
 
-**P1: Game feel and living environment**
+**P1: Complete observed social gameplay and living environment across ALL districts**
 - Refine R3F third-person camera follow, orbit/pitch, zoom and collision-aware movement for mouse + touch. Character remains visible and roads/landmarks are legible on both desktop and mobile.
 - Add low-cost ambience, such as deterministic NPC activity loops, sitting/walking/waving, subtle water/wind/foliage or interactable benches and existing authorized audio. NPC activity is **not** faked as online users.
-- Keep real multiplayer chat bubbles/waves responsive and preserve the real player-count source of truth. Do not build a second multiplayer stack.
+- Keep real multiplayer chat bubbles/waves responsive and preserve the real player-count source of truth. Add mutual-consent synchronized pair/group action and interactive gathering loops; keep server authoritative. Do not build a second multiplayer stack.
 
-**P2: Game-first UI and visit flow**
+**P2: Map travel, game-first UI and fully working social/visit flow**
 - Preserve **Common Ground / Habitat / Public World** navigation. No separate Join Multiplayer button.
 - Compact responsive game HUD and clear world name; leave enough visible 3D viewport on iPhone-sized screens; avoid double header.
-- Public World directory opens real habitat list and respects invite/public/private-world permissions.
+- Public World directory opens real habitat list and respects invite/public/private-world permissions. Add navigable multi-district map/destination interface and safe server-authorized short-distance or district travel so a large world is enjoyable.
 - A user can travel from public world to their own habitat and back without losing character/profile or corrupting world state.
 
 ### 3. Proof gates, not checkbox theatre
@@ -110,7 +113,7 @@ pnpm exec playwright test --config playwright.public-world.config.ts
 pnpm build:next
 ```
 
-At the **final commit SHA**, capture and inspect *actual browser-produced* 1440x900 desktop and ~390x844 mobile screenshots; store paths/CI artifact links in findings. Tests must reject an empty/unlit scene, black shader tiles, giant HUD occlusion and uncaught WebGL exceptions. Check real walkability across both bridges, central plaza and building footprints. Complete a two-wallet signed presence/chat/wave scenario and one visit to a permitted/denied home. Preserve all original wallet/access-control tests.
+At the **final commit SHA**, capture and inspect *actual browser-produced* 1440x900 desktop and ~390x844 mobile screenshots of the center AND 3+ remote districts; store paths/CI artifact links in findings. Test live player synchronization, consent-based actions, server-validated travel and district-specific activities. No sign-off from central-plaza screenshots alone. Tests must reject an empty/unlit scene, black shader tiles, giant HUD occlusion and uncaught WebGL exceptions. Check real walkability across both bridges, central plaza and building footprints. Complete a two-wallet signed presence/chat/wave scenario and one visit to a permitted/denied home. Preserve all original wallet/access-control tests.
 
 Record at least a basic performance observation on a low-power mobile profile; do not claim a measured device FPS or Heartopia quality without actual evidence. Reduce detail before adding heavy models if performance regresses. If an assertion passes but the screenshot is visibly bad, **fix the visual** and rerun.
 
@@ -121,7 +124,7 @@ Produce **code changes** plus:
 2. PR `feat/rea-world-polish-execution` into `feat/public-world-real-neighborhood`, or the exact integration branch that currently contains PR #25/#26 after reconciliation. Include visual evidence and all CI results.
 3. Handoff instruction to release owner: merge after full combined CI, then deploy tested SHA via authorized staging/Sites workflow, then smoke test with two real signing wallets. Do **not** announce live deployment solely from PR merge.
 
-**Definition of done:** not merely “REA installed” or “100 new objects.” A signed player entering `/public-world` experiences a legible, inhabited, **navigable world** with clear destinations, smooth controllable avatar, usable social interactions and a mobile HUD that does not bury the view. Automated browser QA and actual screenshots demonstrate it.
+**Definition of done:** not merely “REA installed,” “100 new objects,” or a bigger empty landscape. Two signed players independently enter `/public-world`, traverse 6+ real playable districts, execute meaningful social activities together with synchronized action, travel/visit authorized homes, and see responsive original map and NPC life on mobile. Screenshots of distant districts, network/backend security checks, and full Playwright journey prove it. Automated browser QA and actual screenshots demonstrate it.
 
 ## Stop conditions
 
