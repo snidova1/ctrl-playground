@@ -1,4 +1,5 @@
 'use client';
+import {TOWN_PALETTE as P} from './town-palette';
 import {useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
 import {useFrame} from '@react-three/fiber';
 import {Html} from '@react-three/drei';
@@ -32,7 +33,7 @@ const LAMPS:[number,number][]= [
  [-24,-12],[-12,-12],[12,-12],[25,-12],
  [-3,23],[3,23],[-20,28],[20,28],
 ];
-const ROOT_COLORS=['#477d5d','#668b57','#77985f','#507a69','#8ca66b'];
+const ROOT_COLORS=P.foliage;
 const leafSeeds=[...Array.from({length:72},(_,i)=>{
  const side=i%4;
  const p=i%18;
@@ -72,7 +73,7 @@ function RaisedGround(){
  },[]);
  return <>
   <mesh rotation-x={-Math.PI/2} position-y={-.1} receiveShadow><planeGeometry args={[150,150]}/><meshStandardMaterial map={grass} roughness={1}/></mesh>
-  <mesh rotation-x={-Math.PI/2} position={[0,-.065,-19.5]}><planeGeometry args={[78,5]}/><meshStandardMaterial color='#75bdc8' roughness={.22} metalness={.05}/></mesh>
+  <mesh rotation-x={-Math.PI/2} position={[0,-.065,-19.5]}><planeGeometry args={[78,5]}/><meshStandardMaterial color={P.water} roughness={.22} metalness={.05}/></mesh>
   {/* Both quays have visible stone retaining walls and a safe road behind them. */}
   {[-16.7,-22.3].flatMap(z=>quays.map(quay=><group key={`${z}:${quay.x}`}>
    <mesh position={[quay.x,-.05,z]} receiveShadow><boxGeometry args={[quay.width,.38,.65]}/><meshStandardMaterial color='#c9b9a0'/></mesh>
@@ -85,10 +86,10 @@ function RaisedGround(){
   <mesh rotation-x={-Math.PI/2} position={[0,.025,1.5]} receiveShadow><circleGeometry args={[7.8,64]}/><meshStandardMaterial map={stone} roughness={1}/></mesh>
   {/* Slightly raised riverside grass behind the cottages makes the silhouette non-flat. */}
   {[[-39,-40,12,7],[-6,-46,22,10],[34,-42,15,8],[-50,22,18,9],[49,26,19,11]].map(([x,z,w,h],i)=>
-   <mesh key={i} position={[x,-h*.32,z]} scale={[w,h,w*.6]}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial color={i%2?'#749e75':'#84ad82'} roughness={1}/></mesh>)}
+   <mesh key={i} position={[x,-h*.32,z]} scale={[w,h,w*.6]}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial color={i%2?P.shutter:P.sage} roughness={1}/></mesh>)}
   {/* Curving distant ridge silhouettes create depth even without downloadable assets. */}
   {[-55,-37,-18,5,25,49].map((x,i)=>
-   <mesh key={i} position={[x,-7,-66]} scale={[20,14+(i%3)*3,14]}><sphereGeometry args={[1,16,10]}/><meshStandardMaterial color={i%2?'#92b6a5':'#a0beaf'} roughness={1}/></mesh>)}
+   <mesh key={i} position={[x,-7,-66]} scale={[20,14+(i%3)*3,14]}><sphereGeometry args={[1,16,10]}/><meshStandardMaterial color={i%2?P.shutter:P.grass} roughness={1}/></mesh>)}
  </>;
 }
 function Bridge({x}:{x:number}){
@@ -104,10 +105,10 @@ function Bridge({x}:{x:number}){
 type House=typeof PUBLIC_WORLD_BUILDINGS[number];
 function TownFountain(){
  return <group position={[0,0,-3]}>
-  <mesh castShadow receiveShadow position-y={.42}><cylinderGeometry args={[2.25,2.05,.84,24]}/><meshStandardMaterial color='#d4c4a9' roughness={.85}/></mesh>
-  <mesh position-y={.87}><cylinderGeometry args={[1.96,1.96,.08,32]}/><meshStandardMaterial color='#72bdc7' metalness={.12} roughness={.2}/></mesh>
-  <mesh rotation-x={-Math.PI/2} position-y={.93}><torusGeometry args={[2.02,.1,8,32]}/><meshStandardMaterial color='#f1e4cc'/></mesh>
-  <mesh castShadow position-y={1.4}><cylinderGeometry args={[.34,.48,1.1,12]}/><meshStandardMaterial color='#f0e2c8'/></mesh>
+  <mesh castShadow receiveShadow position-y={.42}><cylinderGeometry args={[2.25,2.05,.84,24]}/><meshStandardMaterial color={P.pot} roughness={.85}/></mesh>
+  <mesh position-y={.87}><cylinderGeometry args={[1.96,1.96,.08,32]}/><meshStandardMaterial color={P.water} metalness={.12} roughness={.2}/></mesh>
+  <mesh rotation-x={-Math.PI/2} position-y={.93}><torusGeometry args={[2.02,.1,8,32]}/><meshStandardMaterial color={P.cream}/></mesh>
+  <mesh castShadow position-y={1.4}><cylinderGeometry args={[.34,.48,1.1,12]}/><meshStandardMaterial color={P.trim}/></mesh>
   <mesh castShadow position-y={2.04}><sphereGeometry args={[.52,12,8]}/><meshStandardMaterial color='#d8d0b7'/></mesh>
   {[-1,1].map(side=><mesh key={side} position={[side*.85,1.24,0]} rotation-z={side*.45}>
    <coneGeometry args={[.15,.95,8]}/><meshStandardMaterial color='#b5dde2' transparent opacity={.72}/>
@@ -128,11 +129,11 @@ function TownHouse({site,quality}:{site:House;quality:'low'|'high'}){
  const roof=useMemo(()=>new Shape().moveTo(-w/2-.4,0).lineTo(0,1.65).lineTo(w/2+.4,0).closePath(),[w]);
  return <group position={[site.x,0,site.z]}>
   <GroundShadow width={w+3} depth={d+3}/>
-  <mesh castShadow={quality==='high'} receiveShadow position-y={2.06}><boxGeometry args={[w,4.12,d]}/><meshStandardMaterial color={site.color} roughness={1}/></mesh>
+  <mesh castShadow={quality==='high'} receiveShadow position-y={2.06}><boxGeometry args={[w,4.12,d]}/><meshStandardMaterial color={site.name==='ART STUDIO'?P.wall:P.cream} roughness={1}/></mesh>
   {/* Closed gable: no inverted slopes or open daylight seam at the ridge. */}
-  <mesh castShadow={quality==='high'} position={[0,4.08,-d/2-.4]}><extrudeGeometry args={[roof,{depth:d+.8,bevelEnabled:false}]}/><meshStandardMaterial color={site.roof} roughness={.96}/></mesh>
+  <mesh castShadow={quality==='high'} position={[0,4.08,-d/2-.4]}><extrudeGeometry args={[roof,{depth:d+.8,bevelEnabled:false}]}/><meshStandardMaterial color={P.terracotta} roughness={.96}/></mesh>
   <mesh position={[w*.27,5.3,-d*.22]}><boxGeometry args={[.65,1.3,.65]}/><meshStandardMaterial color='#cfae90'/></mesh>
-  <mesh position={[0,1.3,d/2+.12]}><boxGeometry args={[1.18,2.35,.12]}/><meshStandardMaterial color='#7e9b80'/></mesh>
+  <mesh position={[0,1.3,d/2+.12]}><boxGeometry args={[1.18,2.35,.12]}/><meshStandardMaterial color={P.sage}/></mesh>
   <mesh position={[0,1.42,d/2+.2]}><boxGeometry args={[.04,.09,.06]}/><meshStandardMaterial color='#f8d58a' emissive='#efbc5e' emissiveIntensity={.35}/></mesh>
   {[-w*.29,w*.29].map((x,i)=><group key={i}>
    <mesh position={[x,2.4,d/2+.10]}><boxGeometry args={[1.25,1.4,.15]}/><meshStandardMaterial color='#fff0c8' emissive='#e3ad66' emissiveIntensity={.28}/></mesh>
@@ -144,8 +145,8 @@ function TownHouse({site,quality}:{site:House;quality:'low'|'high'}){
   {[-w/2+.13,w/2-.13].map(x=><mesh key={x} position={[x,2.06,d/2+.08]}><boxGeometry args={[.22,4.12,.18]}/><meshStandardMaterial color='#f7e8ca'/></mesh>)}
   <mesh position={[0,4.12,d/2+.42]}><boxGeometry args={[w+.85,.16,.18]}/><meshStandardMaterial color='#f8e7ce'/></mesh>
   {[-w*.29,w*.29].map(x=><group key={x} position={[x,0,d/2+.26]}>
-   {[-.83,.83].map(dx=><mesh key={dx} position={[dx,2.4,0]}><boxGeometry args={[.32,1.48,.14]}/><meshStandardMaterial color='#7e9a85'/></mesh>)}
-   <mesh position={[0,1.51,.12]}><boxGeometry args={[1.5,.28,.42]}/><meshStandardMaterial color='#8d9d76'/></mesh>
+   {[-.83,.83].map(dx=><mesh key={dx} position={[dx,2.4,0]}><boxGeometry args={[.32,1.48,.14]}/><meshStandardMaterial color={P.shutter}/></mesh>)}
+   <mesh position={[0,1.51,.12]}><boxGeometry args={[1.5,.28,.42]}/><meshStandardMaterial color={P.sage}/></mesh>
    {[-.5,0,.5].map((dx,i)=><mesh key={dx} position={[dx,1.76,.15]}><sphereGeometry args={[.21,8,6]}/><meshStandardMaterial color={i%2?'#e9b6ac':'#f3d98d'}/></mesh>)}
   </group>)}
   <mesh position={[0,3.72,d/2+.22]}><boxGeometry args={[Math.min(w-1,4.9),.48,.27]}/><meshStandardMaterial color='#f5ead5'/></mesh>
@@ -161,7 +162,7 @@ function MarketFront({x,name,base,roof}:{x:number;name:string;base:string;roof:s
   <mesh position={[0,4.57,2.22]}><boxGeometry args={[9.5,.16,.2]}/><meshStandardMaterial color='#f6e9d2'/></mesh>
   {[-4.35,4.35].map(side=><mesh key={side} position={[side,2.3,1.99]}><boxGeometry args={[.24,4.6,.19]}/><meshStandardMaterial color='#f7ead0'/></mesh>)}
   {[-2.7,0,2.7].map(x=><group key={x}>
-   <mesh position={[x,2.3,1.96]}><boxGeometry args={[1.9,2.3,.1]}/><meshStandardMaterial color='#759fa3' roughness={.3}/></mesh>
+   <mesh position={[x,2.3,1.96]}><boxGeometry args={[1.9,2.3,.1]}/><meshStandardMaterial color={P.forest} roughness={.3}/></mesh>
    <mesh position={[x,2.7,2.08]}><boxGeometry args={[.08,2.2,.13]}/><meshStandardMaterial color='#e2d2b6'/></mesh>
   </group>)}
   {Array.from({length:9},(_,i)=><group key={i}>
@@ -174,17 +175,17 @@ function MarketFront({x,name,base,roof}:{x:number;name:string;base:string;roof:s
 }
 function TownLantern({x,z}:{x:number;z:number}){
  return <group position={[x,0,z]}>
-  <mesh castShadow position-y={1.55}><cylinderGeometry args={[.065,.1,3.1,7]}/><meshStandardMaterial color='#556d5b'/></mesh>
+  <mesh castShadow position-y={1.55}><cylinderGeometry args={[.065,.1,3.1,7]}/><meshStandardMaterial color={P.forest}/></mesh>
   <mesh position-y={3.22}><boxGeometry args={[.75,.54,.75]}/><meshStandardMaterial color='#f9dba0' emissive='#e6b974' emissiveIntensity={.32}/></mesh>
-  <mesh position-y={3.62}><coneGeometry args={[.57,.46,4]}/><meshStandardMaterial color='#53735f'/></mesh>
+  <mesh position-y={3.62}><coneGeometry args={[.57,.46,4]}/><meshStandardMaterial color={P.forest}/></mesh>
  </group>;
 }
 function Planter({x,z,i}:{x:number;z:number;i:number}){
  return <group position={[x,0,z]}>
   <mesh castShadow position-y={.28}><cylinderGeometry args={[.46,.36,.56,8]}/><meshStandardMaterial color={i%2?'#c38a72':'#e0b38f'}/></mesh>
-  <mesh position-y={.84}><icosahedronGeometry args={[.63,1]}/><meshStandardMaterial color={i%3===0?'#6a996f':'#82aa72'}/></mesh>
+  <mesh position-y={.84}><icosahedronGeometry args={[.63,1]}/><meshStandardMaterial color={P.foliage[i%P.foliage.length]}/></mesh>
   {[0,1,2].map(j=><mesh key={j} position={[Math.sin(j*2.5)*.34,1.26,Math.cos(j*2.5)*.32]}>
-   <icosahedronGeometry args={[.17,0]}/><meshStandardMaterial color={['#e7b5a2','#efdc8b','#d6bbd9'][(i+j)%3]}/>
+   <icosahedronGeometry args={[.17,0]}/><meshStandardMaterial color={P.blossoms[(i+j)%P.blossoms.length]}/>
   </mesh>)}
  </group>;
 }
@@ -238,14 +239,14 @@ export default function TownScenery({quality,onDirectory}:{quality:'low'|'high';
   {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site} quality={quality}/>)}
   <TownFountain/>
   <CanalBoat x={-12} color='#b78c70'/><CanalBoat x={12} color='#82a495'/>
-  <MarketFront x={-8} name='WILLOW CAFÉ' base='#f0d8b5' roof='#86a084'/>
-  <MarketFront x={8} name='FLOWER MARKET' base='#e7c5ab' roof='#b98574'/>
+  <MarketFront x={-8} name='WILLOW CAFÉ' base={P.cream} roof={P.sage}/>
+  <MarketFront x={8} name='FLOWER MARKET' base={P.wall} roof={P.terracotta}/>
   <LifestyleProps quality={quality}/>
   {/* Existing server-owned models provide the interactable fountain and shops.
       This facade surrounds them with streets, districts and actual landmarks. */}
   <group position={[2.4,0,6]}>
    <mesh position-y={.8}><boxGeometry args={[.12,1.6,.12]}/><meshStandardMaterial color='#86745c'/></mesh>
-   <mesh position-y={1.65}><boxGeometry args={[1.7,.55,.14]}/><meshStandardMaterial color='#e8e8cc'/></mesh>
+   <mesh position-y={1.65}><boxGeometry args={[1.7,.55,.14]}/><meshStandardMaterial color={P.cream}/></mesh>
    <Html transform center occlude position={[0,1.65,.09]} distanceFactor={5} zIndexRange={[5,0]}><button className='hb-directory' onClick={onDirectory}>Visit habitats ↗</button></Html>
   </group>
   {Array.from({length:quality==='low'?2:4},(_,i)=><Resident key={i} index={i}/>)}

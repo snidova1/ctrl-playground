@@ -1,4 +1,5 @@
 'use client';
+import {TOWN_PALETTE as P} from './town-palette';
 import {useLayoutEffect,useRef} from 'react';
 import {useFrame} from '@react-three/fiber';
 import {Color,Group,InstancedMesh,Matrix4} from 'three';
@@ -7,7 +8,7 @@ import {GroundShadow} from './town-surfaces';
 const BEDS=[[-10,2,3.1],[10,2,3.1],[-5.8,7,1.5],[5.8,7,1.5],[-17,16,2.8],[17,16,2.8],[-7,24,2.5],[7,24,2.5]];
 const FLOWERS=BEDS.flatMap(([x,z,r],b)=>Array.from({length:38},(_,i)=>{
  const angle=i*2.39996,radius=Math.sqrt((i+.5)/38)*r;
- return {x:x+Math.cos(angle)*radius,z:z+Math.sin(angle)*radius,y:.38+(i%5)*.08,color:['#ecb6ae','#f0d68d','#d1b6de','#f5eee0'][(i+b)%4]};
+ return {x:x+Math.cos(angle)*radius,z:z+Math.sin(angle)*radius,y:.38+(i%5)*.08,color:P.blossoms[(i+b)%P.blossoms.length]};
 }));
 /** Original instanced garden planting; decorative, never new walk blockers. */
 export function TownGardens(){
@@ -29,12 +30,12 @@ export function TownGardens(){
  },[]);
  return <group>
   {BEDS.map(([x,z,r])=><group key={`${x}:${z}`} position={[x,0,z]}>
-   <mesh position-y={-.01}><cylinderGeometry args={[r+.25,r+.25,.08,32]}/><meshStandardMaterial color='#739e65'/></mesh>
-   <mesh position-y={.01} rotation-x={-Math.PI/2}><torusGeometry args={[r+.2,.09,5,48]}/><meshStandardMaterial color='#e0dbc0'/></mesh>
-   {Array.from({length:8},(_,i)=>{const angle=i*Math.PI/4;return <mesh key={i} position={[Math.cos(angle)*r*.8,.18,Math.sin(angle)*r*.8]} scale={[.6,.28,.6]}><sphereGeometry args={[1,10,6]}/><meshStandardMaterial color={i%2?'#8eb17c':'#779e71'}/></mesh>;})}
+   <mesh position-y={-.01}><cylinderGeometry args={[r+.25,r+.25,.08,32]}/><meshStandardMaterial color={P.grass}/></mesh>
+   <mesh position-y={.01} rotation-x={-Math.PI/2}><torusGeometry args={[r+.2,.09,5,48]}/><meshStandardMaterial color={P.pot}/></mesh>
+   {Array.from({length:8},(_,i)=>{const angle=i*Math.PI/4;return <mesh key={i} position={[Math.cos(angle)*r*.8,.18,Math.sin(angle)*r*.8]} scale={[.6,.28,.6]}><sphereGeometry args={[1,10,6]}/><meshStandardMaterial color={i%2?P.sage:P.shutter}/></mesh>;})}
   </group>)}
-  <instancedMesh ref={leaves} args={[undefined,undefined,FLOWERS.length]}><sphereGeometry args={[1,6,4]}/><meshStandardMaterial color='#568856' roughness={1}/></instancedMesh>
-  <instancedMesh ref={stems} args={[undefined,undefined,FLOWERS.length]}><cylinderGeometry args={[1,1,1,5]}/><meshStandardMaterial color='#568856' roughness={1}/></instancedMesh>
+  <instancedMesh ref={leaves} args={[undefined,undefined,FLOWERS.length]}><sphereGeometry args={[1,6,4]}/><meshStandardMaterial color={P.forest} roughness={1}/></instancedMesh>
+  <instancedMesh ref={stems} args={[undefined,undefined,FLOWERS.length]}><cylinderGeometry args={[1,1,1,5]}/><meshStandardMaterial color={P.forest} roughness={1}/></instancedMesh>
   <instancedMesh ref={petals} args={[undefined,undefined,FLOWERS.length*5]}><sphereGeometry args={[1,6,4]}/><meshStandardMaterial roughness={.85}/></instancedMesh>
   {[[-10,-1],[10,-1],[-17,15],[17,15]].map(([x,z],i)=><GardenTree key={i} x={x} z={z} pink={i===0}/>)}
   <Butterflies/>
@@ -48,7 +49,7 @@ function GardenTree({x,z,pink}:{x:number;z:number;pink:boolean}){
   <GroundShadow width={5} depth={5}/>
   <mesh position-y={1.5}><cylinderGeometry args={[.18,.31,3,9]}/><meshStandardMaterial color='#8c7257'/></mesh>
   {[[0,3.2,0,1.45],[-.85,2.85,.2,1.1],[.9,3.05,.3,1.1],[.1,3.9,-.15,1.05]].map(([dx,y,dz,r],i)=><mesh key={i} position={[dx,y,dz]} scale={[1,.83,1]}>
-   <sphereGeometry args={[r,16,10]}/><meshStandardMaterial color={pink?['#d6a9b0','#e0b6bb','#cd9ea9','#e7c0bd'][i]:['#7da877','#8ab67f','#6d9b70','#98be87'][i]} roughness={1}/>
+   <sphereGeometry args={[r,16,10]}/><meshStandardMaterial color={P.foliage[(i+(pink?1:0))%P.foliage.length]} roughness={1}/>
   </mesh>)}
  </group>;
 }
