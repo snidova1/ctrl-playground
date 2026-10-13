@@ -15,6 +15,7 @@ import {TOWN_HILLS,townTerrainHeight} from './town-terrain';
 import {createCharacterMotion,resolveCharacter,seededAppearance} from '@/features/plaza/characters/catalog';
 import VrmAvatar from '@/features/plaza/characters/vrm-avatar';
 import type {Pose} from '@/features/plaza/types';
+import type {WorldState} from './types';
 import type {MutableRefObject} from 'react';
 import TownExpandedDistricts from './town-expanded-districts';
 import TownStylizedWater from './town-stylized-water';
@@ -121,9 +122,9 @@ function WaterfrontRipples(){
   <planeGeometry args={[1.2+(i%3)*.4,.065]}/><meshBasicMaterial color='#d4eeea' transparent opacity={.45} depthWrite={false}/>
  </mesh>)}</group>;
 }
-export default function TownScenery({quality,onDirectory,pose}:{quality:'low'|'high';onDirectory:()=>void;pose:MutableRefObject<Pose>}){
+export default function TownScenery({quality,onDirectory,pose,states}:{quality:'low'|'high';onDirectory:()=>void;pose:MutableRefObject<Pose>;states:WorldState['states']}){
  return <group>
-  <TownExpandedDistricts pose={pose} quality={quality}/>
+  <TownExpandedDistricts pose={pose} quality={quality} states={states}/>
   <RaisedGround/>
   <WaterfrontRipples/>
   <TownGardens quality={quality}/>
