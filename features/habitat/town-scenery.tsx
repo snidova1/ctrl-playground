@@ -17,6 +17,7 @@ import VrmAvatar from '@/features/plaza/characters/vrm-avatar';
 import type {Pose} from '@/features/plaza/types';
 import type {MutableRefObject} from 'react';
 import TownExpandedDistricts from './town-expanded-districts';
+import TownStylizedWater from './town-stylized-water';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_BRIDGES,PUBLIC_WORLD_BRIDGE} from './public-world-geography';
 import {residentPose} from './town-residents';
 
@@ -60,7 +61,7 @@ function RaisedGround(){
  },[]);
  return <>
   <mesh rotation-x={-Math.PI/2} position-y={-.1} receiveShadow><planeGeometry args={[150,150]}/><meshStandardMaterial map={grass} roughness={1}/></mesh>
-  <mesh rotation-x={-Math.PI/2} position={[0,-.065,-19.5]}><planeGeometry args={[78,5]}/><meshStandardMaterial color={P.water} roughness={.22} metalness={.05}/></mesh>
+  <TownStylizedWater x={0} y={-.065} z={-19.5} width={78} depth={5}/>
   {/* Both quays have visible stone retaining walls and a safe road behind them. */}
   {[-16.7,-22.3].flatMap(z=>quays.map(quay=><group key={`${z}:${quay.x}`}>
    <mesh position={[quay.x,-.05,z]} receiveShadow><boxGeometry args={[quay.width,.38,.65]}/><meshStandardMaterial color='#c9b9a0'/></mesh>
