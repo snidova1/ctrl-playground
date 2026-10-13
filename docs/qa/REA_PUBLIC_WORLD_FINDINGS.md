@@ -1,5 +1,73 @@
 # REA-assisted Public World implementation evidence
 
+## Garden visual follow-up — 2026-10-13
+
+This section supersedes the earlier visual checkpoint, not its historical test record. Branch `feat/public-world-garden-life` starts at PR #28's exact head `2d25912d01cd986ce5a28ea26fc53dcbeb27efbe`. Tested renderer/code commit: **`bb3be94e090646de452905a9edcfad4f16c81707`**. The subsequent evidence-only commit adds this report and unretouched PNGs; it does not change the renderer. No main/production mutation or deployment.
+
+### REA was actually used on the owned runtime
+
+Read upstream `morluto/rea` README and `docs/browser-observation.md`, verified npm release/help, and used the shipped **6.4.0 passive CDP provider** against our loopback Chromium at `http://127.0.0.1:9334`, with only the isolated CTRL origin `http://127.0.0.1:3188`. This is a supported attach-only workflow, not a bypass of the earlier source-analyzer process-ownership failure. REA did not drive the app or generate art: Playwright owned the browser, local database, and synthetic wallet sign-in. REA discovered the owned target, inspected its page/runtime metadata, and captured content-addressed screenshot artifacts.
+
+Reproducible entry point:
+
+```bash
+pnpm build:next
+CTRL_CHROMIUM_PATH=/path/to/chromium node --import tsx scripts/qa/rea-town-observe.ts outputs/rea-final-garden
+```
+
+`node --import tsx` is the module-loader entry point; the CLI's optional IPC socket is unavailable in this host. REA setup did not alter agent configuration. Full evidence stays in ignored outputs, not Git; the checked-in images contain only the synthetic game session.
+
+Final observation **2026-10-13T07:33:25.664Z**, clean source `bb3be94...`, no uncaught page errors:
+
+| REA operation | Evidence ID |
+| --- | --- |
+| `list-browser-targets` | `ev_7ebd3625f45e973786b114f75e4d41d10f63209108f89d5d21c8a299a7972314` |
+| `inspect-web-page --observation-ms 1000` | `ev_6d6a60133c65b76b9cfc9ed4a2d9e3025f7fe4ee984a3a5d9e51cb0f8706c95c` |
+| Desktop capture | `ev_3f66757b7a8b4a2af02613dc08b466135c982c061ef9b1a16758b357ed3b4d5a` |
+| Mobile-sized capture | `ev_150bd4b6d6b707e0aa01e405de784d87524cbe393994ce178f6f772e5aa9948a` |
+
+### Observed visual defects and actual implementation
+
+The baseline screenshot shows a large sparse beige tile field, box storefronts, dark gray café annex, small avatar and isolated polygonal trees. These are screenshot observations; REA does not automatically explain their artistic causes. Source inspection mapped them to the oversized plaza, sparse box-tile instancing, imported town kit, far camera and flat façades.
+
+| Source change | Visible outcome / boundary |
+| --- | --- |
+| `town-surfaces.tsx` + town-only `stage.tsx` guard | Original painted stone/grass maps, shared radial contact texture, moving avatar/NPC foot shadows, cream/teal café kit. Original kit AABBs, scale, rotations and interactions retained. Common Ground and personal Habitat use their unchanged assets/materials. |
+| `town-scenery.tsx` | Circular town square replaces the 29×16 beige slab; continuous, scale-correct pavers replace sparse raised tiles. Shops have closed gable roofs, striped valances and teal glazing; homes gain shutters, corner trim and flower boxes. Existing six house and two shop footprints, canal and both bridge collision rules are unchanged. |
+| `town-gardens.tsx` | Eight planted garden beds, instanced stems/leaves/petals, rounded shrubs, layered pink/green trees, original clouds and deterministic fluttering butterflies. Decorative planting creates no new collision/network objects or fake users. |
+| Public-World-only controller initialization | Follow distance 9.2 desktop / 8.8 narrow viewport, pitch .30; original orbit, pinch, obstacle shortening and movement path retained. Other destinations retain their original camera initialization. |
+
+Textures, geometry and animations are original code. Existing approved VRoid and CC0 furniture remain. Public Heartopia references were consulted for high-level garden/cottage composition ([official publisher site](https://heartopia.xd.com/), [publisher Steam listing](https://store.steampowered.com/app/4025700/Heartopia/)); no proprietary binaries, shaders, textures, models or protocols were extracted. **This is not a claim of reconstructed Heartopia internals or equivalent production art quality.**
+
+### Real render proof
+
+REA captured both baseline and implemented images at 1440×900 and 390×844. Mobile REA capture is a resized Chromium viewport of the signed session, not a physical phone. Separate browser tests cold-start the actual mobile-emulated touch context. Character palettes vary by normal randomization; images are not edited.
+
+| | Desktop | Mobile-sized |
+| --- | --- | --- |
+| Before (PR #28) | [PNG](garden-evidence/before-desktop.png) | [PNG](garden-evidence/before-mobile.png) |
+| After | [PNG](garden-evidence/after-desktop.png) | [PNG](garden-evidence/after-mobile.png) |
+
+![Actual REA-captured desktop render](garden-evidence/after-desktop.png)
+
+![Actual REA-captured mobile-sized render](garden-evidence/after-mobile.png)
+
+### Verification
+
+- Preflight PASS; no dependency/lockfile edits.
+- `pnpm test`: **191/191**, 34 files PASS; wallet, API, ACL, presence and existing asset gates retained.
+- Public World targeted tests: **13/13 PASS**, including both bridges/buildings and identical signed server movement geography.
+- Typecheck and scoped ESLint including all new modules/REA script: PASS, no warnings.
+- `pnpm build:next`: PASS; known `ox/viem` dynamic-dependency warning remains.
+- Production Chromium/SwiftShader Playwright: **4/4 PASS**, no retries/skips, approximately 2.7 minutes. Keyboard/touch movement, pinch/orbit, two-wallet speech/wave, denied/permitted visits, ACL revocation, return home and profile preservation all exercised.
+- Desktop pixel diversity 185 quantized colors / 145 non-sky, near-black 0.47%, HUD 9.52%; mobile 73 / 61, near-black 2.10%, HUD 22.62%. No HUD overflow or uncaught page exceptions.
+- A 4× CPU/software-WebGL mobile observation sampled 15 frames, p50 216.7 ms / p95 366.7 ms while another independent REA render process was active. This is not a controlled before/after performance comparison or a physical-device FPS claim. Mobile hardware GPU/thermal profiling remains unverified, and the light-quality town still omits the expensive shadow pass.
+- Repeated the mobile render/input gate alone after REA closed: **1/1 PASS**, 22 sampled frames / p50 133.4 ms / p95 249.9 ms under the same 4× CPU/software-WebGL mode. This isolates simultaneous browser load but still is not physical-device FPS or a statistically controlled comparison to the earlier art checkpoint.
+
+Remaining visual limitations: mobile's narrow frontal composition reveals fewer side gardens; props remain stylized geometry, not a bespoke production-art asset pack. Hardware mobile profiling and combined release CI remain release gates. Review this follow-up against PR #28's branch, integrate in order, and run combined CI at the exact merge SHA before any authorized staging/production release.
+
+---
+
 ## Target, permission and version
 
 - Repository: `snidova1/ctrl-playground`; execution branch: `feat/rea-world-polish-execution`.
