@@ -53,3 +53,18 @@ Why not all sixteen immediately: BOOTH free downloads route through mandatory **
 ## Completion definition
 
 All 16 are *actually available in browser player picker*, each using its original authorized 3D model; full-body rotates, is visible in worlds for all players, animates, persists after re-login, and mobile runs. Signed server allowlist rejects arbitrary IDs, source credit and exact binary checksums are retained. CI, browser tests and visual screenshots pass on exact final SHA. Until the binary ingestion happens, **16/16 playable must not be claimed**.
+
+## Actual download proof — 2026-10-14
+
+**Rain v2.6 source successfully fetched** from Packt's public GitHub repository using CTRL's GitHub Action runner, after direct chat-file downloads were blocked:
+
+- Original public archive: https://github.com/PacktPublishing/Realizing-3D-Animation-in-Blender/blob/main/rain_v2_6_packt.zip
+- Run: https://github.com/snidova1/ctrl-playground/actions/runs/38467834462
+- Job: `public-rain-source`, outcome **success**.
+- GitHub artifact: `ctrl-rain-public-source`, artifact ID `11849292126`; contains ~20MB original ZIP, `SHA256SUMS.txt` and provenance.
+- SHA-256 original Rain inner ZIP: `e31659d181f4b2674958d01b9471bfecc9d7b2faf9cec404ed6d72b9d3111334`.
+- Verified inner archive contains **`rain_v2_6_packt.blend`**, approximately 7.99MB, plus source maps/textures (31 entries total).
+- Extracted into user's persistent ChatGPT Library: `/CTRL/Character_Sources/CTRL_Rain_Character_Source.zip`.
+- License: CC BY, Rain © Blender Foundation, attribution required.
+- **Not playable yet:** the `.blend` rig still must be exported/retargeted into a self-contained normalized humanoid VRM, with visual QA. The 16 new playable roster count remains **0**.
+- Other 15 sources: no authenticated original model files fetched or claimed by this note. BOOTH downloads require account sign-in. Blender Studio rig pages may also require membership/login for actual original file downloads.
