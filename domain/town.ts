@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import type {TownActivityId} from '@/features/habitat/town-districts';
+import type {TownActivityEvent,TownProjectState} from './town-projects';
 export const townSessionSchema=z.string().uuid();
 export const jobStartSchema=z.object({id:z.string().min(2).max(50),sessionId:townSessionSchema}).strict();
 export const jobFinishSchema=z.object({jobId:z.string().uuid(),sessionId:townSessionSchema}).strict();
@@ -21,4 +22,6 @@ export interface TownLifeState {
  invites:{id:string;sender:string;name:string;destination:string;expiresAt:number}[];
  social:{id:string;initiator:string;recipient:string;kind:'high-five'|'dance';acceptedAt:number;expiresAt:number}[];
  chat:{id:string;player:string;name:string;text:string;at:number}[];
+ projects:TownProjectState[];
+ history:TownActivityEvent[];
 }

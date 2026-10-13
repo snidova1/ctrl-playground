@@ -15,7 +15,7 @@ async function enterTown(page:Page,name:string){
  const verified=page.waitForResponse(r=>r.url().endsWith('/api/auth/verify')&&r.request().method()==='POST');
  await press(page,page.getByRole('button',{name:'Sign in to Habitat'}));
  expect((await verified).status()).toBe(200);
- await expect(page.getByRole('region',{name:'3D character creator'})).toBeVisible({timeout:40000});
+ await expect(page.getByRole('region',{name:'Complete character selection'})).toBeVisible({timeout:40000});
  await page.getByRole('textbox',{name:'Name',exact:true}).fill(name);
  await press(page,page.getByRole('button',{name:'Enter Public World',exact:true}));
  await expect(page.getByRole('heading',{name:'Willow Square',exact:true})).toBeVisible({timeout:45000});
@@ -63,7 +63,7 @@ test('signed player enters a rendered walkable multiplayer neighborhood, not a b
  const verified=page.waitForResponse(r=>r.url().endsWith('/api/auth/verify')&&r.request().method()==='POST');
  await press(page,page.getByRole('button',{name:'Sign in to Habitat'}));
  expect((await verified).status()).toBe(200);
- await expect(page.getByRole('region',{name:'3D character creator'})).toBeVisible({timeout:40000});
+ await expect(page.getByRole('region',{name:'Complete character selection'})).toBeVisible({timeout:40000});
  await page.getByRole('textbox',{name:'Name',exact:true}).fill('Town Traveler');
  await press(page,page.getByRole('button',{name:'Enter Public World',exact:true}));
  await expect(page.getByRole('heading',{name:'Willow Square',exact:true})).toBeVisible({timeout:45000});
@@ -298,22 +298,20 @@ test('persistent activity, friendship and consented dance work across two signed
  }finally{await peerBrowser.close();}
 });
 
-test('character creator renders modular geometry and persists it across reload',async({page})=>{
+test('complete character selection changes the rendered model and persists it across reload',async({page})=>{
  test.setTimeout(210000);
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await enterTown(page,'Wardrobe Traveler');
  await press(page,page.locator('.hb-top').getByRole('button',{name:'Settings',exact:true}));
  await press(page,page.getByRole('button',{name:'Edit character',exact:true}));
- await press(page,page.getByRole('button',{name:'Female',exact:true}));
+ await press(page,page.getByRole('button',{name:'Victoria · Free',exact:true}));
  await expect(page.locator('.hb-preview-loading')).toHaveCount(0,{timeout:60000});
  const preview=page.locator('.hb-avatar-preview canvas');
  const before=await preview.screenshot({path:test.info().outputPath('avatar-original.png'),scale:'css'});
- await page.getByRole('combobox',{name:'Hairstyle',exact:true}).selectOption('bob');
- await page.getByRole('combobox',{name:'Garment',exact:true}).selectOption('cape');
- await page.getByRole('combobox',{name:'Footwear',exact:true}).selectOption('boots');
- await page.getByRole('combobox',{name:'Accessory',exact:true}).selectOption('glasses');
+ await press(page,page.getByRole('button',{name:'Fumiriya · Free',exact:true}));
+ await expect(page.locator('.hb-preview-loading')).toHaveCount(0,{timeout:60000});
  await page.waitForTimeout(1200);
- const after=await preview.screenshot({path:test.info().outputPath('avatar-modular.png'),scale:'css'});
+ const after=await preview.screenshot({path:test.info().outputPath('avatar-fumiriya.png'),scale:'css'});
  expect(after.equals(before),'Changing wardrobe must change real rendered pixels').toBe(false);
  const saved=page.waitForResponse(r=>r.url().endsWith('/api/habitat/profile')&&r.request().method()==='POST');
  await press(page,page.getByRole('button',{name:'Save character',exact:true}));
@@ -322,6 +320,6 @@ test('character creator renders modular geometry and persists it across reload',
  await page.reload();
  await expect(page.getByRole('heading',{name:'Willow Square',exact:true})).toBeVisible({timeout:45000});
  const state=await (await page.request.get('/api/habitat/state')).json() as HabitatState;
- expect(state.profile?.appearance?.geometry).toEqual({hair:'bob',outfit:'cape',footwear:'boots',accessory:'glasses'});
+ expect(state.profile?.appearance?.characterId).toBe('vroid-fumiriya-preview');
  expect(errors).toEqual([]);
 });

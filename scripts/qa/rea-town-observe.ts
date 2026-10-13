@@ -47,8 +47,8 @@ try{
  const verified=page.waitForResponse(r=>r.url().endsWith('/api/auth/verify')&&r.request().method()==='POST');
  await page.getByRole('button',{name:'Sign in to Habitat',exact:true}).click();
  expect((await verified).status()).toBe(200);
- await expect(page.getByRole('region',{name:'3D character creator'})).toBeVisible({timeout:45000});
- await page.getByRole('button',{name:'Female',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Complete character selection'})).toBeVisible({timeout:45000});
+ await page.getByRole('button',{name:'Victoria · Free',exact:true}).click();
  await page.getByRole('textbox',{name:'Name',exact:true}).fill('REA Garden Visitor');
  await page.getByRole('button',{name:'Enter Public World',exact:true}).click();
  await expect(page.locator('.hb-title h1')).toHaveText('Willow Square',{timeout:45000});

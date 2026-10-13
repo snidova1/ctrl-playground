@@ -18,7 +18,7 @@ async function openWorld(page: Page, route = '/worlds/editor', preserveStarter =
   await expect(page.getByRole('button', {name: 'Enter Habitat', exact: true})).toBeVisible({timeout: 30000});
   await page.getByRole('textbox', {name: 'Name', exact: true}).fill('CTRL Browser Builder');
   await expect(page.locator('.hb-avatar-preview canvas')).toBeVisible({timeout: 60000});
-  await pointer(page, page.getByRole('button', {name: 'Male', exact: true}));
+  await pointer(page, page.getByRole('button', {name: 'Fumiriya · Free', exact: true}));
   await pointer(page, page.getByRole('button', {name: 'Enter Habitat', exact: true}));
   await expect(page.getByRole('button', {name: 'Build my world +'})).toBeVisible({timeout: 30000});
   const response = await page.request.get('/api/habitat/state');

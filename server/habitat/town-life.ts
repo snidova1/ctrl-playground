@@ -4,6 +4,7 @@ import {AppError} from '@/server/errors';
 import {PUBLIC_WORLD_ID} from '@/features/habitat/public-world';
 import {getTownActivity,TOWN_DISTRICTS} from '@/features/habitat/town-districts';
 import {CROP_GROW_MS,TOWN_GARDEN_BEDS,TOWN_JOB_DURATION,jobStartSchema,jobFinishSchema,gardenActionSchema,type TownLifeState} from '@/domain/town';
+import {civicContribution,readTownProjects} from './town-projects';
 
 const TTL=15000;
 type User={id:string;wallet:string};
@@ -16,7 +17,7 @@ async function nearby(user:User,session:string,x:number,z:number,now:number){
 }
 export async function readTownLife(user:string):Promise<TownLifeState>{
  const now=Date.now();
- const [progress,job,counts,garden,friends,invites,social,chat]=await Promise.all([
+ const [progress,job,counts,garden,friends,invites,social,chat,projects,history]=await Promise.all([
   one<{completed:number}>('SELECT completed FROM town_progress WHERE profile_id=?',user),
   one<TownLifeState['job']>('SELECT id,activity_id AS activityId,ready_at AS readyAt,expires_at AS expiresAt FROM town_jobs WHERE profile_id=? AND completed_at=0 AND expires_at>?',user,now),
   query<{id:string;count:number;neighbors:number}>('SELECT activity_id AS id,COUNT(*) AS count,COUNT(DISTINCT profile_id) AS neighbors FROM town_contributions GROUP BY activity_id'),
@@ -28,17 +29,21 @@ export async function readTownLife(user:string):Promise<TownLifeState>{
   query<TownLifeState['invites'][number]>(`SELECT i.id,i.sender,p.name,i.destination,i.expires_at AS expiresAt FROM town_invites i JOIN habitat_profiles p ON p.id=i.sender WHERE i.recipient=? AND i.accepted_at=0 AND i.expires_at>? AND (i.destination IN ('center','residential','garden','harbor','workshop','festival','orchard') OR EXISTS(SELECT 1 FROM habitat_worlds w WHERE w.id=i.destination AND (w.visibility='public' OR w.owner_id=? OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?)))) ORDER BY i.expires_at DESC LIMIT 20`,user,now,user,user),
   query<TownLifeState['social'][number]>('SELECT id,initiator,recipient,kind,accepted_at AS acceptedAt,expires_at AS expiresAt FROM town_social_actions WHERE (initiator=? OR recipient=?) AND expires_at>? ORDER BY created_at DESC LIMIT 10',user,user,now),
   query<TownLifeState['chat'][number]>(`SELECT c.id,c.profile_id AS player,p.name,c.text,c.created_at AS at FROM town_chat c JOIN habitat_profiles p ON p.id=c.profile_id JOIN habitat_presence s ON s.world_id=c.world_id AND s.profile_id=? JOIN habitat_worlds w ON w.id=c.world_id WHERE s.seen_at>? AND (w.visibility='public' OR w.owner_id=? OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?)) ORDER BY c.created_at DESC LIMIT 30`,user,now-TTL,user,user),
+  readTownProjects(),
+  query<TownLifeState['history'][number]>('SELECT e.id,e.kind,COALESCE(p.name,e.target) AS target,e.created_at AS at FROM town_activity_events e LEFT JOIN habitat_profiles p ON p.id=e.target WHERE e.profile_id=? ORDER BY e.created_at DESC,e.id DESC LIMIT 40',user),
  ]);
  const p=progress??{completed:0};
  return {serverNow:now,progress:p,job,
   contributions:Object.fromEntries(counts.map(c=>[c.id,{count:c.count,neighbors:c.neighbors}])),
   garden:TOWN_GARDEN_BEDS.map(b=>garden.find(g=>g.id===b.id)??{id:b.id,crop:null,plantedAt:0,wateredAt:0,revision:0}),
-  friends:friends.map(f=>({...f,incoming:!!f.incoming})),invites,social,chat:chat.reverse()};
+  friends:friends.map(f=>({...f,incoming:!!f.incoming})),invites,social,chat:chat.reverse(),projects,history};
 }
 export function recordContribution(user:User,receipt:string,activity:string,now:number){
  return [
   statement(`INSERT INTO town_contributions(id,profile_id,activity_id,created_at) SELECT ?,?,?,? WHERE changes()=1`,receipt,user.id,activity,now),
   statement(`INSERT INTO town_progress(profile_id,completed,updated_at) SELECT ?,1,? WHERE changes()=1 ON CONFLICT(profile_id) DO UPDATE SET completed=completed+1,updated_at=excluded.updated_at`,user.id,now),
+  statement(`INSERT OR IGNORE INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT id,profile_id,'completed',activity_id,created_at FROM town_contributions WHERE id=?`,receipt),
+  ...civicContribution(receipt,activity,now),
  ];
 }
 export async function townLifeAction(user:User,path:string,input:unknown):Promise<unknown>{
@@ -58,13 +63,16 @@ export async function townLifeAction(user:User,path:string,input:unknown):Promis
   const id=crypto.randomUUID();
   const result=await batch([statement(`INSERT INTO town_jobs(id,profile_id,activity_id,session_id,started_at,ready_at,expires_at)
    SELECT ?,?,?,?,?,?,? WHERE ${presenceGuard} ON CONFLICT(profile_id) DO UPDATE SET id=excluded.id,activity_id=excluded.activity_id,session_id=excluded.session_id,started_at=excluded.started_at,ready_at=excluded.ready_at,expires_at=excluded.expires_at,completed_at=0 WHERE town_jobs.completed_at>0 OR town_jobs.expires_at<=?`,
-   id,user.id,a.id,data.sessionId,now,now+TOWN_JOB_DURATION,now+120000,...guardArgs(user,data.sessionId,a.x,a.z,now),now)]);
+   id,user.id,a.id,data.sessionId,now,now+TOWN_JOB_DURATION,now+120000,...guardArgs(user,data.sessionId,a.x,a.z,now),now),
+   statement(`INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT ?,?,'started',?,? WHERE changes()=1`,crypto.randomUUID(),user.id,a.id,now)]);
   if(!result[0]?.meta.changes)throw new AppError('JOB_ALREADY_ACTIVE',409,'Finish or cancel your current job first.');
   return {message:`${a.verb}. Stay nearby while you work.`,town:await readTownLife(user.id)};
  }
  if(path==='town-job/cancel'){
   const data=jobFinishSchema.parse(input);
-  await batch([statement('DELETE FROM town_jobs WHERE id=? AND profile_id=? AND completed_at=0',data.jobId,user.id)]);
+  const job=await one<{activity_id:string}>('SELECT activity_id FROM town_jobs WHERE id=? AND profile_id=?',data.jobId,user.id);
+  await batch([statement('DELETE FROM town_jobs WHERE id=? AND profile_id=? AND completed_at=0',data.jobId,user.id),
+   statement(`INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT ?,?,'cancelled',?,? WHERE changes()=1`,crypto.randomUUID(),user.id,job?.activity_id??data.jobId,now)]);
   return {town:await readTownLife(user.id)};
  }
  if(path==='town-job/finish'){
@@ -95,7 +103,10 @@ export async function townLifeAction(user:User,path:string,input:unknown):Promis
   else claim=statement(`UPDATE town_garden SET crop=NULL,planted_at=0,watered_at=0,revision=revision+1 WHERE id=? AND revision=? AND crop IS NOT NULL AND watered_at>0 AND watered_at<=? AND ${presenceGuard}`,bed.id,data.revision,now-CROP_GROW_MS,...args);
   // Replant an existing harvested bed with its current revision.
   if(data.action==='plant'&&data.revision>0)claim=statement(`UPDATE town_garden SET crop='marigold',planted_at=?,watered_at=0,revision=revision+1 WHERE id=? AND revision=? AND crop IS NULL AND ${presenceGuard}`,now,bed.id,data.revision,...args);
-  const result=await batch([claim,...(data.action==='harvest'?recordContribution(user,crypto.randomUUID(),'community-garden',now):[])]);
+  const receipt=crypto.randomUUID();
+  const result=await batch([claim,
+   statement('INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT ?,?,?,?,? WHERE changes()=1',receipt,user.id,data.action,bed.id,now),
+   ...(data.action==='harvest'?recordContribution(user,receipt,'community-garden',now):[])]);
   if(!result[0]?.meta.changes)throw new AppError('GARDEN_CHANGED',409,'This bed changed or is still growing. Check the latest garden.');
   return {message:data.action==='harvest'?'Shared flower harvest saved for the town':data.action==='plant'?'Seeds planted. Ask a neighbor to water them.':'Flowers watered. They will bloom soon.',town:await readTownLife(user.id)};
  }
@@ -139,7 +150,9 @@ export async function townLifeAction(user:User,path:string,input:unknown):Promis
  if(path==='town-social/accept'){
   const data=z.object({id:z.string().uuid(),sessionId:z.string().uuid()}).strict().parse(input);
   const result=await batch([statement(`UPDATE town_social_actions SET accepted_at=?,expires_at=? WHERE id=? AND recipient=? AND accepted_at=0 AND expires_at>?
-   AND EXISTS(SELECT 1 FROM habitat_presence a JOIN habitat_presence b ON b.world_id=a.world_id WHERE a.profile_id=town_social_actions.initiator AND b.profile_id=town_social_actions.recipient AND b.session_id=? AND a.world_id=town_social_actions.world_id AND a.seen_at>? AND b.seen_at>? AND (a.x-b.x)*(a.x-b.x)+(a.z-b.z)*(a.z-b.z)<=16)`,now+800,now+6800,data.id,user.id,now,data.sessionId,now-TTL,now-TTL)]);
+   AND EXISTS(SELECT 1 FROM habitat_presence a JOIN habitat_presence b ON b.world_id=a.world_id WHERE a.profile_id=town_social_actions.initiator AND b.profile_id=town_social_actions.recipient AND b.session_id=? AND a.world_id=town_social_actions.world_id AND a.seen_at>? AND b.seen_at>? AND (a.x-b.x)*(a.x-b.x)+(a.z-b.z)*(a.z-b.z)<=16)`,now+800,now+6800,data.id,user.id,now,data.sessionId,now-TTL,now-TTL),
+   statement(`INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT id||':recipient',recipient,kind,initiator,accepted_at FROM town_social_actions WHERE id=? AND changes()=1`,data.id),
+   statement(`INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT id||':initiator',initiator,kind,recipient,accepted_at FROM town_social_actions WHERE id=? AND changes()=1`,data.id)]);
   if(!result[0]?.meta.changes)throw new AppError('SOCIAL_REQUEST_EXPIRED',409,'The invitation expired or your neighbor moved away.');
   return {town:await readTownLife(user.id)};
  }

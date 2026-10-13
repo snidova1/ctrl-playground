@@ -2,12 +2,15 @@
 import {useMemo,useEffect,useState,type MutableRefObject} from 'react';
 import type {Pose} from '@/features/plaza/types';
 import type {WorldState} from './types';
-import {TOWN_ACTIVITIES,TOWN_DISTRICTS,TOWN_DISTRICT_BUILDINGS,type TownDistrict} from './town-districts';
-import {TownAssetInstances} from './town-assets';
+import {TOWN_ACTIVITIES,TOWN_DISTRICTS,type TownDistrict} from './town-districts';
+import TownRegionDressing from './town-region-dressing';
 import {TownWindGrass} from './town-stylized-grass';
 import TownStylizedWater from './town-stylized-water';
 import TownRegionArchitecture from './town-region-architecture';
 import {GroundShadow,paintedTexture} from './town-surfaces';
+import {HARBOR_WATER} from './town-harbor-geography';
+import {TownAsset} from './town-assets';
+import {CanvasTexture,SRGBColorSpace} from 'three';
 
 /** Larger physical map composed of separately visible districts; not background billboards. */
 type Quality='low'|'high';
@@ -24,31 +27,28 @@ const CONNECTIONS=[
  [-1.5,-29,-1.5,-76],[-32,-12,-75,-12],[-75,-12,-75,-52],
  [78,27,76,80],[78,27,78,-73],[0,-76,78,-76],[0,34,0,98],
 ] as const;
-function DistrictTrees({district,quality}:{district:TownDistrict;quality:Quality}){
- const places=useMemo(()=>{
-  const count=quality==='high'?24:12;
-  return Array.from({length:count},(_,i)=>{
-   const angle=i*2.3999,ring=25+(i%5)*6;
-   return {x:district.x+Math.sin(angle)*ring,z:district.z+Math.cos(angle)*ring,yaw:angle,size:3.7+i%4*.4};
-  }).filter(p=>!TOWN_DISTRICT_BUILDINGS.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<6));
- },[district,quality]);
- return <TownAssetInstances id='nature-kit/tree_detailed' placements={places} castShadow={quality==='high'}/>;
-}
 function ActivityStation({type,x,z,usedAt,cooldownMs}:{type:string;x:number;z:number;usedAt:number;cooldownMs:number}){
  const [now,setNow]=useState(0);
+ const sign=useMemo(()=>{
+  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256;
+  const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Cannot draw town station sign');
+  ctx.fillStyle='#f2e0b9';ctx.fillRect(0,0,512,256);ctx.fillStyle='#354a3e';ctx.font='bold 68px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(({ 'community-garden':'Garden','neighborhood-post':'Post','harbor-cleanup':'Harbor','artisan-project':'Workshop','festival-stage':'Stage','orchard-harvest':'Orchard'} as Record<string,string>)[type]??'Town',256,128);
+  const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;return texture;
+ },[type]);
+ useEffect(()=>()=>sign.dispose(),[sign]);
  useEffect(()=>{const t=setInterval(()=>setNow(Date.now()),950);return()=>clearInterval(t);},[]);
  const recent=usedAt>0&&now-usedAt<cooldownMs;
  const base=recent?'#95b98c':type==='community-garden'?'#839d74':type==='harbor-cleanup'?'#82acb3':type==='festival-stage'?'#cb967d':'#bea786';
- return <group position={[x,0,z]}>
+ return <group position={[x+2.4,0,z]}>
   <GroundShadow width={4.2} depth={4.2}/>
-  <mesh receiveShadow position-y={.09}><cylinderGeometry args={[2.3,2.3,.18,12]}/><meshStandardMaterial color={base}/></mesh>
+  <mesh receiveShadow position-y={.01}><cylinderGeometry args={[2.3,2.3,.02,12]}/><meshStandardMaterial color={base}/></mesh>
   <mesh castShadow position-y={.6}><boxGeometry args={[1.8,.8,1.3]}/><meshStandardMaterial color='#cfb28e'/></mesh>
-  {[-.55,.55].map(px=><mesh key={px} position={[px,1.14,0]} castShadow>
-    <icosahedronGeometry args={[.38,1]}/><meshStandardMaterial color={type==='community-garden'||type==='orchard-harvest'?'#dfab8c':'#f0d8aa'} roughness={1}/>
-  </mesh>)}
+  {[-.55,.55].map(px=><TownAsset key={px} id={type==='orchard-harvest'?'food-kit/apple':type==='community-garden'?'nature-kit/pot_small':type==='harbor-cleanup'?'furniture-kit/trashcan':'platformer-kit/crate'} size={.48} x={px} y={1.02}/>)}
   {recent&&Array.from({length:8},(_,i)=><mesh key={i} position={[Math.sin(i*Math.PI/4)*1.75,.5+Math.abs(Math.sin(i*2))*1.6,Math.cos(i*Math.PI/4)*1.75]}><icosahedronGeometry args={[.18,0]}/><meshBasicMaterial color={i%2?'#f2cf8e':'#e7b1ba'}/></mesh>)}
   <mesh position-y={2.35}><cylinderGeometry args={[.055,.055,2,6]}/><meshStandardMaterial color='#88725e'/></mesh>
   <mesh position={[.55,3.2,0]}><boxGeometry args={[1.25,.55,.12]}/><meshStandardMaterial color='#f2e0b9'/></mesh>
+  <mesh position={[.55,3.2,.066]}><planeGeometry args={[1.21,.51]}/><meshBasicMaterial map={sign} toneMapped={false}/></mesh>
  </group>;
 }
 function FestivalPlatform({x,z}:{x:number;z:number}){
@@ -71,14 +71,18 @@ function RemoteZone({district,quality,pose,states}:{district:TownDistrict;qualit
   <ScenicRoad ax={district.x-48} az={district.z} bx={district.x+48} bz={district.z} width={5.2}/>
   <ScenicRoad ax={district.x} az={district.z-44} bx={district.x} bz={district.z+44} width={4.4}/>
   <TownRegionArchitecture district={district.id}/>
-  <DistrictTrees district={district} quality={quality}/>
+  <TownRegionDressing district={district.id} quality={quality}/>
   <TownWindGrass district={district} quality={quality}/>
   {activity&&<ActivityStation x={activity.x} z={activity.z} type={activity.id} usedAt={states[activity.objectId]?.usedAt??0} cooldownMs={activity.cooldownMs}/>}
   {district.id==='festival'&&<FestivalPlatform x={district.x} z={district.z}/>}
   {district.id==='harbor'&&<group position={[district.x,0,district.z+20]}>
+    <group position-x={HARBOR_WATER.bridgeX-district.x}>
+     <mesh position-y={.033} receiveShadow><boxGeometry args={[4.8,.06,14]}/><meshStandardMaterial color='#c1a17c'/></mesh>
+     {[-2.4,2.4].map(side=><group key={side} position-x={side}><mesh position-y={.85}><boxGeometry args={[.08,.09,14]}/><meshStandardMaterial color='#9b8869'/></mesh>{[-6,-3,0,3,6].map(z=><mesh key={z} position={[0,.45,z]}><boxGeometry args={[.09,.9,.09]}/><meshStandardMaterial color='#9b8869'/></mesh>)}</group>)}
+    </group>
     <TownStylizedWater x={0} y={.015} z={0} width={95} depth={13}/>
     {[-21,-7,7,21].map((x,i)=><group key={x}>
-      <mesh castShadow position={[x,.27,3]}><boxGeometry args={[4,.54,17]}/><meshStandardMaterial color='#d7b996' emissive='#624d36' emissiveIntensity={.16}/></mesh>
+      <mesh castShadow position={[x,.033,3]}><boxGeometry args={[4,.06,19]}/><meshStandardMaterial color='#d7b996' emissive='#624d36' emissiveIntensity={.16}/></mesh>
       {[-5,0,5].map(z=><group key={z}>
         <mesh castShadow position={[x-1.8,-.65,z+3]}><cylinderGeometry args={[.17,.17,1.9,7]}/><meshStandardMaterial color='#9e806b'/></mesh>
         <mesh castShadow position={[x+1.8,-.65,z+3]}><cylinderGeometry args={[.17,.17,1.9,7]}/><meshStandardMaterial color='#9e806b'/></mesh>

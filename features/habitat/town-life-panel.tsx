@@ -4,6 +4,7 @@ import type {Pose} from '@/features/plaza/types';
 import type {HabitatState} from '@/domain/habitat';
 import {CROP_GROW_MS,TOWN_GARDEN_BEDS,type TownLifeState} from '@/domain/town';
 import {TOWN_ACTIVITIES,TOWN_DISTRICTS} from './town-districts';
+import TownProjectPanel from './town-project-panel';
 
 export default function TownLifePanel({state,pose,busy,onAction,onInvite}:{state:HabitatState;pose:MutableRefObject<Pose>;busy:boolean;onAction:(path:string,data:Record<string,unknown>)=>void;onInvite:(id:string)=>void}){
  const [open,setOpen]=useState(false),[now,setNow]=useState(0),[position,setPosition]=useState({x:0,z:6});
@@ -24,6 +25,7 @@ export default function TownLifePanel({state,pose,busy,onAction,onInvite}:{state
    <details><summary>Conversation history</summary>{!town.chat.length&&<p>No messages yet.</p>}{town.chat.map(message=><p key={message.id}><strong>{message.name}</strong> {message.text}</p>)}</details>
    {job&&<div><strong>{TOWN_ACTIVITIES.find(a=>a.id===job.activityId)?.name}</strong><button disabled={busy} onClick={()=>request('town-job/cancel',{jobId:job.id})}>Cancel activity</button></div>}
    <details><summary>Shared projects</summary>{TOWN_ACTIVITIES.map(a=>{const progress=town.contributions[a.id];return <p key={a.id}><strong>{a.name}</strong><br/>{progress?.count??0} contributions from {progress?.neighbors??0} neighbors</p>;})}</details>
+   <TownProjectPanel town={town}/>
    <details open><summary>Community garden</summary>{town.garden.map(bed=>{
     const place=TOWN_GARDEN_BEDS.find(b=>b.id===bed.id)!;
     const close=Math.hypot(position.x-place.x,position.z-place.z)<=4.25;
