@@ -1,6 +1,6 @@
 import {Mesh,MeshBasicMaterial,Raycaster,SphereGeometry,Vector3} from 'three';
 /** Decorative terrain stays beyond the shared walking bounds. */
-export const TOWN_HILLS=[[-135,-130,20,8],[-88,-126,26,12],[34,-135,25,9],[-139,112,29,12],[147,118,25,11]] as const;
+export const TOWN_HILLS=[[-168,-148,20,8],[-88,-144,26,12],[34,-145,25,9],[-162,140,29,12],[161,145,25,11]] as const;
 const terrainMaterial=new MeshBasicMaterial();
 const terrainGeometry=new SphereGeometry(1,12,8);
 const surfaces=TOWN_HILLS.map(([x,z,w,h])=>{const mesh=new Mesh(terrainGeometry,terrainMaterial);mesh.position.set(x,-h*.32,z);mesh.scale.set(w,h,w*.6);mesh.updateMatrixWorld();return mesh;});
