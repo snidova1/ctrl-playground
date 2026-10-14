@@ -7,9 +7,11 @@ import {CROP_GROW_MS,TOWN_GARDEN_BEDS,TOWN_JOB_DURATION,jobStartSchema,jobFinish
 import {readTownProjects} from './town-projects';
 import {recordContribution} from './town-contributions';
 import {readTownRoutes,routeAction} from './town-routes';
+import {readTownGatherings,gatheringAction} from './town-gatherings';
 export {recordContribution} from './town-contributions';
 
 const TTL=15000;
+const pairPermission=`(w.visibility='public' OR w.owner_id=a.profile_id OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=a.profile_id)) AND (w.visibility='public' OR w.owner_id=b.profile_id OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=b.profile_id))`;
 type User={id:string;wallet:string};
 const presenceGuard=`EXISTS(SELECT 1 FROM habitat_presence WHERE profile_id=? AND world_id=? AND session_id=? AND seen_at>? AND (x-?)*(x-?)+(z-?)*(z-?)<=18.0625)`;
 const guardArgs=(user:User,session:string,x:number,z:number,now:number)=>[user.id,PUBLIC_WORLD_ID,session,now-TTL,x,x,z,z];
@@ -30,14 +32,14 @@ export async function readTownLife(user:string):Promise<TownLifeState>{
     FROM town_friendships f JOIN habitat_profiles p ON p.id=CASE WHEN f.requester=? THEN f.recipient ELSE f.requester END
     LEFT JOIN habitat_worlds w ON w.owner_id=p.id WHERE f.requester=? OR f.recipient=?`,user,user,user,user,user),
   query<TownLifeState['invites'][number]>(`SELECT i.id,i.sender,p.name,i.destination,i.expires_at AS expiresAt FROM town_invites i JOIN habitat_profiles p ON p.id=i.sender WHERE i.recipient=? AND i.accepted_at=0 AND i.expires_at>? AND (i.destination IN ('center','residential','garden','harbor','workshop','festival','orchard') OR EXISTS(SELECT 1 FROM habitat_worlds w WHERE w.id=i.destination AND (w.visibility='public' OR w.owner_id=? OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?)))) ORDER BY i.expires_at DESC LIMIT 20`,user,now,user,user),
-  query<TownLifeState['social'][number]>('SELECT id,initiator,recipient,kind,accepted_at AS acceptedAt,expires_at AS expiresAt FROM town_social_actions WHERE (initiator=? OR recipient=?) AND expires_at>? ORDER BY created_at DESC LIMIT 10',user,user,now),
+  query<TownLifeState['social'][number]>(`SELECT a.id,a.initiator,a.recipient,a.kind,a.accepted_at AS acceptedAt,a.expires_at AS expiresAt FROM town_social_actions a JOIN habitat_presence s ON s.world_id=a.world_id AND s.profile_id=? JOIN habitat_worlds w ON w.id=a.world_id WHERE s.seen_at>? AND a.expires_at>? AND (a.accepted_at>0 OR a.initiator=? OR a.recipient=?) AND (w.visibility='public' OR w.owner_id=? OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?)) ORDER BY a.created_at DESC LIMIT 10`,user,now-TTL,now,user,user,user,user),
   query<TownLifeState['chat'][number]>(`SELECT c.id,c.profile_id AS player,p.name,c.text,c.created_at AS at FROM town_chat c JOIN habitat_profiles p ON p.id=c.profile_id JOIN habitat_presence s ON s.world_id=c.world_id AND s.profile_id=? JOIN habitat_worlds w ON w.id=c.world_id WHERE s.seen_at>? AND (w.visibility='public' OR w.owner_id=? OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?)) ORDER BY c.created_at DESC LIMIT 30`,user,now-TTL,user,user),
   readTownProjects(),
   query<TownLifeState['history'][number]>('SELECT e.id,e.kind,COALESCE(p.name,e.target) AS target,e.created_at AS at FROM town_activity_events e LEFT JOIN habitat_profiles p ON p.id=e.target WHERE e.profile_id=? ORDER BY e.created_at DESC,e.id DESC LIMIT 40',user),
  ]);
- const routes=await readTownRoutes(user);
+ const [routes,gatherings]=await Promise.all([readTownRoutes(user),readTownGatherings(user)]);
  const p=progress??{completed:0};
- return {serverNow:now,progress:p,job,...routes,
+ return {serverNow:now,progress:p,job,...routes,gatherings,
   contributions:Object.fromEntries(counts.map(c=>[c.id,{count:c.count,neighbors:c.neighbors}])),
   garden:TOWN_GARDEN_BEDS.map(b=>garden.find(g=>g.id===b.id)??{id:b.id,crop:null,plantedAt:0,wateredAt:0,revision:0}),
   friends:friends.map(f=>({...f,incoming:!!f.incoming})),invites,social,chat:chat.reverse(),projects,history};
@@ -45,6 +47,7 @@ export async function readTownLife(user:string):Promise<TownLifeState>{
 export async function townLifeAction(user:User,path:string,input:unknown):Promise<unknown>{
  const now=Date.now();
  if(path.startsWith('town-route/'))return {message:await routeAction(user,path,input),town:await readTownLife(user.id)};
+ if(path.startsWith('town-gathering/'))return {message:await gatheringAction(user,path,input),town:await readTownLife(user.id)};
  if(path==='town-chat'){
   const data=z.object({text:z.string().trim().min(1).max(120).refine(text=>!/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(text)),sessionId:z.string().uuid()}).strict().parse(input);
   const result=await batch([statement(`INSERT INTO town_chat(id,world_id,profile_id,text,created_at) SELECT ?,s.world_id,s.profile_id,?,? FROM habitat_presence s JOIN habitat_worlds w ON w.id=s.world_id WHERE s.profile_id=? AND s.session_id=? AND s.seen_at>? AND (w.visibility='public' OR w.owner_id=? OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?))`,crypto.randomUUID(),data.text,now,user.id,data.sessionId,now-TTL,user.id,user.id)]);
@@ -138,16 +141,16 @@ export async function townLifeAction(user:User,path:string,input:unknown):Promis
  if(path==='town-social'){
   const data=z.object({id:z.string().min(2).max(100),kind:z.enum(['high-five','dance']),sessionId:z.string().uuid()}).strict().parse(input);
   if(data.id===user.id)throw new AppError('PLAYER_NOT_FOUND',404);
-  const pair=await one<{world_id:string}>(`SELECT a.world_id FROM habitat_presence a JOIN habitat_presence b ON b.world_id=a.world_id WHERE a.profile_id=? AND b.profile_id=? AND a.session_id=? AND a.seen_at>? AND b.seen_at>? AND (a.x-b.x)*(a.x-b.x)+(a.z-b.z)*(a.z-b.z)<=16`,user.id,data.id,data.sessionId,now-TTL,now-TTL);
+  const pair=await one<{world_id:string}>(`SELECT a.world_id FROM habitat_presence a JOIN habitat_presence b ON b.world_id=a.world_id JOIN habitat_worlds w ON w.id=a.world_id WHERE a.profile_id=? AND b.profile_id=? AND a.session_id=? AND a.seen_at>? AND b.seen_at>? AND (a.x-b.x)*(a.x-b.x)+(a.z-b.z)*(a.z-b.z)<=16 AND ${pairPermission}`,user.id,data.id,data.sessionId,now-TTL,now-TTL);
   if(!pair)throw new AppError('COME_CLOSER',422,'Meet this player before inviting an interaction.');
   await batch([statement(`INSERT INTO town_social_actions(id,initiator,recipient,kind,world_id,created_at,expires_at)
-   SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM town_social_actions WHERE (initiator=? OR recipient=?) AND expires_at>?)`,crypto.randomUUID(),user.id,data.id,data.kind,pair.world_id,now,now+15000,user.id,user.id,now)]);
+   SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM town_social_actions WHERE (initiator=? OR recipient=?) AND expires_at>?) AND EXISTS(SELECT 1 FROM habitat_presence a JOIN habitat_presence b ON b.world_id=a.world_id JOIN habitat_worlds w ON w.id=a.world_id WHERE a.profile_id=? AND b.profile_id=? AND a.session_id=? AND a.seen_at>? AND b.seen_at>? AND (a.x-b.x)*(a.x-b.x)+(a.z-b.z)*(a.z-b.z)<=16 AND ${pairPermission})`,crypto.randomUUID(),user.id,data.id,data.kind,pair.world_id,now,now+15000,user.id,user.id,now,user.id,data.id,data.sessionId,now-TTL,now-TTL)]);
   return {town:await readTownLife(user.id)};
  }
  if(path==='town-social/accept'){
   const data=z.object({id:z.string().uuid(),sessionId:z.string().uuid()}).strict().parse(input);
   const result=await batch([statement(`UPDATE town_social_actions SET accepted_at=?,expires_at=? WHERE id=? AND recipient=? AND accepted_at=0 AND expires_at>?
-   AND EXISTS(SELECT 1 FROM habitat_presence a JOIN habitat_presence b ON b.world_id=a.world_id WHERE a.profile_id=town_social_actions.initiator AND b.profile_id=town_social_actions.recipient AND b.session_id=? AND a.world_id=town_social_actions.world_id AND a.seen_at>? AND b.seen_at>? AND (a.x-b.x)*(a.x-b.x)+(a.z-b.z)*(a.z-b.z)<=16)`,now+800,now+6800,data.id,user.id,now,data.sessionId,now-TTL,now-TTL),
+   AND EXISTS(SELECT 1 FROM habitat_presence a JOIN habitat_presence b ON b.world_id=a.world_id JOIN habitat_worlds w ON w.id=a.world_id WHERE a.profile_id=town_social_actions.initiator AND b.profile_id=town_social_actions.recipient AND b.session_id=? AND a.world_id=town_social_actions.world_id AND a.seen_at>? AND b.seen_at>? AND (a.x-b.x)*(a.x-b.x)+(a.z-b.z)*(a.z-b.z)<=16 AND ${pairPermission})`,now+800,now+6800,data.id,user.id,now,data.sessionId,now-TTL,now-TTL),
    statement(`INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT id||':recipient',recipient,kind,initiator,accepted_at FROM town_social_actions WHERE id=? AND changes()=1`,data.id),
    statement(`INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT id||':initiator',initiator,kind,recipient,accepted_at FROM town_social_actions WHERE id=? AND changes()=1`,data.id)]);
   if(!result[0]?.meta.changes)throw new AppError('SOCIAL_REQUEST_EXPIRED',409,'The invitation expired or your neighbor moved away.');
@@ -155,4 +158,4 @@ export async function townLifeAction(user:User,path:string,input:unknown):Promis
  }
  throw new AppError('ROUTE_NOT_FOUND',404);
 }
-export const townLifePaths=new Set(['town-route/start','town-route/work','town-route/finish','town-route/cancel','town-chat','town-job/start','town-job/finish','town-job/cancel','town-garden','town-friend','town-invite','town-invite/accept','town-social','town-social/accept']);
+export const townLifePaths=new Set(['town-gathering/create','town-gathering/join','town-gathering/check-in','town-gathering/leave','town-gathering/end','town-gathering/remove','town-gathering/dance','town-route/start','town-route/work','town-route/finish','town-route/cancel','town-chat','town-job/start','town-job/finish','town-job/cancel','town-garden','town-friend','town-invite','town-invite/accept','town-social','town-social/accept']);

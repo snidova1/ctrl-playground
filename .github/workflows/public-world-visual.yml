@@ -24,6 +24,8 @@ on:
       - 'tests/unit/town*.test.ts'
       - 'tests/browser/town-civic.spec.ts'
       - 'playwright.civic.config.ts'
+      - 'playwright.town-life.config.ts'
+      - 'tests/browser/town-routes-gatherings.spec.ts'
       - 'tests/browser/public-world-visual.spec.ts'
       - 'playwright.public-world.config.ts'
       - '.github/workflows/public-world-visual.yml'
@@ -61,6 +63,8 @@ jobs:
         run: pnpm exec playwright test --config playwright.public-world.config.ts
       - name: Two signed desktop/mobile neighbors complete persistent civic construction
         run: pnpm exec playwright test --config playwright.civic.config.ts
+      - name: Real route work, reload persistence and consented social gathering
+        run: pnpm exec playwright test --config playwright.town-life.config.ts
       - name: Preserve screenshots and traces
         if: always()
         uses: actions/upload-artifact@v4

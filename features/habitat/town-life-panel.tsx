@@ -6,14 +6,15 @@ import {CROP_GROW_MS,TOWN_GARDEN_BEDS,type TownLifeState} from '@/domain/town';
 import {TOWN_ACTIVITIES,TOWN_DISTRICTS} from './town-districts';
 import TownProjectPanel from './town-project-panel';
 import TownRoutePanel from './town-route-panel';
+import TownGatheringPanel from './town-gathering-panel';
 
-export default function TownLifePanel({state,pose,busy,onAction,onInvite}:{state:HabitatState;pose:MutableRefObject<Pose>;busy:boolean;onAction:(path:string,data:Record<string,unknown>)=>void;onInvite:(id:string)=>void}){
+export default function TownLifePanel({state,pose,busy,onAction,onInvite,onVisit}:{state:HabitatState;pose:MutableRefObject<Pose>;busy:boolean;onAction:(path:string,data:Record<string,unknown>)=>void;onInvite:(id:string)=>void;onVisit:(id:string)=>void}){
  const [open,setOpen]=useState(false),[now,setNow]=useState(0),[position,setPosition]=useState({x:0,z:6});
  useEffect(()=>{const tick=()=>{setNow(Date.now());setPosition({...pose.current});};const timer=setInterval(tick,400);return()=>clearInterval(timer);},[pose]);
  const town=state.town,sessionId=state.presenceSession?.id;
  if(!town||!sessionId)return null;
  const job=town.job,seconds=job?Math.max(0,Math.ceil((job.readyAt-now)/1000)):0;
- const request=(path:string,data:Record<string,unknown>)=>onAction(path,{...data,...(path.startsWith('town-job')||path.startsWith('town-route')||path==='town-garden'||path.startsWith('town-social')?{sessionId}:{})});
+ const request=(path:string,data:Record<string,unknown>)=>onAction(path,{...data,...(path.startsWith('town-job')||path.startsWith('town-route')||path==='town-garden'||path.startsWith('town-social')||path.startsWith('town-gathering')&&!['town-gathering/join','town-gathering/leave'].includes(path)?{sessionId}:{})});
  const nearby=state.players.filter(p=>p.id!==state.profile?.id&&Math.hypot(position.x-p.x,position.z-p.z)<4);
  const invitations=town.invites.length+town.friends.filter(f=>f.incoming&&f.status==='pending').length;
  return <aside className='hb-life-dock' aria-label='Town life and neighbors'>
@@ -28,6 +29,7 @@ export default function TownLifePanel({state,pose,busy,onAction,onInvite}:{state
    <details><summary>Shared projects</summary>{TOWN_ACTIVITIES.map(a=>{const progress=town.contributions[a.id];return <p key={a.id}><strong>{a.name}</strong><br/>{progress?.count??0} contributions from {progress?.neighbors??0} neighbors</p>;})}</details>
    <TownProjectPanel town={town}/>
    <TownRoutePanel town={town} x={position.x} z={position.z} now={now} busy={busy} worldId={state.world?.id} onAction={request}/>
+   <TownGatheringPanel events={town.gatherings} profileId={state.profile!.id} worldId={state.world?.id} homeId={state.homeId} x={position.x} z={position.z} busy={busy} onAction={request} onVisit={onVisit}/>
    <details open><summary>Community garden</summary>{town.garden.map(bed=>{
     const place=TOWN_GARDEN_BEDS.find(b=>b.id===bed.id)!;
     const close=Math.hypot(position.x-place.x,position.z-place.z)<=4.25;

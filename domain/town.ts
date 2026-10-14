@@ -2,6 +2,7 @@ import {z} from 'zod';
 import type {TownActivityId} from '@/features/habitat/town-districts';
 import type {TownActivityEvent,TownProjectState} from './town-projects';
 import type {TownRouteRun,TownWorkVisit} from './town-routes';
+import type {TownGathering} from './town-gatherings';
 export const townSessionSchema=z.string().uuid();
 export const jobStartSchema=z.object({id:z.string().min(2).max(50),sessionId:townSessionSchema}).strict();
 export const jobFinishSchema=z.object({jobId:z.string().uuid(),sessionId:townSessionSchema}).strict();
@@ -19,6 +20,7 @@ export interface TownLifeState {
  job:TownJob|null;
  route:TownRouteRun|null;
  visits:TownWorkVisit[];
+ gatherings:TownGathering[];
  contributions:Record<string,{count:number;neighbors:number}>;
  garden:GardenBed[];
  friends:{id:string;name:string;status:'pending'|'accepted';incoming:boolean;homeId:string|null}[];

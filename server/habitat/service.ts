@@ -76,9 +76,10 @@ async function state(user: Principal, worldId?: string): Promise<HabitatState> {
   const w = selected?.world;
   // Recheck private-world ACLs when reading presence, including after revocation.
   const players = w ? await query<ProfileRow & {x: number; z: number; angle: number; motion: string;workUntil:number|null}>(
-    `SELECT p.id,p.name,p.character,p.variant,p.appearance,s.x,s.z,s.angle,s.motion,j.ready_at AS workUntil FROM habitat_presence s
+    `SELECT p.id,p.name,p.character,p.variant,p.appearance,s.x,s.z,s.angle,s.motion,COALESCE(j.ready_at,r.ready_at) AS workUntil FROM habitat_presence s
      JOIN habitat_profiles p ON p.id=s.profile_id JOIN habitat_worlds w ON w.id=s.world_id
      LEFT JOIN town_jobs j ON j.profile_id=p.id AND j.completed_at=0 AND j.expires_at>${Date.now()}
+     LEFT JOIN town_routes r ON r.profile_id=p.id AND r.completed_at=0 AND r.expires_at>${Date.now()}
      WHERE s.world_id=? AND s.seen_at>? AND (w.visibility='public' OR w.owner_id=p.id OR EXISTS
        (SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=p.id))
      ORDER BY s.seen_at DESC LIMIT 64`, w.id, Date.now() - TTL) : [];
