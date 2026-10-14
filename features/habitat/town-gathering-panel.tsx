@@ -24,7 +24,7 @@ export default function TownGatheringPanel({events,profileId,worldId,homeId,x,z,
      {!joined.arrivedAt&&<button disabled={busy||!near} onClick={()=>onAction('town-gathering/check-in',{id:e.id})}>{e.kind==='dance'?'Agree and join dance':'Check in at gathering'}</button>}
      <button disabled={busy} onClick={()=>onAction('town-gathering/leave',{id:e.id})}>Leave gathering</button>
     </>}
-    <ul>{e.guests.map(g=><li key={g.id}>{g.name} · {g.here?'Here':g.arrivedAt?'Attended':'RSVP saved'}{own&&g.id!==profileId&&<button disabled={busy||!near} onClick={()=>onAction('town-gathering/remove',{...data,guestId:g.id})}>Remove {g.name}</button>}</li>)}</ul>
+    <ul>{e.guests.map(g=><li key={g.id}><span>{g.name} · {g.here?'Here':g.arrivedAt?'Attended':'RSVP saved'}</span>{own&&g.id!==profileId&&<button disabled={busy||!near} onClick={()=>onAction('town-gathering/remove',{...data,guestId:g.id})}>Remove {g.name}</button>}</li>)}</ul>
     {own&&<>{e.kind==='dance'&&<button disabled={busy||!near||e.guests.filter(g=>g.here).length<2} onClick={()=>onAction('town-gathering/dance',data)}>Start shared dance</button>}<button disabled={busy||!near} onClick={()=>onAction('town-gathering/end',data)}>End gathering</button></>}
    </article>;
   })}

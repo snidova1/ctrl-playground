@@ -27,17 +27,18 @@ export const TOWN_WORK_SITES:readonly WorkSite[]=[
  {id:'leaves-fern',name:'Fernwood leaf clearing',x:-70,z:39,district:'garden',kind:'leaves',verb:'Rake leaves'},
  {id:'leaves-apple',name:'Applehill leaf clearing',x:81,z:77,district:'orchard',kind:'leaves',verb:'Rake leaves'},
 ];
-export const TOWN_ROUTES:readonly {id:string;name:string;activity:TownActivityId;stops:readonly string[]}[]=[
+export type RouteContribution=TownActivityId|'lawn-care'|'street-sweep'|'walkway-wash'|'hedge-trim'|'leaf-rake';
+export const TOWN_ROUTES:readonly {id:string;name:string;activity:RouteContribution;stops:readonly string[]}[]=[
  {id:'clover-mail',name:'Clover letter round',activity:'neighborhood-post',stops:['post','clover-west','clover-east']},
  {id:'cafe-fruit',name:'Orchard to café',activity:'cafe-supplies',stops:['apple-baskets','cafe']},
  {id:'harbor-care',name:'Tidewater cleanup round',activity:'harbor-cleanup',stops:['harbor-west','harbor-east','harbor-recycling']},
  {id:'sunset-prep',name:'Build a Sunset gathering',activity:'festival-stage',stops:['workshop','stage']},
  {id:'fernwood-care',name:'Fernwood flower round',activity:'community-garden',stops:['fern-west','fern-east']},
- {id:'lawn-care',name:'Neighborhood lawns',activity:'community-garden',stops:['lawn-west','lawn-east']},
- {id:'street-sweep',name:'Sweep neighborhood streets',activity:'neighborhood-post',stops:['road-square','road-clover']},
- {id:'walkway-wash',name:'Wash town walkways',activity:'artisan-project',stops:['walk-square','walk-artisan']},
- {id:'hedge-trim',name:'Shape neighborhood hedges',activity:'orchard-harvest',stops:['hedge-clover','hedge-apple']},
- {id:'leaf-rake',name:'Park and orchard leaf round',activity:'community-garden',stops:['leaves-fern','leaves-apple']},
+ {id:'lawn-care',name:'Neighborhood lawns',activity:'lawn-care',stops:['lawn-west','lawn-east']},
+ {id:'street-sweep',name:'Sweep neighborhood streets',activity:'street-sweep',stops:['road-square','road-clover']},
+ {id:'walkway-wash',name:'Wash town walkways',activity:'walkway-wash',stops:['walk-square','walk-artisan']},
+ {id:'hedge-trim',name:'Shape neighborhood hedges',activity:'hedge-trim',stops:['hedge-clover','hedge-apple']},
+ {id:'leaf-rake',name:'Park and orchard leaf round',activity:'leaf-rake',stops:['leaves-fern','leaves-apple']},
 ];
 export const ROUTE_WORK_MS=6000,ROUTE_TTL=3600000,WORK_REGROW_MS=86400000;
 export type TownRouteRun={id:string;routeId:string;step:number;revision:number;readyAt:number;expiresAt:number};

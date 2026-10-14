@@ -2,6 +2,7 @@
 import type {TownLifeState} from '@/domain/town';
 import {TOWN_PROJECTS} from '@/domain/town-projects';
 import {TOWN_ACTIVITIES,TOWN_DISTRICTS} from './town-districts';
+import {TOWN_ROUTES} from '@/domain/town-routes';
 
 export default function TownProjectPanel({town}:{town:TownLifeState}){
  return <>
@@ -19,7 +20,7 @@ export default function TownProjectPanel({town}:{town:TownLifeState}){
   </details>
   <details><summary>Your saved activity history</summary>
    {!town.history?.length?<p>No activity recorded yet.</p>:<ol className='hb-activity-history'>{town.history.map(event=>{
-    const target=TOWN_ACTIVITIES.find(a=>a.id===event.target)?.name??event.target.replace('fern-bed-','Garden bed ');
+    const target=TOWN_ACTIVITIES.find(a=>a.id===event.target)?.name??TOWN_ROUTES.find(a=>a.activity===event.target)?.name??event.target.replace('fern-bed-','Garden bed ');
     const label=event.kind==='route-stop'?'Finished route stop':event.kind==='plant'?'Planted seeds':event.kind==='water'?'Watered flowers':event.kind==='harvest'?'Harvested flowers':event.kind==='started'?'Started work':event.kind==='cancelled'?'Cancelled work':event.kind==='dance'?'Danced together':event.kind==='high-five'?'High five':'Completed work';
     return <li key={event.id}>{label} · {target}<br/><time dateTime={new Date(event.at).toISOString()}>{new Date(event.at).toLocaleString()}</time></li>;
    })}</ol>}

@@ -13,6 +13,8 @@ describe('signed multi-stop work routes',()=>{
  it('places every stop on authoritative walkable ground and references existing sites',()=>{
   for(const site of TOWN_WORK_SITES)expect(isPublicWorldWalkable(site.x,site.z),site.id).toBe(true);
   for(const route of TOWN_ROUTES)for(const id of route.stops)expect(getWorkSite(id)).toBeDefined();
+  // Maintenance must never counterfeit fruit harvest or crafted supplies.
+  for(const id of ['lawn-care','street-sweep','walkway-wash','hedge-trim','leaf-rake'])expect(TOWN_ROUTES.find(r=>r.id===id)?.activity).toBe(id);
  });
  it('requires signed presence, exact schemas and a physical first stop',async()=>{
   const a=await enter('Route Security');
