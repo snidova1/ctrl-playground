@@ -1,8 +1,11 @@
 import {test,expect,chromium,type Page,type Locator,type Response} from '@playwright/test';
 import {installSignedWallet} from './helpers/wallet';
+import {assertTouchHUD} from './helpers/habitat-hud';
 import type {HabitatState} from '@/domain/habitat';
 import {PUBLIC_WORLD_ID} from '@/features/habitat/public-world-geography';
-async function press(p:Page,b:Locator){if(await p.evaluate(()=>matchMedia('(pointer:coarse)').matches))await b.tap();else await b.click();}
+// Activate the actual page before native input/GPU readback. Two independent
+// browser windows are retained; no emulated focus, forced clicks or fake frames.
+async function press(p:Page,b:Locator){await p.bringToFront();if(await p.evaluate(()=>matchMedia('(pointer:coarse)').matches))await b.tap();else await b.click();}
 async function enter(p:Page,name:string,character?:string){
  await installSignedWallet(p);await p.goto('/public-world');
  await press(p,p.locator('.wallet-options').getByRole('button',{name:'Connect wallet',exact:true}));
@@ -45,6 +48,8 @@ async function routeWork(p:Page,name:string){
 async function capture(p:Page,name:string){
  // The 15s interaction deadline must not also constrain GPU readback. Keep
  // real PNG capture bounded separately; the overall 240s test budget is intact.
+ await p.bringToFront();
+ await assertTouchHUD(p);
  await p.screenshot({path:test.info().outputPath(name),scale:'css',timeout:45000});
 }
 async function focusGathering(p:Page){
@@ -56,20 +61,44 @@ async function focusGathering(p:Page){
  }
 }
 async function spreadPeer(p:Page){
+ await p.bringToFront();
  const touch=await p.context().newCDPSession(p),left=await p.getByRole('button',{name:'Move ←',exact:true}).boundingBox();expect(left).not.toBeNull();
  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:left!.x+left!.width/2,y:left!.y+left!.height/2}]});
  try{await expect.poll(async()=>{const s=await(await p.request.get('/api/habitat/state')).json() as HabitatState;return s.players.find(p=>p.id===s.profile?.id)!.x;},{timeout:15000,intervals:[400]}).toBeLessThan(-1.5);}
  finally{await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await touch.detach();}
 }
 async function walkToTeaRoom(p:Page){
+ await p.bringToFront();
  const close=p.getByRole('button',{name:'Close town life',exact:true});if(await close.isVisible())await press(p,close);
  const coarse=await p.evaluate(()=>matchMedia('(pointer:coarse)').matches);
  const cdp=coarse?await p.context().newCDPSession(p):null;
- if(cdp){const box=await p.getByRole('button',{name:'Move ←',exact:true}).boundingBox(),run=await p.getByRole('button',{name:'Hold to run',exact:true}).boundingBox();expect(box).not.toBeNull();expect(run).not.toBeNull();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:box!.x+box!.width/2,y:box!.y+box!.height/2},{id:1,x:run!.x+run!.width/2,y:run!.y+run!.height/2}]});}
- else{await p.keyboard.down('ShiftLeft');await p.keyboard.down('KeyA');}
- try{await expect.poll(async()=>{const s=await(await p.request.get('/api/habitat/state')).json() as HabitatState;const self=s.players.find(a=>a.id===s.profile?.id)!;return Math.hypot(self.x+8,self.z-2.8)<4&&await p.getByRole('button',{name:'Enter Willow Tea Room',exact:true}).isVisible();},{timeout:20000,intervals:[400]}).toBe(true);}
- finally{if(cdp){await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();}else{await p.keyboard.up('KeyA');await p.keyboard.up('ShiftLeft');}}
- await mutation(p,'town-venue/enter',p.getByRole('button',{name:'Enter Willow Tea Room',exact:true}));
+ const entrance=p.getByRole('button',{name:'Enter Willow Tea Room',exact:true}),approachStarted=Date.now();
+ // Walk, rather than sprint, into a narrow doorway. The native touch log
+ // confirmed both run/move pointer-up events arrive, but a late affordance
+ // frame at software-WebGL FPS can overshoot the complete entry radius.
+ if(cdp){const box=await p.getByRole('button',{name:'Move ←',exact:true}).boundingBox();expect(box).not.toBeNull();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:box!.x+box!.width/2,y:box!.y+box!.height/2}]});}
+ else{await p.keyboard.down('KeyA');}
+ // Stop when the real doorway affordance appears, not after an additional
+ // network roundtrip while still running. Validate fresh server proximity
+ // AFTER release, within the same original 20s approach budget.
+ try{await expect(entrance).toBeVisible({timeout:20000});}
+ finally{if(cdp){
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
+ }else{await p.keyboard.up('KeyA');}}
+ await expect.poll(async()=>{const s=await(await p.request.get('/api/habitat/state')).json() as HabitatState;const self=s.players.find(a=>a.id===s.profile?.id)!;return Math.hypot(self.x+8,self.z-2.8)<4&&await entrance.isVisible();},{timeout:Math.max(1,20000-(Date.now()-approachStarted)),intervals:[400]}).toBe(true);
+ await mutation(p,'town-venue/enter',entrance);
+}
+async function walkToRoomExit(p:Page){
+ await p.bringToFront();const exit=p.getByRole('button',{name:'Return through entrance',exact:true});
+ if(await exit.isEnabled())return;
+ const coarse=await p.evaluate(()=>matchMedia('(pointer:coarse)').matches),cdp=coarse?await p.context().newCDPSession(p):null,started=Date.now();
+ // The neighbor walked left for the two-body proof. Return physically along
+ // that path; an out-of-range exit must stay disabled/authoritatively rejected.
+ if(cdp){const box=await p.getByRole('button',{name:'Move →',exact:true}).boundingBox();expect(box).not.toBeNull();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:box!.x+box!.width/2,y:box!.y+box!.height/2}]});}
+ else await p.keyboard.down('KeyD');
+ try{await expect(exit).toBeEnabled({timeout:20000});}
+ finally{if(cdp){await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();}else await p.keyboard.up('KeyD');}
+ await expect.poll(async()=>{const s=await(await p.request.get('/api/habitat/state')).json() as HabitatState,self=s.players.find(a=>a.id===s.profile?.id)!;return Math.hypot(self.x,self.z-6)<4&&await exit.isEnabled();},{timeout:Math.max(1,20000-(Date.now()-started)),intervals:[400]}).toBe(true);
 }
 // Separate signed-input scenarios keep each actual GPU journey within the
 // unchanged 240s case budget. BOTH platform paths and every persistence check
@@ -143,7 +172,7 @@ test('desktop and touch players physically enter the same furnished room, chat a
   await mutation(page,'town-chat',page.getByRole('button',{name:'Say',exact:true}));
   await expect.poll(async()=>(await state(peer)).town!.chat.some(m=>m.text==='Tea after our orchard round?')).toBe(true);
   await capture(page,'tea-room-desktop.png');await capture(peer,'tea-room-mobile.png');
-  for(const p of [page,peer]){await mutation(p,'town-venue/exit',p.getByRole('button',{name:'Return through entrance',exact:true}));expect((await state(p)).world?.name).toBe('Willow Square');}
+  for(const p of [page,peer]){await walkToRoomExit(p);await mutation(p,'town-venue/exit',p.getByRole('button',{name:'Return through entrance',exact:true}));expect((await state(p)).world?.name).toBe('Willow Square');}
   expect(errors).toEqual([]);
  }finally{await browser.close();}
 });

@@ -341,3 +341,18 @@
  .hb-app:not(.is-public-world) .hb-alert{bottom:calc(280px + env(safe-area-inset-bottom,0px));box-sizing:border-box;}
  .hb-app:not(.is-public-world) .hb-life-dock{top:calc(200px + env(safe-area-inset-top,0px));}
 }
+/* Homes keep the same touch target budget as Public World. Build remains a
+ * full-width action, with four playable controls in two rows, not a tall stack
+ * obscuring the character. Worlds/Character navigation remains scrollable. */
+@media(max-width:760px){
+ .hb-app:not(.is-public-world):not(.is-editing) .hb-message,
+ .hb-app:not(.is-public-world):not(.is-editing) .hb-alert{top:calc(244px + env(safe-area-inset-top,0px));bottom:auto;}
+ .hb-app:not(.is-public-world) .hb-bottom{display:grid;grid-template-columns:repeat(2,62px);max-width:none;gap:4px;padding:4px;}
+ .hb-app:not(.is-public-world) .hb-bottom button{width:62px;min-width:0;height:44px;min-height:44px;padding:5px 3px;font-size:10px;line-height:1.15;white-space:normal;}
+ .hb-app:not(.is-public-world) .hb-bottom .hb-primary{grid-column:1/-1;width:auto;}
+ .hb-app:not(.is-public-world) .hb-chat-toggle{bottom:calc(166px + env(safe-area-inset-bottom,0px));}
+ .hb-app:not(.is-public-world) .hb-music-player{bottom:calc(214px + env(safe-area-inset-bottom,0px));}
+ .hb-app:not(.is-public-world) .hb-chat{bottom:calc(166px + env(safe-area-inset-bottom,0px));}
+ .hb-app:not(.is-public-world):has(.hb-chat) .hb-music-player{display:none;}
+ .hb-app:not(.is-public-world) .hb-venue-guide{bottom:calc(222px + env(safe-area-inset-bottom,0px));}
+}

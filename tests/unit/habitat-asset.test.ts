@@ -1,6 +1,7 @@
 import {describe,it,expect,vi} from 'vitest';
 import {BoxGeometry,Group,Mesh,MeshStandardMaterial,Texture} from 'three';
 import {cloneHabitatAsset,habitatMaterial} from '@/features/habitat/habitat-asset';
+import {TOWN_PALETTE} from '@/features/habitat/town-palette';
 describe('consistent diffuse Habitat and interior asset materials',()=>{
  it('keeps source colors/textures without dark metallic vegetation or cache mutation',()=>{
   const source=new MeshStandardMaterial({color:'#73a083',metalness:1,roughness:.1,map:new Texture()}),color=source.color.clone();source.name='leaf-green';
@@ -15,6 +16,17 @@ describe('consistent diffuse Habitat and interior asset materials',()=>{
   const leaf=new MeshStandardMaterial();leaf.name='leaf-green';const wood=new MeshStandardMaterial();wood.name='wood';
   expect(habitatMaterial(leaf,true).customProgramCacheKey()).toBe('ctrl-root-anchored-foliage-v1');
   expect(habitatMaterial(wood,true).customProgramCacheKey()).not.toBe('ctrl-root-anchored-foliage-v1');expect(leaf.customProgramCacheKey()).not.toBe('ctrl-root-anchored-foliage-v1');
+ });
+ it('harmonizes opted-in nature leaves and bark, preserving flowers, maps and furniture',()=>{
+  for(const name of ['leafsGreen','grass','plant']){
+   const source=new MeshStandardMaterial({color:'#29c9ab',map:new Texture()});source.name=name;const color=source.color.clone();
+   const own=habitatMaterial(source,true) as MeshStandardMaterial;
+   expect(own.color.getHexString()).toBe(TOWN_PALETTE.sage.slice(1));expect(own.map).toBe(source.map);expect(source.color.equals(color)).toBe(true);
+   expect(own.customProgramCacheKey()).toBe('ctrl-root-anchored-foliage-v1');
+   expect((habitatMaterial(source) as MeshStandardMaterial).color.equals(color)).toBe(true);
+  }
+  const bark=new MeshStandardMaterial();bark.name='woodBark';expect((habitatMaterial(bark,true) as MeshStandardMaterial).color.getHexString()).toBe(TOWN_PALETTE.wood.slice(1));
+  const petal=new MeshStandardMaterial({color:'#ba7759'});petal.name='petal';expect((habitatMaterial(petal,true) as MeshStandardMaterial).color.equals(petal.color)).toBe(true);
  });
  it('shares immutable geometry, owns materials once per model and never disposes cached originals',()=>{
   const scene=new Group(),geometry=new BoxGeometry(),source=new MeshStandardMaterial({metalness:1});

@@ -1,6 +1,7 @@
 import {test,expect,type Page,type Locator} from '@playwright/test';
 import type {HabitatState} from '@/domain/habitat';
 import {installSignedWallet} from './helpers/wallet';
+import {assertTouchHUD} from './helpers/habitat-hud';
 
 /**
  * VISUAL acceptance test: valid GLB metadata + an HTML canvas are NOT enough.
@@ -94,6 +95,7 @@ test('wallet player sees a rotating real VRoid preview and a visibly furnished, 
 
   const worldCanvas=page.locator('.hb-stage canvas').first();
   const furnished=await worldCanvas.screenshot({path:test.info().outputPath('furnished-starter-world.png')});
+  await assertTouchHUD(page);
   await page.screenshot({path:test.info().outputPath('player-sees-furnished-habitat.png'),fullPage:true});
 
   // Clear this disposable newly signed-in test wallet only. Revision CAS

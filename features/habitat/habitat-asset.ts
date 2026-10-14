@@ -1,6 +1,7 @@
 import {Material,Mesh,MeshStandardMaterial,type Object3D} from 'three';
 import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import {attachTownWind} from './town-assets';
+import {TOWN_PALETTE as P} from './town-palette';
 
 /** Diffuse stylized room assets: preserve source colors/maps, not accidental
  * exporter-wide metalness=1. Explicit metal/glass materials retain their finish. */
@@ -8,7 +9,12 @@ export function habitatMaterial(source:Material,wind=false){
  const material=source.clone();
  if(material instanceof MeshStandardMaterial&&!/metal|steel|chrome|glass/i.test(material.name)){
   material.metalness=0;material.roughness=Math.max(.75,material.roughness);
-  if(wind&&/grass|leaf|green|flower|petal/i.test(material.name))attachTownWind(material);
+  // Palette changes are opt-in for nature assets, never furniture, outfits or
+  // cached GLBs. The Nature Kit's authored leaves are turquoise rather than
+  // CTRL's existing sage; preserve textures and flower colors.
+  if(wind&&/grass|leaf|green|plant/i.test(material.name))material.color.set(P.sage);
+  else if(wind&&/bark/i.test(material.name))material.color.set(P.wood);
+  if(wind&&/grass|leaf|green|plant|flower|petal/i.test(material.name))attachTownWind(material);
  }
  return material;
 }
