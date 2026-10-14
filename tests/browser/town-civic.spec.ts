@@ -1,6 +1,7 @@
 import {test,expect,chromium,type Page,type Locator} from '@playwright/test';
 import {installSignedWallet} from './helpers/wallet';
 import type {HabitatState} from '@/domain/habitat';
+import {getNearestTownActivity} from '@/features/habitat/town-districts';
 async function press(page:Page,button:Locator){if(await page.evaluate(()=>matchMedia('(pointer:coarse)').matches))await button.tap();else await button.click();}
 async function enter(page:Page,name:string){
  await installSignedWallet(page);await page.goto('/public-world');
@@ -19,9 +20,19 @@ async function travel(page:Page,name:string){
  await press(page,row.getByRole('button',{name:'Travel here ↗',exact:true}));expect((await moved).status()).toBe(200);
 }
 async function work(page:Page){
+ // A peer can still display an enabled button from before the other player's
+ // completion. Wait for the authoritative cooldown, not that stale UI frame.
+ await expect.poll(async()=>{
+  const state=await(await page.request.get('/api/habitat/state')).json() as HabitatState;
+  const player=state.players.find(p=>p.id===state.profile?.id);
+  expect(player).toBeDefined();
+  const activity=getNearestTownActivity(player!.x,player!.z);
+  expect(activity).not.toBeNull();
+  return (state.states[activity!.objectId]?.usedAt??0)+activity!.cooldownMs-state.town!.serverNow;
+ },{timeout:60000,intervals:[500,1000]}).toBeLessThanOrEqual(0);
  const button=page.locator('.hb-town-action');
  await expect(button).toBeEnabled({timeout:60000});
- const started=page.waitForResponse(r=>r.url().endsWith('/api/habitat/town-job/start'));
+ const started=page.waitForResponse(r=>r.url().endsWith('/api/habitat/town-job/start'),{timeout:15000});
  await press(page,button);expect((await started).status()).toBe(200);
  const finish=page.getByRole('button',{name:'Finish activity',exact:true});await expect(finish).toBeEnabled({timeout:15000});
  const finished=page.waitForResponse(r=>r.url().endsWith('/api/habitat/town-job/finish'));
