@@ -11,6 +11,9 @@ import {GroundShadow,paintedTexture} from './town-surfaces';
 import {HARBOR_WATER} from './town-harbor-geography';
 import {TownAsset} from './town-assets';
 import {CanvasTexture,SRGBColorSpace} from 'three';
+import {TOWN_ROAD_CONNECTIONS} from '@/domain/town-terrain';
+import TownGround from './town-ground';
+import {FESTIVAL_DECK} from '@/domain/town-walk-surface';
 
 /** Larger physical map composed of separately visible districts; not background billboards. */
 type Quality='low'|'high';
@@ -22,11 +25,6 @@ function ScenicRoad({ax,az,bx,bz,width=4.8}:{ax:number;az:number;bx:number;bz:nu
   <mesh rotation-x={-Math.PI/2} position-y={.009}><planeGeometry args={[width*.72,length]}/><meshStandardMaterial color='#ead3b4' map={texture} roughness={1}/></mesh>
  </group>;
 }
-const CONNECTIONS=[
- [0,9,78,9],[78,9,78,27],[0,22,-75,22],[-75,22,-75,46],
- [-1.5,-29,-1.5,-76],[-32,-12,-75,-12],[-75,-12,-75,-52],
- [78,27,76,80],[78,27,78,-73],[0,-76,78,-76],[0,34,0,98],
-] as const;
 function ActivityStation({type,x,z,usedAt,cooldownMs}:{type:string;x:number;z:number;usedAt:number;cooldownMs:number}){
  const [now,setNow]=useState(0);
  const sign=useMemo(()=>{
@@ -54,6 +52,10 @@ function ActivityStation({type,x,z,usedAt,cooldownMs}:{type:string;x:number;z:nu
 function FestivalPlatform({x,z}:{x:number;z:number}){
  return <group position={[x,0,z-25]}>
   <mesh castShadow position-y={.4}><boxGeometry args={[16,.8,10]}/><meshStandardMaterial color='#ba856a'/></mesh>
+  <mesh receiveShadow position={[0,.4,7]} rotation-x={-Math.PI/2+Math.atan(FESTIVAL_DECK.height/FESTIVAL_DECK.rampLength)}><planeGeometry args={[5.2,Math.hypot(4,.8)]}/><meshStandardMaterial color='#d8b78e' side={2}/></mesh>
+  {[-8,8].map(side=><group key={side} position={[side,.8,0]}><mesh position-y={.7}><boxGeometry args={[.08,.12,10]}/><meshStandardMaterial color='#7d8665'/></mesh>{[-5,0,5].map(p=><mesh key={p} position={[0,.35,p]}><boxGeometry args={[.1,.7,.1]}/><meshStandardMaterial color='#7d8665'/></mesh>)}</group>)}
+  <mesh position={[0,1.5,-5]}><boxGeometry args={[16,.12,.08]}/><meshStandardMaterial color='#7d8665'/></mesh>
+  {[-5.3,5.3].map(side=><group key={side}><mesh position={[side,1.5,5]}><boxGeometry args={[5.4,.12,.08]}/><meshStandardMaterial color='#7d8665'/></mesh>{[-2.6,2.6].map(p=><mesh key={p} position={[side+p,1.15,5]}><boxGeometry args={[.1,.7,.1]}/><meshStandardMaterial color='#7d8665'/></mesh>)}</group>)}
   {[-6,6].map(v=><mesh key={v} castShadow position={[v,4,-4]}><boxGeometry args={[.45,7.5,.45]}/><meshStandardMaterial color='#7d8665'/></mesh>)}
   <mesh position={[0,7.5,-4]}><boxGeometry args={[14,.5,.5]}/><meshStandardMaterial color='#f3ddae'/></mesh>
   {[-4,0,4].map(v=><mesh key={v} position={[v,7.0,-3.95]}><coneGeometry args={[1.3,1.7,3]}/><meshStandardMaterial color='#dfb58a'/></mesh>)}
@@ -65,8 +67,6 @@ function RemoteZone({district,quality,pose,states}:{district:TownDistrict;qualit
  const activity=TOWN_ACTIVITIES.find(a=>a.district===district.id);
  if(!visible)return null;
  return <group>
-  <mesh rotation-x={-Math.PI/2} position={[district.x,-.082,district.z]} receiveShadow>
-   <planeGeometry args={[110,105]}/><meshStandardMaterial color={district.id==='harbor'?'#b6cfc2':district.id==='garden'||district.id==='orchard'?'#a3c18b':'#b6c79a'} roughness={1}/></mesh>
   {/* Each region has its own through-street, not just scenic facades. */}
   <ScenicRoad ax={district.x-48} az={district.z} bx={district.x+48} bz={district.z} width={5.2}/>
   <ScenicRoad ax={district.x} az={district.z-44} bx={district.x} bz={district.z+44} width={4.4}/>
@@ -109,8 +109,8 @@ function RemoteZone({district,quality,pose,states}:{district:TownDistrict;qualit
 /** Static links are always drawn; remote scenery is visibility-culled per player's current position. */
 export default function TownExpandedDistricts({pose,quality,states}:{pose:MutableRefObject<Pose>;quality:Quality;states:WorldState['states']}){
  return <group>
-  <mesh rotation-x={-Math.PI/2} position-y={-.13} receiveShadow><planeGeometry args={[248,228]}/><meshStandardMaterial color='#a7c395' roughness={1}/></mesh>
-  {CONNECTIONS.map(([ax,az,bx,bz],i)=><ScenicRoad key={i} ax={ax} az={az} bx={bx} bz={bz}/>)}
+  <TownGround/>
+  {TOWN_ROAD_CONNECTIONS.map(([ax,az,bx,bz],i)=><ScenicRoad key={i} ax={ax} az={az} bx={bx} bz={bz}/>)}
   {TOWN_DISTRICTS.filter(d=>d.id!=='center').map(d=><RemoteZone key={d.id} district={d} quality={quality} pose={pose} states={states}/>)}
  </group>;
 }

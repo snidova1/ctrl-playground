@@ -29,7 +29,7 @@ export default function TownRouteWorld({town,x,z}:{town:TownLifeState;x:number;z
    {site.kind==='mail'?<group position={[1,.65,0]}><mesh position-y={-.3}><boxGeometry args={[.09,.7,.09]}/><meshStandardMaterial color='#9f8261'/></mesh><mesh position-y={.25}><boxGeometry args={[.5,.3,.3]}/><meshStandardMaterial color='#94b3af'/></mesh><mesh position={[.28,saved?.45:.25,0]}><boxGeometry args={[.03,.22,.18]}/><meshStandardMaterial color='#ca8873'/></mesh></group>:
     site.kind==='hedge'?<TownAssetInstances id='nature-kit/plant_bushSmall' placements={[-1,0,1].map(i=>({x:i*.65,z:1.2,y:0,size:saved?.6:1.1}))}/>:
     site.kind==='flowers'?<TownAssetInstances id='nature-kit/flower_yellowB' placements={[-1,0,1].map(i=>({x:i*.4,z:1.3,y:0,size:saved?.7:.3}))}/>:
-    site.kind==='grass'?<mesh rotation-x={-Math.PI/2} position-y={.012}><circleGeometry args={[1.35,20]}/><meshStandardMaterial color={saved?'#99b57e':'#849b66'}/></mesh>:
+    site.kind==='grass'?<><mesh rotation-x={-Math.PI/2} position-y={.012}><circleGeometry args={[1.35,20]}/><meshStandardMaterial color={saved?'#99b57e':'#849b66'}/></mesh>{!saved&&<TownAssetInstances id='nature-kit/grass_leafsLarge' placements={Array.from({length:18},(_,i)=>({x:Math.sin(i*2.4)*(.3+i*.04),z:Math.cos(i*2.4)*(.3+i*.04),y:0,size:.5+(i%3)*.15,yaw:i*.79}))}/>}</>:
     site.kind==='fruit'||site.kind==='wood'?<mesh position={[1.3,.2,1.3]}><boxGeometry args={[.6,saved?.55:.25,.6]}/><meshStandardMaterial color={color}/></mesh>:
     !saved&&[-1,0,1].map(i=><mesh key={i} position={[i*.35,.025,1.2+i*.2]} rotation-y={i*.8}><boxGeometry args={[.25,.04,.17]}/><meshStandardMaterial color={site.kind==='leaves'?'#c29a65':site.kind==='road'?'#a29176':'#d6c6ac'}/></mesh>)}
   </group>;

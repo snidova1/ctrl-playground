@@ -6,12 +6,13 @@ import {Html} from '@react-three/drei';
 import {TownGardens} from './town-gardens';
 import {paintedTexture,TownFootShadow} from './town-surfaces';
 import {Group} from 'three';
-import {TownAssetInstances} from './town-assets';
+import {TownAssetInstances,TownFoliageClock} from './town-assets';
 import {TownHouse,MarketFront} from './town-architecture';
 import {TownDailyProps} from './town-daily-props';
 import {TownPaving} from './town-paving';
 import {TownFountain,CanalBoat} from './town-waterfront';
-import {TOWN_HILLS,townTerrainHeight} from './town-terrain';
+import {TOWN_HILLS} from './town-terrain';
+import {townSurfaceHeight as townGroundHeight} from '@/domain/town-walk-surface';
 import {createCharacterMotion,resolveCharacter,seededAppearance} from '@/features/plaza/characters/catalog';
 import VrmAvatar from '@/features/plaza/characters/vrm-avatar';
 import type {Pose} from '@/features/plaza/types';
@@ -51,17 +52,15 @@ const leafSeeds=[...Array.from({length:72},(_,i)=>{
  return {x:x+Math.sin(i*19)*1.6,z:z+Math.cos(i*23)*2.4,h:3+(i%5)*.7};
 }),...[[-11,-6],[11,-6],[-12,8],[12,8],[-4,-7],[4,-7]].map(([x,z])=>({x,z,h:4.1}))];
 function GreenBorder({quality}:{quality:'low'|'high'}){
- const selected=useMemo(()=>(quality==='low'?leafSeeds.filter((_,i)=>i>=72||i%2===0):leafSeeds).map((p,i)=>({x:p.x,z:p.z,y:Math.max(0,townTerrainHeight(p.x,p.z)),size:p.h,yaw:i*.73})),[quality]);
+ const selected=useMemo(()=>(quality==='low'?leafSeeds.filter((_,i)=>i>=72||i%2===0):leafSeeds).map((p,i)=>({x:p.x,z:p.z,y:townGroundHeight(p.x,p.z),size:p.h,yaw:i*.73})),[quality]);
  return <TownAssetInstances id='nature-kit/tree_detailed' placements={selected} castShadow={quality==='high'}/>;
 }
 function RaisedGround(){
- const grass=useMemo(()=>paintedTexture('grass'),[]);
  const quays=useMemo(()=>{
   const edges=[-37.5,...PUBLIC_WORLD_BRIDGES.flatMap(b=>[b.x-PUBLIC_WORLD_BRIDGE.halfWidth,b.x+PUBLIC_WORLD_BRIDGE.halfWidth]),37.5];
   return edges.filter((_,i)=>i%2===0).map((x,i)=>({x:(x+edges[i*2+1])/2,width:edges[i*2+1]-x}));
  },[]);
  return <>
-  <mesh rotation-x={-Math.PI/2} position-y={-.1} receiveShadow><planeGeometry args={[150,150]}/><meshStandardMaterial map={grass} roughness={1}/></mesh>
   <TownStylizedWater x={0} y={-.065} z={-19.5} width={78} depth={5}/>
   {/* Both quays have visible stone retaining walls and a safe road behind them. */}
   {[-16.7,-22.3].flatMap(z=>quays.map(quay=><group key={`${z}:${quay.x}`}>
@@ -113,7 +112,7 @@ function Resident({index}:{index:number}){
   Object.assign(pose.current,next);
   if(wavingRef.current!==next.waving){wavingRef.current=next.waving;setWaving(next.waving);}
  });
- return <><TownFootShadow pose={pose}/><VrmAvatar definition={resolveCharacter(appearance)} appearance={appearance} name={['Mira','Theo','June','Kai'][index]+' · NPC'} local={false} pose={initial} poseRef={pose} motion={motion} quality='low' sitting={index===1} celebrate={waving} interactedAt={0} seatLift={0}/></>;
+ return <><TownFootShadow pose={pose}/><VrmAvatar groundAt={townGroundHeight} definition={resolveCharacter(appearance)} appearance={appearance} name={['Mira','Theo','June','Kai'][index]+' · NPC'} local={false} pose={initial} poseRef={pose} motion={motion} quality='low' sitting={index===1} celebrate={waving} interactedAt={0} seatLift={0}/></>;
 }
 function WaterfrontRipples(){
  const water=useRef<Group>(null);
@@ -124,6 +123,7 @@ function WaterfrontRipples(){
 }
 export default function TownScenery({quality,onDirectory,pose,states}:{quality:'low'|'high';onDirectory:()=>void;pose:MutableRefObject<Pose>;states:WorldState['states']}){
  return <group>
+  <TownFoliageClock/>
   <TownExpandedDistricts pose={pose} quality={quality} states={states}/>
   <RaisedGround/>
   <WaterfrontRipples/>

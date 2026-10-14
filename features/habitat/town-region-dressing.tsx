@@ -3,9 +3,14 @@ import {useMemo} from 'react';
 import {TownAssetInstances} from './town-assets';
 import {regionPlanting} from './town-region-layout';
 import type {TownDistrictKind} from './town-districts';
+import {townGroundHeight} from '@/domain/town-terrain';
 /** Existing licensed CC0 geometry, instanced per material and culled with its region. */
 export default function TownRegionDressing({district,quality}:{district:TownDistrictKind;quality:'low'|'high'}){
- const plants=useMemo(()=>regionPlanting(district),[district]);
+ const plants=useMemo(()=>{
+  const p=regionPlanting(district);
+  const ground=(items:typeof p.trees)=>items.map(v=>({...v,y:townGroundHeight(v.x,v.z)}));
+  return {trees:ground(p.trees),shrubs:ground(p.shrubs),flowers:ground(p.flowers)};
+ },[district]);
  return <group>
   <TownAssetInstances id='nature-kit/tree_detailed' placements={plants.trees} castShadow={quality==='high'}/>
   <TownAssetInstances id='nature-kit/plant_bushDetailed' placements={plants.shrubs}/>

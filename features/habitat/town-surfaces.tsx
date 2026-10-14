@@ -5,6 +5,7 @@ import {useFrame} from '@react-three/fiber';
 import {RoundedBox} from '@react-three/drei';
 import {CanvasTexture,Group,RepeatWrapping,SRGBColorSpace} from 'three';
 import type {Pose} from '@/features/plaza/types';
+import {townSurfaceHeight as townGroundHeight} from '@/domain/town-walk-surface';
 
 /** Original small painted textures, generated locally. No external game art. */
 const textures=new Map<string,CanvasTexture>();
@@ -54,7 +55,7 @@ export function GroundShadow({x=0,z=0,width=2,depth=2}:{x?:number;z?:number;widt
 }
 export function TownFootShadow({pose}:{pose:MutableRefObject<Pose>}){
  const root=useRef<Group>(null);
- useFrame(()=>{if(root.current){root.current.position.x=pose.current.x;root.current.position.z=pose.current.z;}});
+ useFrame(()=>{if(root.current){root.current.position.set(pose.current.x,townGroundHeight(pose.current.x,pose.current.z),pose.current.z);}});
  return <group ref={root}><GroundShadow width={1.3} depth={1.0}/></group>;
 }
 /** Re-skin only immutable town kit pieces, keeping their original AABB/rotation. */

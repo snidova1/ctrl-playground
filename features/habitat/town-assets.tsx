@@ -1,22 +1,46 @@
 'use client';
 import {Suspense,useEffect,useLayoutEffect,useMemo,useRef} from 'react';
 import {useGLTF} from '@react-three/drei';
+import {useFrame} from '@react-three/fiber';
 import {BufferGeometry,InstancedMesh,Material,Matrix4,Mesh,MeshStandardMaterial,Object3D} from 'three';
 import {getBuildAsset} from '@/features/plaza/build-assets';
 import {TOWN_PALETTE as P} from './town-palette';
 
 export type AssetPlacement={x:number;z:number;y?:number;size:number;yaw?:number};
 export type TownAssetTone='natural'|'stone'|'foliage';
+const foliageTime={value:0};
+export function TownFoliageClock(){useFrame(({clock})=>{foliageTime.value=clock.elapsedTime;});return null;}
+/** Original WebGL wind extension. One shared gust clock, instanced world-space
+ * phase and height-squared anchoring; no imported shader/postprocess stack. */
+export function attachTownWind(material:MeshStandardMaterial){
+ material.onBeforeCompile=shader=>{
+  shader.uniforms.ctrlWindTime=foliageTime;
+  shader.vertexShader='uniform float ctrlWindTime;\n'+shader.vertexShader;
+  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+    vec4 ctrlOrigin=vec4(0.0,0.0,0.0,1.0);
+    #ifdef USE_INSTANCING
+      ctrlOrigin=instanceMatrix*ctrlOrigin;
+    #endif
+    ctrlOrigin=modelMatrix*ctrlOrigin;
+    float ctrlHeight=clamp(position.y,0.0,1.4);
+    float ctrlGust=sin(ctrlWindTime*1.15+ctrlOrigin.x*.31+ctrlOrigin.z*.27);
+    transformed.x+=(ctrlGust*.07+sin(ctrlWindTime*.54+ctrlOrigin.z)*.02)*ctrlHeight*ctrlHeight;
+    transformed.z+=cos(ctrlWindTime*.83+ctrlOrigin.z*.33)*.035*ctrlHeight*ctrlHeight;`);
+ };
+ material.customProgramCacheKey=()=> 'ctrl-root-anchored-foliage-v1';
+ return material;
+}
 /** Original GLB materials are cloned: never mutate cached Habitat/Common Ground assets.
  * Some licensed Nature Kit GLBs export metalness=1; vegetation must be diffuse.
  */
-export function townMaterial(source:Material,tone:TownAssetTone='natural'){
+export function townMaterial(source:Material,tone:TownAssetTone='natural',wind=false){
  const material=source.clone();
  if(material instanceof MeshStandardMaterial){
   material.metalness=0;material.roughness=.9;
   if(/grass|leaf|green/i.test(material.name))material.color.set(P.sage);
   else if(tone==='stone')material.color.set(P.pot);
   else if(/wood|bark/i.test(material.name))material.color.set(P.wood);
+  if(wind&&/grass|leaf|green|flower|petal/i.test(material.name))attachTownWind(material);
  }
  return material;
 }
@@ -29,10 +53,11 @@ export function useTownParts(id:string,tone:TownAssetTone='natural'){
   const origin=new Matrix4().makeTranslation(-asset.center[0],-(asset.center[1]-asset.bounds[1]/2),-asset.center[2]);
   scene.traverse((object:Object3D)=>{
    if(!(object instanceof Mesh))return;
-   entries.push({geometry:object.geometry.clone().applyMatrix4(new Matrix4().multiplyMatrices(origin,object.matrixWorld)),material:Array.isArray(object.material)?object.material.map(m=>townMaterial(m,tone)):townMaterial(object.material,tone)});
+   const wind=/nature-kit\/(tree_|plant_|flower_|grass_)/.test(id);
+   entries.push({geometry:object.geometry.clone().applyMatrix4(new Matrix4().multiplyMatrices(origin,object.matrixWorld)),material:Array.isArray(object.material)?object.material.map(m=>townMaterial(m,tone,wind)):townMaterial(object.material,tone,wind)});
   });
   return entries;
- },[asset,scene,tone]);
+ },[asset,scene,tone,id]);
  useEffect(()=>()=>{for(const part of parts){part.geometry.dispose();for(const material of [part.material].flat())material.dispose();}},[parts]);
  return {parts,extent:Math.max(...asset.bounds)};
 }

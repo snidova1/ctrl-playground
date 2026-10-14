@@ -3,6 +3,7 @@ import {useLayoutEffect,useMemo,useRef} from 'react';
 import {useFrame} from '@react-three/fiber';
 import {DoubleSide,InstancedMesh,Object3D,ShaderMaterial} from 'three';
 import {TOWN_ACTIVITIES,TOWN_DISTRICT_BUILDINGS,type TownDistrict} from './town-districts';
+import {townGroundHeight} from '@/domain/town-terrain';
 
 /**
  * One instanced GLSL grass pass per visible region. Inspired by techniques in
@@ -59,7 +60,7 @@ export function TownWindGrass({district,quality}:{district:TownDistrict;quality:
   if(!ref.current)return;
   const obj=new Object3D();
   placements.forEach((p,i)=>{
-    obj.position.set(p.x,.15*p.scale,p.z);
+    obj.position.set(p.x,townGroundHeight(p.x,p.z)+.15*p.scale,p.z);
     obj.rotation.set(0,p.angle,0);
     obj.scale.set(p.scale,p.scale,p.scale);
     obj.updateMatrix();ref.current!.setMatrixAt(i,obj.matrix);
