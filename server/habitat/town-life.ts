@@ -4,7 +4,10 @@ import {AppError} from '@/server/errors';
 import {PUBLIC_WORLD_ID} from '@/features/habitat/public-world';
 import {getTownActivity,TOWN_DISTRICTS} from '@/features/habitat/town-districts';
 import {CROP_GROW_MS,TOWN_GARDEN_BEDS,TOWN_JOB_DURATION,jobStartSchema,jobFinishSchema,gardenActionSchema,type TownLifeState} from '@/domain/town';
-import {civicContribution,readTownProjects} from './town-projects';
+import {readTownProjects} from './town-projects';
+import {recordContribution} from './town-contributions';
+import {readTownRoutes,routeAction} from './town-routes';
+export {recordContribution} from './town-contributions';
 
 const TTL=15000;
 type User={id:string;wallet:string};
@@ -32,22 +35,16 @@ export async function readTownLife(user:string):Promise<TownLifeState>{
   readTownProjects(),
   query<TownLifeState['history'][number]>('SELECT e.id,e.kind,COALESCE(p.name,e.target) AS target,e.created_at AS at FROM town_activity_events e LEFT JOIN habitat_profiles p ON p.id=e.target WHERE e.profile_id=? ORDER BY e.created_at DESC,e.id DESC LIMIT 40',user),
  ]);
+ const routes=await readTownRoutes(user);
  const p=progress??{completed:0};
- return {serverNow:now,progress:p,job,
+ return {serverNow:now,progress:p,job,...routes,
   contributions:Object.fromEntries(counts.map(c=>[c.id,{count:c.count,neighbors:c.neighbors}])),
   garden:TOWN_GARDEN_BEDS.map(b=>garden.find(g=>g.id===b.id)??{id:b.id,crop:null,plantedAt:0,wateredAt:0,revision:0}),
   friends:friends.map(f=>({...f,incoming:!!f.incoming})),invites,social,chat:chat.reverse(),projects,history};
 }
-export function recordContribution(user:User,receipt:string,activity:string,now:number){
- return [
-  statement(`INSERT INTO town_contributions(id,profile_id,activity_id,created_at) SELECT ?,?,?,? WHERE changes()=1`,receipt,user.id,activity,now),
-  statement(`INSERT INTO town_progress(profile_id,completed,updated_at) SELECT ?,1,? WHERE changes()=1 ON CONFLICT(profile_id) DO UPDATE SET completed=completed+1,updated_at=excluded.updated_at`,user.id,now),
-  statement(`INSERT OR IGNORE INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT id,profile_id,'completed',activity_id,created_at FROM town_contributions WHERE id=?`,receipt),
-  ...civicContribution(receipt,activity,now),
- ];
-}
 export async function townLifeAction(user:User,path:string,input:unknown):Promise<unknown>{
  const now=Date.now();
+ if(path.startsWith('town-route/'))return {message:await routeAction(user,path,input),town:await readTownLife(user.id)};
  if(path==='town-chat'){
   const data=z.object({text:z.string().trim().min(1).max(120).refine(text=>!/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(text)),sessionId:z.string().uuid()}).strict().parse(input);
   const result=await batch([statement(`INSERT INTO town_chat(id,world_id,profile_id,text,created_at) SELECT ?,s.world_id,s.profile_id,?,? FROM habitat_presence s JOIN habitat_worlds w ON w.id=s.world_id WHERE s.profile_id=? AND s.session_id=? AND s.seen_at>? AND (w.visibility='public' OR w.owner_id=? OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?))`,crypto.randomUUID(),data.text,now,user.id,data.sessionId,now-TTL,user.id,user.id)]);
@@ -62,8 +59,8 @@ export async function townLifeAction(user:User,path:string,input:unknown):Promis
   if(done&&done.used_at>now-a.cooldownMs)throw new AppError('ACTIVITY_RESTING',409,'This station is resting. Explore another district.');
   const id=crypto.randomUUID();
   const result=await batch([statement(`INSERT INTO town_jobs(id,profile_id,activity_id,session_id,started_at,ready_at,expires_at)
-   SELECT ?,?,?,?,?,?,? WHERE ${presenceGuard} ON CONFLICT(profile_id) DO UPDATE SET id=excluded.id,activity_id=excluded.activity_id,session_id=excluded.session_id,started_at=excluded.started_at,ready_at=excluded.ready_at,expires_at=excluded.expires_at,completed_at=0 WHERE town_jobs.completed_at>0 OR town_jobs.expires_at<=?`,
-   id,user.id,a.id,data.sessionId,now,now+TOWN_JOB_DURATION,now+120000,...guardArgs(user,data.sessionId,a.x,a.z,now),now),
+   SELECT ?,?,?,?,?,?,? WHERE ${presenceGuard} AND NOT EXISTS(SELECT 1 FROM town_routes WHERE profile_id=? AND completed_at=0 AND expires_at>?) ON CONFLICT(profile_id) DO UPDATE SET id=excluded.id,activity_id=excluded.activity_id,session_id=excluded.session_id,started_at=excluded.started_at,ready_at=excluded.ready_at,expires_at=excluded.expires_at,completed_at=0 WHERE town_jobs.completed_at>0 OR town_jobs.expires_at<=?`,
+   id,user.id,a.id,data.sessionId,now,now+TOWN_JOB_DURATION,now+120000,...guardArgs(user,data.sessionId,a.x,a.z,now),user.id,now,now),
    statement(`INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT ?,?,'started',?,? WHERE changes()=1`,crypto.randomUUID(),user.id,a.id,now)]);
   if(!result[0]?.meta.changes)throw new AppError('JOB_ALREADY_ACTIVE',409,'Finish or cancel your current job first.');
   return {message:`${a.verb}. Stay nearby while you work.`,town:await readTownLife(user.id)};
@@ -158,4 +155,4 @@ export async function townLifeAction(user:User,path:string,input:unknown):Promis
  }
  throw new AppError('ROUTE_NOT_FOUND',404);
 }
-export const townLifePaths=new Set(['town-chat','town-job/start','town-job/finish','town-job/cancel','town-garden','town-friend','town-invite','town-invite/accept','town-social','town-social/accept']);
+export const townLifePaths=new Set(['town-route/start','town-route/work','town-route/finish','town-route/cancel','town-chat','town-job/start','town-job/finish','town-job/cancel','town-garden','town-friend','town-invite','town-invite/accept','town-social','town-social/accept']);

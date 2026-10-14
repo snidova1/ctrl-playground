@@ -110,7 +110,11 @@ describe('Habitat 0004 existing-database SQLite migration rehearsal', () => {
         if (table.name === 'ctrl_migrations') continue;
         expect(db.prepare(`SELECT ${table.columns.map(quote).join(',')} FROM ${quote(table.name)} ORDER BY rowid`).all(), table.name).toEqual(table.rows);
       }
-      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 8});
+      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 9});
+      for(const name of ['town_routes','town_route_visits']){
+        expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)).toEqual({name});
+        expect(db.prepare(`SELECT COUNT(*) AS count FROM ${name}`).get()).toEqual({count:0});
+      }
       for(const name of ['town_projects','town_project_work','town_activity_events']){
         expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)).toEqual({name});
         expect(db.prepare(`SELECT COUNT(*) AS count FROM ${name}`).get()).toEqual({count:0});

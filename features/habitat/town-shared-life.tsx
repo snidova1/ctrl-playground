@@ -5,6 +5,7 @@ import {CROP_GROW_MS,TOWN_GARDEN_BEDS,type TownLifeState} from '@/domain/town';
 import {TOWN_ACTIVITIES} from './town-districts';
 import {TownAssetInstances} from './town-assets';
 import TownCivicWorld from './town-civic-world';
+import TownRouteWorld from './town-route-world';
 
 /** Replicated, durable garden growth and visible completed community projects. */
 export default function TownSharedLife({town,pose}:{town:TownLifeState|undefined;pose:MutableRefObject<Pose>}){
@@ -13,6 +14,7 @@ export default function TownSharedLife({town,pose}:{town:TownLifeState|undefined
  if(!town)return null;
  const near=TOWN_ACTIVITIES.filter(a=>Math.hypot(a.x-location.x,a.z-location.z)<65);
  return <group>
+  <TownRouteWorld town={town} x={location.x} z={location.z}/>
   <TownCivicWorld projects={town.projects} x={location.x} z={location.z}/>
   {Math.hypot(location.x+75,location.z-46)<65&&TOWN_GARDEN_BEDS.map(place=>{
    const bed=town.garden.find(b=>b.id===place.id),watered=!!bed?.wateredAt;
