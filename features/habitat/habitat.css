@@ -163,7 +163,7 @@
 .hb-directory{white-space:nowrap;font-size:11px!important;pointer-events:auto}
 .hb-title p{max-width:280px;line-height:1.5}
 @media(max-width:760px){.hb-top{flex-wrap:wrap;background:#f1f1e9eb}.hb-top>div{flex:1;justify-content:flex-end;flex-wrap:wrap}.hb-top .hb-brand{display:none}.hb-top button{min-height:40px;padding:8px;font-size:11px}.hb-top .hb-nav-worlds,.hb-top .hb-nav-character{display:none}.hb-title{top:106px}.hb-title h1{font-size:25px}.hb-panel{top:104px;max-height:calc(100dvh - 124px)}.hb-top .hb-nav-settings{font-size:10px}.hb-bottom{max-width:180px}.hb-touch button{min-width:44px;min-height:44px}.hb-touch{grid-template-columns:repeat(3,44px)} }
-.hb-chat{position:absolute;left:24px;bottom:26px;display:flex;gap:6px;width:280px;z-index:12}.hb-chat input{min-width:0;background:#fffef4e8}.hb-speech{display:block;background:#fffef4;color:#263b30;padding:8px 12px;border:1px solid #9bad94;border-radius:10px;max-width:220px;min-width:70px;overflow-wrap:anywhere;font-size:12px;margin-top:5px;text-align:center}
+.hb-chat{position:absolute;left:24px;bottom:calc(68px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;width:280px;z-index:12}.hb-chat input{min-width:0;background:#fffef4e8}.hb-speech{display:block;background:#fffef4;color:#263b30;padding:8px 12px;border:1px solid #9bad94;border-radius:10px;max-width:220px;min-width:70px;overflow-wrap:anywhere;font-size:12px;margin-top:5px;text-align:center}
 @media(max-width:760px){.hb-chat{left:12px;bottom:190px;width:calc(100% - 24px);max-width:310px}.hb-chat input{font-size:16px}.hb-chat button{min-width:44px}}
 
 /* Public World is a game viewport, not a nested site dashboard.
@@ -199,7 +199,7 @@
 .hb-town-guide strong{font-size:12px}.hb-town-guide svg{display:block;width:100%;margin:12px 0;border-radius:8px}
 .hb-town-guide svg text{font:2.7px sans-serif;fill:#394d3b;letter-spacing:.2px}
 .hb-town-guide p{font-size:12px;line-height:1.6;margin:0 0 8px}.hb-town-guide small{display:block;font-size:10px;line-height:1.5;color:#5b6556}
-.hb-chat-toggle{position:absolute;left:24px;bottom:25px;z-index:12;min-height:44px;background:#faf5e7ed;font-size:12px}
+.hb-chat-toggle{position:absolute;left:24px;bottom:calc(68px + env(safe-area-inset-bottom,0px));z-index:12;min-height:44px;background:#faf5e7ed;font-size:12px}
 @media(max-width:760px){.hb-chat-toggle{left:12px;bottom:calc(130px + env(safe-area-inset-bottom,0px));}}
 .hb-app.is-public-world .hb-music-player{left:auto;right:20px;bottom:25px}
 .hb-app.is-public-world .hb-chat button{min-width:44px}
@@ -301,6 +301,12 @@
 .hb-venue-guide{position:absolute;left:20px;bottom:120px;z-index:12;display:flex;flex-direction:column;gap:8px;padding:12px;max-width:210px;background:#fff8ebf5;border:1px solid #dbc9aa;border-radius:7px;font-size:12px;}
 .hb-venue-guide small{font-size:10px;line-height:1.4;}
 @media(max-width:600px){.hb-venue-guide{left:12px;bottom:calc(190px + env(safe-area-inset-bottom,0px));max-width:170px;}}
+@media(max-width:760px){
+ /* The existing mobile chat slot is shared temporarily with music; this rule
+    applies to real Habitat/public interiors too, not only Public World. */
+ .hb-app:has(.hb-chat) .hb-music-player{display:none;}
+ .hb-app:not(.is-public-world):has(.hb-chat) .hb-venue-guide{bottom:calc(250px + env(safe-area-inset-bottom,0px));}
+}
 @media(max-width:600px){
  .hb-app.is-public-world .hb-life-dock{top:calc(180px + env(safe-area-inset-top,0px));}
  .hb-app.is-public-world .hb-life-panel{max-height:calc(100dvh - 325px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}

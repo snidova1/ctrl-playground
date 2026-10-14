@@ -35,10 +35,10 @@ async function walkToTeaRoom(p:Page){
  const close=p.getByRole('button',{name:'Close town life',exact:true});if(await close.isVisible())await press(p,close);
  const coarse=await p.evaluate(()=>matchMedia('(pointer:coarse)').matches);
  const cdp=coarse?await p.context().newCDPSession(p):null;
- if(cdp){const box=await p.getByRole('button',{name:'Move ←',exact:true}).boundingBox();expect(box).not.toBeNull();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:box!.x+box!.width/2,y:box!.y+box!.height/2}]});}
- else await p.keyboard.down('KeyA');
+ if(cdp){const box=await p.getByRole('button',{name:'Move ←',exact:true}).boundingBox(),run=await p.getByRole('button',{name:'Hold to run',exact:true}).boundingBox();expect(box).not.toBeNull();expect(run).not.toBeNull();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:box!.x+box!.width/2,y:box!.y+box!.height/2},{id:1,x:run!.x+run!.width/2,y:run!.y+run!.height/2}]});}
+ else{await p.keyboard.down('ShiftLeft');await p.keyboard.down('KeyA');}
  try{await expect.poll(async()=>{const s=await(await p.request.get('/api/habitat/state')).json() as HabitatState;const self=s.players.find(a=>a.id===s.profile?.id)!;return Math.hypot(self.x+8,self.z-2.8);},{timeout:20000,intervals:[400]}).toBeLessThan(4);}
- finally{if(cdp){await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();}else await p.keyboard.up('KeyA');}
+ finally{if(cdp){await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();}else{await p.keyboard.up('KeyA');await p.keyboard.up('ShiftLeft');}}
  await mutation(p,'town-venue/enter',p.getByRole('button',{name:'Enter Willow Tea Room',exact:true}));
 }
 test('independent desktop/mobile wallets complete saved routes and a consented gathering through real controls',async({page,baseURL})=>{
@@ -46,8 +46,10 @@ test('independent desktop/mobile wallets complete saved routes and a consented g
  const errors:string[]=[];for(const p of [page,peer]){p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error'&&/Content Security Policy|THREE.WebGL|shader error|context lost/i.test(m.text()))errors.push(m.text());});}
  const state=async(p:Page)=>(await(await p.request.get('/api/habitat/state')).json()) as HabitatState;
  try{
-  await enter(page,'Fruit Courier');await enter(peer,'Orchard Neighbor');expect((await state(page)).wallet).not.toBe((await state(peer)).wallet);
-  for(const p of [page,peer]){
+  await Promise.all([enter(page,'Fruit Courier'),enter(peer,'Orchard Neighbor')]);expect((await state(page)).wallet).not.toBe((await state(peer)).wallet);
+  // Independently signed browsers work concurrently, as players do; no shared
+  // fake session or clock. All per-player persistence assertions remain.
+  await Promise.all([page,peer].map(async p=>{
    await travel(p,'Applehill Orchard');await open(p);
    await mutation(p,'town-route/start',p.getByRole('button',{name:'Start Orchard to café',exact:true}));await routeWork(p,'Gather fruit');
    await p.reload();await expect(p.locator('.pl-name').filter({hasText:/^You$/})).toBeVisible({timeout:60000});
@@ -57,7 +59,7 @@ test('independent desktop/mobile wallets complete saved routes and a consented g
    const restored=await state(p);expect(restored.players.find(player=>player.id===restored.profile?.id)).toMatchObject({x:0,z:6});
    await open(p);await routeWork(p,'Deliver fruit');
    expect((await state(p)).town!.route).toBeNull();expect((await state(p)).town!.progress.completed).toBe(1);
-  }
+  }));
   expect((await state(peer)).town!.visits).toContainEqual(expect.objectContaining({siteId:'cafe'}));
   await page.getByLabel('Gathering name',{exact:true}).fill('Willow friends dance');await page.getByLabel('Activity',{exact:true}).selectOption('dance');
   await mutation(page,'town-gathering/create',page.getByRole('button',{name:'Host gathering here',exact:true}));
@@ -85,7 +87,7 @@ test('desktop and touch players physically enter the same furnished room, chat a
  const errors:string[]=[];for(const p of [page,peer]){p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error'&&/Content Security Policy|THREE.WebGL|shader error|context lost/i.test(m.text()))errors.push(m.text());});}
  const state=async(p:Page)=>(await(await p.request.get('/api/habitat/state')).json()) as HabitatState;
  try{
-  await enter(page,'Tea Host');await enter(peer,'Tea Neighbor');expect((await state(page)).wallet).not.toBe((await state(peer)).wallet);
+  await Promise.all([enter(page,'Tea Host'),enter(peer,'Tea Neighbor')]);expect((await state(page)).wallet).not.toBe((await state(peer)).wallet);
   await walkToTeaRoom(page);await walkToTeaRoom(peer);
   expect((await state(peer)).world?.name).toBe('Willow Tea Room');expect((await state(peer)).players.some(p=>p.name==='Tea Host')).toBe(true);
   await press(page,page.getByRole('button',{name:'Chat nearby',exact:true}));await page.getByRole('textbox',{name:'Say something nearby',exact:true}).fill('Tea after our orchard round?');
