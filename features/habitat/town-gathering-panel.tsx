@@ -8,8 +8,8 @@ export default function TownGatheringPanel({events,profileId,worldId,homeId,x,z,
  return <details open><summary>Gather with neighbors</summary>
   <p>RSVP reserves your place. Check in physically to participate. Dance check-in means agreeing to a shared dance; home permission is always required.</p>
   <form onSubmit={e=>{e.preventDefault();onAction('town-gathering/create',{title,kind});}}>
-   <label>Gathering name<input value={title} onChange={e=>setTitle(e.target.value)} minLength={3} maxLength={60} required/></label>
-   <label>Activity<select value={kind} onChange={e=>setKind(e.target.value as TownGathering['kind'])}><option value='picnic'>Picnic</option><option value='dance'>Shared dance</option><option value='workshop'>Workshop meetup</option></select></label>
+   <label htmlFor='town-gathering-name'>Gathering name</label><input id='town-gathering-name' value={title} onChange={e=>setTitle(e.target.value)} minLength={3} maxLength={60} required/>
+   <label htmlFor='town-gathering-kind'>Activity</label><select id='town-gathering-kind' value={kind} onChange={e=>setKind(e.target.value as TownGathering['kind'])}><option value='picnic'>Picnic</option><option value='dance'>Shared dance</option><option value='workshop'>Workshop meetup</option></select>
    <button disabled={busy||title.trim().length<3||(worldId!==PUBLIC_WORLD_ID&&worldId!==homeId&&!getTownVenue(worldId??''))||events.some(e=>e.hostId===profileId)}>Host gathering here</button>
   </form>
   {!events.length&&<p>No gatherings yet. Host one in Public World or your own Habitat.</p>}
