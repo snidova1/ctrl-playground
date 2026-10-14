@@ -265,7 +265,7 @@
  }
  .hb-app.is-public-world .hb-bottom{
   left:auto;right:10px;bottom:calc(16px + env(safe-area-inset-bottom,0px));
-  transform:none;display:flex;flex-direction:row;gap:4px;
+  transform:none;display:grid;grid-template-columns:repeat(2,55px);gap:4px;
   max-width:none;padding:4px;border-radius:12px;
  }
  .hb-app.is-public-world .hb-bottom button{
@@ -297,6 +297,9 @@
 @media(max-width:760px){.hb-app.is-public-world .hb-town-guide .hb-town-guide-actions{max-width:150px;align-items:stretch}.hb-app.is-public-world .hb-town-guide section{max-height:50dvh}}
 /* Persistent activity/social tools stay collapsed while exploring. */
 .hb-life-dock{position:absolute;left:20px;top:192px;z-index:24;max-width:330px;font-size:12px;}
+.hb-venue-guide{position:absolute;left:20px;bottom:120px;z-index:12;display:flex;flex-direction:column;gap:8px;padding:12px;max-width:210px;background:#fff8ebf5;border:1px solid #dbc9aa;border-radius:7px;font-size:12px;}
+.hb-venue-guide small{font-size:10px;line-height:1.4;}
+@media(max-width:600px){.hb-venue-guide{left:12px;bottom:130px;max-width:170px;}}
 .hb-life-actions{display:flex;gap:6px;flex-wrap:wrap;}
 .hb-life-dock button{border:1px solid #cbbc9f;border-radius:10px;background:#fff6e4;color:#374d40;padding:9px 12px;cursor:pointer;min-height:40px;}
 .hb-life-dock button:disabled{opacity:.55;cursor:default;}

@@ -2,6 +2,7 @@
 import {useState} from 'react';
 import type {TownGathering} from '@/domain/town-gatherings';
 import {PUBLIC_WORLD_ID} from './public-world';
+import {getTownVenue} from '@/domain/town-venues';
 export default function TownGatheringPanel({events,profileId,worldId,homeId,x,z,busy,onAction,onVisit}:{events:TownGathering[];profileId:string;worldId:string|undefined;homeId:string|null;x:number;z:number;busy:boolean;onAction:(path:string,data:Record<string,unknown>)=>void;onVisit:(id:string)=>void}){
  const [title,setTitle]=useState(''),[kind,setKind]=useState<TownGathering['kind']>('picnic');
  return <details open><summary>Gather with neighbors</summary>
@@ -9,7 +10,7 @@ export default function TownGatheringPanel({events,profileId,worldId,homeId,x,z,
   <form onSubmit={e=>{e.preventDefault();onAction('town-gathering/create',{title,kind});}}>
    <label>Gathering name<input value={title} onChange={e=>setTitle(e.target.value)} minLength={3} maxLength={60} required/></label>
    <label>Activity<select value={kind} onChange={e=>setKind(e.target.value as TownGathering['kind'])}><option value='picnic'>Picnic</option><option value='dance'>Shared dance</option><option value='workshop'>Workshop meetup</option></select></label>
-   <button disabled={busy||title.trim().length<3||(worldId!==PUBLIC_WORLD_ID&&worldId!==homeId)||events.some(e=>e.hostId===profileId)}>Host gathering here</button>
+   <button disabled={busy||title.trim().length<3||(worldId!==PUBLIC_WORLD_ID&&worldId!==homeId&&!getTownVenue(worldId??''))||events.some(e=>e.hostId===profileId)}>Host gathering here</button>
   </form>
   {!events.length&&<p>No gatherings yet. Host one in Public World or your own Habitat.</p>}
   {events.map(e=>{

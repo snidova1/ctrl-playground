@@ -128,7 +128,7 @@ export function useWorldPresence(options: Options) {
       return result;
     }finally{mutating.current=false;}
   },[performSync]);
-  const travel = useCallback(async (id:string) => {
+  const travel = useCallback(async (id:string,kind:'district'|'venue'|'exit'='district') => {
     const current=connection.current;
     if(!current || superseded.current)throw new HabitatApiError('WORLD_SESSION_EXPIRED',409,'Rejoin the world before travelling.');
     // Serialize against presence heartbeats so a slow reply never restores the old position.
@@ -137,7 +137,7 @@ export function useWorldPresence(options: Options) {
     try{
       for(let tries=0;syncing.current&&tries<30;tries++)await new Promise<void>(resolve=>setTimeout(resolve,60));
       if(syncing.current)throw new Error('Please wait for your connection to catch up.');
-      const next=await habitatApi<HabitatState&{accepted:{x:number;z:number}}>('town-travel',{id,sessionId:current.id});
+      const next=await habitatApi<HabitatState&{accepted:{x:number;z:number}}>(kind==='district'?'town-travel':kind==='venue'?'town-venue/enter':'town-venue/exit',{id,sessionId:current.id});
       if(generation.current!==generationAtStart)return;
       Object.assign(handlers.current.pose.current,{x:next.accepted.x,z:next.accepted.z,moving:false});
       handlers.current.latest.current=next;

@@ -20,7 +20,7 @@ export async function gatheringAction(user:{id:string},path:string,input:unknown
  if(path==='town-gathering/create'){
   const d=z.object({title:z.string().trim().min(3).max(60).refine(t=>!/[\u0000-\u001f]/.test(t)),kind:z.enum(['picnic','dance','workshop']),sessionId:z.string().uuid()}).strict().parse(input),id=crypto.randomUUID();
   const result=await batch([
-   statement(`INSERT INTO town_gatherings(id,host_id,world_id,title,kind,x,z,created_at,ends_at) SELECT ?,s.profile_id,s.world_id,?,?,s.x,s.z,?,? FROM habitat_presence s JOIN habitat_worlds w ON w.id=s.world_id WHERE s.profile_id=? AND s.session_id=? AND s.seen_at>? AND (w.id=? OR w.owner_id=?) AND NOT EXISTS(SELECT 1 FROM town_gatherings WHERE host_id=? AND ended_at=0 AND ends_at>?)`,id,d.title,d.kind,now,now+GATHERING_DURATION,user.id,d.sessionId,now-15000,PUBLIC_WORLD_ID,user.id,user.id,now),
+   statement(`INSERT INTO town_gatherings(id,host_id,world_id,title,kind,x,z,created_at,ends_at) SELECT ?,s.profile_id,s.world_id,?,?,s.x,s.z,?,? FROM habitat_presence s JOIN habitat_worlds w ON w.id=s.world_id WHERE s.profile_id=? AND s.session_id=? AND s.seen_at>? AND (w.id=? OR w.owner_id=? OR w.owner_id LIKE 'ctrl-public-venue-%') AND NOT EXISTS(SELECT 1 FROM town_gatherings WHERE host_id=? AND ended_at=0 AND ends_at>?)`,id,d.title,d.kind,now,now+GATHERING_DURATION,user.id,d.sessionId,now-15000,PUBLIC_WORLD_ID,user.id,user.id,now),
    statement('INSERT INTO town_gathering_guests(gathering_id,profile_id,joined_at,arrived_at) SELECT ?,?,?,? WHERE changes()=1',id,user.id,now,now),
    statement("INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT ?,?,'gathering-hosted',?,? WHERE changes()=1",`${id}:host`,user.id,d.title,now),
   ]);

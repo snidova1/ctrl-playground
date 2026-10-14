@@ -8,6 +8,7 @@ import {readTownProjects} from './town-projects';
 import {recordContribution} from './town-contributions';
 import {readTownRoutes,routeAction} from './town-routes';
 import {readTownGatherings,gatheringAction} from './town-gatherings';
+import {getTownVenue} from '@/domain/town-venues';
 export {recordContribution} from './town-contributions';
 
 const TTL=15000;
@@ -123,7 +124,7 @@ export async function townLifeAction(user:User,path:string,input:unknown):Promis
   const data=z.object({id:z.string().min(2).max(100),destination:z.string().min(2).max(50)}).strict().parse(input);
   if(!await one("SELECT requester FROM town_friendships WHERE status='accepted' AND ((requester=? AND recipient=?) OR (requester=? AND recipient=?))",user.id,data.id,data.id,user.id))throw new AppError('FRIEND_REQUIRED',403);
   if(!TOWN_DISTRICTS.some(d=>d.id===data.destination)){
-   const home=await one<{id:string}>('SELECT id FROM habitat_worlds WHERE id=? AND owner_id=?',data.destination,user.id);
+   const home=getTownVenue(data.destination)?await one<{id:string}>("SELECT id FROM habitat_worlds WHERE id=? AND visibility='public'",data.destination):await one<{id:string}>('SELECT id FROM habitat_worlds WHERE id=? AND owner_id=?',data.destination,user.id);
    if(!home)throw new AppError('INVALID_INVITE_DESTINATION',422);
    // An invite alone never silently grants private-home membership.
    if(!await one(`SELECT id FROM habitat_worlds w WHERE id=? AND (visibility='public' OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?))`,home.id,data.id))throw new AppError('INVITEE_ACCESS_REQUIRED',403,'Grant visitor access before inviting this friend.');

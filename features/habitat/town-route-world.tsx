@@ -7,7 +7,7 @@ import {getTownRoute,TOWN_WORK_SITES} from '@/domain/town-routes';
 import {TownAssetInstances} from './town-assets';
 
 // No remote font or blob worker: compatible with CTRL's production CSP.
-function WorkLabel({label}:{label:string}){
+export function WorkLabel({label}:{label:string}){
  const texture=useMemo(()=>{
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;
   const context=canvas.getContext('2d')!;context.fillStyle='#f2e0b9';context.fillRect(0,0,512,128);

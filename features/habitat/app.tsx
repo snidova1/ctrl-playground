@@ -1,4 +1,6 @@
 'use client';
+import {getTownVenue} from '@/domain/town-venues';
+import TownVenueGuide from './town-venue-guide';
 import {nearestUsable} from './nearby-object';
 /* eslint-disable @next/next/no-img-element -- Local catalog thumbnails are preoptimized WebP. */
 import dynamic from 'next/dynamic';
@@ -52,12 +54,12 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
  useEffect(()=>{latest.current=state;},[state]);useEffect(()=>{flags.current={sitting,celebrate,interactedAt,speech,speechAt};},[sitting,celebrate,interactedAt,speech,speechAt]);
  const acceptPresence=useCallback((next:WorldState|null)=>{latest.current=next;setState(next);if(!next?.canEdit)setEditing(false);if(!next){setPanel('entry');setMessage('Your wallet session expired. Verify again to continue.');}else if(!next.world){setPanel('worlds');setMessage('World access is no longer available. Choose another place or go home.');}else if(editing&&!next.canEdit){setMessage('Editing access was revoked. Your local draft was not saved.');}},[editing]);
  const {connect,sync,leave,travel,mutate}=useWorldPresence({latest,pose,motion,flags,onState:acceptPresence,onOnline:setOnline});
- const refresh=useCallback(async()=>{
+ const refresh=useCallback(async(preserveVenue=true)=>{
   const epoch=++refreshEpoch.current;setError('');setMessage('');
   try{
    const saved=await ensureStarterHome(await api<WorldState>('state'));
    if(epoch!==refreshEpoch.current)return;
-   const target=requested.current==='public'&&saved.profile?(await api<{id:string}>('public-world',{})).id:saved.homeId;
+   const target=preserveVenue&&saved.world&&getTownVenue(saved.world.id)?saved.world.id:requested.current==='public'&&saved.profile?(await api<{id:string}>('public-world',{})).id:saved.homeId;
    const s=saved.profile&&target?await connect(target):saved;
    if(epoch!==refreshEpoch.current){leave();return;}
    latest.current=s;setState(s);setPanel(s.profile?(s.world?null:'worlds'):'wardrobe');
@@ -74,7 +76,7 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
  useEffect(()=>{if(!town||!message)return;const t=setTimeout(()=>setMessage(''),4500);return()=>clearTimeout(t);},[town,message]);
  async function action(fn:()=>Promise<void>){if(busy)return;setBusy(true);setError('');try{await fn();}catch(e){setError(e instanceof Error?e.message:'Operation failed.');}finally{setBusy(false);}}
  function commonGround(){if(busy)return;window.history.replaceState(null,'','/');setOnline(true);refreshEpoch.current++;leave();latest.current=null;setState(null);requested.current='common';setDestination('common');setPanel(null);setEditing(false);setSitting(false);setError('');setMessage('');Object.assign(pose.current,{x:0,z:6,angle:Math.PI,moving:false});}
- async function chooseDestination(next:'habitat'|'public'){if(busy)return;window.history.replaceState(null,'',next==='public'?'/public-world':'/habitat');setBusy(true);requested.current=next;setDestination(next);setEditing(false);setSitting(false);setPanel('entry');try{await refresh();}finally{setBusy(false);}}
+ async function chooseDestination(next:'habitat'|'public'){if(busy)return;window.history.replaceState(null,'',next==='public'?'/public-world':'/habitat');setBusy(true);requested.current=next;setDestination(next);setEditing(false);setSitting(false);setPanel('entry');try{await refresh(false);}finally{setBusy(false);}}
  function rerollGuest(){const next=createGuestState();setGuestState(old=>old?{...old,profile:next.profile}:next);setGuestStyle(randomGuestStyle());}
  async function profile(){await action(async()=>{const saved=await ensureStarterHome(await api<WorldState>('profile',{name,character:gender,variant,appearance}));const target=requested.current==='public'?(await api<{id:string}>('public-world',{})).id:saved.world?.id;const s=target?await connect(target):saved;latest.current=s;setState(s);if(s.profile)setAppearance(normalizeAppearance(s.profile.appearance,s.profile.character==='male'?'male':'female',s.profile.variant));setPanel(null);setMessage(requested.current==='public'?'Welcome to Willow Square.':'Welcome home. Your starter world is ready to customize.');});}
  async function furnishEmptyHome(){await action(async()=>{const w=state?.world;if(!w||!state?.canEdit||w.id!==state.homeId||w.ownerId!==state.profile?.id||w.objects.length)return;const s=await api<WorldState>('save',{worldId:w.id,revision:w.revision,objects:createStarterWorld()});latest.current=s;setState(s);setMessage('Your starter garden is ready. Every object can be moved, replaced or deleted.');});}
@@ -83,6 +85,7 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
  const guestLatest=useRef(guestState);useEffect(()=>{guestLatest.current=guestState;},[guestState]);
  const useRefLatest=useRef(use);useEffect(()=>{useRefLatest.current=use;});
  useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return;if(e.code==='Escape'){if(requested.current==='common'){setPanel(null);return;}setPanel(latest.current?.profile?(latest.current.world?null:'worlds'):latest.current?'wardrobe':'entry');setSitting(false);}if(['KeyW','KeyA','KeyS','KeyD'].includes(e.code))setSitting(false);if(e.code==='KeyE'){const near=nearestUsable((requested.current==='common'?guestLatest.current:latest.current)?.world?.objects??[],pose.current.x,pose.current.z);if(near)void useRefLatest.current(near);}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[]);
+ async function venueTravel(id:string,kind:'venue'|'exit'){await action(async()=>{setSitting(false);await travel(id,kind);requested.current=kind==='exit'?'public':'habitat';setDestination(requested.current);window.history.replaceState(null,'',kind==='exit'?'/public-world':'/habitat');});}
  async function townTravel(id:TownDistrictKind){if(!town||busy||panel)return;await action(async()=>{
    setSitting(false);await travel(id);setMessage('Arrived at your destination. Explore and help your neighbors!');
  });}
@@ -126,7 +129,8 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
  {viewState&&<HabitatMusic/>}
  {!editing&&!panel&&viewState?.world&&<div className='hb-title'><small>{common?'PLAY BEFORE YOU CONNECT':town?'PUBLIC WORLD':'YOUR HABITAT'}</small><h1>{viewState.world.name}</h1><p>{common?'Explore. Build. Make yourself at home.':town?`${state?.players.length??0} players online · ${quality==='low'?2:4} local NPCs`:'Your own corner of CTRL.'}</p>{common&&<small>Your demo changes last for this visit.</small>}</div>}
  {town&&!panel&&<TownGuide pose={pose} onDirectory={()=>setPanel('worlds')} onActivity={id=>void townActivity(id)} onTravel={id=>void townTravel(id)} states={viewState?.states??{}} busy={busy}/>}
- {state?.profile&&!common&&!panel&&!editing&&<TownLifePanel state={state} pose={pose} busy={busy} onAction={(path,data)=>void lifeAction(path,data)} onInvite={id=>void acceptInvite(id)} onVisit={id=>void visit(id)}/>}
+ {state?.profile&&state.world&&!common&&!panel&&!editing&&<TownVenueGuide worldId={state.world.id} pose={pose} busy={busy} onTravel={(id,kind)=>void venueTravel(id,kind)}/>}
+ {state?.profile&&!common&&!panel&&!editing&&<TownLifePanel state={state} pose={pose} busy={busy} onAction={(path,data)=>void lifeAction(path,data)} onInvite={id=>void acceptInvite(id)} onVisit={id=>void(id===PUBLIC_WORLD_ID?chooseDestination('public'):visit(id))}/>}
  {error&&panel!=='entry'&&<div className='hb-alert' role='alert'>{error}<button onClick={()=>setError('')}>Dismiss</button></div>}{message&&!error&&panel!=='entry'&&<div className='hb-message' role='status' onClick={()=>setMessage('')}>{message}</div>}
  {!state&&panel==='entry'&&<div className='hb-entry-caption'><strong>Starter garden</strong><span>Yours to rebuild.</span></div>}
  {panel==='entry'&&<section className='hb-panel hb-entry' aria-labelledby='habitat-entry-title'><h1 id='habitat-entry-title'>Enter {destination==='public'?'Public World':'Habitat'}.</h1><p>Choose a character. Build your place. Invite your people.</p>{message&&!error&&<p className='hb-entry-note' role='status'>{message}</p>}{error&&<p className='form-error' role='alert'>{error}</p>}<WalletConnection onVerified={()=>void refresh()}/>{!loaded&&<small role='status'>Checking your saved session…</small>}{error&&<button onClick={()=>void refresh()}>Retry connection</button>}<div className='hb-entry-guest'><span>Just looking around?</span><button onClick={commonGround} disabled={busy}>{busy?'Opening Common Ground…':'Enter Common Ground'}</button><small>Explore and try building without a wallet.</small></div></section>}

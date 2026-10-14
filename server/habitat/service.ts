@@ -20,6 +20,8 @@ import {readHabitatJson} from './read-json';
 import {resolveHabitatAssets} from './asset-resolver';
 import {keysConfig} from '@/server/keys/config';
 import {readTownLife,recordContribution,townLifeAction,townLifePaths} from './town-life';
+import {getTownVenue} from '@/domain/town-venues';
+import {seedTownVenues} from './town-venues';
 import {readWorldKeys, prepareOwnerClaim, verifyOwnerClaim} from '@/server/keys/service';
 
 interface Principal {id: string; wallet: string}
@@ -50,7 +52,7 @@ function appearance(profile: ProfileRow): CharacterProfile {
   return {...profile,appearance:saved,variant:saved.variantId,loadout:{version:1,characterId:resolveCharacter(saved).id,variantId:saved.variantId,appearance:saved,accessories:[]}};
 }
 async function permissions(w: Row, user: string): Promise<WorldPermissions> {
-  if (w.id === PUBLIC_WORLD_ID) return {role:'visitor',canVisit:true,canEdit:false,canManage:false};
+  if (w.id === PUBLIC_WORLD_ID||getTownVenue(w.id)) return {role:'visitor',canVisit:true,canEdit:false,canManage:false};
   if (w.owner_id === user) return {role: 'owner', canVisit: true, canEdit: true, canManage: true};
   const member = await one<{role: 'editor' | 'visitor'}>('SELECT role FROM habitat_members WHERE world_id=? AND profile_id=?', w.id, user);
   return {role: member?.role ?? 'visitor', canVisit: w.visibility === 'public' || !!member, canEdit: member?.role === 'editor', canManage: false};
@@ -122,15 +124,16 @@ async function save(user: Principal, id: string, revision: number, input: WorldO
   if (!result[0]?.meta.changes) throw new AppError('WORLD_EDIT_CONFLICT', 409, 'Reload the latest world before editing.');
   return state(user, id);
 }
-async function join(user: Principal, id: string, sequenced = true) {
+async function join(user: Principal, id: string, sequenced = true,transition?:{source:string;session:string;x:number;z:number},spawn={x:0,z:6}) {
   await readWorld(id, user.id);
   if (!await one('SELECT id FROM habitat_profiles WHERE id=?', user.id)) throw new AppError('PROFILE_REQUIRED', 409);
   const result = await exec(`INSERT INTO habitat_presence(profile_id,world_id,x,z,angle,motion,seen_at,session_id,sequence)
-    SELECT ?,id,0,6,3.14,'{}',?,?,0 FROM habitat_worlds WHERE id=? AND
+    SELECT ?,id,?,?,3.14,'{}',?,?,0 FROM habitat_worlds WHERE id=? AND
       (visibility='public' OR owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=habitat_worlds.id AND m.profile_id=?))
+      ${transition?'AND EXISTS(SELECT 1 FROM habitat_presence s WHERE s.profile_id=? AND s.world_id=? AND s.session_id=? AND s.seen_at>? AND (s.x-?)*(s.x-?)+(s.z-?)*(s.z-?)<=18.0625)':''}
     ON CONFLICT(profile_id) DO UPDATE SET
-    world_id=excluded.world_id,x=0,z=6,angle=3.14,motion='{}',seen_at=excluded.seen_at,session_id=excluded.session_id,sequence=0`,
-  user.id, Date.now(), sequenced ? crypto.randomUUID() : '', id, user.id, user.id);
+    world_id=excluded.world_id,x=excluded.x,z=excluded.z,angle=3.14,motion='{}',seen_at=excluded.seen_at,session_id=excluded.session_id,sequence=0`,
+  user.id,spawn.x,spawn.z, Date.now(), sequenced ? crypto.randomUUID() : '', id, user.id, user.id,...(transition?[user.id,transition.source,transition.session,Date.now()-TTL,transition.x,transition.x,transition.z,transition.z]:[]));
   if (!result.meta.changes) throw new AppError('WORLD_NOT_FOUND', 404);
   return state(user, id);
 }
@@ -167,6 +170,7 @@ export async function handleHabitat(r: Request, path: string[]) {
         statement('INSERT OR IGNORE INTO habitat_profiles(id,name,character,variant,appearance,created_at) VALUES(?,?,?,?,?,?)',PUBLIC_WORLD_OWNER,'CTRL Town','female','sage','{}',now),
         statement("INSERT OR IGNORE INTO habitat_worlds(id,owner_id,name,visibility,layout,created_at,updated_at) VALUES(?,?,?,'public',?,?,?)",PUBLIC_WORLD_ID,PUBLIC_WORLD_OWNER,'Willow Square',JSON.stringify(createPublicWorld()),now,now),
       ]);
+      await seedTownVenues();
       return reply({id:PUBLIC_WORLD_ID});
     }
     if (r.method === 'GET' && p === 'state') return reply(await state(user));
@@ -194,6 +198,17 @@ export async function handleHabitat(r: Request, path: string[]) {
     }
     if (r.method === 'POST' && p === 'assets/resolve') {
       return reply(resolveHabitatAssets(await body(r)));
+    }
+    if(r.method==='POST'&&['town-venue/enter','town-venue/exit'].includes(p)){
+      const d=z.object({id:z.string().uuid(),sessionId:z.string().uuid()}).strict().parse(await body(r)),venue=getTownVenue(d.id);
+      if(!venue)throw new AppError('VENUE_NOT_FOUND',404);
+      const exit=p==='town-venue/exit',source=exit?venue.id:PUBLIC_WORLD_ID,entranceX=exit?0:venue.x,entranceZ=exit?6:venue.z;
+      const location=await one<{x:number;z:number}>('SELECT x,z FROM habitat_presence WHERE profile_id=? AND world_id=? AND session_id=? AND seen_at>?',user.id,source,d.sessionId,Date.now()-TTL);
+      if(!location)throw new AppError('WORLD_SESSION_EXPIRED',409);
+      if(Math.hypot(location.x-entranceX,location.z-entranceZ)>4.25)throw new AppError('COME_CLOSER',422,'Walk to this building entrance.');
+      const next=await join(user,exit?PUBLIC_WORLD_ID:venue.id,true,{source,session:d.sessionId,x:entranceX,z:entranceZ},exit?{x:venue.x,z:venue.z}:{x:0,z:6});
+      const self=next.players.find(s=>s.id===user.id)!;
+      return reply({...next,accepted:{x:self.x,z:self.z}});
     }
     if (r.method === 'POST' && (p === 'join' || p === 'visit')) {
       const {id} = z.object({id: worldIdSchema}).strict().parse(await body(r));
