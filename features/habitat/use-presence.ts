@@ -19,6 +19,8 @@ export function useWorldPresence(options: Options) {
   const connection = useRef<PresenceSession | null>(null);
   const generation = useRef(0);
   const syncing = useRef(false);
+  const pendingSync = useRef<Promise<void>|null>(null);
+  const mutating = useRef(false);
   const travelling = useRef(false);
   const joining = useRef<number | null>(null);
   const superseded = useRef(false);
@@ -45,10 +47,10 @@ export function useWorldPresence(options: Options) {
     handlers.current.onOnline(true);
     return state;
   }, [leave]);
-  const sync = useCallback(async () => {
+  const performSync = useCallback(async (foreground=false) => {
     const {latest, pose, motion, flags, onState, onOnline} = handlers.current;
     const world = latest.current?.world;
-    if (!world || !latest.current?.profile || syncing.current || joining.current !== null || travelling.current || superseded.current) return;
+    if (!world || !latest.current?.profile || syncing.current || joining.current !== null || travelling.current || mutating.current&&!foreground || superseded.current) return;
     syncing.current = true;
     let epoch = generation.current;
     try {
@@ -97,6 +99,35 @@ export function useWorldPresence(options: Options) {
       }
     } finally {syncing.current = false;}
   }, [connect, leave]);
+  const sync=useCallback(()=>{
+    if(pendingSync.current)return pendingSync.current;
+    const promise=performSync();pendingSync.current=promise;
+    void promise.finally(()=>{if(pendingSync.current===promise)pendingSync.current=null;});
+    return promise;
+  },[performSync]);
+  const mutate=useCallback(async <T,>(path:string,data:Record<string,unknown>):Promise<T>=>{
+    if(mutating.current||travelling.current)throw new Error('Another world action is still in progress.');
+    mutating.current=true;
+    try{
+      if(pendingSync.current)await pendingSync.current;
+      await performSync(true);
+      const session=connection.current,epoch=generation.current;
+      if(!session||superseded.current)throw new HabitatApiError('WORLD_SESSION_EXPIRED',409,'Rejoin before interacting.');
+      const result=await habitatApi<T>(path,{...data,...('sessionId' in data?{sessionId:session.id}:{})});
+      if(epoch!==generation.current)throw new HabitatApiError('PRESENCE_SESSION_STALE',409,'World changed during this interaction.');
+      const response=result as {state?:HabitatState;town?:HabitatState['town']};
+      const next=response.state??(response.town&&handlers.current.latest.current?{...handlers.current.latest.current,town:response.town}:null);
+      if(next){
+        if(response.state){
+          connection.current=next.presenceSession;
+          const self=next.players.find(p=>p.id===next.profile?.id);
+          if(self)Object.assign(handlers.current.pose.current,{x:self.x,z:self.z,angle:self.angle,moving:false});
+        }
+        handlers.current.latest.current=next;handlers.current.onState(next);
+      }
+      return result;
+    }finally{mutating.current=false;}
+  },[performSync]);
   const travel = useCallback(async (id:string) => {
     const current=connection.current;
     if(!current || superseded.current)throw new HabitatApiError('WORLD_SESSION_EXPIRED',409,'Rejoin the world before travelling.');
@@ -141,5 +172,5 @@ export function useWorldPresence(options: Options) {
     return () => {active = false; clearTimeout(timer); window.removeEventListener('pagehide', leave);
       document.removeEventListener('visibilitychange', visibility); leave();};
   }, [sync, connect, leave]);
-  return {connect, sync, leave, travel};
+  return {connect, sync, leave, travel,mutate};
 }

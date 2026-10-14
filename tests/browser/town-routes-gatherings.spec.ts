@@ -28,7 +28,7 @@ async function routeWork(p:Page,name:string){
 }
 test('independent desktop/mobile wallets complete saved routes and a consented gathering through real controls',async({page,baseURL})=>{
  const browser=await chromium.launch(test.info().project.use.launchOptions),context=await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}),peer=await context.newPage();
- const errors:string[]=[];for(const p of [page,peer])p.on('pageerror',e=>errors.push(e.message));
+ const errors:string[]=[];for(const p of [page,peer]){p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error'&&m.text().includes('Content Security Policy'))errors.push(m.text());});}
  const state=async(p:Page)=>(await(await p.request.get('/api/habitat/state')).json()) as HabitatState;
  try{
   await enter(page,'Fruit Courier');await enter(peer,'Orchard Neighbor');expect((await state(page)).wallet).not.toBe((await state(peer)).wallet);

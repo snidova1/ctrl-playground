@@ -6,7 +6,7 @@ import {one, query, exec, batch, statement} from '@/db';
 import {identity, rateLimit} from '@/server/wallet/auth';
 import {settings} from '@/server/env';
 import {AppError, safeError} from '@/server/errors';
-import {collideWorld, type WorldProfile, type WorldObject} from '@/features/habitat/types';
+import {collideWorld,isWorldPointWalkable, type WorldProfile, type WorldObject} from '@/features/habitat/types';
 import {getBuildAsset} from '@/features/plaza/build-assets';
 import {resolveCharacter, normalizeAppearance, seededAppearance, validVariant, type CharacterAppearance, type CharacterGender} from '@/features/plaza/characters/catalog';
 import {
@@ -24,7 +24,7 @@ import {readWorldKeys, prepareOwnerClaim, verifyOwnerClaim} from '@/server/keys/
 
 interface Principal {id: string; wallet: string}
 interface Row {id: string; owner_id: string; name: string; visibility: 'public' | 'private'; revision: number; layout: string}
-interface Presence {world_id: string; x: number; z: number; seen_at: number; session_id: string; sequence: number}
+interface Presence {world_id: string; x: number; z: number; seen_at: number; session_id: string; sequence: number;motion:string}
 interface ProfileRow extends Omit<WorldProfile,'appearance'>{appearance?:string}
 const TTL = 15000;
 const builtins = new Set(['ctrl-block', 'ctrl-door', 'ctrl-switch', 'ctrl-lamp', 'ctrl-seat', 'ctrl-portal', 'ctrl-marker']);
@@ -298,12 +298,15 @@ export async function handleHabitat(r: Request, path: string[]) {
       if (data.sessionId && (data.sessionId !== old.session_id || data.sequence! <= old.sequence)) throw new AppError('STALE_PRESENCE', 409);
       const limit = Math.min(10, Math.max(1, (Date.now() - old.seen_at) / 1000 * 4));
       if (Math.hypot(data.x - old.x, data.z - old.z) > limit) throw new AppError('MOVE_TOO_FAST', 422);
-      const position = collideWorld(old, data, current.world.objects, current.states, data.worldId);
+      const oldSeat=motionSchema.parse(JSON.parse(old.motion)).seatId;
+      if(data.motion.seatId&&data.motion.seatId!==oldSeat)throw new AppError('SEAT_NOT_CLAIMED',409);
+      const seated=!!data.motion.sitting&&!!oldSeat&&current.world.objects.some(o=>o.id===oldSeat&&o.behavior==='seat')&&isWorldPointWalkable(old.x,old.z,current.world.objects,current.states,data.worldId);
+      const position = seated?{x:old.x,z:old.z}:collideWorld(old, data, current.world.objects, current.states, data.worldId);
       const result = await exec(`UPDATE habitat_presence SET x=?,z=?,angle=?,motion=?,seen_at=?,sequence=?
         WHERE profile_id=? AND world_id=? AND session_id=? AND sequence=? AND EXISTS
         (SELECT 1 FROM habitat_worlds w WHERE w.id=habitat_presence.world_id AND
          (w.visibility='public' OR w.owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?)))`,
-      position.x, position.z, data.angle, JSON.stringify({...data.motion,speechAt:Math.min(data.motion.speechAt??0,Date.now())}), Date.now(), data.sequence ?? old.sequence + 1, user.id, data.worldId, old.session_id, old.sequence, user.id, user.id);
+      position.x, position.z, data.angle, JSON.stringify({...data.motion,seatId:seated?oldSeat:null,speechAt:Math.min(data.motion.speechAt??0,Date.now())}), Date.now(), data.sequence ?? old.sequence + 1, user.id, data.worldId, old.session_id, old.sequence, user.id, user.id);
       if (!result.meta.changes) throw new AppError('STALE_PRESENCE', 409);
       return reply({...await state(user, data.worldId), accepted: position});
     }
@@ -348,11 +351,23 @@ export async function handleHabitat(r: Request, path: string[]) {
       if (!current.world) throw new AppError('PROFILE_REQUIRED', 409);
       const {world} = await readWorld(current.world.id, user.id);
       if (p === 'settings') return reply(await updateSettings(user, world, await body(r)));
-      const {id} = z.object({id: z.string().uuid()}).strict().parse(await body(r));
+      const {id,sessionId} = z.object({id: z.string().uuid(),sessionId:z.string().uuid().optional()}).strict().parse(await body(r));
       const object = current.world.objects.find(o => o.id === id);
       if (!object) throw new AppError('OBJECT_NOT_FOUND', 404);
-      const position = await one<{x: number; z: number}>('SELECT x,z FROM habitat_presence WHERE profile_id=? AND world_id=? AND seen_at>?', user.id, world.id, Date.now() - TTL);
+      const position = await one<{x: number; z: number;session_id:string;motion:string}>('SELECT x,z,session_id,motion FROM habitat_presence WHERE profile_id=? AND world_id=? AND seen_at>?', user.id, world.id, Date.now() - TTL);
       if (!position || Math.hypot(position.x - object.x, position.z - object.z) > 3.5) throw new AppError('COME_CLOSER', 422);
+      if(sessionId&&sessionId!==position.session_id)throw new AppError('STALE_PRESENCE',409);
+      if(object.behavior==='seat'){
+        const now=Date.now(),previous=motionSchema.parse(JSON.parse(position.motion));
+        const standing=previous.sitting&&previous.seatId===id;
+        const candidates=[0,.12,-.12,.24,-.24].map(offset=>({x:object.x+Math.sin(object.rotation)*offset,z:object.z+Math.cos(object.rotation)*offset}));
+        const point=standing?position:candidates.find(p=>isWorldPointWalkable(p.x,p.z,current.world!.objects,current.states,world.id));
+        if(!point)throw new AppError('SEAT_BLOCKED',409,'Move furniture away from this seat before using it.');
+        const result=await batch([statement(`UPDATE habitat_presence SET x=?,z=?,angle=?,motion=?,seen_at=? WHERE profile_id=? AND world_id=? AND session_id=? AND seen_at>? AND (x-?)*(x-?)+(z-?)*(z-?)<=12.25 AND EXISTS(SELECT 1 FROM habitat_worlds w WHERE w.id=habitat_presence.world_id AND w.revision=? AND (w.visibility='public' OR w.owner_id=? OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?))) AND NOT EXISTS(SELECT 1 FROM habitat_presence s WHERE s.profile_id<>? AND s.world_id=? AND s.seen_at>? AND json_extract(s.motion,'$.sitting')=1 AND json_extract(s.motion,'$.seatId')=?)`,point.x,point.z,object.rotation,JSON.stringify({...previous,seatId:standing?null:id,sitting:!standing,moving:false,running:false,airborne:false,height:0}),now,user.id,world.id,position.session_id,now-TTL,object.x,object.x,object.z,object.z,world.revision,user.id,user.id,user.id,world.id,now-TTL,id),
+          statement("INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT ?,?,?,?,? WHERE changes()=1",crypto.randomUUID(),user.id,standing?'stood':'sat',object.name,now)]);
+        if(!result[0]?.meta.changes)throw new AppError('SEAT_UNAVAILABLE',409,'Seat occupied, world changed, or your session expired.');
+        return reply({object,state:await state(user,world.id)});
+      }
       const target = object.behavior === 'switch' ? current.world.objects.find(o => o.id === object.target) : object;
       if (!target) throw new AppError('TARGET_REQUIRED', 422);
       if (['light', 'door', 'spin'].includes(target.behavior)) {

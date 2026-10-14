@@ -1,8 +1,22 @@
 'use client';
-import {Text} from '@react-three/drei';
+import {Billboard} from '@react-three/drei';
+import {useEffect,useMemo} from 'react';
+import {CanvasTexture,SRGBColorSpace} from 'three';
 import type {TownLifeState} from '@/domain/town';
 import {getTownRoute,TOWN_WORK_SITES} from '@/domain/town-routes';
 import {TownAssetInstances} from './town-assets';
+
+// No remote font or blob worker: compatible with CTRL's production CSP.
+function WorkLabel({label}:{label:string}){
+ const texture=useMemo(()=>{
+  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;
+  const context=canvas.getContext('2d')!;context.fillStyle='#f2e0b9';context.fillRect(0,0,512,128);
+  context.fillStyle='#354a3e';context.textAlign='center';context.textBaseline='middle';context.font='bold 34px sans-serif';context.fillText(label,256,64,490);
+  const t=new CanvasTexture(canvas);t.colorSpace=SRGBColorSpace;return t;
+ },[label]);
+ useEffect(()=>()=>texture.dispose(),[texture]);
+ return <Billboard position={[0,2.35,0]}><mesh><planeGeometry args={[3,.75]}/><meshBasicMaterial map={texture}/></mesh></Billboard>;
+}
 
 // All cleaned/tended states come from server receipts and are observed by peers.
 export default function TownRouteWorld({town,x,z}:{town:TownLifeState;x:number;z:number}){
@@ -11,7 +25,7 @@ export default function TownRouteWorld({town,x,z}:{town:TownLifeState;x:number;z
   const saved=town.visits.some(v=>v.siteId===site.id),active=site.id===current;
   const color=saved?'#a8c69a':'#d7b78d';
   return <group key={site.id} position={[site.x,0,site.z]}>
-   {active&&<><mesh rotation-x={-Math.PI/2} position-y={.04}><ringGeometry args={[1.45,1.65,32]}/><meshBasicMaterial color='#d49b46'/></mesh><Text position={[0,2.35,0]} fontSize={.22} maxWidth={3} color='#463c31' anchorY='bottom'>{site.verb}</Text></>}
+   {active&&<><mesh rotation-x={-Math.PI/2} position-y={.04}><ringGeometry args={[1.45,1.65,32]}/><meshBasicMaterial color='#d49b46'/></mesh><WorkLabel label={site.verb}/></>}
    {site.kind==='mail'?<group position={[1,.65,0]}><mesh position-y={-.3}><boxGeometry args={[.09,.7,.09]}/><meshStandardMaterial color='#9f8261'/></mesh><mesh position-y={.25}><boxGeometry args={[.5,.3,.3]}/><meshStandardMaterial color='#94b3af'/></mesh><mesh position={[.28,saved?.45:.25,0]}><boxGeometry args={[.03,.22,.18]}/><meshStandardMaterial color='#ca8873'/></mesh></group>:
     site.kind==='hedge'?<TownAssetInstances id='nature-kit/plant_bushSmall' placements={[-1,0,1].map(i=>({x:i*.65,z:1.2,y:0,size:saved?.6:1.1}))}/>:
     site.kind==='flowers'?<TownAssetInstances id='nature-kit/flower_yellowB' placements={[-1,0,1].map(i=>({x:i*.4,z:1.3,y:0,size:saved?.7:.3}))}/>:
