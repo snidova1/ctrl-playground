@@ -26,7 +26,7 @@ export default function VrmAvatar(props:Props) {
   },[props.quality,definition,attempt]);
   useFrame((_,delta)=>{
     if(!character||!animator.current||!root.current)return;
-    const dt=Math.min(delta,.05),r=root.current,p=props.poseRef?.current??props.pose;
+    const dt=Number.isFinite(delta)?Math.min(Math.max(delta,0),.25):0,r=root.current,p=props.poseRef?.current??props.pose;
     r.position.x+=(p.x-r.position.x)*(1-Math.exp(-30*dt));
     r.position.z+=(p.z-r.position.z)*(1-Math.exp(-30*dt));
     const ground=props.groundAt?.(r.position.x,r.position.z)??0;

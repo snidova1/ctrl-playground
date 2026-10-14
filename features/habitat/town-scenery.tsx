@@ -1,6 +1,6 @@
 'use client';
 import {TOWN_PALETTE as P} from './town-palette';
-import {useMemo,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {useFrame} from '@react-three/fiber';
 import {Html} from '@react-three/drei';
 import {TownGardens} from './town-gardens';
@@ -21,7 +21,7 @@ import type {MutableRefObject} from 'react';
 import TownExpandedDistricts from './town-expanded-districts';
 import TownStylizedWater from './town-stylized-water';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_BRIDGES,PUBLIC_WORLD_BRIDGE} from './public-world-geography';
-import {residentPose} from './town-residents';
+import {nearbyResidents,residentPose,TOWN_RESIDENT_NAMES} from './town-residents';
 
 /** An authored neighborhood made from reusable, lightweight Three geometry.
  * This is visual scenery, not player-created Habitat objects or fake online users.
@@ -106,13 +106,15 @@ function Resident({index}:{index:number}){
  const initial=useMemo<Pose>(()=>residentPose(index,0),[index]);
  const [waving,setWaving]=useState(false);
  const wavingRef=useRef(false);
+ const [working,setWorking]=useState(0),workingRef=useRef(false);
  const pose=useRef({...initial}),motion=useRef(createCharacterMotion());
- useFrame(({clock})=>{
-  const next=residentPose(index,clock.elapsedTime);
+ useFrame(()=>{
+  const next=residentPose(index,Date.now()/1000);
   Object.assign(pose.current,next);
   if(wavingRef.current!==next.waving){wavingRef.current=next.waving;setWaving(next.waving);}
+  if(workingRef.current!==next.working){workingRef.current=next.working;setWorking(next.working?Date.now()+4000:0);}
  });
- return <><TownFootShadow pose={pose}/><VrmAvatar groundAt={townGroundHeight} definition={resolveCharacter(appearance)} appearance={appearance} name={['Mira','Theo','June','Kai'][index]+' · NPC'} local={false} pose={initial} poseRef={pose} motion={motion} quality='low' sitting={index===1} celebrate={waving} interactedAt={0} seatLift={0}/></>;
+ return <><TownFootShadow pose={pose}/><VrmAvatar groundAt={townGroundHeight} definition={resolveCharacter(appearance)} appearance={appearance} name={TOWN_RESIDENT_NAMES[index]+' · NPC'} local={false} pose={initial} poseRef={pose} motion={motion} quality='low' sitting={index===1} workUntil={working} celebrate={waving} interactedAt={0} seatLift={0}/></>;
 }
 function WaterfrontRipples(){
  const water=useRef<Group>(null);
@@ -122,6 +124,8 @@ function WaterfrontRipples(){
  </mesh>)}</group>;
 }
 export default function TownScenery({quality,onDirectory,pose,states}:{quality:'low'|'high';onDirectory:()=>void;pose:MutableRefObject<Pose>;states:WorldState['states']}){
+ const [residents,setResidents]=useState(()=>nearbyResidents(pose.current.x,pose.current.z,quality));
+ useEffect(()=>{const tick=setInterval(()=>{const next=nearbyResidents(pose.current.x,pose.current.z,quality);setResidents(old=>old.join(',')===next.join(',')?old:next);},500);return()=>clearInterval(tick);},[pose,quality]);
  return <group>
   <TownFoliageClock/>
   <TownExpandedDistricts pose={pose} quality={quality} states={states}/>
@@ -143,6 +147,6 @@ export default function TownScenery({quality,onDirectory,pose,states}:{quality:'
    <mesh position-y={1.65}><boxGeometry args={[1.7,.55,.14]}/><meshStandardMaterial color={P.cream}/></mesh>
    <Html transform center occlude position={[0,1.65,.09]} distanceFactor={5} zIndexRange={[5,0]}><button className='hb-directory' onClick={onDirectory}>Visit habitats ↗</button></Html>
   </group>
-  {Array.from({length:quality==='low'?2:4},(_,i)=><Resident key={i} index={i}/>)}
+  {residents.map(i=><Resident key={i} index={i}/>)}
  </group>;
 }

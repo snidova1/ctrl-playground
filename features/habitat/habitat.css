@@ -306,7 +306,10 @@
     applies to real Habitat/public interiors too, not only Public World. */
  .hb-app:has(.hb-chat) .hb-music-player{display:none;}
  .hb-app:not(.is-public-world):has(.hb-chat) .hb-venue-guide{bottom:calc(250px + env(safe-area-inset-bottom,0px));}
+ .hb-app:not(.is-public-world):has(.hb-venue-guide) .hb-music-player{left:auto;right:10px;bottom:calc(132px + env(safe-area-inset-bottom,0px));}
 }
+.hb-label-layer .pl-name{white-space:nowrap;}
+.hb-speech{width:200px;max-width:200px;white-space:normal;}
 @media(max-width:600px){
  .hb-app.is-public-world .hb-life-dock{top:calc(180px + env(safe-area-inset-top,0px));}
  .hb-app.is-public-world .hb-life-panel{max-height:calc(100dvh - 325px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
