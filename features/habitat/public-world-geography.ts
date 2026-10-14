@@ -7,6 +7,7 @@ import {TOWN_PROP_OBSTACLES} from './town-prop-layout';
 import {harborWaterBlocks} from './town-harbor-geography';
 import {REGION_TREE_OBSTACLES} from './town-region-layout';
 import {TOWN_DISTRICT_BUILDINGS} from './town-districts';
+import {festivalDeckBlocks} from '@/domain/town-walk-surface';
 export const PUBLIC_WORLD_ID='cf000000-0000-4000-8000-000000000001';
 export const PUBLIC_WORLD_BOUNDS={minX:-120,maxX:120,minZ:-110,maxZ:110} as const;
 export const PUBLIC_WORLD_CANAL={north:-22,south:-17} as const;
@@ -33,6 +34,7 @@ const bridgeClearWidth=PUBLIC_WORLD_BRIDGE.railX-PUBLIC_WORLD_BRIDGE.railHalfWid
 const walkableBridge=(x:number)=>PUBLIC_WORLD_BRIDGES.some(b=>Math.abs(x-b.x)<bridgeClearWidth);
 /** Exterior structures have their own footprints, not just decorative meshes. */
 export function isPublicWorldWalkable(x:number,z:number){
+ if(festivalDeckBlocks(x,z))return false;
  if(harborWaterBlocks(x,z))return false;
  if(x<PUBLIC_WORLD_BOUNDS.minX||x>PUBLIC_WORLD_BOUNDS.maxX||z<PUBLIC_WORLD_BOUNDS.minZ||z>PUBLIC_WORLD_BOUNDS.maxZ)return false;
  // Stop the whole avatar before the bank, not just its origin. Rails continue
