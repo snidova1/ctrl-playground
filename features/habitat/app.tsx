@@ -12,6 +12,7 @@ import TownGuide from './town-guide';
 import TownLifePanel from './town-life-panel';
 import type {TownLifeState} from '@/domain/town';
 import {TOWN_DISTRICTS} from './town-districts';
+import {nearbyResidents} from './town-residents';
 import type {TownActivityId,TownDistrictKind} from './town-districts';
 import {BrandMark} from '@/components/brand';
 import WalletConnection from '@/features/wallet/wallet-connect';
@@ -49,6 +50,8 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
  const requested=useRef(initialDestination),refreshEpoch=useRef(0);
  const common=destination==='common',viewState=common?guestState:state;
  const town=viewState?.world?.id===PUBLIC_WORLD_ID;
+ const selfPlayer=viewState?.players.find(p=>p.id===viewState.profile?.id);
+ const localResidentCount=town?nearbyResidents(selfPlayer?.x??0,selfPlayer?.z??6,quality).length:0;
  const gender=appearance.gender,variant=appearance.variantId,selectedCharacter=resolveCharacter(appearance);
  const pose=useRef<Pose>({x:0,z:6,angle:Math.PI,moving:false}),input=useRef<ControlInput>({x:0,z:0}),motion=useRef(createCharacterMotion()),latest=useRef(state),flags=useRef({sitting,celebrate,interactedAt,speech,speechAt}),history=useRef<WorldObject[][]>([]),future=useRef<WorldObject[][]>([]),startTime=useRef<number|null>(null),baseRevision=useRef(0),settingsRevision=useRef(0);
  useEffect(()=>{latest.current=state;},[state]);useEffect(()=>{flags.current={sitting,celebrate,interactedAt,speech,speechAt};},[sitting,celebrate,interactedAt,speech,speechAt]);
@@ -127,7 +130,7 @@ export default function HabitatApp({advancedBuilder=false,initialDestination='ha
   {!state&&!common&&<button className='hb-nav-connect' onClick={()=>{setPanel('entry');requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>('.hb-entry .wallet-options button')?.focus());}}>Connect wallet</button>}
  </div></header>
  {viewState&&<HabitatMusic/>}
- {!editing&&!panel&&viewState?.world&&<div className='hb-title'><small>{common?'PLAY BEFORE YOU CONNECT':town?'PUBLIC WORLD':'YOUR HABITAT'}</small><h1>{viewState.world.name}</h1><p>{common?'Explore. Build. Make yourself at home.':town?`${state?.players.length??0} players online · local NPC neighbors`:'Your own corner of CTRL.'}</p>{common&&<small>Your demo changes last for this visit.</small>}</div>}
+ {!editing&&!panel&&viewState?.world&&<div className='hb-title'><small>{common?'PLAY BEFORE YOU CONNECT':town?'PUBLIC WORLD':'YOUR HABITAT'}</small><h1>{viewState.world.name}</h1><p>{common?'Explore. Build. Make yourself at home.':town?`${state?.players.length??0} players online · ${localResidentCount} local NPCs`:'Your own corner of CTRL.'}</p>{common&&<small>Your demo changes last for this visit.</small>}</div>}
  {town&&!panel&&<TownGuide pose={pose} onDirectory={()=>setPanel('worlds')} onActivity={id=>void townActivity(id)} onTravel={id=>void townTravel(id)} states={viewState?.states??{}} busy={busy}/>}
  {state?.profile&&state.world&&!common&&!panel&&!editing&&<TownVenueGuide worldId={state.world.id} pose={pose} busy={busy} onTravel={(id,kind)=>void venueTravel(id,kind)}/>}
  {state?.profile&&!common&&!panel&&!editing&&<TownLifePanel state={state} pose={pose} busy={busy} onAction={(path,data)=>void lifeAction(path,data)} onInvite={id=>void acceptInvite(id)} onVisit={id=>void(id===PUBLIC_WORLD_ID?chooseDestination('public'):visit(id))}/>}

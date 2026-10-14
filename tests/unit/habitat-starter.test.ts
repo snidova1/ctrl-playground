@@ -15,6 +15,9 @@ describe('Editable starter home',()=>{
   expect(objects.some(o=>o.behavior==='light')).toBe(true);
   expect(objects.some(o=>o.assetId.includes('tree'))).toBe(true);
   expect(inspectStarterSourceAssets()).toEqual([]);
+  expect(objects.filter(o=>o.behavior==='seat').length).toBeGreaterThanOrEqual(5);
+  expect(objects.some(o=>o.name==='Personal writing desk'&&o.behavior==='solid')).toBe(true);
+  expect(objects.some(o=>o.name==='Garden tea')).toBe(true);
  });
  it('never reseeds edited/cleared, visited, or unauthorized worlds',()=>{
   const original=createStarterWorld(), base={id:crypto.randomUUID(),ownerId:'wallet-A',revision:0,objects:[]};

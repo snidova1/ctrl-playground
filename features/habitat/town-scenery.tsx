@@ -1,12 +1,12 @@
 'use client';
 import {TOWN_PALETTE as P} from './town-palette';
-import {useEffect,useMemo,useRef,useState} from 'react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useFrame} from '@react-three/fiber';
 import {Html} from '@react-three/drei';
 import {TownGardens} from './town-gardens';
 import {paintedTexture,TownFootShadow} from './town-surfaces';
-import {Group} from 'three';
-import {TownAssetInstances,TownFoliageClock} from './town-assets';
+import {Group,Object3D} from 'three';
+import {TownAssetInstances} from './town-assets';
 import {TownHouse,MarketFront} from './town-architecture';
 import {TownDailyProps} from './town-daily-props';
 import {TownPaving} from './town-paving';
@@ -22,6 +22,8 @@ import TownExpandedDistricts from './town-expanded-districts';
 import TownStylizedWater from './town-stylized-water';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_BRIDGES,PUBLIC_WORLD_BRIDGE} from './public-world-geography';
 import {nearbyResidents,residentPose,TOWN_RESIDENT_NAMES} from './town-residents';
+import {townCenterDetailed} from './town-lod';
+import {assignOcclusionTarget} from './town-occlusion';
 
 /** An authored neighborhood made from reusable, lightweight Three geometry.
  * This is visual scenery, not player-created Habitat objects or fake online users.
@@ -125,28 +127,31 @@ function WaterfrontRipples(){
 }
 export default function TownScenery({quality,onDirectory,pose,states}:{quality:'low'|'high';onDirectory:()=>void;pose:MutableRefObject<Pose>;states:WorldState['states']}){
  const [residents,setResidents]=useState(()=>nearbyResidents(pose.current.x,pose.current.z,quality));
+ const empty=useMemo(()=>new Object3D(),[]),directory=useRef(empty);
+ const mountDirectory=useCallback((object:Object3D|null)=>assignOcclusionTarget(directory,object,empty),[empty]);
+ const [centerDetail,setCenterDetail]=useState(()=>townCenterDetailed(pose.current.x,pose.current.z,false));
  useEffect(()=>{const tick=setInterval(()=>{const next=nearbyResidents(pose.current.x,pose.current.z,quality);setResidents(old=>old.join(',')===next.join(',')?old:next);},500);return()=>clearInterval(tick);},[pose,quality]);
+ useEffect(()=>{const tick=setInterval(()=>setCenterDetail(old=>townCenterDetailed(pose.current.x,pose.current.z,old)),500);return()=>clearInterval(tick);},[pose]);
  return <group>
-  <TownFoliageClock/>
   <TownExpandedDistricts pose={pose} quality={quality} states={states}/>
   <RaisedGround/>
   <WaterfrontRipples/>
-  <TownGardens quality={quality}/>
+  {centerDetail&&<TownGardens quality={quality}/>}
   <GreenBorder quality={quality}/>
   {PUBLIC_WORLD_BRIDGES.map(bridge=><Bridge key={bridge.x} x={bridge.x}/>)}
-  {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site}/>)}
-  <TownFountain/>
-  <CanalBoat x={-12} color='#b78c70'/><CanalBoat x={12} color='#82a495'/>
-  <MarketFront x={-8} name='WILLOW CAFÉ' base={P.cream} roof={P.sage}/>
-  <MarketFront x={8} name='FLOWER MARKET' base={P.wall} roof={P.terracotta}/>
-  <LifestyleProps quality={quality}/>
+  {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site} detailed={centerDetail}/>)}
+  {centerDetail&&<><TownFountain/>
+  <CanalBoat x={-12} color='#b78c70'/><CanalBoat x={12} color='#82a495'/></>}
+  <MarketFront x={-8} name='WILLOW CAFÉ' base={P.cream} roof={P.sage} detailed={centerDetail}/>
+  <MarketFront x={8} name='FLOWER MARKET' base={P.wall} roof={P.terracotta} detailed={centerDetail}/>
+  {centerDetail&&<LifestyleProps quality={quality}/>}
   {/* Existing server-owned models provide the interactable fountain and shops.
       This facade surrounds them with streets, districts and actual landmarks. */}
-  <group position={[2.4,0,6]}>
+  {centerDetail&&<group ref={mountDirectory} position={[2.4,0,6]}>
    <mesh position-y={.8}><boxGeometry args={[.12,1.6,.12]}/><meshStandardMaterial color='#86745c'/></mesh>
    <mesh position-y={1.65}><boxGeometry args={[1.7,.55,.14]}/><meshStandardMaterial color={P.cream}/></mesh>
-   <Html transform center occlude position={[0,1.65,.09]} distanceFactor={5} zIndexRange={[5,0]}><button className='hb-directory' onClick={onDirectory}>Visit habitats ↗</button></Html>
-  </group>
+   <Html transform center occlude={[directory]} position={[0,1.65,.09]} distanceFactor={5} zIndexRange={[5,0]}><button className='hb-directory' onClick={onDirectory}>Visit habitats ↗</button></Html>
+  </group>}
   {residents.map(i=><Resident key={i} index={i}/>)}
  </group>;
 }

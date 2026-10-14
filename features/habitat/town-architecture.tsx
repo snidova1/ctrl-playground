@@ -1,13 +1,14 @@
 'use client';
-import {useMemo} from 'react';
+import {useMemo,useRef,useCallback} from 'react';
 import {Html,RoundedBox} from '@react-three/drei';
-import {BoxGeometry,BufferGeometry,Matrix4,Shape} from 'three';
+import {BoxGeometry,BufferGeometry,Matrix4,Shape,Object3D} from 'three';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {useEffect} from 'react';
 import {PUBLIC_WORLD_BUILDINGS} from './public-world-geography';
 import {TOWN_PALETTE as P} from './town-palette';
 import {GroundShadow,paintedTexture} from './town-surfaces';
 import {TownAsset} from './town-assets';
+import {assignOcclusionTarget} from './town-occlusion';
 
 function GableRoof({width,depth,base,rise=1.5,color}:{width:number;depth:number;base:number;rise?:number;color:string}){
  const half=width/2+.35,angle=Math.atan2(rise,half),length=Math.hypot(half,rise);
@@ -58,11 +59,20 @@ function ArchedDoor({z}:{z:number}){
   {[-.3,0,.3].map(x=><mesh key={x} position={[x,.8,.115]}><boxGeometry args={[.025,1.35,.025]}/><meshStandardMaterial color={P.shutter}/></mesh>)}
  </group>;
 }
-export function TownHouse({site}:{site:typeof PUBLIC_WORLD_BUILDINGS[number]}){
+/** Distant LOD keeps real closed building volume instead of rendering hundreds
+ * of window/flower/label draw calls while the player explores another district. */
+function TownShell({x,z,width,depth,height=4.12,rise=1.5,wall,roof}:{x:number;z:number;width:number;depth:number;height?:number;rise?:number;wall:string;roof:string}){
+ const shape=useMemo(()=>new Shape().moveTo(-width/2-.35,0).lineTo(0,rise).lineTo(width/2+.35,0).closePath(),[width,rise]);
+ return <group position={[x,0,z]}><mesh position-y={height/2} castShadow receiveShadow><boxGeometry args={[width,height,depth]}/><meshStandardMaterial color={wall} roughness={.95}/></mesh><mesh position={[0,height,-depth/2-.35]} castShadow receiveShadow><extrudeGeometry args={[shape,{depth:depth+.7,bevelEnabled:false}]}/><meshStandardMaterial color={roof} roughness={.95}/></mesh></group>;
+}
+export function TownHouse({site,detailed=true}:{site:typeof PUBLIC_WORLD_BUILDINGS[number];detailed?:boolean}){
+ const empty=useMemo(()=>new Object3D(),[]),body=useRef(empty);
+ const mount=useCallback((object:Object3D|null)=>assignOcclusionTarget(body,object,empty),[empty]);
  const w=site.width,d=site.depth;
+ if(!detailed)return <TownShell x={site.x} z={site.z} width={w} depth={d} wall={site.name==='ART STUDIO'?P.wall:P.cream} roof={P.terracotta}/>;
  return <group position={[site.x,0,site.z]}>
   <GroundShadow width={w+2} depth={d+2}/>
-  <RoundedBox args={[w,4.12,d]} position-y={2.06} radius={.06} smoothness={1} receiveShadow><meshStandardMaterial color={site.name==='ART STUDIO'?P.wall:P.cream}/></RoundedBox>
+  <RoundedBox ref={mount} args={[w,4.12,d]} position-y={2.06} radius={.06} smoothness={1} receiveShadow><meshStandardMaterial color={site.name==='ART STUDIO'?P.wall:P.cream}/></RoundedBox>
   <mesh position-y={.23}><boxGeometry args={[w+.06,.46,d+.06]}/><meshStandardMaterial color={P.pot}/></mesh>
   <GableRoof width={w} depth={d} base={4.12} color={P.terracotta}/>
   <mesh position={[w*.27,5.3,-d*.22]}><boxGeometry args={[.6,1.15,.6]}/><meshStandardMaterial color={P.terracotta}/></mesh>
@@ -75,13 +85,16 @@ export function TownHouse({site}:{site:typeof PUBLIC_WORLD_BUILDINGS[number]}){
   <mesh position={[0,.12,d/2+.55]}><boxGeometry args={[2.1,.2,.95]}/><meshStandardMaterial color={P.pot}/></mesh>
   {[-w/2+.12,w/2-.12].map(x=><mesh key={x} position={[x,2.06,d/2+.06]}><boxGeometry args={[.2,4.12,.14]}/><meshStandardMaterial color={P.trim}/></mesh>)}
   <mesh position={[0,3.74,d/2+.12]}><boxGeometry args={[Math.min(w-1,4.9),.42,.16]}/><meshStandardMaterial color={P.trim}/></mesh>
-  <Html transform center occlude position={[0,3.74,d/2+.24]} distanceFactor={8} zIndexRange={[5,0]}><span className='hb-town-label'>{site.name}</span></Html>
+  <Html transform center occlude={[body]} position={[0,3.74,d/2+.24]} distanceFactor={8} zIndexRange={[5,0]}><span className='hb-town-label'>{site.name}</span></Html>
  </group>;
 }
-export function MarketFront({x,name,base,roof}:{x:number;name:string;base:string;roof:string}){
+export function MarketFront({x,name,base,roof,detailed=true}:{x:number;name:string;base:string;roof:string;detailed?:boolean}){
+ const empty=useMemo(()=>new Object3D(),[]),body=useRef(empty);
+ const mount=useCallback((object:Object3D|null)=>assignOcclusionTarget(body,object,empty),[empty]);
+ if(!detailed)return <TownShell x={x} z={-9} width={9} depth={3.8} height={4.6} rise={1.1} wall={base} roof={roof}/>;
  return <group position={[x,0,-9]}>
   <GroundShadow width={11} depth={7}/>
-  <RoundedBox args={[9,4.6,3.8]} position-y={2.3} radius={.06} smoothness={1}><meshStandardMaterial color={base}/></RoundedBox>
+  <RoundedBox ref={mount} args={[9,4.6,3.8]} position-y={2.3} radius={.06} smoothness={1}><meshStandardMaterial color={base}/></RoundedBox>
   <mesh position-y={.23}><boxGeometry args={[9.06,.46,3.86]}/><meshStandardMaterial color={P.pot}/></mesh>
   <GableRoof width={9} depth={3.8} base={4.6} rise={1.1} color={roof}/>
   <ArchedDoor z={1.96}/>
@@ -92,6 +105,6 @@ export function MarketFront({x,name,base,roof}:{x:number;name:string;base:string
    <mesh position={[-4.28+i*.95,3.03,3.67]}><boxGeometry args={[.95,.32,.08]}/><meshStandardMaterial color={i%2?roof:P.cream}/></mesh>
   </group>)}
   <RoundedBox args={[5,.48,.15]} position={[0,4.08,2.08]} radius={.04} smoothness={1}><meshStandardMaterial color={P.trim}/></RoundedBox>
-  <Html transform center occlude position={[0,4.08,2.2]} distanceFactor={10} zIndexRange={[5,0]}><span className='hb-town-label'>{name}</span></Html>
+  <Html transform center occlude={[body]} position={[0,4.08,2.2]} distanceFactor={10} zIndexRange={[5,0]}><span className='hb-town-label'>{name}</span></Html>
  </group>;
 }
