@@ -1,8 +1,9 @@
 import {z} from 'zod';
 import type {TownActivityId,TownDistrictKind} from '@/features/habitat/town-districts';
+import {TOWN_VENUES} from './town-venue-directory';
 
 // Original CTRL routes, informed by Townies' physical work targets. No economy.
-export type WorkSite={id:string;name:string;x:number;z:number;district:TownDistrictKind;kind:'mail'|'fruit'|'litter'|'flowers'|'wood'|'grass'|'road'|'hedge'|'leaves';verb:string};
+export type WorkSite={id:string;name:string;x:number;z:number;district:TownDistrictKind;kind:'mail'|'fruit'|'litter'|'flowers'|'wood'|'grass'|'road'|'hedge'|'leaves';verb:string;worldId?:string;display?:{x:number;y:number;z:number;assetId:string}};
 export const TOWN_WORK_SITES:readonly WorkSite[]=[
  {id:'post',name:'Clover post stand',x:78,z:27,district:'residential',kind:'mail',verb:'Collect letters'},
  {id:'clover-west',name:'West Clover mailbox',x:63,z:21,district:'residential',kind:'mail',verb:'Deliver letters'},
@@ -26,6 +27,12 @@ export const TOWN_WORK_SITES:readonly WorkSite[]=[
  {id:'hedge-apple',name:'Applehill hedge',x:68,z:77,district:'orchard',kind:'hedge',verb:'Trim the hedge'},
  {id:'leaves-fern',name:'Fernwood leaf clearing',x:-70,z:39,district:'garden',kind:'leaves',verb:'Rake leaves'},
  {id:'leaves-apple',name:'Applehill leaf clearing',x:81,z:77,district:'orchard',kind:'leaves',verb:'Rake leaves'},
+ {id:'tea-service',name:'Willow tea service',x:0,z:-3.5,district:'center',kind:'fruit',verb:'Prepare café supplies',worldId:TOWN_VENUES[0].id,display:{x:-2.6,y:1.315,z:-6,assetId:'food-kit/apple'}},
+ {id:'studio-components',name:'Studio assembly table',x:0,z:-3.5,district:'workshop',kind:'wood',verb:'Assemble workshop components',worldId:TOWN_VENUES[1].id,display:{x:0,y:.95,z:-5.7,assetId:'furniture-kit/cardboardBoxClosed'}},
+ {id:'post-sorting',name:'Clover parcel sorting',x:0,z:-3.5,district:'residential',kind:'mail',verb:'Sort neighborhood parcels',worldId:TOWN_VENUES[2].id,display:{x:0,y:.95,z:-5.7,assetId:'furniture-kit/cardboardBoxClosed'}},
+ {id:'boathouse-sorting',name:'Boathouse recycling table',x:0,z:-3.5,district:'harbor',kind:'litter',verb:'Sort recovered dock materials',worldId:TOWN_VENUES[3].id,display:{x:0,y:.95,z:-5.2,assetId:'furniture-kit/cardboardBoxClosed'}},
+ {id:'lounge-supplies',name:'Lounge gathering supplies',x:0,z:-3.5,district:'festival',kind:'wood',verb:'Arrange gathering supplies',worldId:TOWN_VENUES[4].id,display:{x:-.7,y:1.03,z:-6,assetId:'food-kit/cup-coffee'}},
+ {id:'conservatory-seeds',name:'Conservatory seed exchange',x:0,z:-3.5,district:'orchard',kind:'flowers',verb:'Prepare shared seedlings',worldId:TOWN_VENUES[5].id,display:{x:0,y:.95,z:-5.7,assetId:'furniture-kit/plantSmall1'}},
 ];
 export type RouteContribution=TownActivityId|'lawn-care'|'street-sweep'|'walkway-wash'|'hedge-trim'|'leaf-rake';
 export const TOWN_ROUTES:readonly {id:string;name:string;activity:RouteContribution;stops:readonly string[]}[]=[
@@ -39,6 +46,12 @@ export const TOWN_ROUTES:readonly {id:string;name:string;activity:RouteContribut
  {id:'walkway-wash',name:'Wash town walkways',activity:'walkway-wash',stops:['walk-square','walk-artisan']},
  {id:'hedge-trim',name:'Shape neighborhood hedges',activity:'hedge-trim',stops:['hedge-clover','hedge-apple']},
  {id:'leaf-rake',name:'Park and orchard leaf round',activity:'leaf-rake',stops:['leaves-fern','leaves-apple']},
+ {id:'tea-service',name:'Tea room to café',activity:'cafe-supplies',stops:['tea-service','cafe']},
+ {id:'studio-delivery',name:'Studio to Sunset',activity:'festival-stage',stops:['studio-components','stage']},
+ {id:'clover-parcels',name:'Sort and deliver parcels',activity:'neighborhood-post',stops:['post-sorting','clover-west','clover-east']},
+ {id:'boathouse-recycling',name:'Promenade to boathouse',activity:'harbor-cleanup',stops:['harbor-west','harbor-east','boathouse-sorting']},
+ {id:'lounge-preparation',name:'Studio to music lounge',activity:'festival-stage',stops:['studio-components','lounge-supplies']},
+ {id:'seed-sharing',name:'Conservatory to Fernwood',activity:'community-garden',stops:['conservatory-seeds','fern-west','fern-east']},
 ];
 export const ROUTE_WORK_MS=6000,ROUTE_TTL=3600000,WORK_REGROW_MS=86400000;
 export type TownRouteRun={id:string;routeId:string;step:number;revision:number;readyAt:number;expiresAt:number};

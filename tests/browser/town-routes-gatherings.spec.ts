@@ -3,6 +3,7 @@ import {installSignedWallet} from './helpers/wallet';
 import {assertTouchHUD} from './helpers/habitat-hud';
 import type {HabitatState} from '@/domain/habitat';
 import {PUBLIC_WORLD_ID} from '@/features/habitat/public-world-geography';
+import {TOWN_VENUES,createTownVenue} from '@/domain/town-venues';
 // Activate the actual page before native input/GPU readback. Two independent
 // browser windows are retained; no emulated focus, forced clicks or fake frames.
 async function press(p:Page,b:Locator){await p.bringToFront();if(await p.evaluate(()=>matchMedia('(pointer:coarse)').matches))await b.tap();else await b.click();}
@@ -164,6 +165,18 @@ test('desktop and touch players physically enter the same furnished room, chat a
    await test.info().attach('doorway-state',{body:JSON.stringify(diagnostic),contentType:'application/json'});throw error;
   }
   expect((await state(peer)).world?.name).toBe('Willow Tea Room');expect((await state(peer)).players.some(p=>p.name==='Tea Host')).toBe(true);
+  // Real shared room state, not a local visual toggle. Both independently
+  // signed browsers use the actual Interact button at the entrance, then a
+  // complete page reload must recover the same persisted lamp state.
+  const lamp=(await state(page)).world!.objects.find(o=>o.behavior==='light')!;
+  await mutation(page,'use',page.getByRole('button',{name:'Interact',exact:true}));
+  await expect.poll(async()=>(await state(peer)).states[lamp.id]?.active).toBe(true);
+  await peer.reload();await expect(peer.locator('.pl-name').filter({hasText:/^You$/})).toBeVisible({timeout:60000});
+  expect((await state(peer)).world?.name).toBe('Willow Tea Room');expect((await state(peer)).states[lamp.id]?.active).toBe(true);
+  await mutation(peer,'use',peer.getByRole('button',{name:'Interact',exact:true}));
+  await expect.poll(async()=>(await state(page)).states[lamp.id]?.active).toBe(false);
+  await mutation(page,'use',page.getByRole('button',{name:'Interact',exact:true}));
+  await expect.poll(async()=>(await state(peer)).states[lamp.id]?.active).toBe(true);
   // Both arrive through the same physical door. Move with real touch input so
   // acceptance pixels show two distinct bodies, not stacked spawn avatars.
   await spreadPeer(peer);
@@ -174,5 +187,66 @@ test('desktop and touch players physically enter the same furnished room, chat a
   await capture(page,'tea-room-desktop.png');await capture(peer,'tea-room-mobile.png');
   for(const p of [page,peer]){await walkToRoomExit(p);await mutation(p,'town-venue/exit',p.getByRole('button',{name:'Return through entrance',exact:true}));expect((await state(p)).world?.name).toBe('Willow Square');}
   expect(errors).toEqual([]);
+ }finally{await browser.close();}
+});
+
+// The normal world directory is a supported travel UI, not a fixture teleport.
+// Physical doors and two-player replication are independently exercised above.
+for(const device of ['desktop','touch'] as const){
+ test(`${device} visits all six distinct saved public interiors through the real directory`,async({page,browser,baseURL})=>{
+  const mobile=device==='touch'?await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}):null;
+  const p=mobile?await mobile.newPage():page,errors:string[]=[];
+  p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error'&&/Content Security Policy|THREE.WebGL|shader error|context lost/i.test(m.text()))errors.push(m.text());});
+  const state=async()=>(await(await p.request.get('/api/habitat/state')).json()) as HabitatState;
+  try{
+   await enter(p,device==='touch'?'Room explorer mobile':'Room explorer desktop');
+   for(const v of TOWN_VENUES){
+    if((await state()).world?.id===PUBLIC_WORLD_ID){await press(p,p.getByRole('button',{name:'Town map',exact:true}));await press(p,p.getByRole('button',{name:'Visit habitats ↗',exact:true}));}
+    else await press(p,p.getByRole('button',{name:'Worlds',exact:true}));
+    await mutation(p,'join',p.locator('.hb-world-row').filter({has:p.getByText(v.name,{exact:true})}));
+    await expect(p.getByRole('heading',{name:v.name,exact:true})).toBeVisible();
+    const s=await state();expect(s.world?.id).toBe(v.id);expect(s.canEdit).toBe(false);expect(s.world!.objects).toEqual(createTownVenue(v.id));
+    expect(s.players.find(a=>a.id===s.profile!.id)).toMatchObject({x:0,z:6});
+    await expect(p.getByRole('button',{name:'Build',exact:true})).toHaveCount(0);
+    // Native interaction must survive the read-only/public-room permission path.
+    const lamp=s.world!.objects.find(o=>o.behavior==='light')!,previous=s.states[lamp.id]?.active??false;
+    await mutation(p,'use',p.getByRole('button',{name:'Interact',exact:true}));
+    expect((await state()).states[lamp.id].active).toBe(!previous);
+    await capture(p,`venue-${v.feature}-${device}.png`);
+   }
+   await p.reload();await expect(p.locator('.pl-name').filter({hasText:/^You$/})).toBeVisible({timeout:60000});
+   expect((await state()).world?.id).toBe(TOWN_VENUES.at(-1)!.id);
+   await mutation(p,'town-venue/exit',p.getByRole('button',{name:'Return through entrance',exact:true}));
+   expect((await state()).world?.id).toBe(PUBLIC_WORLD_ID);expect(errors).toEqual([]);
+  }finally{await mobile?.close();}
+ });
+}
+
+test('a signed worker carries a persistent indoor route outside while another player sees the supplies',async({page,baseURL})=>{
+ const browser=await chromium.launch(test.info().project.use.launchOptions),context=await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}),peer=await context.newPage();
+ const state=async(p:Page)=>(await(await p.request.get('/api/habitat/state')).json()) as HabitatState;
+ const errors:string[]=[];for(const p of [page,peer])p.on('pageerror',e=>errors.push(e.message));
+ try{
+  await enter(page,'Tea service worker');await enter(peer,'Tea service observer');
+  expect((await state(page)).wallet).not.toBe((await state(peer)).wallet);
+  await walkToTeaRoom(page);await walkToTeaRoom(peer);
+  await page.bringToFront();await page.keyboard.down('KeyW');
+  try{await expect.poll(async()=>{const s=await state(page);return s.players.find(p=>p.id===s.profile!.id)!.z;},{timeout:20000,intervals:[200]}).toBeLessThan(.3);}
+  finally{await page.keyboard.up('KeyW');}
+  await open(page);await mutation(page,'town-route/start',page.getByRole('button',{name:'Start Tea room to café',exact:true}));
+  await routeWork(page,'Prepare café supplies');
+  await expect.poll(async()=>(await state(peer)).town!.visits.some(v=>v.siteId==='tea-service')).toBe(true);
+  expect((await state(page)).town!.progress.completed).toBe(0);
+  await press(page,page.getByRole('button',{name:'Close town life',exact:true}));
+  await capture(page,'tea-service-supplies-desktop.png');await capture(peer,'tea-service-supplies-mobile.png');
+  await page.reload();await expect(page.locator('.pl-name').filter({hasText:/^You$/})).toBeVisible({timeout:60000});
+  expect((await state(page)).world?.id).toBe(TOWN_VENUES[0].id);expect((await state(page)).town!.route?.step).toBe(1);
+  await open(page);await expect(page.getByRole('article',{name:'Current work route'}).getByRole('button',{name:'Deliver fruit',exact:true})).toBeDisabled();
+  await press(page,page.getByRole('button',{name:'Close town life',exact:true}));
+  await mutation(page,'town-venue/exit',page.getByRole('button',{name:'Return through entrance',exact:true}));
+  await travel(page,'Willow Square');await open(page);await routeWork(page,'Deliver fruit');
+  await page.reload();await expect.poll(async()=>(await state(page)).town!.progress.completed).toBe(1);
+  expect((await state(page)).town!.route).toBeNull();expect((await state(peer)).town!.progress.completed).toBe(0);
+  expect((await state(peer)).town!.visits).toContainEqual(expect.objectContaining({siteId:'cafe'}));expect(errors).toEqual([]);
  }finally{await browser.close();}
 });

@@ -5,6 +5,7 @@ import {CanvasTexture,SRGBColorSpace} from 'three';
 import type {TownLifeState} from '@/domain/town';
 import {getTownRoute,TOWN_WORK_SITES} from '@/domain/town-routes';
 import {TownAssetInstances} from './town-assets';
+import {PUBLIC_WORLD_ID} from './public-world-geography';
 
 // No remote font or blob worker: compatible with CTRL's production CSP.
 export function WorkLabel({label}:{label:string}){
@@ -19,11 +20,16 @@ export function WorkLabel({label}:{label:string}){
 }
 
 // All cleaned/tended states come from server receipts and are observed by peers.
-export default function TownRouteWorld({town,x,z}:{town:TownLifeState;x:number;z:number}){
+export default function TownRouteWorld({town,x,z,worldId=PUBLIC_WORLD_ID}:{town:TownLifeState;x:number;z:number;worldId?:string}){
  const route=town.route&&getTownRoute(town.route.routeId),current=route?.stops[town.route!.step];
- return <group>{TOWN_WORK_SITES.filter(s=>Math.hypot(x-s.x,z-s.z)<65).map(site=>{
+ return <group>{TOWN_WORK_SITES.filter(s=>(s.worldId??PUBLIC_WORLD_ID)===worldId&&Math.hypot(x-s.x,z-s.z)<65).map(site=>{
   const saved=town.visits.some(v=>v.siteId===site.id),active=site.id===current;
   const color=saved?'#a8c69a':'#d7b78d';
+  if(site.worldId&&site.display)return <group key={site.id}>
+   {(active||saved)&&<group position={[site.x,.1,site.z]}><WorkLabel label={saved?'Shared supplies ready':site.verb}/></group>}
+   {active&&<mesh position={[site.x,.115,site.z]} rotation-x={-Math.PI/2}><ringGeometry args={[1.45,1.65,32]}/><meshBasicMaterial color='#d49b46'/></mesh>}
+   {saved&&<TownAssetInstances id={site.display.assetId} castShadow placements={[-1,0,1].map(i=>({x:site.display!.x+i*.28,y:site.display!.y,z:site.display!.z,size:.25}))}/>}
+  </group>;
   return <group key={site.id} position={[site.x,0,site.z]}>
    {active&&<><mesh rotation-x={-Math.PI/2} position-y={.04}><ringGeometry args={[1.45,1.65,32]}/><meshBasicMaterial color='#d49b46'/></mesh><WorkLabel label={site.verb}/></>}
    {site.kind==='mail'?<group position={[1,.65,0]}><mesh position-y={-.3}><boxGeometry args={[.09,.7,.09]}/><meshStandardMaterial color='#9f8261'/></mesh><mesh position-y={.25}><boxGeometry args={[.5,.3,.3]}/><meshStandardMaterial color='#94b3af'/></mesh><mesh position={[.28,saved?.45:.25,0]}><boxGeometry args={[.03,.22,.18]}/><meshStandardMaterial color='#ca8873'/></mesh></group>:

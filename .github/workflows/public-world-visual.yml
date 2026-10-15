@@ -63,13 +63,39 @@ jobs:
         run: pnpm exec playwright test --config playwright.public-world.config.ts
       - name: Two signed desktop/mobile neighbors complete persistent civic construction
         run: pnpm exec playwright test --config playwright.civic.config.ts
-      - name: Real route work, reload persistence and consented social gathering
-        run: pnpm exec playwright test --config playwright.town-life.config.ts
       - name: Preserve screenshots and traces
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ctrl-real-town-screenshots
           path: test-results/
+          retention-days: 14
+          if-no-files-found: warn
+  town-life:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install headless Chromium with software WebGL
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Production compilation only — no deploy
+        run: pnpm build:next
+      - name: Real route work, room persistence and consented social gathering
+        run: pnpm exec playwright test --config playwright.town-life.config.ts
+      - name: Preserve room and activity screenshots and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrl-real-town-life-screenshots
+          path: test-results/town-life/
           retention-days: 14
           if-no-files-found: warn

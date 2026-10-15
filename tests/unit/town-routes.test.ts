@@ -4,6 +4,8 @@ import {actor,api,error} from './security/habitat-fixtures';
 import {PUBLIC_WORLD_ID} from '@/features/habitat/public-world';
 import {getWorkSite,TOWN_ROUTES,TOWN_WORK_SITES} from '@/domain/town-routes';
 import {isPublicWorldWalkable} from '@/features/habitat/public-world-geography';
+import {createTownVenue} from '@/domain/town-venues';
+import {isWorldPointWalkable} from '@/features/habitat/types';
 import type {HabitatState} from '@/domain/habitat';
 const latest=async(cookie:string)=>(await (await api('habitat/state',undefined,cookie)).json()) as HabitatState;
 async function enter(name:string){const a=await actor(name);await api('habitat/public-world',{},a.cookie);const s=await (await api('habitat/join',{id:PUBLIC_WORLD_ID},a.cookie)).json() as HabitatState;return {...a,sessionId:s.presenceSession!.id};}
@@ -11,7 +13,7 @@ async function stand(a:Awaited<ReturnType<typeof enter>>,site:string){const p=ge
 const step=(a:Awaited<ReturnType<typeof enter>>,path:string,r:NonNullable<HabitatState['town']>['route'])=>api(`habitat/town-route/${path}`,{runId:r!.id,revision:r!.revision,sessionId:a.sessionId},a.cookie);
 describe('signed multi-stop work routes',()=>{
  it('places every stop on authoritative walkable ground and references existing sites',()=>{
-  for(const site of TOWN_WORK_SITES)expect(isPublicWorldWalkable(site.x,site.z),site.id).toBe(true);
+  for(const site of TOWN_WORK_SITES)expect(site.worldId?isWorldPointWalkable(site.x,site.z,createTownVenue(site.worldId),{}):isPublicWorldWalkable(site.x,site.z),site.id).toBe(true);
   for(const route of TOWN_ROUTES)for(const id of route.stops)expect(getWorkSite(id)).toBeDefined();
   // Maintenance must never counterfeit fruit harvest or crafted supplies.
   for(const id of ['lawn-care','street-sweep','walkway-wash','hedge-trim','leaf-rake'])expect(TOWN_ROUTES.find(r=>r.id===id)?.activity).toBe(id);

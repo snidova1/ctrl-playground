@@ -12,13 +12,13 @@ export default function TownGatheringPanel({events,profileId,worldId,homeId,x,z,
    <label htmlFor='town-gathering-kind'>Activity</label><select id='town-gathering-kind' value={kind} onChange={e=>setKind(e.target.value as TownGathering['kind'])}><option value='picnic'>Picnic</option><option value='dance'>Shared dance</option><option value='workshop'>Workshop meetup</option></select>
    <button disabled={busy||title.trim().length<3||(worldId!==PUBLIC_WORLD_ID&&worldId!==homeId&&!getTownVenue(worldId??''))||events.some(e=>e.hostId===profileId)}>Host gathering here</button>
   </form>
-  {!events.length&&<p>No gatherings yet. Host one in Public World or your own Habitat.</p>}
+  {!events.length&&<p>No gatherings yet. Host one in Public World, a public room, or your own Habitat.</p>}
   {events.map(e=>{
    const joined=e.guests.find(g=>g.id===profileId),own=e.hostId===profileId,near=worldId===e.worldId&&Math.hypot(x-e.x,z-e.z)<=4.25;
    const data={id:e.id,revision:e.revision};
    return <article className='hb-civic-project' key={e.id} aria-label={`Gathering ${e.title}`}>
     <h3>{e.title}</h3><p>{e.hostName} · {e.kind} · {e.guests.length}/16 guests</p>
-    <small>Ends {new Date(e.endsAt).toLocaleTimeString()} · {e.worldId===PUBLIC_WORLD_ID?'Public World':'Habitat with permission'} · ({Math.round(e.x)}, {Math.round(e.z)})</small>
+    <small>Ends {new Date(e.endsAt).toLocaleTimeString()} · {e.worldId===PUBLIC_WORLD_ID?'Public World':getTownVenue(e.worldId)?.name??'Habitat with permission'} · ({Math.round(e.x)}, {Math.round(e.z)})</small>
     {worldId!==e.worldId&&<button disabled={busy} onClick={()=>onVisit(e.worldId)}>Visit gathering world</button>}
     {!joined?<button disabled={busy} onClick={()=>onAction('town-gathering/join',{id:e.id})}>RSVP</button>:<>
      {!joined.arrivedAt&&<button disabled={busy||!near} onClick={()=>onAction('town-gathering/check-in',{id:e.id})}>{e.kind==='dance'?'Agree and join dance':'Check in at gathering'}</button>}

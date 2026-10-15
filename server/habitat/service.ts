@@ -74,6 +74,10 @@ async function state(user: Principal, worldId?: string): Promise<HabitatState> {
     try {selected = await readWorld(location.world_id, user.id);}
     catch (e) {if (!(e instanceof AppError) || e.code !== 'WORLD_NOT_FOUND') throw e;}
   }
+  if(!selected&&!worldId&&!location){
+    const remembered=await one<{world_id:string}>('SELECT world_id FROM habitat_last_location WHERE profile_id=?',user.id);
+    if(remembered){try{selected=await readWorld(remembered.world_id,user.id);}catch(e){if(!(e instanceof AppError)||e.code!=='WORLD_NOT_FOUND')throw e;}}
+  }
   if (!selected && home) selected = await readWorld(home.id, user.id);
   const w = selected?.world;
   // Recheck private-world ACLs when reading presence, including after revocation.
@@ -127,14 +131,17 @@ async function save(user: Principal, id: string, revision: number, input: WorldO
 async function join(user: Principal, id: string, sequenced = true,transition?:{source:string;session:string;x:number;z:number},spawn={x:0,z:6}) {
   await readWorld(id, user.id);
   if (!await one('SELECT id FROM habitat_profiles WHERE id=?', user.id)) throw new AppError('PROFILE_REQUIRED', 409);
-  const result = await exec(`INSERT INTO habitat_presence(profile_id,world_id,x,z,angle,motion,seen_at,session_id,sequence)
+  const result = await batch([statement(`INSERT INTO habitat_presence(profile_id,world_id,x,z,angle,motion,seen_at,session_id,sequence)
     SELECT ?,id,?,?,3.14,'{}',?,?,0 FROM habitat_worlds WHERE id=? AND
       (visibility='public' OR owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=habitat_worlds.id AND m.profile_id=?))
       ${transition?'AND EXISTS(SELECT 1 FROM habitat_presence s WHERE s.profile_id=? AND s.world_id=? AND s.session_id=? AND s.seen_at>? AND (s.x-?)*(s.x-?)+(s.z-?)*(s.z-?)<=18.0625)':''}
     ON CONFLICT(profile_id) DO UPDATE SET
     world_id=excluded.world_id,x=excluded.x,z=excluded.z,angle=3.14,motion='{}',seen_at=excluded.seen_at,session_id=excluded.session_id,sequence=0`,
-  user.id,spawn.x,spawn.z, Date.now(), sequenced ? crypto.randomUUID() : '', id, user.id, user.id,...(transition?[user.id,transition.source,transition.session,Date.now()-TTL,transition.x,transition.x,transition.z,transition.z]:[]));
-  if (!result.meta.changes) throw new AppError('WORLD_NOT_FOUND', 404);
+  user.id,spawn.x,spawn.z, Date.now(), sequenced ? crypto.randomUUID() : '', id, user.id, user.id,...(transition?[user.id,transition.source,transition.session,Date.now()-TTL,transition.x,transition.x,transition.z,transition.z]:[])),
+  statement(`INSERT INTO habitat_last_location(profile_id,world_id,updated_at)
+    SELECT profile_id,world_id,seen_at FROM habitat_presence WHERE profile_id=? AND changes()=1
+    ON CONFLICT(profile_id) DO UPDATE SET world_id=excluded.world_id,updated_at=excluded.updated_at`,user.id)]);
+  if (!result[0]?.meta.changes) throw new AppError('WORLD_NOT_FOUND', 404);
   return state(user, id);
 }
 async function members(id: string): Promise<WorldMember[]> {
@@ -386,11 +393,18 @@ export async function handleHabitat(r: Request, path: string[]) {
       const target = object.behavior === 'switch' ? current.world.objects.find(o => o.id === object.target) : object;
       if (!target) throw new AppError('TARGET_REQUIRED', 422);
       if (['light', 'door', 'spin'].includes(target.behavior)) {
-        const result = await exec(`INSERT INTO habitat_object_state(world_id,object_id,active,used_at)
+        const now=Date.now();
+        const result = await batch([statement(`INSERT INTO habitat_object_state(world_id,object_id,active,used_at)
           SELECT id,?,1,? FROM habitat_worlds WHERE id=? AND revision=? AND
           (visibility='public' OR owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=habitat_worlds.id AND m.profile_id=?))
-          ON CONFLICT(world_id,object_id) DO UPDATE SET active=1-active,used_at=excluded.used_at`, target.id, Date.now(), world.id, current.world.revision, user.id, user.id);
-        if (!result.meta.changes) throw new AppError('WORLD_EDIT_CONFLICT', 409);
+          AND EXISTS(SELECT 1 FROM habitat_presence p WHERE p.profile_id=? AND p.world_id=habitat_worlds.id AND p.session_id=? AND p.seen_at>?
+            AND (p.x-?)*(p.x-?)+(p.z-?)*(p.z-?)<=12.25)
+          ON CONFLICT(world_id,object_id) DO UPDATE SET active=1-active,used_at=excluded.used_at`, target.id, now, world.id, current.world.revision, user.id, user.id,
+          user.id,position.session_id,now-TTL,object.x,object.x,object.z,object.z),
+          statement(`INSERT INTO town_activity_events(id,profile_id,kind,target,created_at)
+            SELECT ?,?,CASE WHEN active=1 THEN 'switched on' ELSE 'switched off' END,?,?
+            FROM habitat_object_state WHERE world_id=? AND object_id=? AND changes()=1`,crypto.randomUUID(),user.id,`${world.name} · ${target.name}`,now,world.id,target.id)]);
+        if (!result[0]?.meta.changes) throw new AppError('WORLD_EDIT_CONFLICT', 409);
       }
       return reply({object, state: await state(user, world.id)});
     }
