@@ -3,7 +3,7 @@ import {expect,type Page} from '@playwright/test';
 /** Read actual composited element geometry, not screenshots/mock layout. */
 export async function assertTouchHUD(p:Page){
  if(!await p.evaluate(()=>matchMedia('(pointer:coarse)').matches))return;
- const controls=['.hb-touch','.hb-bottom','.hb-chat-toggle','.hb-music-player','.hb-venue-guide'];
+ const controls=['.hb-touch','.hb-bottom','.hb-chat-toggle','.hb-music-player','.hb-venue-guide','.hb-title','.hb-life-actions'];
  const boxes:{name:string;x:number;y:number;width:number;height:number}[]=[];
  for(const name of controls){
   const node=p.locator(name);

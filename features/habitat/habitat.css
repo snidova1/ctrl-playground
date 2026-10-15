@@ -345,6 +345,9 @@
  * full-width action, with four playable controls in two rows, not a tall stack
  * obscuring the character. Worlds/Character navigation remains scrollable. */
 @media(max-width:760px){
+ /* Room names need two readable lines above Town life, not the inherited
+  * body line-height that pushed the studio title into its action button. */
+ .hb-app:not(.is-public-world) .hb-title h1{line-height:1.15;max-width:calc(100vw - 24px);}
  .hb-app:not(.is-public-world):not(.is-editing) .hb-message,
  .hb-app:not(.is-public-world):not(.is-editing) .hb-alert{top:calc(244px + env(safe-area-inset-top,0px));bottom:auto;}
  .hb-app:not(.is-public-world) .hb-bottom{display:grid;grid-template-columns:repeat(2,62px);max-width:none;gap:4px;padding:4px;}

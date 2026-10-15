@@ -79,10 +79,13 @@ async function walkToTeaRoom(p:Page){
  // frame at software-WebGL FPS can overshoot the complete entry radius.
  if(cdp){const box=await p.getByRole('button',{name:'Move ←',exact:true}).boundingBox();expect(box).not.toBeNull();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:box!.x+box!.width/2,y:box!.y+box!.height/2}]});}
  else{await p.keyboard.down('KeyA');}
- // Stop when the real doorway affordance appears, not after an additional
- // network roundtrip while still running. Validate fresh server proximity
- // AFTER release, within the same original 20s approach budget.
- try{await expect(entrance).toBeVisible({timeout:20000});}
+ // The affordance appears at 4.25m; keep walking until the signed server
+ // position also reaches the test's stricter 4m approach. Otherwise stopping
+ // in that quarter-metre band waits forever for a stationary player to move.
+ try{
+  await expect(entrance).toBeVisible({timeout:20000});
+  await expect.poll(async()=>{const s=await(await p.request.get('/api/habitat/state')).json() as HabitatState;const self=s.players.find(a=>a.id===s.profile?.id)!;return Math.hypot(self.x+8,self.z-2.8);},{timeout:Math.max(1,20000-(Date.now()-approachStarted)),intervals:[200]}).toBeLessThan(4);
+ }
  finally{if(cdp){
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
  }else{await p.keyboard.up('KeyA');}}
@@ -201,7 +204,7 @@ for(const device of ['desktop','touch'] as const){
   try{
    await enter(p,device==='touch'?'Room explorer mobile':'Room explorer desktop');
    for(const v of TOWN_VENUES){
-    if((await state()).world?.id===PUBLIC_WORLD_ID){await press(p,p.getByRole('button',{name:'Town map',exact:true}));await press(p,p.getByRole('button',{name:'Visit habitats ↗',exact:true}));}
+    if((await state()).world?.id===PUBLIC_WORLD_ID){await press(p,p.getByRole('button',{name:'Town map',exact:true}));await press(p,p.getByRole('complementary',{name:'Public World travel and activities',exact:true}).getByRole('button',{name:'Visit habitats ↗',exact:true}));}
     else await press(p,p.getByRole('button',{name:'Worlds',exact:true}));
     await mutation(p,'join',p.locator('.hb-world-row').filter({has:p.getByText(v.name,{exact:true})}));
     await expect(p.getByRole('heading',{name:v.name,exact:true})).toBeVisible();
@@ -244,7 +247,12 @@ test('a signed worker carries a persistent indoor route outside while another pl
   await open(page);await expect(page.getByRole('article',{name:'Current work route'}).getByRole('button',{name:'Deliver fruit',exact:true})).toBeDisabled();
   await press(page,page.getByRole('button',{name:'Close town life',exact:true}));
   await mutation(page,'town-venue/exit',page.getByRole('button',{name:'Return through entrance',exact:true}));
-  await travel(page,'Willow Square');await open(page);await routeWork(page,'Deliver fruit');
+  // The doorway is already in Willow Square, so its nearby travel control is
+  // correctly disabled. Walk to the café instead of bypassing that constraint.
+  await page.bringToFront();await page.keyboard.down('KeyD');
+  try{await expect.poll(async()=>{const s=await state(page);return s.players.find(p=>p.id===s.profile!.id)!.x;},{timeout:20000,intervals:[200]}).toBeGreaterThan(1);}
+  finally{await page.keyboard.up('KeyD');}
+  await open(page);await routeWork(page,'Deliver fruit');
   await page.reload();await expect.poll(async()=>(await state(page)).town!.progress.completed).toBe(1);
   expect((await state(page)).town!.route).toBeNull();expect((await state(peer)).town!.progress.completed).toBe(0);
   expect((await state(peer)).town!.visits).toContainEqual(expect.objectContaining({siteId:'cafe'}));expect(errors).toEqual([]);

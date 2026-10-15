@@ -1,5 +1,13 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## 2026-10-15 browser follow-up to 218bae8
+
+The complete production town-life run reached **6/7 passing**: desktop/touch courier persistence, two-player consented gathering, physical shared room/chat/lamp/reload/return, and all six directory interiors on desktop/touch. The remaining route case stopped in the 4–4.25m doorway band: the native affordance appeared before the stricter signed-position assertion was satisfied. Keep normal native walking until that assertion is satisfied, then release and revalidate within the original 20-second budget. No distance threshold, server permission, timeout or assertion was relaxed. An isolated real indoor-to-outdoor route rerun then passed **1/1 (3.1m)**, including actual work timers, independently signed observation, reload and exactly one final contribution.
+
+Directory input now scopes the real Town map sidebar to distinguish its button from the in-world sign. On exit, the route worker physically walks to the café instead of attempting disabled near-destination travel. Actual screenshot review found the mobile studio title intersecting Town life; explicit title line-height and available width fix the layout, and touch HUD assertions now include the title and Town life actions. All twelve room screenshots and both new shared-supply screenshots were inspected; neutral floors, repeated room architecture and sparse dressing still need substantial art work.
+
+Runtime checkpoint `218bae8a3e4b2b4883ac4245564a82db676f3242` finished six successful workflows; Public World workflow failed only in its new town-life job. Its separate public-world/civic job passed, as did Builder and Visible Habitat. Failures correspond to the native doorway, duplicate selector and nearby travel issues above. Current follow-up: 303/303 unit/API passed, targeted lint and Next production/TypeScript passed; full seven-case production browser rerun with the stronger HUD geometry checks is pending. Record final results before claiming exact-head CI acceptance. No deployment or new economy.
+
 ## 2026-10-15 active continuation: distinct rooms, cross-world work and durable destination
 
 Continues remote `b40bee2db98f4776186da3156e5eeac25d385c77` / local `93b6c09`, on the existing branch and draft PR #30. No merge, staging/production publish, new economy or independent character asset/catalog change.
