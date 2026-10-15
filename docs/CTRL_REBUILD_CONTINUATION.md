@@ -1,5 +1,11 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## Remote Worker verification while execution host is unavailable
+
+Added an independent **Worker production compilation — no deploy** CI job: pinned install, example configuration, portable `pnpm build`, and verification of the same `dist/server/wrangler.json` used by the existing start command. Clean GitHub checkouts select the repository's portable execution profile. No deployment command, production credential or database mutation is introduced. All original browser/unit gates and deadlines remain. Per-ref concurrency prevents future obsolete Public World workflow attempts accumulating after a newer push; old failures remain documented.
+
+This is CI configuration only after the host interruption, not untested new application behavior. Native stopped-pose correction was already locally verified 2/2; exact-head Worker and visual/browser CI still need final results. The execution host must recover before new local gameplay work or additional screenshot inspection can continue.
+
 ## Stopped-pose touch correction and execution-host interruption
 
 The final native approach was reproduced outside gathering range at x=-4.6886m. A sequence newer than BEFORE pointer-up was not enough: the next heartbeat could still describe motion before release. The corrected helper waits for a sequence newer than the post-release sample AND a stopped pose, then physically walks either direction if outside the target band. It retains all original displacement/range assertions and the 15-second budget. No forced input, teleport, fake clock or weakened authority.

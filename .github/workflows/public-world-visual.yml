@@ -30,9 +30,33 @@ on:
       - 'playwright.public-world.config.ts'
       - '.github/workflows/public-world-visual.yml'
   workflow_dispatch:
+concurrency:
+  group: ctrl-public-world-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
+  worker-build:
+    name: Worker production compilation — no deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Use example build configuration without deployment credentials
+        run: cp .env.example .env.local
+      - name: Compile portable Cloudflare Worker
+        run: pnpm build
+      - name: Verify the configured Worker entry exists
+        run: test -f dist/server/wrangler.json
   public-world:
     runs-on: ubuntu-latest
     timeout-minutes: 35
