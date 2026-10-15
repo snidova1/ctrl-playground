@@ -64,19 +64,22 @@ async function focusGathering(p:Page){
 }
 async function spreadPeer(p:Page){
  await p.bringToFront();
- const touch=await p.context().newCDPSession(p),left=await p.getByRole('button',{name:'Move ←',exact:true}).boundingBox();expect(left).not.toBeNull();
+ const touch=await p.context().newCDPSession(p);
  const read=async()=>{const s=await(await p.request.get('/api/habitat/state')).json() as HabitatState;return {player:s.players.find(a=>a.id===s.profile?.id)!,sequence:s.presenceSession?.sequence??-1};};
  const deadline=Date.now()+15000;
  try{
   let current=await read();
-  while(current.player.x>=-1.5){
-   const previous=current.sequence;
+  while(current.player.x>=-1.5||current.player.x<=-3.5){
+   const direction=current.player.x<=-3.5?'Move →':'Move ←',button=await p.getByRole('button',{name:direction,exact:true}).boundingBox();expect(button).not.toBeNull();
    // Short REAL touch holds, followed by a server heartbeat acknowledgement.
    // Holding through slow GPU/network polling could walk beyond the gathering.
-   await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:left!.x+left!.width/2,y:left!.y+left!.height/2}]});
+   await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:button!.x+button!.width/2,y:button!.y+button!.height/2}]});
    try{await new Promise(resolve=>setTimeout(resolve,250));}
    finally{await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
-   await expect.poll(async()=>(await read()).sequence,{timeout:Math.max(1,deadline-Date.now()),intervals:[200]}).toBeGreaterThan(previous);
+   // An acknowledgement from BEFORE pointer-up is insufficient: wait for a
+   // newer stopped pose, then physically correct either direction if needed.
+   const released=await read();
+   await expect.poll(async()=>{const next=await read();return next.sequence>released.sequence&&!next.player.motion.moving;},{timeout:Math.max(1,deadline-Date.now()),intervals:[200]}).toBe(true);
    current=await read();
    if(Date.now()>=deadline)throw new Error('Native touch approach exceeded its original 15s budget');
   }

@@ -1,5 +1,15 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## Stopped-pose touch correction and execution-host interruption
+
+The final native approach was reproduced outside gathering range at x=-4.6886m. A sequence newer than BEFORE pointer-up was not enough: the next heartbeat could still describe motion before release. The corrected helper waits for a sequence newer than the post-release sample AND a stopped pose, then physically walks either direction if outside the target band. It retains all original displacement/range assertions and the 15-second budget. No forced input, teleport, fake clock or weakened authority.
+
+Verified on the actual production app after the startup fix: **gathering + shared room 2/2 passed (3.2m)** with separate signed browser processes; earlier startup-route case **1/1 passed (2.1m)**. Scoped lint and TypeScript passed. The new daily-table journey **1/1 (3.0m)**, complete pre-startup town-life **7/7 (10.6m)**, 308/308 unit/API, and both pre-startup production builds remain recorded below. Final startup Worker build and Habitat visual regression still need verification (or successful exact-head CI). Do not claim full CI green.
+
+Immediately after the 2/2 completion, the execution host disconnected: "exec-server transport disconnected; recovery timed out". A read-only recovery attempt stalled and was terminated. The identical tested one-file correction is preserved through the existing GitHub connection, together with this record. No new application behavior was invented after the disconnection. Local base was `ae497fb08a54561c66721e18a852bafa44cee6e2`, with only `tests/browser/town-routes-gatherings.spec.ts` dirty; preserve/reconcile that file and this added continuation section on recovery, never reset unrelated work. Remote parent is `b3b766bdf9845bbd24bfc3d1350dda1ee581e54f`.
+
+New runtime remains the daily neighborhood table + warmer/batched rooms + direct saved-world startup. Apply migrations through 0011 before any separately approved deployment. The latest GitHub CI must run and be checked. Full authored-world art/activities, separate character roster, transport/load scaling, physical devices and staging remain unfinished. The saved proof archives are CTRL_ROOM_RENDER_624919d.zip (16 real PNGs) and CTRL_DAILY_TABLE_1be2fcf.zip (2 real PNGs); no auth traces/keys were included.
+
 ## Recovery from shared-GPU browser experiment
 
 Test-only remote `d816c6a65461f16c96ccd0ddb0cfc73889873649` / local `5a59012` is **not accepted**: sharing one browser process made four native mobile wallet taps stall at scrolling/actionability in the real WebGL run. The run was interrupted (exit 130) after those failures; neither failed nor unexecuted cases are presented as passes. Reverted that experiment to separate native browser/GPU processes, retaining genuinely independent signed wallets and the new bounded, acknowledged touch approach.
