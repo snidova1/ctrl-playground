@@ -172,6 +172,11 @@ test('a signed player can travel across genuinely rendered remote districts and 
   expect(metric.colors,target.id+' must contain nonempty rendered scenery').toBeGreaterThan(24);
   expect(metric.nearBlack,target.id+' must not render black WebGL placeholder').toBeLessThan(.08);
   await expect(page.locator('.hb-town-action')).toBeVisible();
+  // Both platform cases use the same real shared world. A faster renderer can
+  // reach a station within the other neighbor's 45s cooldown. Wait for the
+  // actual authoritative-state-driven control; do not reset state or retry work.
+  // The original 210s total and every request/pixel assertion remain unchanged.
+  await expect(page.locator('.hb-town-action')).toBeEnabled({timeout:45000});
   const work=await page.request.post('/api/habitat/town-activity',{headers:{Origin:'http://127.0.0.1:3187'},data:{id:target.activity}});
   expect(work.status(),target.id).toBe(200);
   const result=await work.json() as {state:HabitatState;message:string};

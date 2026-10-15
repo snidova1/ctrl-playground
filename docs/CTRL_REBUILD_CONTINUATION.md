@@ -1,5 +1,13 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## 2026-10-16 — real cooldown readiness after bounded rendering
+
+The GPU-budget production render gates pass **4/4 (1.2m)**: desktop/mobile center plus all six remote districts. The faster independent mobile journey exposed a test assumption: it reached the shared garden within the desktop neighbor's actual 45-second cooldown, correctly receiving `ACTIVITY_RESTING`. The existing visual test now waits for its original state-driven action control to become enabled before making the original signed request. No station-state reset, retry, fake clock, cooldown bypass, assertion removal or increased 210-second total. Scoped lint and strict TypeScript passed.
+
+Native forwarded draw/fence/wait instrumentation on `6ced6a7` confirms **maximum one GPU frame outstanding** across desktop/touch center/Harbor, 10 nonempty real rendered frames per sample. Desktop center median remains **1018 calls / 303,590 triangles**; mobile sample **614 calls / 252,552 triangles** (small animated-pose variation). This is actual software-WebGL draw accounting, not physical-phone FPS acceptance. High quality, complete scene/shadows/resolution, authoritative work and real clocks remain.
+
+Full exact-head GitHub CI remains pending after this test-readiness follow-up. No merge, production migration or deployment.
+
 ## 2026-10-16 — bound light-profile GPU submissions and navigation teardown
 
 Art checkpoint `7eadeb0c8369be4868aa608e4dc601c5fab2ce5d` completed six successful GitHub workflows. Its Public World job passed the original **10/10 visual cases (16.2m)** and **1/1 waterfront civic case (5.5m)**; portable Worker passed. Builder passed **12/12 browser cases**, all **310 unit/API tests**, global lint and strict types. Visible Habitat passed. Local final art additionally passed **4/4 district/center render gates**, **7/7 town-life** and **2/2 civic/daily-table**.
