@@ -34,8 +34,8 @@ function useCanvasTexture(kind: 'floor' | 'plaster' | 'sky', tint = '#ead8b8') {
           const px = x + offset;
           const n = hashNoise(px, y, 4);
           const hue = 30 + n * 7;
-          const light = 56 + n * 9;
-          ctx.fillStyle = `hsl(${hue} 45% ${light}%)`;
+          const light = 63 + n * 8;
+          ctx.fillStyle = `hsl(${hue} 30% ${light}%)`;
           ctx.fillRect(px + 1, y + 1, plankW - 2, plankH - 2);
           ctx.strokeStyle = 'rgba(86,54,30,.32)';
           ctx.lineWidth = 1.3;
@@ -161,19 +161,18 @@ function LargeWindow() {
 export default function CozyRoom({wallColor}: CozyRoomProps) {
   const floor = useCanvasTexture('floor');
   const plaster = useCanvasTexture('plaster', wallColor || '#ead8b8');
-  const wall = wallColor || '#ead8b8';
   return <group>
     <mesh rotation-x={-Math.PI / 2} position-y={0} receiveShadow>
       <planeGeometry args={[10, 8]}/>
-      <meshStandardMaterial map={floor} color='#d4a06a' roughness={.82} metalness={0}/>
+      <meshStandardMaterial map={floor} color='#ffffff' roughness={.82} metalness={0}/>
     </mesh>
 
     <group>
-      <mesh receiveShadow position={[0, .475, -4.05]}><boxGeometry args={[10.1, .95, .12]}/><meshStandardMaterial map={plaster} color={wall} roughness={.94}/></mesh>
-      <mesh receiveShadow position={[0, 3.175, -4.05]}><boxGeometry args={[10.1, .65, .12]}/><meshStandardMaterial map={plaster} color={wall} roughness={.94}/></mesh>
-      <mesh receiveShadow position={[-3.5, 2.05, -4.05]}><boxGeometry args={[3.1, 1.6, .12]}/><meshStandardMaterial map={plaster} color={wall} roughness={.94}/></mesh>
-      <mesh receiveShadow position={[3.5, 2.05, -4.05]}><boxGeometry args={[3.1, 1.6, .12]}/><meshStandardMaterial map={plaster} color={wall} roughness={.94}/></mesh>
-      <mesh receiveShadow position={[-5.05, 1.75, 0]}><boxGeometry args={[.12, 3.5, 8.1]}/><meshStandardMaterial map={plaster} color={wall} roughness={.94}/></mesh>
+      <mesh receiveShadow position={[0, .475, -4.05]}><boxGeometry args={[10.1, .95, .12]}/><meshStandardMaterial map={plaster} color='#ffffff' roughness={.94}/></mesh>
+      <mesh receiveShadow position={[0, 3.175, -4.05]}><boxGeometry args={[10.1, .65, .12]}/><meshStandardMaterial map={plaster} color='#ffffff' roughness={.94}/></mesh>
+      <mesh receiveShadow position={[-3.5, 1.9, -4.05]}><boxGeometry args={[3.1, 1.9, .12]}/><meshStandardMaterial map={plaster} color='#ffffff' roughness={.94}/></mesh>
+      <mesh receiveShadow position={[3.5, 1.9, -4.05]}><boxGeometry args={[3.1, 1.9, .12]}/><meshStandardMaterial map={plaster} color='#ffffff' roughness={.94}/></mesh>
+      <mesh receiveShadow position={[-5.05, 1.75, 0]}><boxGeometry args={[.12, 3.5, 8.1]}/><meshStandardMaterial map={plaster} color='#ffffff' roughness={.94}/></mesh>
     </group>
 
     <BackWainscot/>
@@ -183,10 +182,6 @@ export default function CozyRoom({wallColor}: CozyRoomProps) {
     <Trim position={[0, 3.46, -3.93]} size={[10.05, .11, .18]} color='#dfbf97'/>
     <Trim position={[-4.93, 3.46, 0]} size={[.18, .11, 8.05]} color='#dfbf97'/>
     <Trim position={[-4.93, 1.75, -3.93]} size={[.18, 3.5, .18]} color='#c28d62'/>
-    <mesh rotation-x={-Math.PI / 2} position={[0, 3.5, 0]} receiveShadow>
-      <planeGeometry args={[9.9, 7.9]}/>
-      <meshStandardMaterial color='#f3dfbd' roughness={.95} transparent opacity={.16} side={DoubleSide}/>
-    </mesh>
     <pointLight position={[0, 2.4, -3.15]} intensity={.72} distance={5.5} color='#dff7ff'/>
   </group>;
 }

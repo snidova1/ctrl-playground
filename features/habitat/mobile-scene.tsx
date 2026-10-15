@@ -176,13 +176,13 @@ function FurnitureObject({
 
 function DoorButton({inside, htmlPortal, onDoor}: {inside: boolean; htmlPortal: MutableRefObject<HTMLDivElement | null>; onDoor: () => void}) {
   const position: [number, number, number] = inside ? [0, 1.25, 3.72] : [0, 1, -.7];
-  return <Html portal={htmlPortal.current ? {current: htmlPortal.current} : undefined} position={position} center distanceFactor={inside ? 7 : 10} zIndexRange={[80, 0]} style={{pointerEvents: 'auto'}}>
+  return <Html portal={htmlPortal.current ? {current: htmlPortal.current} : undefined} position={position} center zIndexRange={[80, 0]} style={{pointerEvents: 'auto'}}>
     <button
       type='button'
       aria-label={inside ? 'Keluar rumah' : 'Masuk rumah'}
       onClick={event => {event.stopPropagation(); onDoor();}}
       style={{
-        border: '0', borderRadius: 999, padding: '.55rem .78rem', minWidth: '7rem',
+        border: '0', borderRadius: 999, padding: '.55rem .78rem', minWidth: '6rem', minHeight: 44, fontSize: 12, whiteSpace: 'nowrap',
         background: inside ? '#7b4d34' : '#f2d59b', color: inside ? '#fff7e8' : '#3e2f1f',
         boxShadow: '0 10px 24px rgba(54,35,20,.28)', fontWeight: 800, touchAction: 'manipulation',
       }}
@@ -308,9 +308,9 @@ function SceneContents(props: Props & {htmlPortal: MutableRefObject<HTMLDivEleme
   const walkAvatar = (x: number, z: number) => window.dispatchEvent(new CustomEvent('habit-mobile-avatar-target', {detail: {x, z}}));
   return <>
     <color attach='background' args={[props.inside ? '#e7e2d5' : '#c6e3e4']}/>
-    <ambientLight intensity={props.inside ? .45 : .58}/>
-    <hemisphereLight args={['#fff3de', props.inside ? '#b2a28e' : '#79926b', props.inside ? .8 : 1.3]}/>
-    <directionalLight position={[-3, 9, 5]} intensity={props.inside ? 2.1 : 2.4} color='#fff1da' castShadow shadow-mapSize={[2048,2048]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-far={35} shadow-bias={-.0003} shadow-normalBias={.025}/>
+    <ambientLight intensity={props.inside ? .65 : .58}/>
+    <hemisphereLight args={['#fff3de', props.inside ? '#b2a28e' : '#79926b', props.inside ? 1.1 : 1.3]}/>
+    <directionalLight position={[-3, 9, 5]} intensity={props.inside ? 1.6 : 2.4} color='#fff1da' castShadow shadow-mapSize={[2048,2048]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-far={35} shadow-radius={4} shadow-bias={-.0003} shadow-normalBias={.025}/>
     <directionalLight position={[5, 4, -2]} intensity={.3} color='#c9dfe9'/>
     <CameraAndProjection inside={props.inside} orbitEnabled={props.orbitEnabled}/>
     {props.inside ? <CozyRoom wallColor={props.houseSettings.wallColor || '#eadfc9'}/> : <>

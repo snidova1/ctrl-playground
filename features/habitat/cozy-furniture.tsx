@@ -122,17 +122,9 @@ function NormalizeToAsset({assetId, authored, children}: {assetId: CozyFurniture
   return <group scale={scale}>{children}</group>;
 }
 
-function Pipe({position, length, axis, color}: {position: [number, number, number]; length: number; axis: 'x' | 'z'; color: string}) {
-  return <mesh position={position} rotation-z={axis === 'x' ? Math.PI / 2 : 0} rotation-x={axis === 'z' ? Math.PI / 2 : 0} castShadow>
-    <cylinderGeometry args={[.028, .028, length, 14]}/>
-    <meshStandardMaterial color={color} roughness={.86}/>
-  </mesh>;
-}
-
 function Sofa({tint}: {tint?: string}) {
   const fabricColor = tint || '#9fb594';
   const fabric = useFabricTexture(fabricColor, '#e6eedb');
-  const darkFabric = '#7f9878';
   return <group>
     <RoundedBox args={[1.72, .26, .72]} radius={.13} smoothness={7} position={[0, .31, .02]} castShadow receiveShadow>
       <meshStandardMaterial map={fabric} color='#ffffff' roughness={.9}/>
@@ -147,8 +139,6 @@ function Sofa({tint}: {tint?: string}) {
       <cylinderGeometry args={[.23, .23, .75, 24]}/>
       <meshStandardMaterial map={fabric} color='#ffffff' roughness={.9}/>
     </mesh>)}
-    {[-.9, 0, .9].map(x => <Pipe key={`front-${x}`} position={[x, .44, .39]} length={.5} axis='x' color={darkFabric}/>) }
-    {[-.46, .46].map(x => <Pipe key={`split-${x}`} position={[x, .6, .39]} length={.62} axis='z' color={darkFabric}/>) }
     {[-.72, .72].map(x => <RoundedBox key={`leg-${x}`} args={[.14, .16, .14]} radius={.04} position={[x, .08, .26]} castShadow><meshStandardMaterial color='#755237' roughness={.65}/></RoundedBox>)}
   </group>;
 }
@@ -210,7 +200,6 @@ function Bed({tint}: {tint?: string}) {
     {[-.52, .52].map(x => <RoundedBox key={x} args={[.72, .16, .42]} radius={.09} smoothness={6} position={[x, .53, -.55]} rotation={[-.08, 0, 0]} castShadow receiveShadow>
       <meshStandardMaterial map={linen} color='#ffffff' roughness={.94}/>
     </RoundedBox>)}
-    {[-.55, 0, .55].map(x => <Pipe key={x} position={[x, .52, .28]} length={1.52} axis='z' color='#889b75'/>) }
   </group>;
 }
 
