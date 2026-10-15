@@ -1,11 +1,12 @@
-import {test,expect,chromium,type Page,type Locator,type Response} from '@playwright/test';
+import {test,expect,type Page,type Locator,type Response} from '@playwright/test';
 import {installSignedWallet} from './helpers/wallet';
 import {assertTouchHUD} from './helpers/habitat-hud';
 import type {HabitatState} from '@/domain/habitat';
 import {PUBLIC_WORLD_ID} from '@/features/habitat/public-world-geography';
 import {TOWN_VENUES,createTownVenue} from '@/domain/town-venues';
 // Activate the actual page before native input/GPU readback. Two independent
-// browser windows are retained; no emulated focus, forced clicks or fake frames.
+// signed browser contexts retain separate cookies/storage/wallets. Sharing the
+// browser's GPU process avoids oversubscribing software WebGL on CI; no fake peers.
 async function press(p:Page,b:Locator){await p.bringToFront();if(await p.evaluate(()=>matchMedia('(pointer:coarse)').matches))await b.tap();else await b.click();}
 async function enter(p:Page,name:string,character?:string){
  await installSignedWallet(p);await p.goto('/public-world');
@@ -64,9 +65,24 @@ async function focusGathering(p:Page){
 async function spreadPeer(p:Page){
  await p.bringToFront();
  const touch=await p.context().newCDPSession(p),left=await p.getByRole('button',{name:'Move ←',exact:true}).boundingBox();expect(left).not.toBeNull();
- await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:left!.x+left!.width/2,y:left!.y+left!.height/2}]});
- try{await expect.poll(async()=>{const s=await(await p.request.get('/api/habitat/state')).json() as HabitatState;return s.players.find(p=>p.id===s.profile?.id)!.x;},{timeout:15000,intervals:[400]}).toBeLessThan(-1.5);}
- finally{await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await touch.detach();}
+ const read=async()=>{const s=await(await p.request.get('/api/habitat/state')).json() as HabitatState;return {player:s.players.find(a=>a.id===s.profile?.id)!,sequence:s.presenceSession?.sequence??-1};};
+ const deadline=Date.now()+15000;
+ try{
+  let current=await read();
+  while(current.player.x>=-1.5){
+   const previous=current.sequence;
+   // Short REAL touch holds, followed by a server heartbeat acknowledgement.
+   // Holding through slow GPU/network polling could walk beyond the gathering.
+   await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:left!.x+left!.width/2,y:left!.y+left!.height/2}]});
+   try{await new Promise(resolve=>setTimeout(resolve,250));}
+   finally{await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
+   await expect.poll(async()=>(await read()).sequence,{timeout:Math.max(1,deadline-Date.now()),intervals:[200]}).toBeGreaterThan(previous);
+   current=await read();
+   if(Date.now()>=deadline)throw new Error('Native touch approach exceeded its original 15s budget');
+  }
+  expect(current.player.x).toBeGreaterThan(-3.5);
+  expect(Math.hypot(current.player.x,current.player.z-6)).toBeLessThan(4.25);
+ }finally{await touch.detach();}
 }
 async function walkToTeaRoom(p:Page){
  await p.bringToFront();
@@ -108,8 +124,8 @@ async function walkToRoomExit(p:Page){
 // unchanged 240s case budget. BOTH platform paths and every persistence check
 // remain; neither browser is a simulated player or a mocked backend.
 for(const device of ['desktop','touch'] as const){
- test(`${device} courier persists an ordered route while an independent neighbor sees its world changes`,async({page,baseURL})=>{
-  const browser=await chromium.launch(test.info().project.use.launchOptions),context=await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}),peer=await context.newPage();
+ test(`${device} courier persists an ordered route while an independent neighbor sees its world changes`,async({page,browser,baseURL})=>{
+  const context=await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}),peer=await context.newPage();
   const errors:string[]=[];for(const p of [page,peer]){p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error'&&/Content Security Policy|THREE.WebGL|shader error|context lost/i.test(m.text()))errors.push(m.text());});}
   const state=async(p:Page)=>(await(await p.request.get('/api/habitat/state')).json()) as HabitatState;
   try{
@@ -125,12 +141,12 @@ for(const device of ['desktop','touch'] as const){
    const seen=(await state(observer)).town!;expect(seen.visits).toContainEqual(expect.objectContaining({siteId:'cafe'}));expect(seen.visits).toContainEqual(expect.objectContaining({siteId:'apple-baskets'}));
    expect(seen.progress.completed).toBe(0); // Shared changes do not forge personal work.
    await capture(actor,`saved-route-${device}.png`);expect(errors).toEqual([]);
-  }finally{await browser.close();}
+  }finally{await context.close();}
  });
 }
 
-test('independent desktop and touch neighbors consent to a synchronized gathering and retain attendance',async({page,baseURL})=>{
- const browser=await chromium.launch(test.info().project.use.launchOptions),context=await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}),peer=await context.newPage();
+test('independent desktop and touch neighbors consent to a synchronized gathering and retain attendance',async({page,browser,baseURL})=>{
+ const context=await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}),peer=await context.newPage();
  const errors:string[]=[];for(const p of [page,peer]){p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error'&&/Content Security Policy|THREE.WebGL|shader error|context lost/i.test(m.text()))errors.push(m.text());});}
  const state=async(p:Page)=>(await(await p.request.get('/api/habitat/state')).json()) as HabitatState;
  try{
@@ -151,14 +167,14 @@ test('independent desktop and touch neighbors consent to a synchronized gatherin
   await mutation(page,'town-gathering/end',host.getByRole('button',{name:'End gathering',exact:true}));
   await peer.reload();await expect(peer.locator('.pl-name').filter({hasText:/^You$/})).toBeVisible({timeout:60000});expect((await state(peer)).town!.history.some(e=>e.kind==='gathering-attended')).toBe(true);
   expect(errors).toEqual([]);
- }finally{await browser.close();}
+ }finally{await context.close();}
 });
 
 // Separate bounded acceptance case: the route/reload/gathering GPU workload
 // must not consume the time allocated to physically testing both doorways.
 // Every previous interior/chat/return assertion remains, with genuine wallets.
-test('desktop and touch players physically enter the same furnished room, chat and return',async({page,baseURL})=>{
- const browser=await chromium.launch(test.info().project.use.launchOptions),context=await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}),peer=await context.newPage();
+test('desktop and touch players physically enter the same furnished room, chat and return',async({page,browser,baseURL})=>{
+ const context=await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}),peer=await context.newPage();
  const errors:string[]=[];for(const p of [page,peer]){p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error'&&/Content Security Policy|THREE.WebGL|shader error|context lost/i.test(m.text()))errors.push(m.text());});}
  const state=async(p:Page)=>(await(await p.request.get('/api/habitat/state')).json()) as HabitatState;
  try{
@@ -190,7 +206,7 @@ test('desktop and touch players physically enter the same furnished room, chat a
   await capture(page,'tea-room-desktop.png');await capture(peer,'tea-room-mobile.png');
   for(const p of [page,peer]){await walkToRoomExit(p);await mutation(p,'town-venue/exit',p.getByRole('button',{name:'Return through entrance',exact:true}));expect((await state(p)).world?.name).toBe('Willow Square');}
   expect(errors).toEqual([]);
- }finally{await browser.close();}
+ }finally{await context.close();}
 });
 
 // The normal world directory is a supported travel UI, not a fixture teleport.
@@ -225,8 +241,8 @@ for(const device of ['desktop','touch'] as const){
  });
 }
 
-test('a signed worker carries a persistent indoor route outside while another player sees the supplies',async({page,baseURL})=>{
- const browser=await chromium.launch(test.info().project.use.launchOptions),context=await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}),peer=await context.newPage();
+test('a signed worker carries a persistent indoor route outside while another player sees the supplies',async({page,browser,baseURL})=>{
+ const context=await browser.newContext({baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true}),peer=await context.newPage();
  const state=async(p:Page)=>(await(await p.request.get('/api/habitat/state')).json()) as HabitatState;
  const errors:string[]=[];for(const p of [page,peer])p.on('pageerror',e=>errors.push(e.message));
  try{
@@ -257,5 +273,5 @@ test('a signed worker carries a persistent indoor route outside while another pl
   await expect.poll(async()=>(await state(page)).town!.progress.completed).toBe(1);
   expect((await state(page)).town!.route).toBeNull();expect((await state(peer)).town!.progress.completed).toBe(0);
   expect((await state(peer)).town!.visits).toContainEqual(expect.objectContaining({siteId:'cafe'}));expect(errors).toEqual([]);
- }finally{await browser.close();}
+ }finally{await context.close();}
 });

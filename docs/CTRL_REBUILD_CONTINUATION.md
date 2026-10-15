@@ -1,5 +1,15 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## Native two-session CI follow-up after the shared-table checkpoint
+
+Application checkpoint `1be2fcf4ef324038ef17fbfc2109f067b8c5fcee` / local `98e2f27` passed the complete existing production town-life suite **7/7 (10.6m)** after the new table integration; the separately signed table journey also passed **1/1 (3.0m)**. Runtime build/unit results remain as recorded below.
+
+Downloaded actual `624919d` CI artifact: town-life was **5/7**, while the Public World/civic job and six other workflows passed. Gathering check-in correctly stayed disabled; the final indoor/outdoor case again exhausted 240 seconds after completing delivery (reload/readback remained expensive). Neither result is full CI success.
+
+The follow-up uses two genuinely isolated signed BrowserContexts in the same Playwright browser rather than launching another complete GPU process per case. Cookies/storage/wallets/presence sessions remain independent, and all native inputs, wallet-inequality, actual work-timer, world/position, consent and persistence assertions remain. A direct native headless check confirmed both separate-context pages stay visible when the other is activated. This addresses process oversubscription as a hypothesis; measure the new CI instead of claiming a proven FPS improvement.
+
+The touch separation gesture now uses short real 250ms contact holds and waits for a newer authoritative presence sequence after each, within its existing 15-second budget. Before consenting, it asserts the signed player's final displacement is separated but still inside the original gathering radius. No forced input, teleport, changed distance/visual threshold, skipped assertion, fake clock or timeout increase. Full seven-case production rerun of this test follow-up is pending; record the outcome and exact pushed CI before claiming acceptance.
+
 ## 2026-10-15 shared neighborhood table after 624919d
 
 Continues remote `624919da40643010a66a3afb621ae0801b8dde0b` / local `2a063be`; exact room-render tree `7603359478c08659ccd86d936ca5f87e58b83643`. That checkpoint's final real room/shared-route browser run passed **4/4 (5.7m)**, with 16 inspected WebGL PNGs; both production builds passed. Its GitHub CI is still running at this record, with six successful workflows. Do not replace that status with an invented full pass.
