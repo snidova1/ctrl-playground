@@ -1,16 +1,13 @@
-# Habit local preview
+# Habit interactive preview
 
-Route: `/preview`. Display name: **Habit**.
+Route: `/preview`. PC and phone, pointer/touch parity; not mobile-only.
 
-## Scope
-- One customizable exterior house, not a village.
-- Roof profile and color, wall style and color.
-- Existing Habitat object renderer and transform controls power decoration editing.
-- Local design is automatically stored under `ctrl-habit-local-v1` in browser localStorage.
-- No wallet/auth/personal-world API requests. This is not server/cloud persistence.
-- Loading validates layout with the existing schema and asset registry; house colors must be six-digit hex.
-- Includes eight starter decoration choices; adding is capped at 120 objects.
-- No interior editing, ownership transfer, marketplace, or real-time shared save is implied.
+- One exterior home; select its door to enter a cutaway interior.
+- Original rounded/procedural furniture and canvas-generated wood/fabric textures. No extracted Heartopia game mesh, texture or binary is shipped.
+- Eight movable starter items for fresh storage. Existing v2 layouts (including intentionally empty rooms) are preserved; v1 yard/house data migrates. Empty rooms offer an explicit example-room action.
+- Open the furniture bag, choose an item and click/tap the floor to place it. Drag the object directly, rotate and change its primary material color, or return it to the bag. No XYZ inspector.
+- Room walls/roof color controls; mouse orbit/pan/scroll and touch orbit/pinch camera controls.
+- Storage: `ctrl-habit-local-v2`, with separate `yard`, `room`, `house`, `colors`. Browser-local only, not cross-device/cloud synchronization.
+- Camera/shadow values are Habit implementation choices inspired by reference analysis, not a claim to run Heartopia's renderer.
 
-## Verification
-`node scripts/qa/preview-smoke.mjs` against `CTRL_STAGING_ORIGIN` exercises one-house readiness, roof and wall controls, add/move/rotate/resize/remove, reload persistence, missing model responses, JS errors, and the absence of wallet API calls. Artifacts include desktop before/after, editor, and mobile screenshots. The Cloudflare staging workflow runs this after deployment.
+`node scripts/qa/preview-smoke.mjs` against the staging origin exercises entry/exit, actual mouse/CDP-touch placement and drag, rotation, color, save/reload, removal and wall paint at desktop and phone viewports. It saves screenshots and a JSON acceptance report; `window.__habitProject` only projects world coordinates to screen for test targeting, never mutates scene state.

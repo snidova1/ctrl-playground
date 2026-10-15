@@ -1,48 +1,45 @@
 'use client';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import {Component,useEffect,useRef,useState,type ReactNode} from 'react';
-import {createCharacterMotion} from '@/features/plaza/characters/catalog';
-import type {ControlInput} from '@/features/plaza/scene';
-import type {Pose} from '@/features/plaza/types';
-import {layoutSchema,worldObjectSchema,type WorldObject,type WorldState} from '@/features/habitat/types';
+import {layoutSchema,worldObjectSchema,type WorldObject} from '@/features/habitat/types';
 import {DEFAULT_HOUSE_SETTINGS,type HabitHouseSettings} from '@/features/habitat/habit-home';
 import {getBuildAsset} from '@/features/plaza/build-assets';
-import type {HabitatTool} from '@/features/plaza/editor/habitat-tools';
 import './preview.css';
-const Stage=dynamic(()=>import('@/features/habitat/stage'),{ssr:false});
-const STORAGE='ctrl-habit-local-v1';
-const CATALOG=[['Bench','furniture-kit/bench',3],['Chair','furniture-kit/chair',3],['Lamp','furniture-kit/lampRoundFloor',2],['Fence','nature-kit/fence_simple',2.5],['Red flowers','nature-kit/flower_redA',3],['Purple flowers','nature-kit/flower_purpleA',3],['Potted plant','furniture-kit/pottedPlant',2],['Table','furniture-kit/tableRound',2]] as const;
-const initialDecor=():WorldObject[]=>[0,2,4,5].map((n,i)=>({id:`00000000-0000-4000-8000-00000000000${i}`,name:CATALOG[n][0],assetId:CATALOG[n][1],x:i%2?-4:4,y:0,z:1+Math.floor(i/2)*2,rotation:0,scale:CATALOG[n][2],behavior:'decoration',target:''}));
-class Boundary extends Component<{children:ReactNode},{failed:boolean}>{state={failed:false};static getDerivedStateFromError(){return {failed:true};}render(){return this.state.failed?<div role='alert'>WebGL could not render. Try Chrome/Edge with hardware acceleration.</div>:this.props.children;}}
-export default function Preview(){
- const pose=useRef<Pose>({x:0,z:6,angle:Math.PI,moving:false}),input=useRef<ControlInput>({x:0,z:0}),motion=useRef(createCharacterMotion());
- const [quality,setQuality]=useState<'low'|'high'>('low'),[editing,setEditing]=useState(false),[selected,setSelected]=useState<string|null>(null),[tool,setTool]=useState<HabitatTool>('translate');
- const [house,setHouse]=useState<HabitHouseSettings>(DEFAULT_HOUSE_SETTINGS),[decor,setDecor]=useState<WorldObject[]>(initialDecor),[ready,setReady]=useState(false),[saved,setSaved]=useState('Loading local design…');
- useEffect(()=>{try{const raw=localStorage.getItem(STORAGE);if(raw){const d=JSON.parse(raw);const parsed=layoutSchema.safeParse(d.decor);if(parsed.success&&parsed.data.every(o=>getBuildAsset(o.assetId)))setDecor(parsed.data);const h=d.house;if(h&&typeof h.timber==='boolean'&&typeof h.tall==='boolean'&&/^#[0-9a-f]{6}$/i.test(h.roofColor)&&/^#[0-9a-f]{6}$/i.test(h.wallColor))setHouse({timber:h.timber,tall:h.tall,roofColor:h.roofColor,wallColor:h.wallColor});}}catch{setSaved('Could not read local design');}setReady(true);},[]);
- useEffect(()=>{if(!ready)return;try{localStorage.setItem(STORAGE,JSON.stringify({house,decor}));setSaved('Saved on this browser');}catch{setSaved('Storage unavailable — changes last this visit only');}},[ready,house,decor]);
- const state:WorldState={profile:{id:'local-preview',name:'Visitor',character:'female',variant:'original'},world:{id:'local-preview-world',ownerId:'local-preview',name:'Habit',visibility:'private',revision:0,objects:decor},homeId:null,canEdit:true,players:[],states:{},wallet:null,keyStatus:'not-deployed',worlds:[]};
- const picked=decor.find(o=>o.id===selected);
- const update=(id:string,p:Partial<WorldObject>)=>setDecor(items=>items.map(o=>{if(o.id!==id)return o;const v=worldObjectSchema.safeParse({...o,...p});return v.success?v.data:o;}));
- const add=(entry:typeof CATALOG[number])=>{if(decor.length>=120)return;const id=crypto.randomUUID();setDecor(items=>[...items,{id,name:entry[0],assetId:entry[1],x:2+(items.length%4),y:0,z:5+Math.floor(items.length%12/4),rotation:0,scale:entry[2],behavior:'decoration',target:''}]);setSelected(id);};
- return <main className='habit-preview' data-decor-count={decor.length}>
-  <Boundary><Stage state={state} houseSettings={house} pose={pose} input={input} motion={motion} editing={editing} locked={false} selected={selected} draft={decor} onSelect={setSelected} onUse={()=>{}} sitting={false} celebrate={false} interactedAt={0} quality={quality} advancedBuilder tool={tool} snap onTransform={update}/></Boundary>
-  <header className='habit-header'><div><strong>Habit</strong><small>Your home. Your little world.</small></div><span>NO WALLET</span><button aria-pressed={editing} onClick={()=>{setEditing(!editing);input.current={x:0,z:0};}}>{editing?'Done editing':'Edit home'}</button><label>Graphics <select aria-label='Graphics' value={quality} onChange={e=>setQuality(e.target.value as 'low'|'high')}><option value='low'>Low</option><option value='high'>High</option></select></label><Link href='/courtyard'>Common Ground ↗</Link></header>
-  {editing&&<aside className='habit-editor' aria-label='Home editor'>
-   <h2>My house</h2><p>One home, made yours.</p>
-   <label>Wall style<select aria-label='Wall style' value={house.timber?'timber':'plaster'} onChange={e=>setHouse(h=>({...h,timber:e.target.value==='timber'}))}><option value='plaster'>Plaster</option><option value='timber'>Timber</option></select></label>
-   <label>Roof shape<select aria-label='Roof shape' value={house.tall?'tall':'low'} onChange={e=>setHouse(h=>({...h,tall:e.target.value==='tall'}))}><option value='low'>Low gable</option><option value='tall'>Tall gable</option></select></label>
-   <label>Roof color<input aria-label='Roof color' type='color' value={house.roofColor} onChange={e=>setHouse(h=>({...h,roofColor:e.target.value}))}/></label>
-   <label>Wall color<input aria-label='Wall color' type='color' value={house.wallColor} onChange={e=>setHouse(h=>({...h,wallColor:e.target.value}))}/></label>
-   <div className='habit-catalog'>{[['Terracotta','#bd7356'],['Sage','#789b82'],['Slate','#718595']].map(([name,color])=><button key={name} onClick={()=>setHouse(h=>({...h,roofColor:color}))}>{name} roof</button>)}</div>
-   <h2>Decorations</h2><p>Add, select, move, rotate, resize or remove.</p><div className='habit-catalog'>{CATALOG.map(a=><button key={a[0]} disabled={decor.length>=120} onClick={()=>add(a)}>+ {a[0]}</button>)}</div>
-   <label>Selected decoration<select aria-label='Selected decoration' value={selected??''} onChange={e=>setSelected(e.target.value||null)}><option value=''>Choose an item</option>{decor.map((o,i)=><option key={o.id} value={o.id}>{i+1}. {o.name}</option>)}</select></label>
-   {picked&&<section aria-label='Decoration controls'><div className='habit-catalog'>{(['translate','rotate','scale'] as const).map(t=><button key={t} aria-pressed={tool===t} onClick={()=>setTool(t)}>{t==='translate'?'Move':t==='rotate'?'Rotate':'Resize'}</button>)}</div>
-    {(['x','y','z','rotation','scale'] as const).map(k=><label key={k}>{k}<input aria-label={`Decoration ${k}`} type='number' step={k==='rotation'?.25:.1} value={Number(picked[k].toFixed(2))} onChange={e=>{if(e.target.value!=='')update(picked.id,{[k]:Number(e.target.value)});}}/></label>)}
-    <button onClick={()=>{setDecor(a=>a.filter(o=>o.id!==picked.id));setSelected(null);}}>Remove decoration</button>
-   </section>}
-   <p className='habit-save' role='status'>{saved}</p><small>Local design only. No wallet or cloud save.</small>
-  </aside>}
-  <footer className='habit-footer'><span>{editing?'Drag the selected item’s handles, or use the controls.':'WASD / arrows: walk · drag: orbit · scroll: zoom'}<small>{saved}</small></span>{!editing&&<div>{([['←',-1,0],['↑',0,-1],['↓',0,1],['→',1,0]] as const).map(([label,x,z])=><button key={label} aria-label={`Move ${label}`} style={{touchAction:'none'}} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);input.current={x,z};}} onPointerUp={()=>{input.current={x:0,z:0};}} onPointerCancel={()=>{input.current={x:0,z:0};}} onLostPointerCapture={()=>{input.current={x:0,z:0};}}>{label}</button>)}</div>}</footer>
+const Scene=dynamic(()=>import('@/features/habitat/mobile-scene'),{ssr:false});
+const KEY='ctrl-habit-local-v2';
+const CATALOG=[['Sofa','furniture-kit/benchCushionLow',4],['Kursi','furniture-kit/chair',3],['Meja','furniture-kit/tableRound',2],['Kasur','furniture-kit/bedDouble',2],['Rak buku','furniture-kit/bookcaseOpen',2.4],['Lampu','furniture-kit/lampRoundFloor',2],['Tanaman','furniture-kit/pottedPlant',2],['Karpet','furniture-kit/rugRectangle',2],['Pagar','nature-kit/fence_simple',2.5],['Bunga','nature-kit/flower_redA',3]] as const;
+type Entry=typeof CATALOG[number];
+const PALETTE=[['Terracotta','#bd7356'],['Sage','#789b82'],['Cream','#f3dfb5'],['Blue','#718fae'],['Rose','#ca94a5'],['White','#ffffff']] as const;
+const validHouse=(h:HabitHouseSettings)=>h&&typeof h.tall==='boolean'&&typeof h.timber==='boolean'&&/^#[\da-f]{6}$/i.test(h.wallColor)&&/^#[\da-f]{6}$/i.test(h.roofColor);
+function starterRoom():WorldObject[]{const places:Array<[number,number,number,number]>=[[0,-2.4,-1.5,0],[2,-2.4,.1,0],[7,-2.4,.1,0],[3,2.5,-1.9,0],[4,4.1,-3.1,0],[5,-4.1,-2.3,0],[6,.6,-3.1,0],[1,-.6,.4,-.6]];return places.map(([i,x,z,rotation],n)=>({id:`70000000-0000-4000-8000-00000000000${n}`,name:CATALOG[i][0],assetId:CATALOG[i][1],x,y:0,z,rotation,scale:CATALOG[i][2],behavior:'decoration',target:''}));}
+function readLayout(v:unknown){const p=layoutSchema.safeParse(v);return p.success?p.data.filter(o=>getBuildAsset(o.assetId)):[];}
+class Boundary extends Component<{children:ReactNode},{failed:boolean}>{state={failed:false};static getDerivedStateFromError(){return {failed:true};}render(){return this.state.failed?<div role='alert'>Scene belum bisa tampil. Coba browser Chrome dengan WebGL aktif.</div>:this.props.children;}}
+export default function Habit(){
+ const [inside,setInside]=useState(false),[tray,setTray]=useState(false),[painting,setPainting]=useState(false),[paintTarget,setPaintTarget]=useState<'wallColor'|'roofColor'>('wallColor');
+ const [placing,setPlacing]=useState<Entry|null>(null),[selected,setSelected]=useState<string|null>(null),[house,setHouse]=useState(DEFAULT_HOUSE_SETTINGS);
+ const [yard,setYard]=useState<WorldObject[]>([]),[room,setRoom]=useState<WorldObject[]>(starterRoom),[colors,setColors]=useState<Record<string,string>>({});
+ const [ready,setReady]=useState(false),[saved,setSaved]=useState('Memuat desain…'),[notice,setNotice]=useState('');
+ const latest=useRef({ready:false,house,yard,room,colors});latest.current={ready,house,yard,room,colors};
+ useEffect(()=>{try{const raw=localStorage.getItem(KEY),d=JSON.parse(raw??localStorage.getItem('ctrl-habit-local-v1')??'null');if(d){setYard(readLayout(raw?d.yard:d.decor));setRoom(raw?readLayout(d.room):starterRoom());if(validHouse(d.house))setHouse(d.house);if(d.colors&&typeof d.colors==='object')setColors(Object.fromEntries(Object.entries(d.colors).filter(([,v])=>typeof v==='string'&&/^#[\da-f]{6}$/i.test(v))) as Record<string,string>);}}catch{setSaved('Desain lama tidak dapat dibaca');}setReady(true);const flush=()=>{const v=latest.current;if(v.ready)try{localStorage.setItem(KEY,JSON.stringify({version:2,house:v.house,yard:v.yard,room:v.room,colors:v.colors}));}catch{}};window.addEventListener('pagehide',flush);return()=>window.removeEventListener('pagehide',flush);},[]);
+ useEffect(()=>{if(!ready)return;setSaved('Menyimpan…');const t=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify({version:2,house,yard,room,colors}));setSaved('Tersimpan di perangkat ini');}catch{setSaved('Penyimpanan browser tidak tersedia');}},200);return()=>clearTimeout(t);},[ready,house,yard,room,colors]);
+ const objects=inside?room:yard,setObjects=inside?setRoom:setYard,picked=objects.find(o=>o.id===selected);
+ const constrain=(o:WorldObject)=>{const b=getBuildAsset(o.assetId)!.bounds,c=Math.abs(Math.cos(o.rotation)),s=Math.abs(Math.sin(o.rotation)),hx=(b[0]*c+b[2]*s)*o.scale/2,hz=(b[0]*s+b[2]*c)*o.scale/2;
+  if(inside)return {...o,x:Math.max(-4.85+hx,Math.min(4.85-hx,o.x)),z:Math.max(-3.85+hz,Math.min(3.85-hz,o.z))};
+  return {...o,x:Math.max(-14+hx,Math.min(14-hx,o.x)),z:Math.max(-8+hz,Math.min(12-hz,o.z))};};
+ const update=(id:string,p:Partial<WorldObject>)=>setObjects(items=>items.map(o=>{if(o.id!==id)return o;const v=worldObjectSchema.safeParse(constrain({...o,...p}));return v.success?v.data:o;}));
+ const select=(id:string|null)=>{setSelected(id);if(id){setTray(false);setPainting(false);setPlacing(null);}};
+ const place=(x:number,z:number)=>{if(!placing)return;if(objects.length>=120){setNotice('Ruangan penuh — simpan beberapa barang dulu.');return;}const id=crypto.randomUUID(),o=constrain({id,name:placing[0],assetId:placing[1],x,y:0,z,rotation:0,scale:placing[2],behavior:'decoration',target:''});if(!inside&&Math.abs(o.x)<3.7&&o.z> -5.6&&o.z<-.4){setNotice('Di situ rumahnya. Pilih area halaman.');return;}setObjects(a=>[...a,o]);setSelected(id);setPlacing(null);setNotice('Barang ditaruh. Geser langsung untuk memindahkan.');};
+ const door=()=>{setInside(a=>!a);setSelected(null);setPlacing(null);setTray(false);setPainting(false);setNotice('');};
+ return <main className='habit-play' data-area={inside?'inside':'yard'} data-item-count={objects.length}>
+  <Boundary><Scene inside={inside} objects={objects} selected={selected} placing={!!placing} colors={colors} houseSettings={house} onSelect={select} onPlace={place} onMove={(id,x,z)=>update(id,{x,z})} onDoor={door}/></Boundary>
+  <header className='habit-hud'><div><strong>Habit</strong><small>{inside?'Dalam rumah':'Halaman rumah'}</small></div><span role='status'>{saved}</span></header>
+  <div className='habit-hint' aria-live='polite'>{placing?`Tap lantai untuk menaruh ${placing[0]}`:picked?'Geser barang langsung · scroll/cubit untuk zoom':inside?'Klik/tap lantai untuk jalan · pilih barang untuk menata':'Pilih pintu untuk masuk · drag untuk memutar kamera'}{notice&&<small>{notice}</small>}</div>
+  {placing?<div className='habit-bottom habit-placement'><strong>{placing[0]}</strong><span>Pilih tempatnya langsung di scene</span><button onClick={()=>{setPlacing(null);setNotice('');}}>Batal</button></div>:picked?<section className='habit-bottom habit-context' aria-label='Barang dipilih'>
+   <div className='habit-actions'><strong>{picked.name}</strong><button aria-label='Putar barang' onClick={()=>update(picked.id,{rotation:picked.rotation+Math.PI/4})}>↻ Putar</button><button aria-label='Simpan barang' onClick={()=>{setObjects(a=>a.filter(o=>o.id!==picked.id));setColors(c=>{const n={...c};delete n[picked.id];return n;});setSelected(null);setNotice('Barang kembali ke tas perabot.');}}>▣ Simpan</button><button onClick={()=>{setSelected(null);setNotice('');}}>✓ Selesai</button></div>
+   <div className='habit-swatches'><span>Warna</span>{PALETTE.map(([name,color])=><button key={name} aria-label={`Warna ${name}`} aria-pressed={colors[picked.id]===color} style={{background:color}} onClick={()=>setColors(c=>({...c,[picked.id]:color}))}/>)}<button className='habit-original' onClick={()=>setColors(c=>{const n={...c};delete n[picked.id];return n;})}>Asli</button></div>
+  </section>:tray?<section className='habit-bottom habit-inventory' aria-label='Tas perabot'>
+   <div className='habit-actions'><strong>Tas perabot</strong><span>Pilih barang, lalu klik/tap lantai</span><button aria-label='Tutup tas' onClick={()=>setTray(false)}>✕</button></div>
+   <div className='habit-items'>{CATALOG.map(a=>{const asset=getBuildAsset(a[1])!;return <button key={a[0]} aria-label={`Pilih ${a[0]}`} onClick={()=>{setPlacing(a);setTray(false);setNotice('');}}><img src={asset.thumbnailUrl} alt='' width={62} height={62}/><span>{a[0]}</span></button>;})}</div>
+  </section>:painting?<section className='habit-bottom habit-paint' aria-label='Cat rumah'><div className='habit-actions'><strong>Cat rumah</strong><button aria-pressed={paintTarget==='wallColor'} onClick={()=>setPaintTarget('wallColor')}>Dinding</button>{!inside&&<button aria-pressed={paintTarget==='roofColor'} onClick={()=>setPaintTarget('roofColor')}>Atap</button>}<button onClick={()=>setPainting(false)}>Selesai</button></div><div className='habit-swatches'>{PALETTE.map(([name,color])=><button key={name} aria-label={`Cat ${name}`} style={{background:color}} onClick={()=>setHouse(h=>({...h,[paintTarget]:color}))}/>)}</div></section>:<nav className='habit-bottom habit-dock' aria-label='Aksi rumah'><button onClick={()=>{setTray(true);setNotice('');}}>▣ Tas perabot</button><button onClick={()=>{setPainting(true);setPaintTarget('wallColor');}}>◉ Cat rumah</button>{inside&&objects.length===0&&<button onClick={()=>setRoom(starterRoom())}>Contoh ruangan</button>}<span>PC + HP · simpan lokal</span></nav>}
  </main>;
 }
