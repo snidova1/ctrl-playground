@@ -9,6 +9,12 @@ import {TOWN_PALETTE as P} from './town-palette';
 import {GroundShadow,paintedTexture} from './town-surfaces';
 import {TownAsset} from './town-assets';
 import {assignOcclusionTarget} from './town-occlusion';
+import TownRoof,{type TownRoofKind} from './town-roof';
+
+const HOUSE_ROOFS:Readonly<Record<string,TownRoofKind>>={
+ 'WILLOW BAKERY':'gambrel','MAKERS HOUSE':'clerestory','GARDEN HOUSE':'hip',
+ 'ART STUDIO':'clerestory','LAKE COTTAGE':'hip','HILL COTTAGE':'gambrel',
+};
 
 function GableRoof({width,depth,base,rise=1.5,color}:{width:number;depth:number;base:number;rise?:number;color:string}){
  const half=width/2+.35,angle=Math.atan2(rise,half),length=Math.hypot(half,rise);
@@ -61,20 +67,37 @@ function ArchedDoor({z}:{z:number}){
 }
 /** Distant LOD keeps real closed building volume instead of rendering hundreds
  * of window/flower/label draw calls while the player explores another district. */
-function TownShell({x,z,width,depth,height=4.12,rise=1.5,wall,roof}:{x:number;z:number;width:number;depth:number;height?:number;rise?:number;wall:string;roof:string}){
+function TownShell({x,z,width,depth,height=4.12,rise=1.5,wall,roof,kind}:{x:number;z:number;width:number;depth:number;height?:number;rise?:number;wall:string;roof:string;kind?:TownRoofKind}){
  const shape=useMemo(()=>new Shape().moveTo(-width/2-.35,0).lineTo(0,rise).lineTo(width/2+.35,0).closePath(),[width,rise]);
- return <group position={[x,0,z]}><mesh position-y={height/2} castShadow receiveShadow><boxGeometry args={[width,height,depth]}/><meshStandardMaterial color={wall} roughness={.95}/></mesh><mesh position={[0,height,-depth/2-.35]} castShadow receiveShadow><extrudeGeometry args={[shape,{depth:depth+.7,bevelEnabled:false}]}/><meshStandardMaterial color={roof} roughness={.95}/></mesh></group>;
+ return <group position={[x,0,z]}><mesh position-y={height/2} castShadow receiveShadow><boxGeometry args={[width,height,depth]}/><meshStandardMaterial color={wall} roughness={.95}/></mesh>{kind?<TownRoof width={width} depth={depth} base={height} rise={rise} kind={kind} color={roof}/>:<mesh position={[0,height,-depth/2-.35]} castShadow receiveShadow><extrudeGeometry args={[shape,{depth:depth+.7,bevelEnabled:false}]}/><meshStandardMaterial color={roof} roughness={.95}/></mesh>}</group>;
 }
+function RoofDetail({width,depth,kind,color}:{width:number;depth:number;kind:TownRoofKind;color:string}){
+ if(kind==='clerestory')return <group position={[-width*.14,5.32,0]}>
+  <mesh position-z={depth/2+.37}><boxGeometry args={[width*.38,.43,.07]}/><meshStandardMaterial color={P.forest} roughness={.4}/></mesh>
+  {[-.5,0,.5].map(x=><mesh key={x} position={[x*width*.35,0,depth/2+.43]}><boxGeometry args={[.06,.5,.08]}/><meshStandardMaterial color={P.trim}/></mesh>)}
+ </group>;
+ if(kind==='hip')return null;
+ return <group position={[0,4.45,depth*.29]}>
+  <mesh position-y={.35}><boxGeometry args={[1.65,.7,1.2]}/><meshStandardMaterial color={P.cream}/></mesh>
+  <ShutterWindow x={0} y={.39} z={.64} width={.8} height={.6}/>
+  <GableRoof width={1.65} depth={1.2} base={.7} rise={.55} color={color}/>
+ </group>;
+}
+// Keep the Html root alive across LOD swaps: disposing and recreating its
+// concurrent DOM root while another renderer commits can delete its new children.
 export function TownHouse({site,detailed=true}:{site:typeof PUBLIC_WORLD_BUILDINGS[number];detailed?:boolean}){
  const empty=useMemo(()=>new Object3D(),[]),body=useRef(empty);
  const mount=useCallback((object:Object3D|null)=>assignOcclusionTarget(body,object,empty),[empty]);
- const w=site.width,d=site.depth;
- if(!detailed)return <TownShell x={site.x} z={site.z} width={w} depth={d} wall={site.name==='ART STUDIO'?P.wall:P.cream} roof={P.terracotta}/>;
+ const w=site.width,d=site.depth,kind=HOUSE_ROOFS[site.name];
  return <group position={[site.x,0,site.z]}>
+  {detailed?<group>
   <GroundShadow width={w+2} depth={d+2}/>
-  <RoundedBox ref={mount} args={[w,4.12,d]} position-y={2.06} radius={.06} smoothness={1} receiveShadow><meshStandardMaterial color={site.name==='ART STUDIO'?P.wall:P.cream}/></RoundedBox>
+  <RoundedBox ref={mount} args={[w,4.12,d]} position-y={2.06} radius={.06} smoothness={1} receiveShadow><meshStandardMaterial color={site.color}/></RoundedBox>
   <mesh position-y={.23}><boxGeometry args={[w+.06,.46,d+.06]}/><meshStandardMaterial color={P.pot}/></mesh>
-  <GableRoof width={w} depth={d} base={4.12} color={P.terracotta}/>
+  <TownRoof width={w} depth={d} base={4.12} kind={kind} color={site.roof}/>
+  <RoofDetail width={w} depth={d} kind={kind} color={site.roof}/>
+  {site.name==='MAKERS HOUSE'&&[-w*.33,0,w*.33].map(x=><mesh key={x} position={[x,3.25,d/2+.1]}><boxGeometry args={[.13,1.35,.13]}/><meshStandardMaterial color={P.wood}/></mesh>)}
+  {site.name==='GARDEN HOUSE'&&<mesh position={[0,3.12,d/2+.28]}><boxGeometry args={[w*.82,.14,.65]}/><meshStandardMaterial color={P.sage}/></mesh>}
   <mesh position={[w*.27,5.3,-d*.22]}><boxGeometry args={[.6,1.15,.6]}/><meshStandardMaterial color={P.terracotta}/></mesh>
   <mesh position={[w*.27,5.87,-d*.22]}><boxGeometry args={[.76,.14,.76]}/><meshStandardMaterial color={P.pot}/></mesh>
   <ArchedDoor z={d/2+.08}/>
@@ -85,18 +108,25 @@ export function TownHouse({site,detailed=true}:{site:typeof PUBLIC_WORLD_BUILDIN
   <mesh position={[0,.12,d/2+.55]}><boxGeometry args={[2.1,.2,.95]}/><meshStandardMaterial color={P.pot}/></mesh>
   {[-w/2+.12,w/2-.12].map(x=><mesh key={x} position={[x,2.06,d/2+.06]}><boxGeometry args={[.2,4.12,.14]}/><meshStandardMaterial color={P.trim}/></mesh>)}
   <mesh position={[0,3.74,d/2+.12]}><boxGeometry args={[Math.min(w-1,4.9),.42,.16]}/><meshStandardMaterial color={P.trim}/></mesh>
-  <Html transform center occlude={[body]} position={[0,3.74,d/2+.24]} distanceFactor={8} zIndexRange={[5,0]}><span className='hb-town-label'>{site.name}</span></Html>
+  </group>:<TownShell x={0} z={0} width={w} depth={d} rise={1.6} wall={site.color} roof={site.roof} kind={kind}/>}
+  <Html style={{display:detailed?'block':'none'}} transform center occlude={[body]} position={[0,3.74,d/2+.24]} distanceFactor={8} zIndexRange={[5,0]}><span className='hb-town-label'>{site.name}</span></Html>
  </group>;
 }
 export function MarketFront({x,name,base,roof,detailed=true}:{x:number;name:string;base:string;roof:string;detailed?:boolean}){
+ const flowerShop=name==='FLOWER MARKET';
  const empty=useMemo(()=>new Object3D(),[]),body=useRef(empty);
  const mount=useCallback((object:Object3D|null)=>assignOcclusionTarget(body,object,empty),[empty]);
- if(!detailed)return <TownShell x={x} z={-9} width={9} depth={3.8} height={4.6} rise={1.1} wall={base} roof={roof}/>;
  return <group position={[x,0,-9]}>
+  {detailed?<group>
   <GroundShadow width={11} depth={7}/>
   <RoundedBox ref={mount} args={[9,4.6,3.8]} position-y={2.3} radius={.06} smoothness={1}><meshStandardMaterial color={base}/></RoundedBox>
   <mesh position-y={.23}><boxGeometry args={[9.06,.46,3.86]}/><meshStandardMaterial color={P.pot}/></mesh>
-  <GableRoof width={9} depth={3.8} base={4.6} rise={1.1} color={roof}/>
+  {flowerShop?<TownRoof width={9} depth={3.8} base={4.6} rise={1.8} kind='hip' color={roof}/>:<GableRoof width={9} depth={3.8} base={4.6} rise={1.1} color={roof}/>}
+  {flowerShop&&<group position={[0,6.62,0]}>
+   <mesh><boxGeometry args={[2.4,.85,1.35]}/><meshStandardMaterial color={P.forest} roughness={.35}/></mesh>
+   {[-1.2,-.4,.4,1.2].map(v=><mesh key={v} position={[v,0,.72]}><boxGeometry args={[.07,.9,.07]}/><meshStandardMaterial color={P.trim}/></mesh>)}
+   <GableRoof width={2.4} depth={1.35} base={.42} rise={.6} color={P.sage}/>
+  </group>}
   <ArchedDoor z={1.96}/>
   {[-2.75,2.75].map(dx=><ShutterWindow key={dx} x={dx} y={2.18} z={1.97} width={1.85} height={2.18}/>)}
   {[-4.34,4.34].map(dx=><mesh key={dx} position={[dx,2.3,1.98]}><boxGeometry args={[.2,4.6,.12]}/><meshStandardMaterial color={P.trim}/></mesh>)}
@@ -105,6 +135,7 @@ export function MarketFront({x,name,base,roof,detailed=true}:{x:number;name:stri
    <mesh position={[-4.28+i*.95,3.03,3.67]}><boxGeometry args={[.95,.32,.08]}/><meshStandardMaterial color={i%2?roof:P.cream}/></mesh>
   </group>)}
   <RoundedBox args={[5,.48,.15]} position={[0,4.08,2.08]} radius={.04} smoothness={1}><meshStandardMaterial color={P.trim}/></RoundedBox>
-  <Html transform center occlude={[body]} position={[0,4.08,2.2]} distanceFactor={10} zIndexRange={[5,0]}><span className='hb-town-label'>{name}</span></Html>
+  </group>:<TownShell x={0} z={0} width={9} depth={3.8} height={4.6} rise={flowerShop?1.8:1.1} wall={base} roof={roof} kind={flowerShop?'hip':undefined}/>}
+  <Html style={{display:detailed?'block':'none'}} transform center occlude={[body]} position={[0,4.08,2.2]} distanceFactor={10} zIndexRange={[5,0]}><span className='hb-town-label'>{name}</span></Html>
  </group>;
 }

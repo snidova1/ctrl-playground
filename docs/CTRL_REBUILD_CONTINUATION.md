@@ -1,5 +1,36 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## 2026-10-16 — recovered host, reproduced CI faults and selective art integration
+
+The execution host has recovered. Continued the existing PR #30 branch from `599624b8c29f94800fd2024d95a3190dc4b54c52`; no reset, merge, database publication or deployment. Latest verified baseline CI was **not green**: Builder 11/12, original Public World 10/10, civic failed a DOM removal, town-life 6/7 (last reload exceeded 240s). Worker compilation and Visible Habitat passed on that baseline.
+
+### Concrete runtime fixes and evidence
+
+- Downloaded the actual baseline Builder/civic/town-life traces. Reproduced civic failure locally with diagnostic-only DOM logging: a transformed `WILLOW BAKERY` label lost its children when its concurrent HTML root was destroyed during a center-detail LOD transition. Labels and directory roots now persist across LOD transitions; only building meshes and actual label visibility change. Existing narrow occlusion targets, detailed near geometry and closed distant volumes remain. Temporary DOM instrumentation was removed; no `removeChild` patch or error suppression ships.
+- Renderer pauses during in-flight world actions, leaving the last frame visible so software WebGL does not compete with join/travel response processing. The 15s API deadline and original browser deadlines remain. A failed post-commit join now marks presence offline/superseded, preventing the next heartbeat from silently rejoining the previously displayed home.
+- Strengthened the original two-wallet Builder journey with **real response-loss fault injection**: the signed join executes on the actual server, then its response is dropped. After more than two real heartbeat periods, no automatic old-world join is allowed; explicit native retry, member editing/revocation and leave/reconnect still execute. **Desktop/mobile 2/2 passed (4.3m)** on the integrated roof/planting/wall-finish build. No fabricated API response, wallet identity, fake clock or WebGL mock is used.
+- Persistent waterfront civic journey **1/1 passed (3.4m)** after the label/pause fix, with both real signed browsers, work timers, reload and unchanged empty-error assertion. Previously timed-out indoor-to-outdoor route **1/1 passed (1.9m)** after that fix. These runs precede the final art refinements; full final-head gates must independently pass.
+
+### Actual selective art work
+
+- Original hip, gambrel and clerestory roof geometry replaces uniform gables in the main houses and outer districts. Harbor cladding, workshop timber framing, orchard joinery, differentiated main-house roof colors, cottage dormers and the flower-market rooftop lantern. Source buildings, ground-level doors, solid footprints and saved coordinates are unchanged. Remote facades still merge by material; no downloaded asset or external runtime dependency is implied.
+- Ten **already installed** licensed Kenney tree models are curated into instanced district-specific planting, replacing some repeated `tree_detailed` shapes. Tree centers, count and shared trunk obstacles are unchanged. Unique referenced GLB bytes **139,656**, not a whole-scene performance or phone-FPS claim.
+- Six public rooms retain their saved furniture, interactive seats/lamps, shell batching, glass and immutable cached source materials. Per-room cloned wall finishes differentiate tea / studio / post / boats / music / plants without another draw group or saved-layout migration.
+- Original three-material batched wooden activity counter replaces the blank box inside the same 1.8 x 1.3m solid footprint. Orchard counter fruit requires an actual successful saved station `usedAt`; daily-table supplies, serving, civic construction and all player progress keep their existing receipt authority.
+- Public World title now derives the actual district from the signed self position, rather than claiming Willow Square everywhere. The original world/destination identity and server logic are unchanged.
+- Reproducible source/license/triangle/material/byte audit: `node --import tsx scripts/audit-town-polish.ts` writes `docs/assets/CTRL_TOWN_POLISH_MANIFEST.json`. Counts distinguish reused bundled GLBs, original authored geometry and uninstalled candidates.
+
+### Real acquisition/pilot limits
+
+Quaternius Ultimate Stylized Nature is officially CC0 with glTF, but its official public `BirchTree_2.gltf` download returned quota-exceeded HTML. Those bytes were rejected, not installed as a model. Buildings pack requires FBX/OBJ/Blend conversion; none is claimed imported. No purchase or user download is required for the working authored/bundled integration.
+
+WorldGacha was actually opened and operated in the cloud browser: minimum 2km, grid 256, 300m near view, seed 301610 and low/light display. Its renderer failed to create a WebGL context (`GL_RENDERER = Disabled`, `BindToCurrentSequence failed`); one reload did not provide a functioning generator. **Blocked pilot, not an export or implemented district.** No GLB, recipe, heightmap or benchmark is fabricated. Keep its note P2/open; existing playable districts remain intact. No Poly Haven material/HDRI has been imported.
+
+Verification at this record: **310/310 unit/API in 65 files**, strict TypeScript; global lint passed after an inline-hook lint correction. Next and Worker builds passed the integrated initial art build; original full Public World browser run passed **10/10 (9.0m)** on that build. Final header/counter/roof-lantern Next and Worker production builds also passed. Final four-case desktop/mobile render acceptance and original seven-case town-life rerun are in progress; exact pushed-head CI is still pending. Do not claim pending CI or full-game acceptance.
+
+Keep PR #30 draft. The note remains **partially implemented**, with broader hero furniture/prop breadth, independently owned 16-character source imports, successful isolated WorldGacha pilot, transport/load scaling, physical phone GPU verification and separately approved staging still outstanding. No token/XP/economy, paid character shop, purchase, production migration or deployment.
+
+
 ## Remote Worker verification while execution host is unavailable
 
 Added an independent **Worker production compilation — no deploy** CI job: pinned install, example configuration, portable `pnpm build`, and verification of the same `dist/server/wrangler.json` used by the existing start command. Clean GitHub checkouts select the repository's portable execution profile. No deployment command, production credential or database mutation is introduced. All original browser/unit gates and deadlines remain. Per-ref concurrency prevents future obsolete Public World workflow attempts accumulating after a newer push; old failures remain documented.

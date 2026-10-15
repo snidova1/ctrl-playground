@@ -14,6 +14,7 @@ import {CanvasTexture,SRGBColorSpace} from 'three';
 import {TOWN_ROAD_CONNECTIONS} from '@/domain/town-terrain';
 import TownGround from './town-ground';
 import {FESTIVAL_DECK} from '@/domain/town-walk-surface';
+import TownActivityCounter from './town-activity-counter';
 
 /** Larger physical map composed of separately visible districts; not background billboards. */
 type Quality='low'|'high';
@@ -41,8 +42,11 @@ function ActivityStation({type,x,z,usedAt,cooldownMs}:{type:string;x:number;z:nu
  return <group position={[x+2.4,0,z]}>
   <GroundShadow width={4.2} depth={4.2}/>
   <mesh receiveShadow position-y={.01}><cylinderGeometry args={[2.3,2.3,.02,12]}/><meshStandardMaterial color={base}/></mesh>
-  <mesh castShadow position-y={.6}><boxGeometry args={[1.8,.8,1.3]}/><meshStandardMaterial color='#cfb28e'/></mesh>
-  {[-.55,.55].map(px=><TownAsset key={px} id={type==='orchard-harvest'?'food-kit/apple':type==='community-garden'?'nature-kit/pot_small':type==='harbor-cleanup'?'furniture-kit/trashcan':'platformer-kit/crate'} size={.48} x={px} y={1.02}/>)}
+  <TownActivityCounter type={type}/>
+  {[-.55,.55].map(px=><group key={px} position={[px,1.02,0]}>
+   <TownAsset id={type==='community-garden'?'nature-kit/pot_small':type==='harbor-cleanup'?'furniture-kit/trashcan':'platformer-kit/crate'} size={.48}/>
+   {type==='orchard-harvest'&&usedAt>0&&<TownAsset id='food-kit/apple' size={.23} y={.4}/>}
+  </group>)}
   {recent&&Array.from({length:8},(_,i)=><mesh key={i} position={[Math.sin(i*Math.PI/4)*1.75,.5+Math.abs(Math.sin(i*2))*1.6,Math.cos(i*Math.PI/4)*1.75]}><icosahedronGeometry args={[.18,0]}/><meshBasicMaterial color={i%2?'#f2cf8e':'#e7b1ba'}/></mesh>)}
   <mesh position-y={2.35}><cylinderGeometry args={[.055,.055,2,6]}/><meshStandardMaterial color='#88725e'/></mesh>
   <mesh position={[.55,3.2,0]}><boxGeometry args={[1.25,.55,.12]}/><meshStandardMaterial color='#f2e0b9'/></mesh>

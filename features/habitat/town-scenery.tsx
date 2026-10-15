@@ -1,4 +1,5 @@
 'use client';
+import {TOWN_PLANTING_MODELS} from './town-planting-models';
 import {TOWN_PALETTE as P} from './town-palette';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useFrame} from '@react-three/fiber';
@@ -55,7 +56,7 @@ const leafSeeds=[...Array.from({length:72},(_,i)=>{
 }),...[[-11,-6],[11,-6],[-12,8],[12,8],[-4,-7],[4,-7]].map(([x,z])=>({x,z,h:4.1}))];
 function GreenBorder({quality}:{quality:'low'|'high'}){
  const selected=useMemo(()=>(quality==='low'?leafSeeds.filter((_,i)=>i>=72||i%2===0):leafSeeds).map((p,i)=>({x:p.x,z:p.z,y:townGroundHeight(p.x,p.z),size:p.h,yaw:i*.73})),[quality]);
- return <TownAssetInstances id='nature-kit/tree_detailed' placements={selected} castShadow={quality==='high'}/>;
+ return <group>{TOWN_PLANTING_MODELS.center.map((id,index,models)=><TownAssetInstances key={id} id={id} placements={selected.filter((_,i)=>i%models.length===index)} castShadow={quality==='high'}/>)}</group>;
 }
 function RaisedGround(){
  const quays=useMemo(()=>{
@@ -147,10 +148,10 @@ export default function TownScenery({quality,onDirectory,pose,states}:{quality:'
   {centerDetail&&<LifestyleProps quality={quality}/>}
   {/* Existing server-owned models provide the interactable fountain and shops.
       This facade surrounds them with streets, districts and actual landmarks. */}
-  {centerDetail&&<group ref={mountDirectory} position={[2.4,0,6]}>
+  {<group visible={centerDetail} ref={mountDirectory} position={[2.4,0,6]}>
    <mesh position-y={.8}><boxGeometry args={[.12,1.6,.12]}/><meshStandardMaterial color='#86745c'/></mesh>
    <mesh position-y={1.65}><boxGeometry args={[1.7,.55,.14]}/><meshStandardMaterial color={P.cream}/></mesh>
-   <Html transform center occlude={[directory]} position={[0,1.65,.09]} distanceFactor={5} zIndexRange={[5,0]}><button className='hb-directory' onClick={onDirectory}>Visit habitats ↗</button></Html>
+   <Html style={{display:centerDetail?'block':'none'}} transform center occlude={[directory]} position={[0,1.65,.09]} distanceFactor={5} zIndexRange={[5,0]}><button className='hb-directory' onClick={onDirectory}>Visit habitats ↗</button></Html>
   </group>}
   {residents.map(i=><Resident key={i} index={i}/>)}
  </group>;

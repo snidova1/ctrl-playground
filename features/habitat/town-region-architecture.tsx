@@ -4,6 +4,7 @@ import {BoxGeometry,BufferGeometry,ExtrudeGeometry,Matrix4,Shape} from 'three';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {TOWN_DISTRICT_BUILDINGS,type TownDistrictKind} from './town-districts';
 import {paintedTexture} from './town-surfaces';
+import {makeTownRoof,type TownRoofKind} from './town-roof';
 
 /** Detailed original facades batched by material, rather than a draw per shutter slat. */
 export function makeTownRegionParts(district:TownDistrictKind){
@@ -13,7 +14,9 @@ export function makeTownRegionParts(district:TownDistrictKind){
    const {width:w,depth:d}=h,height=h.levels===3?6.4:4.5;
    const box=(key:string,x:number,y:number,z:number,bw:number,bh:number,bd:number,rz=0)=>append(key,new BoxGeometry(bw,bh,bd).applyMatrix4(new Matrix4().makeRotationZ(rz).setPosition(h.x+x,y,h.z+z)));
    box(h.wall,0,height/2,0,w,height,d);box('#b9ad91',0,.22,0,w+.08,.44,d+.08);
-   const half=w/2+.42,rise=1.55,angle=Math.atan2(rise,half),length=Math.hypot(half,rise);
+   const index=Number(h.id.split('-').at(-1)),half=w/2+.42,rise=district==='orchard'?2:1.55,angle=Math.atan2(rise,half),length=Math.hypot(half,rise);
+   const roofKind:TownRoofKind|'gable'=district==='workshop'?'clerestory':district==='harbor'?(index%2?'gambrel':'hip'):district==='orchard'?'gambrel':district==='festival'?(index%2?'clerestory':'hip'):index%3===0?'gable':index%3===1?'hip':'gambrel';
+   if(roofKind==='gable'){
    const gable=new Shape().moveTo(-w/2,0).lineTo(0,rise).lineTo(w/2,0).closePath();
    append(h.wall,new ExtrudeGeometry(gable,{depth:d,bevelEnabled:false}).applyMatrix4(new Matrix4().makeTranslation(h.x,height,h.z-d/2)));
    for(const side of [-1,1]){
@@ -22,6 +25,10 @@ export function makeTownRegionParts(district:TownDistrictKind){
     box('#f8ecd3',side*(w/2-.04),height/2,d/2+.05,.15,height,.15);
    }
    box(`roof:${h.roof}`,0,height+rise,0,.19,.19,d+1.02);
+   }else{
+    append(`roof:${h.roof}`,makeTownRoof(w,d,rise,roofKind).applyMatrix4(new Matrix4().makeTranslation(h.x,height,h.z)));
+    box('#f8ecd3',0,height-.035,0,w+.78,.13,d+.78);
+   }
    box('#bd957e',w*.28,height+.65,-d*.23,.55,1.5,.6);
    box('#e8d6b8',w*.28,height+1.4,-d*.23,.72,.14,.77);
    box('#678b7c',0,1.15,d/2+.09,1.05,2.25,.15);
@@ -30,6 +37,9 @@ export function makeTownRegionParts(district:TownDistrictKind){
    box('#d4b36d',.37,1.18,d/2+.21,.08,.08,.08);
    box('#c5b396',0,.11,d/2+.65,2.6,.22,1.3);
    box('#dcd0b9',0,.055,d/2+1.38,3,.11,.45);
+   if(district==='harbor')for(let y=.8;y<height;y+=.42)box('wood',0,y,d/2+.035,w,.045,.06);
+   if(district==='workshop')for(const x of [-w*.43,0,w*.43])box('wood',x,height*.63,d/2+.07,.12,height*.7,.12);
+   if(district==='orchard')for(const side of [-1,1])box('#f8ecd3',side*.46,3.42,d/2+.11,1.25,.1,.08,side*.55);
    const window=(x:number,y:number,z:number,side=0)=>{
     if(side){
      box('#527565',x,y,z,.08,1.15,1.04);
@@ -50,9 +60,12 @@ export function makeTownRegionParts(district:TownDistrictKind){
    for(const x of [-w*.29,w*.29])window(x,2.63,d/2+.1);
    for(const side of [-1,1])for(const z of [-d*.24,d*.24])window(side*(w/2+.05),2.63,z,side);
    if(h.levels===3)for(const x of [-w*.29,w*.29])window(x,5.1,d/2+.1);
-   box('#527565',0,height+.65,d/2+.015,.54,.5,.06);
-   box('#f8ecd3',0,height+.65,d/2+.06,.06,.56,.06);
-   box('#f8ecd3',0,height+.65,d/2+.06,.59,.06,.06);
+   if(roofKind!=='hip'){
+    const loftWidth=roofKind==='clerestory'?w*.43:.54;
+    box('#527565',0,height+.65,d/2+.015,loftWidth,.5,.06);
+    box('#f8ecd3',0,height+.65,d/2+.06,.06,.56,.06);
+    box('#f8ecd3',0,height+.65,d/2+.06,loftWidth+.05,.06,.06);
+   }
   }
   return [...buckets].map(([key,geometries])=>{const geometry=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!geometry)throw new Error('Incompatible district geometry: '+key);return {key,geometry};});
 }

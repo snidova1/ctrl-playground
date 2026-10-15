@@ -34,7 +34,7 @@ export function attachTownWind(material:MeshStandardMaterial){
 /** Original GLB materials are cloned: never mutate cached Habitat/Common Ground assets.
  * Some licensed Nature Kit GLBs export metalness=1; vegetation must be diffuse.
  */
-export function townMaterial(source:Material,tone:TownAssetTone='natural',wind=false){
+export function townMaterial(source:Material,tone:TownAssetTone='natural',wind=false,tint?:string){
  const material=source.clone();
  if(material instanceof MeshStandardMaterial){
   if(tone==='room'||tone==='room-floor'||tone==='room-wall'){
@@ -48,7 +48,7 @@ export function townMaterial(source:Material,tone:TownAssetTone='natural',wind=f
    }
    if(tone==='room-floor'){material.color.set('#ffffff');material.map=paintedTexture('floorboards');material.roughness=1;}
    if(tone==='room-wall'&&!/glass|metal|steel|chrome/i.test(material.name)){
-    material.map=null;material.color.set('#e3dbc5');material.roughness=1;
+    material.map=null;material.color.set(tint??'#e3dbc5');material.roughness=1;
    }
    return material;
   }
@@ -60,7 +60,7 @@ export function townMaterial(source:Material,tone:TownAssetTone='natural',wind=f
  }
  return material;
 }
-export function useTownParts(id:string,tone:TownAssetTone='natural'){
+export function useTownParts(id:string,tone:TownAssetTone='natural',tint?:string){
  const asset=getBuildAsset(id);if(!asset)throw Error('Unknown bundled town asset: '+id);
  const {scene}=useGLTF(asset.url);
  const parts=useMemo(()=>{
@@ -78,15 +78,15 @@ export function useTownParts(id:string,tone:TownAssetTone='natural'){
     for(let i=0;i<positions.count;i++){uv[i*2]=(positions.getX(i)+1)/2;uv[i*2+1]=(positions.getZ(i)+1)/2;}
     geometry.setAttribute('uv',new Float32BufferAttribute(uv,2));
    }
-   entries.push({geometry,material:Array.isArray(object.material)?object.material.map(m=>townMaterial(m,tone,wind)):townMaterial(object.material,tone,wind)});
+   entries.push({geometry,material:Array.isArray(object.material)?object.material.map(m=>townMaterial(m,tone,wind,tint)):townMaterial(object.material,tone,wind,tint)});
   });
   return entries;
- },[asset,scene,tone,id]);
+ },[asset,scene,tone,id,tint]);
  useEffect(()=>()=>{for(const part of parts){part.geometry.dispose();for(const material of [part.material].flat())material.dispose();}},[parts]);
  return {parts,extent:Math.max(...asset.bounds)};
 }
-function LoadedInstances({id,placements,tone,castShadow}:{id:string;placements:readonly AssetPlacement[];tone:TownAssetTone;castShadow:boolean}){
- const {parts,extent}=useTownParts(id,tone);
+function LoadedInstances({id,placements,tone,castShadow,tint}:{id:string;placements:readonly AssetPlacement[];tone:TownAssetTone;castShadow:boolean;tint?:string}){
+ const {parts,extent}=useTownParts(id,tone,tint);
  const roots=useRef<(InstancedMesh|null)[]>([]);
  useLayoutEffect(()=>{
   const matrix=new Matrix4(),rotation=new Matrix4();
@@ -99,8 +99,8 @@ function LoadedInstances({id,placements,tone,castShadow}:{id:string;placements:r
  },[extent,placements,parts]);
  return <group>{parts.map((part,i)=><instancedMesh key={i} ref={root=>{roots.current[i]=root;}} args={[part.geometry,part.material,placements.length]} receiveShadow castShadow={castShadow} dispose={null}/>)}</group>;
 }
-export function TownAssetInstances({id,placements,tone='natural',castShadow=false}:{id:string;placements:readonly AssetPlacement[];tone?:TownAssetTone;castShadow?:boolean}){
- return <Suspense fallback={null}><LoadedInstances id={id} placements={placements} tone={tone} castShadow={castShadow}/></Suspense>;
+export function TownAssetInstances({id,placements,tone='natural',castShadow=false,tint}:{id:string;placements:readonly AssetPlacement[];tone?:TownAssetTone;castShadow?:boolean;tint?:string}){
+ return <Suspense fallback={null}><LoadedInstances id={id} placements={placements} tone={tone} castShadow={castShadow} tint={tint}/></Suspense>;
 }
 function LoadedAsset({id,size,tone}:{id:string;size?:number;tone:TownAssetTone}){
  const {parts,extent}=useTownParts(id,tone);

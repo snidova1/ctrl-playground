@@ -164,6 +164,7 @@ test('a signed player can travel across genuinely rendered remote districts and 
    const p=s.players.find(p=>p.id===s.profile?.id);
    return p?Math.hypot(p.x-target.x,p.z-target.z):999;
   },{timeout:12000}).toBeLessThan(.15);
+  await expect(page.locator('.hb-title h1')).toHaveText(name);
   await page.waitForTimeout(850);
   const canvas=page.locator('.hb-stage canvas').first();
   const png=await canvas.screenshot({path:test.info().outputPath(`district-${target.id}.png`),scale:'css'});

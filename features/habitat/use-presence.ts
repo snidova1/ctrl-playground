@@ -37,6 +37,13 @@ export function useWorldPresence(options: Options) {
     joining.current = epoch;
     let state: HabitatState;
     try {state = await habitatApi<HabitatState>('join', {id});}
+    catch(error){
+      // A timed-out join may already have committed on the server. Never let
+      // the next heartbeat silently join the previously displayed world and
+      // replace that destination. An explicit retry establishes a fresh session.
+      if(epoch===generation.current){superseded.current=true;handlers.current.onOnline(false);}
+      throw error;
+    }
     finally {if (joining.current === epoch) joining.current = null;}
     if (epoch !== generation.current) throw new HabitatApiError('PRESENCE_SESSION_STALE', 409, 'This join was superseded by a newer connection.');
     connection.current = state.presenceSession;

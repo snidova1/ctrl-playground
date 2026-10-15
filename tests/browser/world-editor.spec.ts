@@ -187,6 +187,27 @@ test('Two verified wallets visit, exercise member permissions, leave and reconne
     const visitorPage = await otherContext.newPage();
     const visitor = await openWorld(visitorPage);
     await pointer(visitorPage, visitorPage.getByRole('button', {name: 'Worlds', exact: true}));
+    // Real fault injection: the signed join commits on the actual server, then
+    // its response is lost. No fabricated world/session/API response is served.
+    // A background heartbeat must not silently replace it with the old home.
+    let lostJoin=false;
+    const backgroundJoins:string[]=[];
+    await visitorPage.route('**/api/habitat/join',async route=>{
+      const target=route.request().postDataJSON() as {id:string};
+      if(target.id===owner.homeId&&!lostJoin){
+        lostJoin=true;const accepted=await route.fetch();expect(accepted.status()).toBe(200);
+        await route.abort('connectionreset');
+      }else{if(lostJoin)backgroundJoins.push(target.id);await route.continue();}
+    });
+    await pointer(visitorPage,visitorPage.getByRole('button',{name:new RegExp(sharedName)}));
+    await expect(visitorPage.locator('.hb-alert')).toBeVisible();
+    // Observe more than two real 700ms heartbeat periods; no fake clock.
+    await visitorPage.waitForTimeout(1800);
+    expect(lostJoin).toBe(true);expect(backgroundJoins).toEqual([]);
+    const committed=await(await visitorPage.request.get('/api/habitat/state')).json() as HabitatState;
+    expect(committed.world?.id).toBe(owner.homeId);
+    await visitorPage.unroute('**/api/habitat/join');
+    await pointer(visitorPage,visitorPage.getByRole('button',{name:'Dismiss',exact:true}));
     await pointer(visitorPage, visitorPage.getByRole('button', {name: new RegExp(sharedName)}));
     await expect(visitorPage.getByRole('heading', {name: sharedName, exact: true})).toBeVisible();
     await expect(visitorPage.getByRole('button', {name: 'Build my world +'})).toHaveCount(0);
