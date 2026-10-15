@@ -7,7 +7,7 @@ import type {AssetPlacement} from './town-assets';
 export function venueStaticBatches(objects:readonly WorldObject[]){
  const groups=new Map<string,AssetPlacement[]>(),ids=new Set<string>();
  for(const o of objects){
-  if(!(o.assetId==='building-kit/floor'&&o.behavior==='decoration'||o.assetId==='building-kit/wall-window-square'&&o.behavior==='solid'))continue;
+  if(o.behavior!=='decoration'&&o.behavior!=='solid')continue;
   const asset=getBuildAsset(o.assetId);if(!asset)continue;
   const placements=groups.get(o.assetId)??[];
   placements.push({x:o.x,y:o.y,z:o.z,size:o.scale*Math.max(...asset.bounds),yaw:o.rotation});

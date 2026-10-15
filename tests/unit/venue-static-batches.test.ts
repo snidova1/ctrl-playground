@@ -6,7 +6,9 @@ describe('instanced read-only public room shells',()=>{
  it('batches every original floor/wall with identical transforms, leaving real interactions intact',()=>{
   for(const venue of TOWN_VENUES){
    const objects=createTownVenue(venue.id),batch=venueStaticBatches(objects);
-   expect(batch.groups.size).toBe(2);expect(batch.ids.size).toBe(86);
+   expect((batch.groups.get('building-kit/floor')?.length??0)+(batch.groups.get('building-kit/wall-window-square')?.length??0)).toBe(86);
+   expect(batch.ids.size).toBe(objects.filter(o=>o.behavior==='solid'||o.behavior==='decoration').length);
+   expect(batch.groups.size).toBeLessThan(batch.ids.size/3);
    expect(objects.filter(o=>!batch.ids.has(o.id)).some(o=>o.behavior==='seat')).toBe(true);
    expect(objects.filter(o=>!batch.ids.has(o.id)).some(o=>o.behavior==='light')).toBe(true);
    for(const [id,placements] of batch.groups){

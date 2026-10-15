@@ -242,7 +242,7 @@ test('a signed worker carries a persistent indoor route outside while another pl
   expect((await state(page)).town!.progress.completed).toBe(0);
   await press(page,page.getByRole('button',{name:'Close town life',exact:true}));
   await capture(page,'tea-service-supplies-desktop.png');await capture(peer,'tea-service-supplies-mobile.png');
-  await page.reload();await expect(page.locator('.pl-name').filter({hasText:/^You$/})).toBeVisible({timeout:60000});
+  await page.reload({waitUntil:'domcontentloaded'});await expect(page.locator('.pl-name').filter({hasText:/^You$/})).toBeVisible({timeout:60000});
   expect((await state(page)).world?.id).toBe(TOWN_VENUES[0].id);expect((await state(page)).town!.route?.step).toBe(1);
   await open(page);await expect(page.getByRole('article',{name:'Current work route'}).getByRole('button',{name:'Deliver fruit',exact:true})).toBeDisabled();
   await press(page,page.getByRole('button',{name:'Close town life',exact:true}));
@@ -253,7 +253,8 @@ test('a signed worker carries a persistent indoor route outside while another pl
   try{await expect.poll(async()=>{const s=await state(page);return s.players.find(p=>p.id===s.profile!.id)!.x;},{timeout:20000,intervals:[200]}).toBeGreaterThan(1);}
   finally{await page.keyboard.up('KeyD');}
   await open(page);await routeWork(page,'Deliver fruit');
-  await page.reload();await expect.poll(async()=>(await state(page)).town!.progress.completed).toBe(1);
+  await page.reload({waitUntil:'domcontentloaded'});await expect(page.locator('.pl-name').filter({hasText:/^You$/})).toBeVisible({timeout:60000});
+  await expect.poll(async()=>(await state(page)).town!.progress.completed).toBe(1);
   expect((await state(page)).town!.route).toBeNull();expect((await state(peer)).town!.progress.completed).toBe(0);
   expect((await state(peer)).town!.visits).toContainEqual(expect.objectContaining({siteId:'cafe'}));expect(errors).toEqual([]);
  }finally{await browser.close();}

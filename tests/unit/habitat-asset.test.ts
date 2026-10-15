@@ -2,7 +2,21 @@ import {describe,it,expect,vi} from 'vitest';
 import {BoxGeometry,Group,Mesh,MeshStandardMaterial,Texture} from 'three';
 import {cloneHabitatAsset,habitatMaterial} from '@/features/habitat/habitat-asset';
 import {TOWN_PALETTE} from '@/features/habitat/town-palette';
+import {townMaterial} from '@/features/habitat/town-assets';
 describe('consistent diffuse Habitat and interior asset materials',()=>{
+ it('keeps batched public-room furniture and glass identical to their interactive Habitat finish',()=>{
+  for(const name of ['wood','colormap','leaf-green','glass','steel']){
+   const source=new MeshStandardMaterial({color:'#c78e69',metalness:.8,roughness:.2,map:new Texture()});source.name=name;
+   for(const wind of [false,true]){
+    const expected=habitatMaterial(source,wind) as MeshStandardMaterial,actual=townMaterial(source,'room',wind) as MeshStandardMaterial;
+    expect(actual.color.equals(expected.color)).toBe(true);expect(actual.map).toBe(source.map);
+    expect(actual.metalness).toBe(expected.metalness);expect(actual.roughness).toBe(expected.roughness);
+    expect(actual.customProgramCacheKey()).toBe(expected.customProgramCacheKey());
+    actual.dispose();expected.dispose();
+   }
+   expect(source.metalness).toBe(.8);expect(source.color.getHexString()).toBe('c78e69');
+  }
+ });
  it('keeps source colors/textures without dark metallic vegetation or cache mutation',()=>{
   const source=new MeshStandardMaterial({color:'#73a083',metalness:1,roughness:.1,map:new Texture()}),color=source.color.clone();source.name='leaf-green';
   const result=habitatMaterial(source) as MeshStandardMaterial;

@@ -9,7 +9,7 @@ import {townSurfaceHeight as townGroundHeight} from '@/domain/town-walk-surface'
 
 /** Original small painted textures, generated locally. No external game art. */
 const textures=new Map<string,CanvasTexture>();
-export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'){
+export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'|'floorboards'){
  const existing=textures.get(kind);if(existing)return existing;
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
  const ctx=canvas.getContext('2d')!;
@@ -17,6 +17,18 @@ export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'){
   const gradient=ctx.createRadialGradient(128,128,3,128,128,125);
   gradient.addColorStop(0,'rgba(28,52,38,.3)');gradient.addColorStop(.4,'rgba(28,52,38,.19)');gradient.addColorStop(1,'rgba(28,52,38,0)');
   ctx.fillStyle=gradient;ctx.fillRect(0,0,256,256);
+ }else if(kind==='floorboards'){
+  const boards=['#e8cfaa','#dfc29b','#e6caa3','#d4b891'];
+  for(let row=0;row<8;row++){
+   ctx.fillStyle=boards[row%boards.length];ctx.fillRect(0,row*32,256,32);
+   ctx.strokeStyle='#9c775144';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,row*32+.5);ctx.lineTo(256,row*32+.5);ctx.stroke();
+   for(let line=0;line<5;line++){
+    ctx.strokeStyle='#8b693419';ctx.beginPath();
+    for(let x=0;x<=256;x+=8){const y=row*32+4+line*5+Math.sin(x*.045+row+line)*1.2;if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+    ctx.stroke();
+   }
+   const joint=row%2?128:0;ctx.strokeStyle='#9c775144';ctx.beginPath();ctx.moveTo(joint,row*32);ctx.lineTo(joint,(row+1)*32);ctx.stroke();
+  }
  }else if(kind==='wood'){
   ctx.fillStyle='#f0e1ca';ctx.fillRect(0,0,256,256);
   ctx.strokeStyle='#82644033';ctx.lineWidth=1;

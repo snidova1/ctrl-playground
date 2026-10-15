@@ -2,12 +2,13 @@
 import {Suspense,useEffect,useLayoutEffect,useMemo,useRef} from 'react';
 import {useGLTF} from '@react-three/drei';
 import {useFrame} from '@react-three/fiber';
-import {BufferGeometry,InstancedMesh,Material,Matrix4,Mesh,MeshStandardMaterial,Object3D} from 'three';
+import {BufferGeometry,Float32BufferAttribute,InstancedMesh,Material,Matrix4,Mesh,MeshStandardMaterial,Object3D} from 'three';
 import {getBuildAsset} from '@/features/plaza/build-assets';
 import {TOWN_PALETTE as P} from './town-palette';
+import {paintedTexture} from './town-surfaces';
 
 export type AssetPlacement={x:number;z:number;y?:number;size:number;yaw?:number};
-export type TownAssetTone='natural'|'stone'|'foliage';
+export type TownAssetTone='natural'|'stone'|'foliage'|'room'|'room-floor'|'room-wall';
 const foliageTime={value:0};
 export function TownFoliageClock(){useFrame(({clock})=>{foliageTime.value=clock.elapsedTime;});return null;}
 /** Original WebGL wind extension. One shared gust clock, instanced world-space
@@ -36,6 +37,21 @@ export function attachTownWind(material:MeshStandardMaterial){
 export function townMaterial(source:Material,tone:TownAssetTone='natural',wind=false){
  const material=source.clone();
  if(material instanceof MeshStandardMaterial){
+  if(tone==='room'||tone==='room-floor'||tone==='room-wall'){
+   // Match the unbatched Habitat finish; never recolor furniture or mutate the
+   // cached source. Shared painted maps are immutable and owned by their cache.
+   if(!/metal|steel|chrome|glass/i.test(material.name)){
+    material.metalness=0;material.roughness=Math.max(.75,material.roughness);
+    if(wind&&/grass|leaf|green|plant/i.test(material.name))material.color.set(P.sage);
+    else if(wind&&/bark/i.test(material.name))material.color.set(P.wood);
+    if(wind&&/grass|leaf|green|plant|flower|petal/i.test(material.name))attachTownWind(material);
+   }
+   if(tone==='room-floor'){material.color.set('#ffffff');material.map=paintedTexture('floorboards');material.roughness=1;}
+   if(tone==='room-wall'&&!/glass|metal|steel|chrome/i.test(material.name)){
+    material.map=null;material.color.set('#e3dbc5');material.roughness=1;
+   }
+   return material;
+  }
   material.metalness=0;material.roughness=.9;
   if(/grass|leaf|green/i.test(material.name))material.color.set(P.sage);
   else if(tone==='stone')material.color.set(P.pot);
@@ -53,8 +69,16 @@ export function useTownParts(id:string,tone:TownAssetTone='natural'){
   const origin=new Matrix4().makeTranslation(-asset.center[0],-(asset.center[1]-asset.bounds[1]/2),-asset.center[2]);
   scene.traverse((object:Object3D)=>{
    if(!(object instanceof Mesh))return;
-   const wind=/nature-kit\/(tree_|plant_|flower_|grass_)/.test(id);
-   entries.push({geometry:object.geometry.clone().applyMatrix4(new Matrix4().multiplyMatrices(origin,object.matrixWorld)),material:Array.isArray(object.material)?object.material.map(m=>townMaterial(m,tone,wind)):townMaterial(object.material,tone,wind)});
+   const wind=/nature-kit\/(tree_|plant_|flower_|grass_)|pottedPlant/.test(id);
+   const geometry=object.geometry.clone().applyMatrix4(new Matrix4().multiplyMatrices(origin,object.matrixWorld));
+   if(tone==='room-floor'){
+    // The kit's atlas UVs address one tiny color swatch. Project the replacement
+    // wood in floor space instead, with exact 2m tile joins across all instances.
+    const positions=geometry.getAttribute('position'),uv=new Float32Array(positions.count*2);
+    for(let i=0;i<positions.count;i++){uv[i*2]=(positions.getX(i)+1)/2;uv[i*2+1]=(positions.getZ(i)+1)/2;}
+    geometry.setAttribute('uv',new Float32BufferAttribute(uv,2));
+   }
+   entries.push({geometry,material:Array.isArray(object.material)?object.material.map(m=>townMaterial(m,tone,wind)):townMaterial(object.material,tone,wind)});
   });
   return entries;
  },[asset,scene,tone,id]);
