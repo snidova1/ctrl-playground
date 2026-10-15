@@ -132,8 +132,8 @@ function FurnitureObject({
   const bounds = objectHalfExtents(object);
   const invalid = inside && (object.x - bounds.x < ROOM.minX || object.x + bounds.x > ROOM.maxX || object.z - bounds.z < ROOM.minZ || object.z + bounds.z > ROOM.maxZ);
   const floorHit = (e: ThreeEvent<PointerEvent>) => e.ray.intersectPlane(FLOOR_PLANE, TMP_POINT)?.clone();
-  const capture = (target: EventTarget, pointerId: number) => (target as EventTarget & {setPointerCapture?: (id: number) => void}).setPointerCapture?.(pointerId);
-  const release = (target: EventTarget, pointerId: number) => (target as EventTarget & {releasePointerCapture?: (id: number) => void}).releasePointerCapture?.(pointerId);
+  const capture = (target: EventTarget | null, pointerId: number) => (target as (EventTarget & {setPointerCapture?: (id: number) => void}) | null)?.setPointerCapture?.(pointerId);
+  const release = (target: EventTarget | null, pointerId: number) => (target as (EventTarget & {releasePointerCapture?: (id: number) => void}) | null)?.releasePointerCapture?.(pointerId);
   return <group
     position={[object.x, object.y, object.z]}
     rotation-y={object.rotation}
@@ -254,7 +254,8 @@ function CameraAndProjection({inside, orbitEnabled}: {inside: boolean; orbitEnab
   const controls = useRef<{target: Vector3; update: () => void} | null>(null);
   useEffect(() => {
     const portrait = size.width/size.height < .85;
-    camera.position.set(...(inside ? (portrait ? [9, 12, 21] as const : [8, 8, 13] as const) : (portrait ? [7, 13, 24] as const : [10, 10, 16] as const)));
+    const position = inside ? (portrait ? [9, 12, 21] : [8, 8, 13]) : (portrait ? [7, 13, 24] : [10, 10, 16]);
+    camera.position.set(position[0], position[1], position[2]);
     camera.near = .08;
     camera.far = 100;
     camera.lookAt(0, inside ? .8 : 0, inside ? 0 : -1);
