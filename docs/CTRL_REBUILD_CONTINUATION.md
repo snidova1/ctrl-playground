@@ -1,5 +1,11 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## Recovery from shared-GPU browser experiment
+
+Test-only remote `d816c6a65461f16c96ccd0ddb0cfc73889873649` / local `5a59012` is **not accepted**: sharing one browser process made four native mobile wallet taps stall at scrolling/actionability in the real WebGL run. The run was interrupted (exit 130) after those failures; neither failed nor unexecuted cases are presented as passes. Reverted that experiment to separate native browser/GPU processes, retaining genuinely independent signed wallets and the new bounded, acknowledged touch approach.
+
+Actual startup waste found in `HabitatApp`: before the saved-session lookup/connect completes, Stage mounted and loaded the unrelated furnished starter scene, then replaced it with the saved room/world. Rendering now begins after session resolution, directly in the selected world. Common Ground opens as soon as its local guest state exists and never waits on authentication. Wallet/header controls and loading/error feedback remain reachable. The existing Stage already uses demand rendering while menus lock controls; do not claim that was newly implemented. No scene quality, pixel threshold, authority or test timeout was reduced. Rebuild and retest this startup change, then inspect its exact GitHub CI; it is a concrete optimization, not a claimed proof that every CI timeout is solved.
+
 ## Native two-session CI follow-up after the shared-table checkpoint
 
 Application checkpoint `1be2fcf4ef324038ef17fbfc2109f067b8c5fcee` / local `98e2f27` passed the complete existing production town-life suite **7/7 (10.6m)** after the new table integration; the separately signed table journey also passed **1/1 (3.0m)**. Runtime build/unit results remain as recorded below.
