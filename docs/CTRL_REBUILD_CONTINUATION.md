@@ -1,5 +1,15 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## 2026-10-16 — bound light-profile GPU submissions and navigation teardown
+
+Art checkpoint `7eadeb0c8369be4868aa608e4dc601c5fab2ce5d` completed six successful GitHub workflows. Its Public World job passed the original **10/10 visual cases (16.2m)** and **1/1 waterfront civic case (5.5m)**; portable Worker passed. Builder passed **12/12 browser cases**, all **310 unit/API tests**, global lint and strict types. Visible Habitat passed. Local final art additionally passed **4/4 district/center render gates**, **7/7 town-life** and **2/2 civic/daily-table**.
+
+The exact-head CI town-life still finished **6/7**. The final indoor/outdoor case exhausted the unchanged 240-second total during its last reload; daily-table was therefore skipped in that job. Downloaded trace: the first room reload used **39.2s**, two genuine PNG readbacks **28.4s + 17.4s**, and the final reload had only **26.6s** left. Both signed work stops completed before the timeout. This is not recorded as a green pipeline.
+
+Follow-up rendering keeps the complete scene, shadows, pixel resolution, native input, physics and real-time work/animation clocks. Light mode submits at most 30 frames per second and uses a native WebGL2 fence to keep at most one GPU frame in flight, polling without blocking the main thread. All simulation callbacks continue normally. Demand-mode editor redraws and high quality remain uncapped. Page hide/unload stops submissions immediately; page show restores the previous frame loop for browser-cache return. No test timeout, retry, API deadline, proximity check or pixel threshold is changed. Final follow-up production/browser verification: strict TypeScript, scoped ESLint, Next and portable Worker production builds passed; configured Worker entry exists. Original shared-room/chat/lamp/reload/physical-return plus indoor/outdoor signed-work route passed **2/2 (2.4m)** with the entire browser/server process tree constrained to two CPU cores: room **54.0s**, route **1.4m**, unchanged 240s per case. Full exact-pushed-head GitHub CI and center/district render acceptance remain pending; they are not claimed green.
+
+Measured art-only center budget (`599624b` → `7eadeb0`, 10 warmed native software-WebGL frames): desktop **1003 → 1018 draw calls**, **329,390 → 303,590 triangles**; mobile emulation **591 → 613 calls**, **265,494 → 252,550 triangles**. Geometry decreased but draw calls modestly increased; broader center batching remains unfinished. These measurements do not certify physical-phone FPS or make the full visual-rebuild note complete.
+
 ## 2026-10-16 — recovered host, reproduced CI faults and selective art integration
 
 The execution host has recovered. Continued the existing PR #30 branch from `599624b8c29f94800fd2024d95a3190dc4b54c52`; no reset, merge, database publication or deployment. Latest verified baseline CI was **not green**: Builder 11/12, original Public World 10/10, civic failed a DOM removal, town-life 6/7 (last reload exceeded 240s). Worker compilation and Visible Habitat passed on that baseline.
