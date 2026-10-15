@@ -110,7 +110,7 @@ describe('Habitat 0004 existing-database SQLite migration rehearsal', () => {
         if (table.name === 'ctrl_migrations') continue;
         expect(db.prepare(`SELECT ${table.columns.map(quote).join(',')} FROM ${quote(table.name)} ORDER BY rowid`).all(), table.name).toEqual(table.rows);
       }
-      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 11});
+      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 12});
       expect(db.prepare('SELECT profile_id,world_id,updated_at FROM habitat_last_location ORDER BY profile_id').all()).toEqual(
         db.prepare('SELECT profile_id,world_id,seen_at AS updated_at FROM habitat_presence ORDER BY profile_id').all(),
       );

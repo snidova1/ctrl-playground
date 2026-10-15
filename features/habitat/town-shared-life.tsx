@@ -7,6 +7,7 @@ import {TownAssetInstances} from './town-assets';
 import TownCivicWorld from './town-civic-world';
 import TownRouteWorld from './town-route-world';
 import TownVenueWorld from './town-venue-world';
+import TownTableWorld from './town-table-world';
 
 /** Replicated, durable garden growth and visible completed community projects. */
 export default function TownSharedLife({town,pose}:{town:TownLifeState|undefined;pose:MutableRefObject<Pose>}){
@@ -18,6 +19,7 @@ export default function TownSharedLife({town,pose}:{town:TownLifeState|undefined
   <TownRouteWorld town={town} x={location.x} z={location.z}/>
   <TownVenueWorld x={location.x} z={location.z}/>
   <TownCivicWorld projects={town.projects} x={location.x} z={location.z}/>
+  {Math.hypot(location.x-11,location.z-18.5)<65&&<TownTableWorld table={town.table}/>}
   {Math.hypot(location.x+75,location.z-46)<65&&TOWN_GARDEN_BEDS.map(place=>{
    const bed=town.garden.find(b=>b.id===place.id),watered=!!bed?.wateredAt;
    const growth=bed?.crop?watered?Math.min(1,Math.max(.18,(now-bed.wateredAt)/CROP_GROW_MS)):.14:0;

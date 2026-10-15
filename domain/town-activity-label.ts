@@ -6,5 +6,6 @@ const labels:Readonly<Record<string,string>>={
  dance:'Danced together','high-five':'High five',sat:'Sat down',stood:'Stood up',
  'gathering-hosted':'Hosted a gathering','gathering-attended':'Attended a gathering',
  'switched on':'Switched on','switched off':'Switched off',
+ 'table-served':'Served the neighborhood table',
 };
 export function townActivityLabel(kind:string){return Object.hasOwn(labels,kind)?labels[kind]:'Recorded activity';}

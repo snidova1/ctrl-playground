@@ -9,6 +9,7 @@ import {recordContribution} from './town-contributions';
 import {readTownRoutes,routeAction} from './town-routes';
 import {readTownGatherings,gatheringAction} from './town-gatherings';
 import {getTownVenue} from '@/domain/town-venues';
+import {readTownTable,serveTownTable} from './town-table';
 export {recordContribution} from './town-contributions';
 
 const TTL=15000;
@@ -38,15 +39,16 @@ export async function readTownLife(user:string):Promise<TownLifeState>{
   readTownProjects(),
   query<TownLifeState['history'][number]>('SELECT e.id,e.kind,COALESCE(p.name,e.target) AS target,e.created_at AS at FROM town_activity_events e LEFT JOIN habitat_profiles p ON p.id=e.target WHERE e.profile_id=? ORDER BY e.created_at DESC,e.id DESC LIMIT 40',user),
  ]);
- const [routes,gatherings]=await Promise.all([readTownRoutes(user),readTownGatherings(user)]);
+ const [routes,gatherings,table]=await Promise.all([readTownRoutes(user),readTownGatherings(user),readTownTable(now)]);
  const p=progress??{completed:0};
- return {serverNow:now,progress:p,job,...routes,gatherings,
+ return {serverNow:now,progress:p,job,...routes,gatherings,table,
   contributions:Object.fromEntries(counts.map(c=>[c.id,{count:c.count,neighbors:c.neighbors}])),
   garden:TOWN_GARDEN_BEDS.map(b=>garden.find(g=>g.id===b.id)??{id:b.id,crop:null,plantedAt:0,wateredAt:0,revision:0}),
   friends:friends.map(f=>({...f,incoming:!!f.incoming})),invites,social,chat:chat.reverse(),projects,history};
 }
 export async function townLifeAction(user:User,path:string,input:unknown):Promise<unknown>{
  const now=Date.now();
+ if(path==='town-table/serve')return {message:await serveTownTable(user,input,now),town:await readTownLife(user.id)};
  if(path.startsWith('town-route/'))return {message:await routeAction(user,path,input),town:await readTownLife(user.id)};
  if(path.startsWith('town-gathering/'))return {message:await gatheringAction(user,path,input),town:await readTownLife(user.id)};
  if(path==='town-chat'){
@@ -159,4 +161,4 @@ export async function townLifeAction(user:User,path:string,input:unknown):Promis
  }
  throw new AppError('ROUTE_NOT_FOUND',404);
 }
-export const townLifePaths=new Set(['town-gathering/create','town-gathering/join','town-gathering/check-in','town-gathering/leave','town-gathering/end','town-gathering/remove','town-gathering/dance','town-route/start','town-route/work','town-route/finish','town-route/cancel','town-chat','town-job/start','town-job/finish','town-job/cancel','town-garden','town-friend','town-invite','town-invite/accept','town-social','town-social/accept']);
+export const townLifePaths=new Set(['town-table/serve','town-gathering/create','town-gathering/join','town-gathering/check-in','town-gathering/leave','town-gathering/end','town-gathering/remove','town-gathering/dance','town-route/start','town-route/work','town-route/finish','town-route/cancel','town-chat','town-job/start','town-job/finish','town-job/cancel','town-garden','town-friend','town-invite','town-invite/accept','town-social','town-social/accept']);

@@ -62,7 +62,7 @@ jobs:
           CTRL_QA_PRODUCTION: '1'
         run: pnpm exec playwright test --config playwright.public-world.config.ts
       - name: Two signed desktop/mobile neighbors complete persistent civic construction
-        run: pnpm exec playwright test --config playwright.civic.config.ts
+        run: pnpm exec playwright test --config playwright.civic.config.ts --grep 'persistent waterfront'
       - name: Preserve screenshots and traces
         if: always()
         uses: actions/upload-artifact@v4
@@ -91,6 +91,8 @@ jobs:
         run: pnpm build:next
       - name: Real route work, room persistence and consented social gathering
         run: pnpm exec playwright test --config playwright.town-life.config.ts
+      - name: Real shared daily table from orchard, cafe and garden work
+        run: pnpm exec playwright test --config playwright.civic.config.ts --grep 'neighborhood table' --output test-results/town-life/community-table
       - name: Preserve room and activity screenshots and traces
         if: always()
         uses: actions/upload-artifact@v4

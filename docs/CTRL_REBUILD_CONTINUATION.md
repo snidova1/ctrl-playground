@@ -1,5 +1,21 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## 2026-10-15 shared neighborhood table after 624919d
+
+Continues remote `624919da40643010a66a3afb621ae0801b8dde0b` / local `2a063be`; exact room-render tree `7603359478c08659ccd86d936ca5f87e58b83643`. That checkpoint's final real room/shared-route browser run passed **4/4 (5.7m)**, with 16 inspected WebGL PNGs; both production builds passed. Its GitHub CI is still running at this record, with six successful workflows. Do not replace that status with an invented full pass.
+
+Actual Townies Apache-2.0 `db/sharedLife.ts` examined for its shared pantry/picnic flow. New implementation is original and excludes its coins/treasury/rewards. Existing successful orchard, café and garden contribution receipts now prepare a daily neighborhood table on the existing east picnic table in Willow Square. Three work categories and at least two different contributing profiles are required. Real gardening harvests and completed eligible routes also flow through the existing receipt ledger; unfinished work never counts.
+
+- Additive **0011_town_daily_table.sql** keeps completed daily tables and adds a day/activity receipt index. Apply migrations through **0011** before any separately approved deployment. Old houses/profiles/permissions/activity records stay intact, verified by the migration rehearsal.
+- `town-table/serve` accepts only the signed session. Server chooses the UTC day and checks current Public World presence, fresh exact session and distance again inside the guarded INSERT. Day primary key makes concurrent serving exactly once. Success and truthful personal activity history share one transaction. Serving does **not** add a completed job, XP, levels, currency or tokens.
+- Receipt-backed fruit, cups and flowers appear on the existing table; serving adds its shared cloth. Replaced the second table's unconditional decorative food, so supplies now reflect actual completed work. No new obstacles or private-home access path. Today's progress resets at the displayed preparation boundary; old served records and personal history persist.
+- Town Life shows real missing/ready supplies, participating-neighbor count, location and saved served status. Wrong-world/distant/unready controls are disabled and still rejected by the server. Public state intentionally reports this public activity, while private chat/home permissions remain unchanged.
+- Native production browser case **1/1 passed (3.0m)**: independent signed desktop/touch wallets complete all three real six-second district jobs; walk physically around actual picnic furniture; serve, observe the same world change and retain completion/history after reload. Two original PNGs inspected. No clock, player, travel or receipt fixtures in browser acceptance.
+- **308/308 unit/API in 63 files**, global lint, TypeScript, Next production and Worker production passed. Security regressions cover missing categories, one contributor, replayed work, private-room same coordinates, stale sessions, distance, concurrent serving, leave/rejoin persistence, next-day reset with old completion retained and rejected client-supplied day.
+- CI retains the original waterfront case in its existing job. The new table case runs after town-life on its separate job, keeping both job caps at 35 minutes and the existing civic case budget at 420 seconds. No original case/assertion/visual threshold is removed or weakened.
+
+Full rebuild remains unfinished: broader authored district/room art, full activity breadth, the independently owned whole-character roster, transport/load scaling, physical mobile GPU checks and approved staging. Keep PR #30 draft and production protected. Continue from these working systems; do not restart or overwrite unrelated work.
+
 ## 2026-10-15 room render and CI continuation after 87653c1
 
 Remote baseline `87653c1493e9def3b1e80cb4458ae3cbef6d4d21` / local `735c41b` completed six successful workflows. Public World/civic job passed, but town-life finished **6/7**: its final indoor/outdoor case exceeded the unchanged 240-second budget. Actual downloaded CI trace showed both work stops and delivery finished; the last reload consumed 43.53 seconds and exhausted the budget before persistence assertions. The earlier room reload consumed 29.86 seconds. No activity authorization failure was hidden.
