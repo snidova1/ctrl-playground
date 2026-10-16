@@ -7,7 +7,7 @@ import TownRegionDressing from './town-region-dressing';
 import {TownWindGrass} from './town-stylized-grass';
 import TownStylizedWater from './town-stylized-water';
 import TownRegionArchitecture from './town-region-architecture';
-import {GroundShadow,paintedTexture} from './town-surfaces';
+import {GroundShadow} from './town-surfaces';
 import {HARBOR_WATER} from './town-harbor-geography';
 import {TownAsset} from './town-assets';
 import {CanvasTexture,SRGBColorSpace} from 'three';
@@ -15,15 +15,17 @@ import {TOWN_ROAD_CONNECTIONS} from '@/domain/town-terrain';
 import TownGround from './town-ground';
 import {FESTIVAL_DECK} from '@/domain/town-walk-surface';
 import TownActivityCounter from './town-activity-counter';
+import {ScenicPaving} from './town-paving';
 
 /** Larger physical map composed of separately visible districts; not background billboards. */
 type Quality='low'|'high';
 function ScenicRoad({ax,az,bx,bz,width=4.8}:{ax:number;az:number;bx:number;bz:number;width?:number}){
  const dx=bx-ax,dz=bz-az,length=Math.hypot(dx,dz);
- const texture=useMemo(()=>paintedTexture('stone'),[]);
- return <group position={[(ax+bx)/2,.024,(az+bz)/2]} rotation-y={Math.atan2(dx,dz)}>
+ return <group>
+ <group position={[(ax+bx)/2,.024,(az+bz)/2]} rotation-y={Math.atan2(dx,dz)}>
   <mesh rotation-x={-Math.PI/2} receiveShadow><planeGeometry args={[width,length]}/><meshStandardMaterial color='#d8bea0' roughness={1}/></mesh>
-  <mesh rotation-x={-Math.PI/2} position-y={.009}><planeGeometry args={[width*.72,length]}/><meshStandardMaterial color='#ead3b4' map={texture} roughness={1}/></mesh>
+ </group>
+ <ScenicPaving ax={ax} az={az} bx={bx} bz={bz} width={width*.72}/>
  </group>;
 }
 function ActivityStation({type,x,z,usedAt,cooldownMs}:{type:string;x:number;z:number;usedAt:number;cooldownMs:number}){

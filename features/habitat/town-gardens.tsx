@@ -6,13 +6,14 @@ import {TreeContactShadows} from './town-surfaces';
 import {TownAssetInstances} from './town-assets';
 import {GARDEN_TREES,TOWN_GARDEN_BEDS,gardenPlanting} from './town-planting';
 import {TOWN_PALETTE as P} from './town-palette';
+import TownRoundedTrees from './town-rounded-trees';
 
 /** Real licensed Kenney plant meshes, instanced by material/geometry. */
 export function TownGardens({quality='low'}:{quality?:'low'|'high'}){
  const flowers=useMemo(()=>gardenPlanting('flower'),[]);
  const shrubs=useMemo(()=>gardenPlanting('shrub'),[]);
  const grass=useMemo(()=>gardenPlanting('grass'),[]);
- return <group>
+ return <group name={'town-gardens-'+quality}>
   {TOWN_GARDEN_BEDS.map(([x,z,r])=><group key={x+':'+z} position={[x,0,z]}>
    <mesh position-y={-.01}><cylinderGeometry args={[r+.2,r+.2,.08,32]}/><meshStandardMaterial color={P.grass}/></mesh>
    <mesh position-y={.015} rotation-x={-Math.PI/2}><torusGeometry args={[r+.2,.065,5,48]}/><meshStandardMaterial color={P.pot}/></mesh>
@@ -22,7 +23,7 @@ export function TownGardens({quality='low'}:{quality?:'low'|'high'}){
   <TownAssetInstances id='nature-kit/flower_redA' placements={flowers.filter((_,i)=>i%3===0)}/>
   <TownAssetInstances id='nature-kit/flower_yellowB' placements={flowers.filter((_,i)=>i%3===1)}/>
   <TownAssetInstances id='nature-kit/flower_purpleC' placements={flowers.filter((_,i)=>i%3===2)}/>
-  <TownAssetInstances id='nature-kit/tree_detailed' placements={GARDEN_TREES} castShadow={quality==='high'}/>
+  <TownRoundedTrees trees={GARDEN_TREES}/>
   <TreeContactShadows trees={GARDEN_TREES}/>
   <Butterflies/>
   <group position={[0,14,-44]}>{[-20,-5,14,29].map((x,i)=><group key={x} position={[x,i%2,0]}>

@@ -1,5 +1,5 @@
 'use client';
-import {TOWN_PLANTING_MODELS} from './town-planting-models';
+import TownRoundedTrees from './town-rounded-trees';
 import {TOWN_PALETTE as P} from './town-palette';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useFrame} from '@react-three/fiber';
@@ -7,7 +7,6 @@ import TownSign from './town-sign';
 import {TownGardens} from './town-gardens';
 import {paintedTexture,TownFootShadow,TreeContactShadows} from './town-surfaces';
 import {Group,Object3D} from 'three';
-import {TownAssetInstances} from './town-assets';
 import {TownHouse,MarketFront} from './town-architecture';
 import {TownDailyProps} from './town-daily-props';
 import {TownPaving,FountainInlay} from './town-paving';
@@ -56,7 +55,7 @@ const leafSeeds=[...Array.from({length:72},(_,i)=>{
 }),...[[-11,-6],[11,-6],[-12,8],[12,8],[-4,-7],[4,-7]].map(([x,z])=>({x,z,h:4.1}))];
 function GreenBorder({quality}:{quality:'low'|'high'}){
  const selected=useMemo(()=>(quality==='low'?leafSeeds.filter((_,i)=>i>=72||i%2===0):leafSeeds).map((p,i)=>({x:p.x,z:p.z,y:townGroundHeight(p.x,p.z),size:p.h,yaw:i*.73})),[quality]);
- return <group><TreeContactShadows trees={selected}/>{TOWN_PLANTING_MODELS.center.map((id,index,models)=><TownAssetInstances key={id} id={id} placements={selected.filter((_,i)=>i%models.length===index)} castShadow={quality==='high'}/>)}</group>;
+ return <group><TreeContactShadows trees={selected}/><TownRoundedTrees trees={selected}/></group>;
 }
 function RaisedGround(){
  const quays=useMemo(()=>{

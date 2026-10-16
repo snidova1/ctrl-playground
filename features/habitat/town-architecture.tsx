@@ -48,7 +48,7 @@ function ShutterWindow({x,y,z,width=1.25,height=1.4,flowers=false}:{x:number;y:n
  },[width,height]);
  useEffect(()=>()=>Object.values(geometry).forEach(g=>g.dispose()),[geometry]);
  return <group position={[x,y,z]}>
-  <mesh position-z={.09}><boxGeometry args={[width,height,.05]}/><meshStandardMaterial color={P.forest} roughness={.5}/></mesh>
+  <mesh position-z={.09}><boxGeometry args={[width,height,.05]}/><meshStandardMaterial map={paintedTexture('glass')} roughness={.26} metalness={.08} emissive='#cfb586' emissiveIntensity={.045}/></mesh>
   <mesh geometry={geometry.frame} dispose={null}><meshStandardMaterial color={P.trim}/></mesh>
   <mesh geometry={geometry.boards} dispose={null}><meshStandardMaterial color={P.shutter}/></mesh>
   <mesh geometry={geometry.slats} dispose={null}><meshStandardMaterial color={P.sage}/></mesh>

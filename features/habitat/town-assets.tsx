@@ -6,6 +6,8 @@ import {BufferGeometry,Float32BufferAttribute,InstancedMesh,Material,Matrix4,Mes
 import {getBuildAsset} from '@/features/plaza/build-assets';
 import {TOWN_PALETTE as P} from './town-palette';
 import {paintedTexture} from './town-surfaces';
+import TownBistroFurniture,{BISTRO_FURNITURE} from './town-bistro-furniture';
+import TownMeadowFlowers from './town-meadow-flowers';
 
 export type AssetPlacement={x:number;z:number;y?:number;size:number;yaw?:number};
 export type TownAssetTone='natural'|'stone'|'foliage'|'room'|'room-floor'|'room-wall';
@@ -107,5 +109,5 @@ function LoadedAsset({id,size,tone}:{id:string;size?:number;tone:TownAssetTone})
  return <group scale={size===undefined?1:size/extent}>{parts.map((part,i)=><mesh key={i} geometry={part.geometry} material={part.material} receiveShadow castShadow dispose={null}/>)}</group>;
 }
 export function TownAsset({id,size,x=0,y=0,z=0,yaw=0,tone='natural'}:{id:string;size?:number;x?:number;y?:number;z?:number;yaw?:number;tone?:TownAssetTone}){
- return <group position={[x,y,z]} rotation-y={yaw}><Suspense fallback={null}><LoadedAsset id={id} size={size} tone={tone}/></Suspense></group>;
+ return <group position={[x,y,z]} rotation-y={yaw}>{BISTRO_FURNITURE.has(id)?<TownBistroFurniture id={id} size={size}/>:id==='platformer-kit/flowers'?<TownMeadowFlowers size={size}/>:<Suspense fallback={null}><LoadedAsset id={id} size={size} tone={tone}/></Suspense>}</group>;
 }

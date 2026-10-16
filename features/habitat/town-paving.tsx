@@ -32,6 +32,20 @@ export function createPavingGeometry(x:number,z:number,w:number,d:number,round=f
  uv.needsUpdate=true;
  return geometry;
 }
+/** Long connectors must not stretch a single 256px tile across an entire
+ * district. Project from their actual world vertices just like plaza paving. */
+export function createScenicPavingGeometry(ax:number,az:number,bx:number,bz:number,width:number){
+ const geometry=new PlaneGeometry(width,Math.hypot(bx-ax,bz-az));
+ geometry.rotateX(-Math.PI/2);geometry.rotateY(Math.atan2(bx-ax,bz-az));geometry.translate((ax+bx)/2,0,(az+bz)/2);
+ const positions=geometry.getAttribute('position'),uv=geometry.getAttribute('uv');
+ for(let i=0;i<positions.count;i++)uv.setXY(i,positions.getX(i)/4.8,positions.getZ(i)/4.8);
+ return geometry;
+}
+export function ScenicPaving({ax,az,bx,bz,width}:{ax:number;az:number;bx:number;bz:number;width:number}){
+ const geometry=useMemo(()=>createScenicPavingGeometry(ax,az,bx,bz,width),[ax,az,bx,bz,width]);
+ useEffect(()=>()=>geometry.dispose(),[geometry]);
+ return <mesh geometry={geometry} position-y={.033} dispose={null} receiveShadow><meshStandardMaterial map={paintedTexture('stone')} roughness={1}/></mesh>;
+}
 export function TownPaving({x,z,w,d,round=false,height=.015}:{x:number;z:number;w:number;d:number;round?:boolean;height?:number}){
  const geometry=useMemo(()=>createPavingGeometry(x,z,w,d,round),[x,z,w,d,round]);
  const texture=useMemo(()=>paintedTexture('stone'),[]);

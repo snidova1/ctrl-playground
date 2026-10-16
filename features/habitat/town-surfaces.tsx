@@ -9,7 +9,7 @@ import {townSurfaceHeight as townGroundHeight} from '@/domain/town-walk-surface'
 
 /** Original small painted textures, generated locally. No external game art. */
 const textures=new Map<string,CanvasTexture>();
-export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'|'floorboards'|'plaster'){
+export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'|'floorboards'|'plaster'|'glass'|'foliage'){
  const existing=textures.get(kind);if(existing)return existing;
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
  const ctx=canvas.getContext('2d')!;
@@ -17,6 +17,23 @@ export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'|'floo
   const gradient=ctx.createRadialGradient(128,128,3,128,128,125);
   gradient.addColorStop(0,'rgba(28,52,38,.3)');gradient.addColorStop(.4,'rgba(28,52,38,.19)');gradient.addColorStop(1,'rgba(28,52,38,0)');
   ctx.fillStyle=gradient;ctx.fillRect(0,0,256,256);
+ }else if(kind==='foliage'){
+  // An original leaf spray with a transparent silhouette, for cutout foliage.
+  // Opaque alpha-tested cards keep sorting and mobile overdraw predictable.
+  ctx.strokeStyle='#a0b38c';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(128,220);ctx.lineTo(128,42);ctx.stroke();
+  for(let i=0;i<11;i++){
+   const angle=i*2.399,rad=22+(i%4)*13;
+   const x=128+Math.cos(angle)*rad,y=120+Math.sin(angle)*rad;
+   ctx.save();ctx.translate(x,y);ctx.rotate(angle+.4);
+   ctx.fillStyle=['#e3e8d4','#c4d3ae','#f2efd9'][i%3];
+   ctx.beginPath();ctx.moveTo(-40,0);ctx.bezierCurveTo(-16,-25,18,-25,43,0);ctx.bezierCurveTo(18,25,-16,25,-40,0);ctx.fill();
+   ctx.strokeStyle='#748f6740';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(-33,0);ctx.lineTo(35,0);ctx.stroke();ctx.restore();
+  }
+ }else if(kind==='glass'){
+  const glass=ctx.createLinearGradient(0,0,0,256);
+  glass.addColorStop(0,'#719493');glass.addColorStop(.45,'#526f69');glass.addColorStop(.52,'#9eac9a');glass.addColorStop(1,'#cfb586');
+  ctx.fillStyle=glass;ctx.fillRect(0,0,256,256);
+  ctx.fillStyle='#e9dec822';ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(70,0);ctx.lineTo(230,256);ctx.lineTo(182,256);ctx.fill();
  }else if(kind==='plaster'){
   // Neutral pigment multiplies the approved facade colour, not a new palette.
   const wash=ctx.createLinearGradient(0,0,0,256);
@@ -53,7 +70,9 @@ export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'|'floo
    ctx.strokeStyle='#9a796657';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+2,y+30);ctx.lineTo(x+62,y+30);ctx.stroke();
   }
  }else{
-  ctx.fillStyle=kind==='stone'?P.terracotta:P.grass;ctx.fillRect(0,0,256,256);
+  // Ground already carries its own geographic green vertex pigment. A second
+  // full-strength green map was multiplying it into a dark, flat olive field.
+  ctx.fillStyle=kind==='stone'?P.terracotta:'#e4e7db';ctx.fillRect(0,0,256,256);
   if(kind==='stone')for(let y=-1;y<13;y++)for(let x=-1;x<9;x++){
    const seed=Math.abs(Math.sin(x*14.1+y*27.7));
    ctx.fillStyle=P.pavers[Math.floor(seed*4)];
@@ -107,7 +126,7 @@ export function TownKitStructure({id}:{id:string}){
  return <group>
   <RoundedBox args={[.2,2.4,2]} position-y={1.2} radius={.03} smoothness={2}><meshStandardMaterial color={P.cream} roughness={1}/></RoundedBox>
   {[-1,1].map(side=><group key={side} position-x={side*.115}>
-   <mesh position-y={1.53}><boxGeometry args={[.025,1.12,1.25]}/><meshStandardMaterial color={P.forest} roughness={.35}/></mesh>
+   <mesh position-y={1.53}><boxGeometry args={[.025,1.12,1.25]}/><meshStandardMaterial map={paintedTexture('glass')} roughness={.26} metalness={.08} emissive='#cfb586' emissiveIntensity={.045}/></mesh>
    <mesh position-y={1.53}><boxGeometry args={[.06,1.2,.065]}/><meshStandardMaterial color='#fcf1d8'/></mesh>
    <mesh position-y={1.53}><boxGeometry args={[.06,.065,1.3]}/><meshStandardMaterial color='#fcf1d8'/></mesh>
    <mesh position-y={.88}><boxGeometry args={[.24,.12,1.45]}/><meshStandardMaterial color={P.shutter}/></mesh>

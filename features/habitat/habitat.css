@@ -210,8 +210,8 @@
  box-shadow:0 2px 9px #233d2c24;letter-spacing:.01em;
 }
 .hb-app.is-public-world .hb-town-label{
- padding:5px 9px;border-radius:9px;background:#f7eed8e8;
- box-shadow:0 2px 9px #486c5333;font-size:9px;
+ padding:5px 9px;border:0;border-radius:0;background:transparent;
+ box-shadow:none;font-size:9px;color:#30493d;letter-spacing:.12em;
 }
 .hb-app.is-public-world .hb-directory{
  padding:7px 11px!important;border-radius:12px!important;
