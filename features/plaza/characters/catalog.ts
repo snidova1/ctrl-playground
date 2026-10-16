@@ -1,8 +1,10 @@
 import type {VRMHumanBoneName} from '@pixiv/three-vrm';
+import {INSTALLED_CHARACTER_ASSETS} from './ready-character-assets';
 export type CharacterQuality = 'low' | 'high';
 export interface CharacterDefinition {
   id: string;
   name: string;
+  gender: 'female'|'male';
   assets: Record<CharacterQuality, string>;
   height: number;
   license: {name: string; author: string; source: string};
@@ -16,13 +18,13 @@ export interface CharacterDefinition {
 }
 /** Approved female reference; retained export for preview compatibility. */
 export const previewCharacter: CharacterDefinition = {
-  id: 'vroid-victoria-preview', name: 'Victoria', height: 1.88,
+  id: 'vroid-victoria-preview', name: 'Victoria', gender:'female', height: 1.88,
   assets: {high: '/plaza/characters/victoria-desktop.vrm', low: '/plaza/characters/victoria-mobile.vrm'},
   license: {name: 'CC0', author: 'VRoid Project / pixiv', source: 'https://vroid.pixiv.help/hc/en-us/articles/360014900233'},
   customization: {hairstyle: 'wavy-blonde', outfit: 'victoria-original', bodyProfile: 'source-proportions', strategy: 'authored-vrm-variants', accessoryBones: ['head', 'chest', 'hips', 'leftHand', 'rightHand']},
 };
 export const maleCharacter: CharacterDefinition = {
-  id: 'vroid-fumiriya', name: 'Fumiriya', height: 1.9,
+  id: 'vroid-fumiriya', name: 'Fumiriya', gender:'male', height: 1.9,
   assets: {high: '/plaza/characters/fumiriya-desktop.vrm', low: '/plaza/characters/fumiriya-mobile.vrm'},
   license: {name: 'CC0', author: 'VRoid Project / pixiv', source: 'https://vroid.pixiv.help/hc/en-us/articles/360014788554'},
   customization: {hairstyle: 'blonde-layered', outfit: 'fumiriya-original', bodyProfile: 'source-proportions', strategy: 'authored-vrm-variants', accessoryBones: ['head', 'chest', 'hips', 'leftHand', 'rightHand']},
@@ -31,7 +33,23 @@ export type CharacterGender = 'female' | 'male';
 export const characterCatalog: Readonly<Record<CharacterGender, CharacterDefinition>> = {
   female: previewCharacter, male: maleCharacter,
 };
-/** Colorways are intentionally named colorways, not different garment meshes. */
+/** Only locally installed, licensed and validated VRMs may be selected at runtime.
+ * The 16 requested mixed-style character sources are NOT placed here until their
+ * self-contained binaries and real-animation tests pass.
+ */
+export const AVAILABLE_CHARACTER_DEFINITIONS: readonly CharacterDefinition[] = [
+  previewCharacter,maleCharacter,
+  ...INSTALLED_CHARACTER_ASSETS.map(asset=>({
+    id:asset.id,name:asset.name,gender:asset.gender,height:asset.height,
+    assets:{high:asset.modelUrl,low:asset.modelUrl},
+    license:{name:asset.license,author:asset.creator,source:asset.sourceUrl},
+    customization:{hairstyle:'authored',outfit:'complete',bodyProfile:'source-proportions',strategy:'authored-vrm-variants' as const,accessoryBones:[]},
+  }))
+];
+export function getAvailableCharacter(id:unknown):CharacterDefinition|undefined {
+  return typeof id==='string'?AVAILABLE_CHARACTER_DEFINITIONS.find(character=>character.id===id):undefined;
+}
+/** Colorways are legacy persistence details, NOT customization exposed to players. */
 export const outfitVariants = [
   {id: 'original', name: 'Original', clothTint: '#ffffff'},
   {id: 'sage', name: 'Sage', clothTint: '#a7c5b3'},
@@ -62,16 +80,25 @@ export type OutfitVariantId = typeof outfitVariants[number]['id'];
 export type HairVariantId = typeof hairVariants[number]['id'];
 export type EyeVariantId = typeof eyeVariants[number]['id'];
 export type SkinVariantId = typeof skinVariants[number]['id'];
-export interface CharacterAppearance {version: 1; gender: CharacterGender; variantId: OutfitVariantId; hairId: HairVariantId; eyeId: EyeVariantId; skinId: SkinVariantId}
+export interface CharacterGeometry {hair:'original'|'bob'|'ponytail';outfit:'original'|'cape'|'apron';footwear:'original'|'boots';accessory:'none'|'beret'|'glasses'|'satchel'}
+export const defaultGeometry:CharacterGeometry={hair:'original',outfit:'original',footwear:'original',accessory:'none'};
+export interface CharacterAppearance {version: 1; gender: CharacterGender; characterId?:string; variantId: OutfitVariantId; hairId: HairVariantId; eyeId: EyeVariantId; skinId: SkinVariantId;geometry?:CharacterGeometry}
 export const defaultAppearance: CharacterAppearance = {version: 1, gender: 'female', variantId: 'original', hairId: 'source', eyeId: 'source', skinId: 'source'};
 export function isCharacterAppearance(value: unknown): value is CharacterAppearance {
   if (!value || typeof value !== 'object') return false;
   const appearance = value as Record<string, unknown>;
   return appearance.version === 1 && (appearance.gender === 'male' || appearance.gender === 'female')
+    && (appearance.geometry===undefined || isCharacterGeometry(appearance.geometry))
+    && (appearance.characterId===undefined || getAvailableCharacter(appearance.characterId)!==undefined)
     && outfitVariants.some(variant => variant.id === appearance.variantId)
     && hairVariants.some(variant => variant.id === appearance.hairId)
     && eyeVariants.some(variant => variant.id === appearance.eyeId)
     && skinVariants.some(variant => variant.id === appearance.skinId);
+}
+export function isCharacterGeometry(value:unknown):value is CharacterGeometry{
+ if(!value||typeof value!=='object')return false;
+ const g=value as Record<string,unknown>;
+ return ['original','bob','ponytail'].includes(String(g.hair))&&['original','cape','apron'].includes(String(g.outfit))&&['original','boots'].includes(String(g.footwear))&&['none','beret','glasses','satchel'].includes(String(g.accessory));
 }
 /** Stable across server/client; persist this result instead of rerolling on login. */
 export function seededAppearance(seed: string, gender: CharacterGender): CharacterAppearance {
@@ -81,11 +108,15 @@ export function seededAppearance(seed: string, gender: CharacterGender): Charact
   return {version:1,gender,variantId:pick(outfitVariants,0),hairId:pick(hairVariants,5),eyeId:pick(eyeVariants,10),skinId:pick(skinVariants,15)};
 }
 export function normalizeAppearance(value:unknown,gender:CharacterGender,variantId:string):CharacterAppearance{
-  if(isCharacterAppearance(value))return {...value,gender};
+  if(isCharacterAppearance(value)) {
+    const chosen=getAvailableCharacter(value.characterId);
+    return {...value,gender,...(value.characterId!==undefined?{characterId:chosen && chosen.gender===gender?chosen.id:characterCatalog[gender].id}:{})};
+  }
   return {...seededAppearance(`${gender}:${variantId}`,gender),variantId:validVariant(variantId)};
 }
 export function resolveCharacter(appearance: CharacterAppearance): CharacterDefinition {
-  return characterCatalog[appearance.gender];
+  const candidate=getAvailableCharacter(appearance.characterId);
+  return candidate?.gender===appearance.gender?candidate:characterCatalog[appearance.gender];
 }
 export const characterBudgets = {maxAssetBytes: 20 * 1024 * 1024, maxDelta: .05, fixedStep: 1 / 60, maxSteps: 3} as const;
 export interface CharacterMotion {

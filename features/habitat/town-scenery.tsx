@@ -1,22 +1,29 @@
 'use client';
+import TownRoundedTrees from './town-rounded-trees';
 import {TOWN_PALETTE as P} from './town-palette';
-import {useMemo,useRef,useState} from 'react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useFrame} from '@react-three/fiber';
-import {Html} from '@react-three/drei';
+import TownSign from './town-sign';
 import {TownGardens} from './town-gardens';
-import {paintedTexture,TownFootShadow} from './town-surfaces';
-import {Group} from 'three';
-import {TownAssetInstances} from './town-assets';
+import {paintedTexture,TownFootShadow,TreeContactShadows} from './town-surfaces';
+import {Group,Object3D} from 'three';
 import {TownHouse,MarketFront} from './town-architecture';
 import {TownDailyProps} from './town-daily-props';
-import {TownPaving} from './town-paving';
+import {TownPaving,FountainInlay} from './town-paving';
 import {TownFountain,CanalBoat} from './town-waterfront';
-import {TOWN_HILLS,townTerrainHeight} from './town-terrain';
+import {TOWN_HILLS} from './town-terrain';
+import {townSurfaceHeight as townGroundHeight} from '@/domain/town-walk-surface';
 import {createCharacterMotion,resolveCharacter,seededAppearance} from '@/features/plaza/characters/catalog';
 import VrmAvatar from '@/features/plaza/characters/vrm-avatar';
 import type {Pose} from '@/features/plaza/types';
+import type {WorldState} from './types';
+import type {MutableRefObject} from 'react';
+import TownExpandedDistricts from './town-expanded-districts';
+import TownStylizedWater from './town-stylized-water';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_BRIDGES,PUBLIC_WORLD_BRIDGE} from './public-world-geography';
-import {residentPose} from './town-residents';
+import {nearbyResidents,residentPose,TOWN_RESIDENT_NAMES} from './town-residents';
+import {townCenterDetailed} from './town-lod';
+import {assignOcclusionTarget} from './town-occlusion';
 
 /** An authored neighborhood made from reusable, lightweight Three geometry.
  * This is visual scenery, not player-created Habitat objects or fake online users.
@@ -47,18 +54,16 @@ const leafSeeds=[...Array.from({length:72},(_,i)=>{
  return {x:x+Math.sin(i*19)*1.6,z:z+Math.cos(i*23)*2.4,h:3+(i%5)*.7};
 }),...[[-11,-6],[11,-6],[-12,8],[12,8],[-4,-7],[4,-7]].map(([x,z])=>({x,z,h:4.1}))];
 function GreenBorder({quality}:{quality:'low'|'high'}){
- const selected=useMemo(()=>(quality==='low'?leafSeeds.filter((_,i)=>i>=72||i%2===0):leafSeeds).map((p,i)=>({x:p.x,z:p.z,y:Math.max(0,townTerrainHeight(p.x,p.z)),size:p.h,yaw:i*.73})),[quality]);
- return <TownAssetInstances id='nature-kit/tree_detailed' placements={selected} castShadow={quality==='high'}/>;
+ const selected=useMemo(()=>(quality==='low'?leafSeeds.filter((_,i)=>i>=72||i%2===0):leafSeeds).map((p,i)=>({x:p.x,z:p.z,y:townGroundHeight(p.x,p.z),size:p.h,yaw:i*.73})),[quality]);
+ return <group><TreeContactShadows trees={selected}/><TownRoundedTrees trees={selected}/></group>;
 }
 function RaisedGround(){
- const grass=useMemo(()=>paintedTexture('grass'),[]);
  const quays=useMemo(()=>{
   const edges=[-37.5,...PUBLIC_WORLD_BRIDGES.flatMap(b=>[b.x-PUBLIC_WORLD_BRIDGE.halfWidth,b.x+PUBLIC_WORLD_BRIDGE.halfWidth]),37.5];
   return edges.filter((_,i)=>i%2===0).map((x,i)=>({x:(x+edges[i*2+1])/2,width:edges[i*2+1]-x}));
  },[]);
  return <>
-  <mesh rotation-x={-Math.PI/2} position-y={-.1} receiveShadow><planeGeometry args={[150,150]}/><meshStandardMaterial map={grass} roughness={1}/></mesh>
-  <mesh rotation-x={-Math.PI/2} position={[0,-.065,-19.5]}><planeGeometry args={[78,5]}/><meshStandardMaterial color={P.water} roughness={.22} metalness={.05}/></mesh>
+  <TownStylizedWater x={0} y={-.065} z={-19.5} width={78} depth={5}/>
   {/* Both quays have visible stone retaining walls and a safe road behind them. */}
   {[-16.7,-22.3].flatMap(z=>quays.map(quay=><group key={`${z}:${quay.x}`}>
    <mesh position={[quay.x,-.05,z]} receiveShadow><boxGeometry args={[quay.width,.38,.65]}/><meshStandardMaterial color='#c9b9a0'/></mesh>
@@ -70,9 +75,9 @@ function RaisedGround(){
   {/* Slightly raised riverside grass behind the cottages makes the silhouette non-flat. */}
   {TOWN_HILLS.map(([x,z,w,h],i)=>
    <mesh key={i} position={[x,-h*.32,z]} scale={[w,h,w*.6]}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial color={i%2?P.shutter:P.sage} roughness={1}/></mesh>)}
-  {/* Curving distant ridge silhouettes create depth even without downloadable assets. */}
+  {/* The old z=-66 ridge crossed the expanded Harbor and occluded its camera. */}
   {[-55,-37,-18,5,25,49].map((x,i)=>
-   <mesh key={i} position={[x,-7,-66]} scale={[20,14+(i%3)*3,14]}><sphereGeometry args={[1,16,10]}/><meshStandardMaterial color={i%2?P.shutter:P.grass} roughness={1}/></mesh>)}
+   <mesh key={i} position={[x,-7,-154]} scale={[20,14+(i%3)*3,14]}><sphereGeometry args={[1,16,10]}/><meshStandardMaterial color={i%2?P.shutter:P.grass} roughness={1}/></mesh>)}
  </>;
 }
 function Bridge({x}:{x:number}){
@@ -103,13 +108,15 @@ function Resident({index}:{index:number}){
  const initial=useMemo<Pose>(()=>residentPose(index,0),[index]);
  const [waving,setWaving]=useState(false);
  const wavingRef=useRef(false);
+ const [working,setWorking]=useState(0),workingRef=useRef(false);
  const pose=useRef({...initial}),motion=useRef(createCharacterMotion());
- useFrame(({clock})=>{
-  const next=residentPose(index,clock.elapsedTime);
+ useFrame(()=>{
+  const next=residentPose(index,Date.now()/1000);
   Object.assign(pose.current,next);
   if(wavingRef.current!==next.waving){wavingRef.current=next.waving;setWaving(next.waving);}
+  if(workingRef.current!==next.working){workingRef.current=next.working;setWorking(next.working?Date.now()+4000:0);}
  });
- return <><TownFootShadow pose={pose}/><VrmAvatar definition={resolveCharacter(appearance)} appearance={appearance} name={['Mira','Theo','June','Kai'][index]+' · NPC'} local={false} pose={initial} poseRef={pose} motion={motion} quality='low' sitting={index===1} celebrate={waving} interactedAt={0} seatLift={0}/></>;
+ return <><TownFootShadow pose={pose}/><VrmAvatar groundAt={townGroundHeight} definition={resolveCharacter(appearance)} appearance={appearance} name={TOWN_RESIDENT_NAMES[index]+' · NPC'} local={false} pose={initial} poseRef={pose} motion={motion} quality='low' sitting={index===1} workUntil={working} celebrate={waving} interactedAt={0} seatLift={0}/></>;
 }
 function WaterfrontRipples(){
  const water=useRef<Group>(null);
@@ -118,26 +125,33 @@ function WaterfrontRipples(){
   <planeGeometry args={[1.2+(i%3)*.4,.065]}/><meshBasicMaterial color='#d4eeea' transparent opacity={.45} depthWrite={false}/>
  </mesh>)}</group>;
 }
-export default function TownScenery({quality,onDirectory}:{quality:'low'|'high';onDirectory:()=>void}){
+export default function TownScenery({quality,onDirectory,pose,states}:{quality:'low'|'high';onDirectory:()=>void;pose:MutableRefObject<Pose>;states:WorldState['states']}){
+ const [residents,setResidents]=useState(()=>nearbyResidents(pose.current.x,pose.current.z,quality));
+ const empty=useMemo(()=>new Object3D(),[]),directory=useRef(empty);
+ const mountDirectory=useCallback((object:Object3D|null)=>assignOcclusionTarget(directory,object,empty),[empty]);
+ const [centerDetail,setCenterDetail]=useState(()=>townCenterDetailed(pose.current.x,pose.current.z,false));
+ useEffect(()=>{const tick=setInterval(()=>{const next=nearbyResidents(pose.current.x,pose.current.z,quality);setResidents(old=>old.join(',')===next.join(',')?old:next);},500);return()=>clearInterval(tick);},[pose,quality]);
+ useEffect(()=>{const tick=setInterval(()=>setCenterDetail(old=>townCenterDetailed(pose.current.x,pose.current.z,old)),500);return()=>clearInterval(tick);},[pose]);
  return <group>
+  <TownExpandedDistricts pose={pose} quality={quality} states={states}/>
   <RaisedGround/>
   <WaterfrontRipples/>
-  <TownGardens quality={quality}/>
+  {centerDetail&&<TownGardens quality={quality}/>}
   <GreenBorder quality={quality}/>
   {PUBLIC_WORLD_BRIDGES.map(bridge=><Bridge key={bridge.x} x={bridge.x}/>)}
-  {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site}/>)}
-  <TownFountain/>
-  <CanalBoat x={-12} color='#b78c70'/><CanalBoat x={12} color='#82a495'/>
-  <MarketFront x={-8} name='WILLOW CAFÉ' base={P.cream} roof={P.sage}/>
-  <MarketFront x={8} name='FLOWER MARKET' base={P.wall} roof={P.terracotta}/>
-  <LifestyleProps quality={quality}/>
+  {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site} detailed={centerDetail}/>)}
+  {centerDetail&&<><FountainInlay/><TownFountain/>
+  <CanalBoat x={-12} color='#b78c70'/><CanalBoat x={12} color='#82a495'/></>}
+  <MarketFront x={-8} name='WILLOW CAFÉ' base={P.cream} roof={P.sage} detailed={centerDetail}/>
+  <MarketFront x={8} name='FLOWER MARKET' base={P.wall} roof={P.terracotta} detailed={centerDetail}/>
+  {centerDetail&&<LifestyleProps quality={quality}/>}
   {/* Existing server-owned models provide the interactable fountain and shops.
       This facade surrounds them with streets, districts and actual landmarks. */}
-  <group position={[2.4,0,6]}>
+  {<group visible={centerDetail} ref={mountDirectory} position={[2.4,0,6]}>
    <mesh position-y={.8}><boxGeometry args={[.12,1.6,.12]}/><meshStandardMaterial color='#86745c'/></mesh>
    <mesh position-y={1.65}><boxGeometry args={[1.7,.55,.14]}/><meshStandardMaterial color={P.cream}/></mesh>
-   <Html transform center occlude position={[0,1.65,.09]} distanceFactor={5} zIndexRange={[5,0]}><button className='hb-directory' onClick={onDirectory}>Visit habitats ↗</button></Html>
-  </group>
-  {Array.from({length:quality==='low'?2:4},(_,i)=><Resident key={i} index={i}/>)}
+   <TownSign visible={centerDetail} occlude={[directory]} position={[0,1.65,.09]} distanceFactor={5} onClick={onDirectory} text='Visit habitats ↗'/>
+  </group>}
+  {residents.map(i=><Resident key={i} index={i}/>)}
  </group>;
 }

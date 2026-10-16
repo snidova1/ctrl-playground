@@ -17,9 +17,9 @@ export function TownDailyProps(){
    <TownAsset id='furniture-kit/tableRound' size={2} />
    <TownAsset id='furniture-kit/chairRounded' size={1.3} x={-1.25} yaw={Math.PI/2}/>
    <TownAsset id='furniture-kit/chairRounded' size={1.3} x={1.25} yaw={-Math.PI/2}/>
-   <TownAsset id='food-kit/plate' size={.4} x={-.35} y={.92}/>
+   {x<0&&<><TownAsset id='food-kit/plate' size={.4} x={-.35} y={.92}/>
    <TownAsset id='food-kit/croissant' size={.34} x={-.35} y={.97}/>
-   <TownAsset id='food-kit/cup-tea' size={.3} x={.32} y={.92}/>
+   <TownAsset id='food-kit/cup-tea' size={.3} x={.32} y={.92}/></>}
   </group>)}
   {/* Details stay on the existing café tables/counter, not in walking lanes. */}
   {[-8,-5].map(x=><group key={x} position={[x,0,0]}>

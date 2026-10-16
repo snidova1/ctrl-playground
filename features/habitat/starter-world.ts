@@ -39,6 +39,17 @@ const SCENE:StarterSpec[]=[
   ['nature-kit/path_stone','Entry stepping stone B',0,2.65,1.7,'decoration'],
   ['nature-kit/path_stone','Entry stepping stone C',0,3.9,1.7,'decoration'],
   ['nature-kit/path_stone','Entry stepping stone D',0,5.15,1.7,'decoration'],
+  ['furniture-kit/tableRound','Breakfast garden table',-8,2,2.2,'solid'],
+  ['furniture-kit/chairRounded','Breakfast chair west',-9.5,2,2.6,'seat',0,Math.PI/2],
+  ['furniture-kit/chairRounded','Breakfast chair east',-6.5,2,2.6,'seat',0,-Math.PI/2],
+  ['food-kit/plate','Breakfast plate',-8.3,2,.7,'decoration',.85],
+  ['food-kit/croissant','Breakfast pastry',-8.3,2,.6,'decoration',.92],
+  ['food-kit/cup-tea','Garden tea',-7.6,2,.6,'decoration',.85],
+  ['furniture-kit/table','Personal writing desk',8,-2.5,2.4,'solid'],
+  ['furniture-kit/chair','Studio desk chair',8,-1,2.6,'seat',0,Math.PI],
+  ['furniture-kit/bookcaseOpen','Personal studio shelves',8,-5.5,2.2,'solid'],
+  ['furniture-kit/pottedPlant','Studio fern',10,-4,2,'decoration'],
+  ...([-11,11] as const).flatMap(x=>([-6,-3,0,3,6,9] as const).map(z=>['nature-kit/plant_bushDetailed','Editable garden border',x,z,1.5,'decoration'] as const)),
 ];
 export const STARTER_TEMPLATE_ID='garden-courtyard-v1' as const;
 export const STARTER_WORLD_OBJECT_COUNT=PATIO.length+SCENE.length;

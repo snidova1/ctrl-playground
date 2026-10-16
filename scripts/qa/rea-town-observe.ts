@@ -19,7 +19,7 @@ const server=spawn(process.execPath,[path.resolve('node_modules/next/dist/bin/ne
 let log='';server.stdout.on('data',b=>{log+=b;});server.stderr.on('data',b=>{log+=b;});
 let browser:Awaited<ReturnType<typeof chromium.launch>>|undefined;
 async function rea(name:string,args:string[]){
- const result=await run('npx',['-y','rea-agents@6.4.0',name,...args,'--json'],{timeout:120000,maxBuffer:32*1024*1024});
+ const result=await run(process.env.CTRL_REA_BIN?process.execPath:'npx',process.env.CTRL_REA_BIN?[process.env.CTRL_REA_BIN,name,...args,'--json']:['-y','rea-agents@6.4.0',name,...args,'--json'],{timeout:120000,maxBuffer:32*1024*1024});
  const value=JSON.parse(result.stdout);
  writeFileSync(path.join(output,name+'.json'),JSON.stringify(value));
  return value;
@@ -47,8 +47,8 @@ try{
  const verified=page.waitForResponse(r=>r.url().endsWith('/api/auth/verify')&&r.request().method()==='POST');
  await page.getByRole('button',{name:'Sign in to Habitat',exact:true}).click();
  expect((await verified).status()).toBe(200);
- await expect(page.getByRole('region',{name:'3D character creator'})).toBeVisible({timeout:45000});
- await page.getByRole('button',{name:'Female',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Complete character selection'})).toBeVisible({timeout:45000});
+ await page.getByRole('button',{name:'Victoria · Free',exact:true}).click();
  await page.getByRole('textbox',{name:'Name',exact:true}).fill('REA Garden Visitor');
  await page.getByRole('button',{name:'Enter Public World',exact:true}).click();
  await expect(page.locator('.hb-title h1')).toHaveText('Willow Square',{timeout:45000});
@@ -83,10 +83,13 @@ try{
   const detailPng=pngData(detail);if(!detailPng)throw Error('REA desktop detail screenshot missing');
   writeFileSync(path.join(output,'rea-desktop-detail.png'),Buffer.from(detailPng,'base64'));details.detailScreenshotEvidence=detail.evidence_id;
   const position=async()=>{const s=await (await page.request.get(origin+'/api/habitat/state')).json();const p=s.players.find((p:{id:string})=>p.id===s.profile.id) as {x:number;z:number};return {x:p.x,z:p.z};};
-  await page.keyboard.down('KeyD');
-  try{await expect.poll(async()=>(await position()).x,{timeout:90000}).toBeGreaterThan(16);}finally{await page.keyboard.up('KeyD');}
-  await page.keyboard.down('KeyW');
-  try{await expect.poll(async()=>(await position()).z,{timeout:60000}).toBeLessThan(3.6);}finally{await page.keyboard.up('KeyW');}
+  // Use the actual destination UI instead of walking directly into cafe furniture.
+  await page.getByRole('button',{name:'Town map',exact:true}).click();
+  const destination=page.locator('.hb-town-destinations>div').filter({has:page.getByText('Tidewater Harbor',{exact:true})});
+  const travelled=page.waitForResponse(r=>r.url().endsWith('/api/habitat/town-travel')&&r.request().method()==='POST');
+  await destination.getByRole('button',{name:'Travel here ↗',exact:true}).click();
+  expect((await travelled).status()).toBe(200);
+  await expect.poll(position,{timeout:45000}).toEqual({x:5,z:-76});
   await page.mouse.move(720,400);await page.mouse.down();await page.mouse.move(870,400,{steps:10});await page.mouse.up();
   await page.waitForTimeout(1200);
   const district=await rea('capture-web-screenshot',[cdp,id]);

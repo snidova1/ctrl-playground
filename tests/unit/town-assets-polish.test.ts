@@ -3,7 +3,7 @@ import {describe,expect,it} from 'vitest';
 import {MeshStandardMaterial} from 'three';
 import {getBuildAsset} from '../../features/plaza/build-assets';
 import {TOWN_POLISH_ASSETS,TOWN_RENDER_ALIASES} from '../../features/habitat/town-asset-manifest';
-import {townMaterial} from '../../features/habitat/town-assets';
+import {townMaterial,attachTownWind} from '../../features/habitat/town-assets';
 import {createPavingGeometry} from '../../features/habitat/town-paving';
 import {gardenPlanting} from '../../features/habitat/town-planting';
 import {TOWN_PLANTING_CLEARANCES,TOWN_PROP_OBSTACLES} from '../../features/habitat/town-prop-layout';
@@ -40,6 +40,17 @@ describe('complete Public World asset polish',()=>{
    expect(Math.abs(target.bounds[1]-source.bounds[1])).toBeLessThan(.025);
   }
  });
+ it('extends only cloned foliage with one instanced root-anchored WebGL gust clock',()=>{
+  const source=new MeshStandardMaterial();source.name='leafsGreen';
+  const leaf=townMaterial(source,'natural',true) as MeshStandardMaterial;
+  const shader={uniforms:{},vertexShader:'#include <begin_vertex>'} as Parameters<typeof leaf.onBeforeCompile>[0];
+  leaf.onBeforeCompile(shader,{} as Parameters<typeof leaf.onBeforeCompile>[1]);
+  expect(shader.vertexShader).toContain('instanceMatrix*ctrlOrigin');expect(shader.vertexShader).toContain('ctrlHeight*ctrlHeight');expect(shader.uniforms.ctrlWindTime).toBeDefined();
+  expect(source.customProgramCacheKey()).not.toBe(leaf.customProgramCacheKey());
+  const second=attachTownWind(new MeshStandardMaterial()),other={uniforms:{},vertexShader:'#include <begin_vertex>'} as typeof shader;
+  second.onBeforeCompile(other,{} as Parameters<typeof leaf.onBeforeCompile>[1]);expect(other.uniforms.ctrlWindTime).toBe(shader.uniforms.ctrlWindTime);
+  source.dispose();leaf.dispose();second.dispose();
+ });
  it('joins paving textures at a shared world origin instead of restarting UVs',()=>{
   const a=createPavingGeometry(0,0,4.8,4.8),b=createPavingGeometry(4.8,0,4.8,4.8);
   const u=a.getAttribute('uv'),v=b.getAttribute('uv');
@@ -59,7 +70,7 @@ describe('complete Public World asset polish',()=>{
   expect(isPublicWorldWalkable(0,6)).toBe(true);expect(isPublicWorldWalkable(17,6)).toBe(true);
  });
  it('grounds decorative hill trees without raising any walkable terrain',()=>{
-  expect(townTerrainHeight(-10.744031378109902,-36.663242656681156)).toBeCloseTo(1.8691947443,3);
+  expect(townTerrainHeight(-10.744031378109902,-36.663242656681156)).toBeLessThanOrEqual(0); // Old backdrop moved outside the expanded playable world.
   for(let x=-32;x<=32;x+=2)for(let z=-30;z<=31;z+=2)expect(townTerrainHeight(x,z)).toBeLessThanOrEqual(0);
   for(const [x,z,,height] of TOWN_HILLS)expect(townTerrainHeight(x,z)).toBeGreaterThanOrEqual(height*.68-.001);
  });

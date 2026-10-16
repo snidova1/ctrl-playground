@@ -1,0 +1,348 @@
+{
+  "version": 1,
+  "verifiedDate": "2026-10-16",
+  "baseline": "599624b8c29f94800fd2024d95a3190dc4b54c52",
+  "scope": "Selective authored roofs/facades, curated bundled planting, six room wall finishes; gameplay and saved layouts retained",
+  "counts": {
+    "curatedModels": 10,
+    "newDownloadedModels": 0,
+    "uniqueLocalModelBytes": 139656
+  },
+  "activityCounter": {
+    "source": "CTRL original authored joinery",
+    "meshPrimitives": 3,
+    "triangles": 208,
+    "footprint": [
+      1.8,
+      1.3
+    ],
+    "additionalModelDownloadBytes": 0
+  },
+  "modelStatsAre": "source GLB metrics, not measured device FPS or whole-scene draw calls",
+  "models": [
+    {
+      "id": "nature-kit/tree_detailed",
+      "path": "public/plaza/build-kit/nature-kit/tree_detailed.glb",
+      "bytes": 31412,
+      "sha256": "c041daf2f0fb1d49e4325227cbcd58667adbe51e9b55e8c1f0a94b74cc521b3b",
+      "triangles": 402,
+      "meshPrimitives": 3,
+      "materials": 3,
+      "textures": 0,
+      "bounds": [
+        0.84712,
+        1.33242,
+        0.7616
+      ],
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "installation": "existing local GLB; newly curated visible use, not a new downloaded pack",
+      "scale": "largest axis normalized to the existing placement size",
+      "lod": "instanced per model; existing district culling and quality selection",
+      "destinations": [
+        "center",
+        "residential"
+      ]
+    },
+    {
+      "id": "nature-kit/tree_tall",
+      "path": "public/plaza/build-kit/nature-kit/tree_tall.glb",
+      "bytes": 7000,
+      "sha256": "3515a8826044d91e84e011186c86878f62024a487a079b4e32c9ac2e71994411",
+      "triangles": 72,
+      "meshPrimitives": 2,
+      "materials": 2,
+      "textures": 0,
+      "bounds": [
+        0.39958,
+        1.68772,
+        0.4614
+      ],
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "installation": "existing local GLB; newly curated visible use, not a new downloaded pack",
+      "scale": "largest axis normalized to the existing placement size",
+      "lod": "instanced per model; existing district culling and quality selection",
+      "destinations": [
+        "center",
+        "residential"
+      ]
+    },
+    {
+      "id": "nature-kit/tree_oak",
+      "path": "public/plaza/build-kit/nature-kit/tree_oak.glb",
+      "bytes": 14644,
+      "sha256": "d7fd8773674928c50c11b66d12c636d49bdcc15a8b1c7fbb98e6f63a3439a3f3",
+      "triangles": 196,
+      "meshPrimitives": 2,
+      "materials": 2,
+      "textures": 0,
+      "bounds": [
+        0.64055,
+        1.22624,
+        0.73965
+      ],
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "installation": "existing local GLB; newly curated visible use, not a new downloaded pack",
+      "scale": "largest axis normalized to the existing placement size",
+      "lod": "instanced per model; existing district culling and quality selection",
+      "destinations": [
+        "center",
+        "residential",
+        "garden",
+        "harbor",
+        "workshop",
+        "festival",
+        "orchard"
+      ]
+    },
+    {
+      "id": "nature-kit/tree_fat",
+      "path": "public/plaza/build-kit/nature-kit/tree_fat.glb",
+      "bytes": 5576,
+      "sha256": "84b262c5dda3a91ac6c95f9d8b23a0ebbb1951d678c0e1375d3e32623cc43ee2",
+      "triangles": 50,
+      "meshPrimitives": 2,
+      "materials": 2,
+      "textures": 0,
+      "bounds": [
+        0.755,
+        1.15039,
+        0.65385
+      ],
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "installation": "existing local GLB; newly curated visible use, not a new downloaded pack",
+      "scale": "largest axis normalized to the existing placement size",
+      "lod": "instanced per model; existing district culling and quality selection",
+      "destinations": [
+        "garden",
+        "orchard"
+      ]
+    },
+    {
+      "id": "nature-kit/tree_pineRoundC",
+      "path": "public/plaza/build-kit/nature-kit/tree_pineRoundC.glb",
+      "bytes": 15332,
+      "sha256": "29080a4935bae6b4ab29066f22c99c58f88b23ce4e2f79b4dcbb5e76de73f69d",
+      "triangles": 206,
+      "meshPrimitives": 2,
+      "materials": 2,
+      "textures": 0,
+      "bounds": [
+        0.48038,
+        1.25285,
+        0.5547
+      ],
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "installation": "existing local GLB; newly curated visible use, not a new downloaded pack",
+      "scale": "largest axis normalized to the existing placement size",
+      "lod": "instanced per model; existing district culling and quality selection",
+      "destinations": [
+        "garden"
+      ]
+    },
+    {
+      "id": "nature-kit/tree_pineRoundB",
+      "path": "public/plaza/build-kit/nature-kit/tree_pineRoundB.glb",
+      "bytes": 18464,
+      "sha256": "d4b664a2ac27ffec4125d95dffebed23471595f3a86650a55bcb9ac6b7c54637",
+      "triangles": 262,
+      "meshPrimitives": 3,
+      "materials": 3,
+      "textures": 0,
+      "bounds": [
+        0.53221,
+        1.19592,
+        0.6132
+      ],
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "installation": "existing local GLB; newly curated visible use, not a new downloaded pack",
+      "scale": "largest axis normalized to the existing placement size",
+      "lod": "instanced per model; existing district culling and quality selection",
+      "destinations": [
+        "harbor"
+      ]
+    },
+    {
+      "id": "nature-kit/tree_pineTallB",
+      "path": "public/plaza/build-kit/nature-kit/tree_pineTallB.glb",
+      "bytes": 7204,
+      "sha256": "49b54146351e1e009e97ee592f997a90a16b10c5467baf734d352df1cddec5d1",
+      "triangles": 78,
+      "meshPrimitives": 2,
+      "materials": 2,
+      "textures": 0,
+      "bounds": [
+        0.38627,
+        1.93461,
+        0.39195
+      ],
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "installation": "existing local GLB; newly curated visible use, not a new downloaded pack",
+      "scale": "largest axis normalized to the existing placement size",
+      "lod": "instanced per model; existing district culling and quality selection",
+      "destinations": [
+        "harbor"
+      ]
+    },
+    {
+      "id": "nature-kit/tree_plateau",
+      "path": "public/plaza/build-kit/nature-kit/tree_plateau.glb",
+      "bytes": 16304,
+      "sha256": "7f19e347ff28703dd9e5fcce89b920156e291fbdb19331a57cb31a95c73e1322",
+      "triangles": 215,
+      "meshPrimitives": 2,
+      "materials": 2,
+      "textures": 0,
+      "bounds": [
+        0.61174,
+        1.24934,
+        0.6549
+      ],
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "installation": "existing local GLB; newly curated visible use, not a new downloaded pack",
+      "scale": "largest axis normalized to the existing placement size",
+      "lod": "instanced per model; existing district culling and quality selection",
+      "destinations": [
+        "workshop",
+        "festival"
+      ]
+    },
+    {
+      "id": "nature-kit/tree_small",
+      "path": "public/plaza/build-kit/nature-kit/tree_small.glb",
+      "bytes": 6500,
+      "sha256": "d26c0eeed65cc681667f50042ef23ec72ce47ae3b39837bfeec170b05ba6ab6a",
+      "triangles": 62,
+      "meshPrimitives": 2,
+      "materials": 2,
+      "textures": 0,
+      "bounds": [
+        0.35464,
+        1.11004,
+        0.4095
+      ],
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "installation": "existing local GLB; newly curated visible use, not a new downloaded pack",
+      "scale": "largest axis normalized to the existing placement size",
+      "lod": "instanced per model; existing district culling and quality selection",
+      "destinations": [
+        "workshop",
+        "orchard"
+      ]
+    },
+    {
+      "id": "nature-kit/tree_pineDefaultA",
+      "path": "public/plaza/build-kit/nature-kit/tree_pineDefaultA.glb",
+      "bytes": 17220,
+      "sha256": "60d8f352fa3659ed275e06cbddfecf8f92c8effe2977c2f2d7b29b6c9b582e46",
+      "triangles": 230,
+      "meshPrimitives": 2,
+      "materials": 2,
+      "textures": 0,
+      "bounds": [
+        0.53196,
+        1.54584,
+        0.53196
+      ],
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "creator": "Kenney",
+      "installation": "existing local GLB; newly curated visible use, not a new downloaded pack",
+      "scale": "largest axis normalized to the existing placement size",
+      "lod": "instanced per model; existing district culling and quality selection",
+      "destinations": [
+        "festival"
+      ]
+    }
+  ],
+  "roofs": [
+    {
+      "kind": "hip",
+      "source": "CTRL original authored geometry",
+      "triangles": 6,
+      "materials": 2,
+      "additionalModelDownloadBytes": 0,
+      "footprint": "Existing solid building + existing 0.35m eave; no door/collision/location changes",
+      "destinations": "town-architecture.tsx and batched town-region-architecture.tsx"
+    },
+    {
+      "kind": "gambrel",
+      "source": "CTRL original authored geometry",
+      "triangles": 16,
+      "materials": 2,
+      "additionalModelDownloadBytes": 0,
+      "footprint": "Existing solid building + existing 0.35m eave; no door/collision/location changes",
+      "destinations": "town-architecture.tsx and batched town-region-architecture.tsx"
+    },
+    {
+      "kind": "clerestory",
+      "source": "CTRL original authored geometry",
+      "triangles": 16,
+      "materials": 2,
+      "additionalModelDownloadBytes": 0,
+      "footprint": "Existing solid building + existing 0.35m eave; no door/collision/location changes",
+      "destinations": "town-architecture.tsx and batched town-region-architecture.tsx"
+    }
+  ],
+  "replacements": [
+    {
+      "from": "nature-kit/tree_detailed repeated everywhere",
+      "to": "TOWN_PLANTING_MODELS district-specific buckets",
+      "collision": "unchanged shared tree centers and solid footprints"
+    },
+    {
+      "from": "uniform gable roofs",
+      "to": "original hip/gambrel/clerestory roof volumes and district facade details",
+      "collision": "unchanged authoritative buildings"
+    },
+    {
+      "from": "plain activity-station box",
+      "to": "original batched wood counter; orchard fruit requires a real persisted usedAt receipt",
+      "collision": "unchanged solid station footprint"
+    },
+    {
+      "from": "same cream finish in six public rooms",
+      "to": "six cloned wall finishes; existing glass/materials/furniture/seat/lamp IDs retained",
+      "newDrawCalls": 0
+    }
+  ],
+  "externalCandidates": [
+    {
+      "source": "https://quaternius.com/packs/ultimatestylizednature.html",
+      "license": "CC0-1.0",
+      "status": "not imported",
+      "evidence": "Official public glTF BirchTree_2 download returned Google Drive quota-exceeded HTML on 2026-10-16; rejected as model bytes"
+    },
+    {
+      "source": "https://quaternius.com/packs/ultimatetexturedbuildings.html",
+      "license": "CC0-1.0",
+      "status": "not imported; FBX/OBJ/Blend conversion required"
+    },
+    {
+      "source": "https://tools.oyasumi-gamedev.com/worldgacha/",
+      "status": "P2 pilot attempted in browser with 2km / 256 grid / 300m near view / seed 301610 / low+light display; WebGL context creation failed (GL_RENDERER Disabled), repeated once after reload; no generation, recipe or model export claimed"
+    },
+    {
+      "source": "https://polyhaven.com/",
+      "status": "No material/HDRI imported; existing authored stylized materials retained"
+    }
+  ],
+  "remaining": "Broader hero furniture and activity-prop breadth, independently owned 16-character imports, WorldGacha pilot, physical phone GPU and full reference-stack visual acceptance remain unverified"
+}

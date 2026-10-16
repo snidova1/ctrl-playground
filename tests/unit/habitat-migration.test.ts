@@ -110,7 +110,23 @@ describe('Habitat 0004 existing-database SQLite migration rehearsal', () => {
         if (table.name === 'ctrl_migrations') continue;
         expect(db.prepare(`SELECT ${table.columns.map(quote).join(',')} FROM ${quote(table.name)} ORDER BY rowid`).all(), table.name).toEqual(table.rows);
       }
-      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 6});
+      expect(db.prepare('SELECT COUNT(*) AS count FROM ctrl_migrations').get()).toEqual({count: 12});
+      expect(db.prepare('SELECT profile_id,world_id,updated_at FROM habitat_last_location ORDER BY profile_id').all()).toEqual(
+        db.prepare('SELECT profile_id,world_id,seen_at AS updated_at FROM habitat_presence ORDER BY profile_id').all(),
+      );
+      for(const name of ['town_routes','town_route_visits','town_gatherings','town_gathering_guests']){
+        expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)).toEqual({name});
+        expect(db.prepare(`SELECT COUNT(*) AS count FROM ${name}`).get()).toEqual({count:0});
+      }
+      for(const name of ['town_projects','town_project_work','town_activity_events']){
+        expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)).toEqual({name});
+        expect(db.prepare(`SELECT COUNT(*) AS count FROM ${name}`).get()).toEqual({count:0});
+      }
+      for(const name of ['town_progress','town_jobs','town_contributions','town_garden','town_friendships','town_invites','town_social_actions','town_chat']){
+        expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)).toEqual({name});
+        expect(db.prepare(`SELECT COUNT(*) AS count FROM ${name}`).get()).toEqual({count:0});
+      }
+      expect(columns(db,'town_progress').map(column=>column.name)).toEqual(['profile_id','completed','updated_at']);
       expect(columns(db,'habitat_profiles')).toEqual(expect.arrayContaining([expect.objectContaining({name:'appearance',type:'TEXT',notnull:1,dflt_value:"'{}'"})]));
       expect(db.prepare('SELECT id,appearance FROM habitat_profiles ORDER BY id').all()).toEqual([
         {id:'wallet-member',appearance:'{}'},{id:'wallet-owner',appearance:'{}'},

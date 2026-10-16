@@ -1,12 +1,14 @@
 import {z} from 'zod';
 import {PUBLIC_WORLD_ID,PUBLIC_WORLD_OWNER,createPublicWorld} from '@/features/habitat/public-world';
+import {getTownActivity,TOWN_DISTRICTS} from '@/features/habitat/town-districts';
+import {isPublicWorldWalkable} from '@/features/habitat/public-world-geography';
 import {one, query, exec, batch, statement} from '@/db';
 import {identity, rateLimit} from '@/server/wallet/auth';
 import {settings} from '@/server/env';
 import {AppError, safeError} from '@/server/errors';
-import {collideWorld, type WorldProfile, type WorldObject} from '@/features/habitat/types';
+import {collideWorld,isWorldPointWalkable, type WorldProfile, type WorldObject} from '@/features/habitat/types';
 import {getBuildAsset} from '@/features/plaza/build-assets';
-import {characterCatalog, normalizeAppearance, seededAppearance, validVariant, type CharacterAppearance, type CharacterGender} from '@/features/plaza/characters/catalog';
+import {resolveCharacter, normalizeAppearance, seededAppearance, validVariant, type CharacterAppearance, type CharacterGender} from '@/features/plaza/characters/catalog';
 import {
   layoutSchema, motionSchema, worldIdSchema, worldEditorSavePayloadSchema,
   characterProfileInputSchema, poseInputSchema, presenceInputSchema,
@@ -17,11 +19,14 @@ import {
 import {readHabitatJson} from './read-json';
 import {resolveHabitatAssets} from './asset-resolver';
 import {keysConfig} from '@/server/keys/config';
+import {readTownLife,recordContribution,townLifeAction,townLifePaths} from './town-life';
+import {getTownVenue} from '@/domain/town-venues';
+import {seedTownVenues} from './town-venues';
 import {readWorldKeys, prepareOwnerClaim, verifyOwnerClaim} from '@/server/keys/service';
 
 interface Principal {id: string; wallet: string}
 interface Row {id: string; owner_id: string; name: string; visibility: 'public' | 'private'; revision: number; layout: string}
-interface Presence {world_id: string; x: number; z: number; seen_at: number; session_id: string; sequence: number}
+interface Presence {world_id: string; x: number; z: number; seen_at: number; session_id: string; sequence: number;motion:string}
 interface ProfileRow extends Omit<WorldProfile,'appearance'>{appearance?:string}
 const TTL = 15000;
 const builtins = new Set(['ctrl-block', 'ctrl-door', 'ctrl-switch', 'ctrl-lamp', 'ctrl-seat', 'ctrl-portal', 'ctrl-marker']);
@@ -43,11 +48,11 @@ function parsedAppearance(profile:ProfileRow):CharacterAppearance{
   return normalizeAppearance(saved,gender,profile.variant);
 }
 function appearance(profile: ProfileRow): CharacterProfile {
-  const saved=parsedAppearance(profile),gender=saved.gender;
-  return {...profile,appearance:saved,variant:saved.variantId,loadout:{version:1,characterId:characterCatalog[gender].id,variantId:saved.variantId,appearance:saved,accessories:[]}};
+  const saved=parsedAppearance(profile);
+  return {...profile,appearance:saved,variant:saved.variantId,loadout:{version:1,characterId:resolveCharacter(saved).id,variantId:saved.variantId,appearance:saved,accessories:[]}};
 }
 async function permissions(w: Row, user: string): Promise<WorldPermissions> {
-  if (w.id === PUBLIC_WORLD_ID) return {role:'visitor',canVisit:true,canEdit:false,canManage:false};
+  if (w.id === PUBLIC_WORLD_ID||getTownVenue(w.id)) return {role:'visitor',canVisit:true,canEdit:false,canManage:false};
   if (w.owner_id === user) return {role: 'owner', canVisit: true, canEdit: true, canManage: true};
   const member = await one<{role: 'editor' | 'visitor'}>('SELECT role FROM habitat_members WHERE world_id=? AND profile_id=?', w.id, user);
   return {role: member?.role ?? 'visitor', canVisit: w.visibility === 'public' || !!member, canEdit: member?.role === 'editor', canManage: false};
@@ -69,12 +74,18 @@ async function state(user: Principal, worldId?: string): Promise<HabitatState> {
     try {selected = await readWorld(location.world_id, user.id);}
     catch (e) {if (!(e instanceof AppError) || e.code !== 'WORLD_NOT_FOUND') throw e;}
   }
+  if(!selected&&!worldId&&!location){
+    const remembered=await one<{world_id:string}>('SELECT world_id FROM habitat_last_location WHERE profile_id=?',user.id);
+    if(remembered){try{selected=await readWorld(remembered.world_id,user.id);}catch(e){if(!(e instanceof AppError)||e.code!=='WORLD_NOT_FOUND')throw e;}}
+  }
   if (!selected && home) selected = await readWorld(home.id, user.id);
   const w = selected?.world;
   // Recheck private-world ACLs when reading presence, including after revocation.
-  const players = w ? await query<ProfileRow & {x: number; z: number; angle: number; motion: string}>(
-    `SELECT p.id,p.name,p.character,p.variant,p.appearance,s.x,s.z,s.angle,s.motion FROM habitat_presence s
+  const players = w ? await query<ProfileRow & {x: number; z: number; angle: number; motion: string;workUntil:number|null}>(
+    `SELECT p.id,p.name,p.character,p.variant,p.appearance,s.x,s.z,s.angle,s.motion,COALESCE(j.ready_at,r.ready_at) AS workUntil FROM habitat_presence s
      JOIN habitat_profiles p ON p.id=s.profile_id JOIN habitat_worlds w ON w.id=s.world_id
+     LEFT JOIN town_jobs j ON j.profile_id=p.id AND j.completed_at=0 AND j.expires_at>${Date.now()}
+     LEFT JOIN town_routes r ON r.profile_id=p.id AND r.completed_at=0 AND r.expires_at>${Date.now()}
      WHERE s.world_id=? AND s.seen_at>? AND (w.visibility='public' OR w.owner_id=p.id OR EXISTS
        (SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=p.id))
      ORDER BY s.seen_at DESC LIMIT 64`, w.id, Date.now() - TTL) : [];
@@ -82,10 +93,11 @@ async function state(user: Principal, worldId?: string): Promise<HabitatState> {
   if (w) for (const s of await query<{object_id: string; active: number; used_at: number}>(
     'SELECT * FROM habitat_object_state WHERE world_id=?', w.id)) states[s.object_id] = {active: !!s.active, usedAt: s.used_at};
   return {
+    town: profile ? await readTownLife(user.id) : undefined,
     profile: profile ? appearance(profile) : null, homeId: home?.id ?? null,
     world: w ? {id: w.id, ownerId: w.owner_id, name: w.name, visibility: w.visibility, revision: w.revision, objects: layoutSchema.parse(JSON.parse(w.layout))} : null,
     canEdit: selected?.access.canEdit ?? false, permissions: selected?.access ?? null,
-    players: players.map(p => ({...appearance(p), x: p.x, z: p.z, angle: p.angle, motion: motionSchema.parse(JSON.parse(p.motion))})),
+    players: players.map(p => ({...appearance(p), x: p.x, z: p.z, angle: p.angle, workUntil:p.workUntil??0, motion: motionSchema.parse(JSON.parse(p.motion))})),
     presenceSession: location && location.world_id === w?.id ? {id: location.session_id, worldId: location.world_id, sequence: location.sequence, expiresAt: location.seen_at + TTL} : null,
     states, wallet: user.wallet, keyStatus: 'not-deployed',
     worlds: await query<{id: string; name: string; owner: string}>(
@@ -116,16 +128,20 @@ async function save(user: Principal, id: string, revision: number, input: WorldO
   if (!result[0]?.meta.changes) throw new AppError('WORLD_EDIT_CONFLICT', 409, 'Reload the latest world before editing.');
   return state(user, id);
 }
-async function join(user: Principal, id: string, sequenced = true) {
+async function join(user: Principal, id: string, sequenced = true,transition?:{source:string;session:string;x:number;z:number},spawn={x:0,z:6}) {
   await readWorld(id, user.id);
   if (!await one('SELECT id FROM habitat_profiles WHERE id=?', user.id)) throw new AppError('PROFILE_REQUIRED', 409);
-  const result = await exec(`INSERT INTO habitat_presence(profile_id,world_id,x,z,angle,motion,seen_at,session_id,sequence)
-    SELECT ?,id,0,6,3.14,'{}',?,?,0 FROM habitat_worlds WHERE id=? AND
+  const result = await batch([statement(`INSERT INTO habitat_presence(profile_id,world_id,x,z,angle,motion,seen_at,session_id,sequence)
+    SELECT ?,id,?,?,3.14,'{}',?,?,0 FROM habitat_worlds WHERE id=? AND
       (visibility='public' OR owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=habitat_worlds.id AND m.profile_id=?))
+      ${transition?'AND EXISTS(SELECT 1 FROM habitat_presence s WHERE s.profile_id=? AND s.world_id=? AND s.session_id=? AND s.seen_at>? AND (s.x-?)*(s.x-?)+(s.z-?)*(s.z-?)<=18.0625)':''}
     ON CONFLICT(profile_id) DO UPDATE SET
-    world_id=excluded.world_id,x=0,z=6,angle=3.14,motion='{}',seen_at=excluded.seen_at,session_id=excluded.session_id,sequence=0`,
-  user.id, Date.now(), sequenced ? crypto.randomUUID() : '', id, user.id, user.id);
-  if (!result.meta.changes) throw new AppError('WORLD_NOT_FOUND', 404);
+    world_id=excluded.world_id,x=excluded.x,z=excluded.z,angle=3.14,motion='{}',seen_at=excluded.seen_at,session_id=excluded.session_id,sequence=0`,
+  user.id,spawn.x,spawn.z, Date.now(), sequenced ? crypto.randomUUID() : '', id, user.id, user.id,...(transition?[user.id,transition.source,transition.session,Date.now()-TTL,transition.x,transition.x,transition.z,transition.z]:[])),
+  statement(`INSERT INTO habitat_last_location(profile_id,world_id,updated_at)
+    SELECT profile_id,world_id,seen_at FROM habitat_presence WHERE profile_id=? AND changes()=1
+    ON CONFLICT(profile_id) DO UPDATE SET world_id=excluded.world_id,updated_at=excluded.updated_at`,user.id)]);
+  if (!result[0]?.meta.changes) throw new AppError('WORLD_NOT_FOUND', 404);
   return state(user, id);
 }
 async function members(id: string): Promise<WorldMember[]> {
@@ -149,6 +165,10 @@ export async function handleHabitat(r: Request, path: string[]) {
     }
     const user = await principal(r);
     if (r.method !== 'GET') await rateLimit(`habitat:${path[0]}:${user.id}`, ['pose', 'presence'].includes(p) ? 150 : 40);
+    if (r.method === 'POST' && townLifePaths.has(p)) {
+      if (!await one('SELECT id FROM habitat_profiles WHERE id=?',user.id)) throw new AppError('PROFILE_REQUIRED',409);
+      return reply(await townLifeAction(user,p,await body(r)));
+    }
     if (r.method === 'POST' && p === 'public-world') {
       z.object({}).strict().parse(await body(r));
       if (!await one('SELECT id FROM habitat_profiles WHERE id=?',user.id)) throw new AppError('PROFILE_REQUIRED',409);
@@ -157,6 +177,7 @@ export async function handleHabitat(r: Request, path: string[]) {
         statement('INSERT OR IGNORE INTO habitat_profiles(id,name,character,variant,appearance,created_at) VALUES(?,?,?,?,?,?)',PUBLIC_WORLD_OWNER,'CTRL Town','female','sage','{}',now),
         statement("INSERT OR IGNORE INTO habitat_worlds(id,owner_id,name,visibility,layout,created_at,updated_at) VALUES(?,?,?,'public',?,?,?)",PUBLIC_WORLD_ID,PUBLIC_WORLD_OWNER,'Willow Square',JSON.stringify(createPublicWorld()),now,now),
       ]);
+      await seedTownVenues();
       return reply({id:PUBLIC_WORLD_ID});
     }
     if (r.method === 'GET' && p === 'state') return reply(await state(user));
@@ -184,6 +205,17 @@ export async function handleHabitat(r: Request, path: string[]) {
     }
     if (r.method === 'POST' && p === 'assets/resolve') {
       return reply(resolveHabitatAssets(await body(r)));
+    }
+    if(r.method==='POST'&&['town-venue/enter','town-venue/exit'].includes(p)){
+      const d=z.object({id:z.string().uuid(),sessionId:z.string().uuid()}).strict().parse(await body(r)),venue=getTownVenue(d.id);
+      if(!venue)throw new AppError('VENUE_NOT_FOUND',404);
+      const exit=p==='town-venue/exit',source=exit?venue.id:PUBLIC_WORLD_ID,entranceX=exit?0:venue.x,entranceZ=exit?6:venue.z;
+      const location=await one<{x:number;z:number}>('SELECT x,z FROM habitat_presence WHERE profile_id=? AND world_id=? AND session_id=? AND seen_at>?',user.id,source,d.sessionId,Date.now()-TTL);
+      if(!location)throw new AppError('WORLD_SESSION_EXPIRED',409);
+      if(Math.hypot(location.x-entranceX,location.z-entranceZ)>4.25)throw new AppError('COME_CLOSER',422,'Walk to this building entrance.');
+      const next=await join(user,exit?PUBLIC_WORLD_ID:venue.id,true,{source,session:d.sessionId,x:entranceX,z:entranceZ},exit?{x:venue.x,z:venue.z}:{x:0,z:6});
+      const self=next.players.find(s=>s.id===user.id)!;
+      return reply({...next,accepted:{x:self.x,z:self.z}});
     }
     if (r.method === 'POST' && (p === 'join' || p === 'visit')) {
       const {id} = z.object({id: worldIdSchema}).strict().parse(await body(r));
@@ -288,33 +320,91 @@ export async function handleHabitat(r: Request, path: string[]) {
       if (data.sessionId && (data.sessionId !== old.session_id || data.sequence! <= old.sequence)) throw new AppError('STALE_PRESENCE', 409);
       const limit = Math.min(10, Math.max(1, (Date.now() - old.seen_at) / 1000 * 4));
       if (Math.hypot(data.x - old.x, data.z - old.z) > limit) throw new AppError('MOVE_TOO_FAST', 422);
-      const position = collideWorld(old, data, current.world.objects, current.states, data.worldId);
+      const oldSeat=motionSchema.parse(JSON.parse(old.motion)).seatId;
+      if(data.motion.seatId&&data.motion.seatId!==oldSeat)throw new AppError('SEAT_NOT_CLAIMED',409);
+      const seated=!!data.motion.sitting&&!!oldSeat&&current.world.objects.some(o=>o.id===oldSeat&&o.behavior==='seat')&&isWorldPointWalkable(old.x,old.z,current.world.objects,current.states,data.worldId);
+      const position = seated?{x:old.x,z:old.z}:collideWorld(old, data, current.world.objects, current.states, data.worldId);
       const result = await exec(`UPDATE habitat_presence SET x=?,z=?,angle=?,motion=?,seen_at=?,sequence=?
         WHERE profile_id=? AND world_id=? AND session_id=? AND sequence=? AND EXISTS
         (SELECT 1 FROM habitat_worlds w WHERE w.id=habitat_presence.world_id AND
          (w.visibility='public' OR w.owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?)))`,
-      position.x, position.z, data.angle, JSON.stringify({...data.motion,speechAt:Math.min(data.motion.speechAt??0,Date.now())}), Date.now(), data.sequence ?? old.sequence + 1, user.id, data.worldId, old.session_id, old.sequence, user.id, user.id);
+      position.x, position.z, data.angle, JSON.stringify({...data.motion,seatId:seated?oldSeat:null,speechAt:Math.min(data.motion.speechAt??0,Date.now())}), Date.now(), data.sequence ?? old.sequence + 1, user.id, data.worldId, old.session_id, old.sequence, user.id, user.id);
       if (!result.meta.changes) throw new AppError('STALE_PRESENCE', 409);
       return reply({...await state(user, data.worldId), accepted: position});
+    }
+    // Server-owned destination travel; not an untrusted client teleport coordinate.
+    if (r.method === 'POST' && p === 'town-travel') {
+      const data = z.object({id:z.string().max(40),sessionId:z.string().uuid()}).strict().parse(await body(r));
+      const destination = TOWN_DISTRICTS.find(d=>d.id===data.id);
+      if (!destination || !isPublicWorldWalkable(destination.x,destination.z))
+        throw new AppError('INVALID_TOWN_DESTINATION',422);
+      const now=Date.now();
+      const moved=await exec(`UPDATE habitat_presence SET x=?,z=?,seen_at=?
+        WHERE profile_id=? AND world_id=? AND session_id=? AND seen_at>?`,
+        destination.x,destination.z,now,user.id,PUBLIC_WORLD_ID,data.sessionId,now-TTL);
+      if (!moved.meta.changes) throw new AppError('WORLD_SESSION_EXPIRED',409);
+      return reply({...await state(user,PUBLIC_WORLD_ID),accepted:{x:destination.x,z:destination.z}});
+    }
+    // Shared Townies-style field work: authenticated, proximity-gated and persistent.
+    // This never trusts a client-supplied position, reward amount or world identifier.
+    if (r.method === 'POST' && p === 'town-activity') {
+      const {id} = z.object({id:z.string().min(2).max(50)}).strict().parse(await body(r));
+      const activity = getTownActivity(id);
+      if (!activity) throw new AppError('ACTIVITY_NOT_FOUND', 404);
+      const location = await one<{x:number;z:number;world_id:string;seen_at:number}>(
+        'SELECT x,z,world_id,seen_at FROM habitat_presence WHERE profile_id=?',user.id);
+      if (!location || location.world_id !== PUBLIC_WORLD_ID || location.seen_at < Date.now()-TTL)
+        throw new AppError('PUBLIC_WORLD_REQUIRED',409,'Enter the Public World to help your neighbors.');
+      if (Math.hypot(location.x-activity.x,location.z-activity.z)>4.25)
+        throw new AppError('COME_CLOSER',422,'Walk to the activity marker first.');
+      const now=Date.now();
+      const results=await batch([statement(`INSERT INTO habitat_object_state(world_id,object_id,active,used_at)
+        SELECT ?,?,1,? WHERE EXISTS (SELECT 1 FROM habitat_worlds WHERE id=? AND visibility='public')
+        AND EXISTS (SELECT 1 FROM habitat_presence WHERE profile_id=? AND world_id=? AND seen_at>?
+         AND (x-?)*(x-?)+(z-?)*(z-?)<=18.0625)
+        ON CONFLICT(world_id,object_id) DO UPDATE SET active=1,used_at=excluded.used_at
+        WHERE habitat_object_state.used_at<=?`,PUBLIC_WORLD_ID,activity.objectId,now,PUBLIC_WORLD_ID,user.id,PUBLIC_WORLD_ID,now-TTL,activity.x,activity.x,activity.z,activity.z,now-activity.cooldownMs),
+        ...recordContribution(user,crypto.randomUUID(),activity.id,now)]);
+      if (!results[0]?.meta.changes) throw new AppError('ACTIVITY_RESTING',409,'Your neighbors finished this recently. Come back soon.');
+      return reply({activity:activity.id,message:activity.result,updatedAt:now,state:await state(user,PUBLIC_WORLD_ID)});
     }
     if (r.method === 'POST' && (p === 'settings' || p === 'use')) {
       const current = await state(user);
       if (!current.world) throw new AppError('PROFILE_REQUIRED', 409);
       const {world} = await readWorld(current.world.id, user.id);
       if (p === 'settings') return reply(await updateSettings(user, world, await body(r)));
-      const {id} = z.object({id: z.string().uuid()}).strict().parse(await body(r));
+      const {id,sessionId} = z.object({id: z.string().uuid(),sessionId:z.string().uuid().optional()}).strict().parse(await body(r));
       const object = current.world.objects.find(o => o.id === id);
       if (!object) throw new AppError('OBJECT_NOT_FOUND', 404);
-      const position = await one<{x: number; z: number}>('SELECT x,z FROM habitat_presence WHERE profile_id=? AND world_id=? AND seen_at>?', user.id, world.id, Date.now() - TTL);
+      const position = await one<{x: number; z: number;session_id:string;motion:string}>('SELECT x,z,session_id,motion FROM habitat_presence WHERE profile_id=? AND world_id=? AND seen_at>?', user.id, world.id, Date.now() - TTL);
       if (!position || Math.hypot(position.x - object.x, position.z - object.z) > 3.5) throw new AppError('COME_CLOSER', 422);
+      if(sessionId&&sessionId!==position.session_id)throw new AppError('STALE_PRESENCE',409);
+      if(object.behavior==='seat'){
+        const now=Date.now(),previous=motionSchema.parse(JSON.parse(position.motion));
+        const standing=previous.sitting&&previous.seatId===id;
+        const candidates=[0,.12,-.12,.24,-.24].map(offset=>({x:object.x+Math.sin(object.rotation)*offset,z:object.z+Math.cos(object.rotation)*offset}));
+        const point=standing?position:candidates.find(p=>isWorldPointWalkable(p.x,p.z,current.world!.objects,current.states,world.id));
+        if(!point)throw new AppError('SEAT_BLOCKED',409,'Move furniture away from this seat before using it.');
+        const result=await batch([statement(`UPDATE habitat_presence SET x=?,z=?,angle=?,motion=?,seen_at=? WHERE profile_id=? AND world_id=? AND session_id=? AND seen_at>? AND (x-?)*(x-?)+(z-?)*(z-?)<=12.25 AND EXISTS(SELECT 1 FROM habitat_worlds w WHERE w.id=habitat_presence.world_id AND w.revision=? AND (w.visibility='public' OR w.owner_id=? OR EXISTS(SELECT 1 FROM habitat_members m WHERE m.world_id=w.id AND m.profile_id=?))) AND NOT EXISTS(SELECT 1 FROM habitat_presence s WHERE s.profile_id<>? AND s.world_id=? AND s.seen_at>? AND json_extract(s.motion,'$.sitting')=1 AND json_extract(s.motion,'$.seatId')=?)`,point.x,point.z,object.rotation,JSON.stringify({...previous,seatId:standing?null:id,sitting:!standing,moving:false,running:false,airborne:false,height:0}),now,user.id,world.id,position.session_id,now-TTL,object.x,object.x,object.z,object.z,world.revision,user.id,user.id,user.id,world.id,now-TTL,id),
+          statement("INSERT INTO town_activity_events(id,profile_id,kind,target,created_at) SELECT ?,?,?,?,? WHERE changes()=1",crypto.randomUUID(),user.id,standing?'stood':'sat',object.name,now)]);
+        if(!result[0]?.meta.changes)throw new AppError('SEAT_UNAVAILABLE',409,'Seat occupied, world changed, or your session expired.');
+        return reply({object,state:await state(user,world.id)});
+      }
       const target = object.behavior === 'switch' ? current.world.objects.find(o => o.id === object.target) : object;
       if (!target) throw new AppError('TARGET_REQUIRED', 422);
       if (['light', 'door', 'spin'].includes(target.behavior)) {
-        const result = await exec(`INSERT INTO habitat_object_state(world_id,object_id,active,used_at)
+        const now=Date.now();
+        const result = await batch([statement(`INSERT INTO habitat_object_state(world_id,object_id,active,used_at)
           SELECT id,?,1,? FROM habitat_worlds WHERE id=? AND revision=? AND
           (visibility='public' OR owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=habitat_worlds.id AND m.profile_id=?))
-          ON CONFLICT(world_id,object_id) DO UPDATE SET active=1-active,used_at=excluded.used_at`, target.id, Date.now(), world.id, current.world.revision, user.id, user.id);
-        if (!result.meta.changes) throw new AppError('WORLD_EDIT_CONFLICT', 409);
+          AND EXISTS(SELECT 1 FROM habitat_presence p WHERE p.profile_id=? AND p.world_id=habitat_worlds.id AND p.session_id=? AND p.seen_at>?
+            AND (p.x-?)*(p.x-?)+(p.z-?)*(p.z-?)<=12.25)
+          ON CONFLICT(world_id,object_id) DO UPDATE SET active=1-active,used_at=excluded.used_at`, target.id, now, world.id, current.world.revision, user.id, user.id,
+          user.id,position.session_id,now-TTL,object.x,object.x,object.z,object.z),
+          statement(`INSERT INTO town_activity_events(id,profile_id,kind,target,created_at)
+            SELECT ?,?,CASE WHEN active=1 THEN 'switched on' ELSE 'switched off' END,?,?
+            FROM habitat_object_state WHERE world_id=? AND object_id=? AND changes()=1`,crypto.randomUUID(),user.id,`${world.name} · ${target.name}`,now,world.id,target.id)]);
+        if (!result[0]?.meta.changes) throw new AppError('WORLD_EDIT_CONFLICT', 409);
       }
       return reply({object, state: await state(user, world.id)});
     }

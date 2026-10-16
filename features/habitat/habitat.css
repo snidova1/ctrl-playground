@@ -163,7 +163,7 @@
 .hb-directory{white-space:nowrap;font-size:11px!important;pointer-events:auto}
 .hb-title p{max-width:280px;line-height:1.5}
 @media(max-width:760px){.hb-top{flex-wrap:wrap;background:#f1f1e9eb}.hb-top>div{flex:1;justify-content:flex-end;flex-wrap:wrap}.hb-top .hb-brand{display:none}.hb-top button{min-height:40px;padding:8px;font-size:11px}.hb-top .hb-nav-worlds,.hb-top .hb-nav-character{display:none}.hb-title{top:106px}.hb-title h1{font-size:25px}.hb-panel{top:104px;max-height:calc(100dvh - 124px)}.hb-top .hb-nav-settings{font-size:10px}.hb-bottom{max-width:180px}.hb-touch button{min-width:44px;min-height:44px}.hb-touch{grid-template-columns:repeat(3,44px)} }
-.hb-chat{position:absolute;left:24px;bottom:26px;display:flex;gap:6px;width:280px;z-index:12}.hb-chat input{min-width:0;background:#fffef4e8}.hb-speech{display:block;background:#fffef4;color:#263b30;padding:8px 12px;border:1px solid #9bad94;border-radius:10px;max-width:220px;min-width:70px;overflow-wrap:anywhere;font-size:12px;margin-top:5px;text-align:center}
+.hb-chat{position:absolute;left:24px;bottom:calc(68px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;width:280px;z-index:12}.hb-chat input{min-width:0;background:#fffef4e8}.hb-speech{display:block;background:#fffef4;color:#263b30;padding:8px 12px;border:1px solid #9bad94;border-radius:10px;max-width:220px;min-width:70px;overflow-wrap:anywhere;font-size:12px;margin-top:5px;text-align:center}
 @media(max-width:760px){.hb-chat{left:12px;bottom:190px;width:calc(100% - 24px);max-width:310px}.hb-chat input{font-size:16px}.hb-chat button{min-width:44px}}
 
 /* Public World is a game viewport, not a nested site dashboard.
@@ -199,7 +199,8 @@
 .hb-town-guide strong{font-size:12px}.hb-town-guide svg{display:block;width:100%;margin:12px 0;border-radius:8px}
 .hb-town-guide svg text{font:2.7px sans-serif;fill:#394d3b;letter-spacing:.2px}
 .hb-town-guide p{font-size:12px;line-height:1.6;margin:0 0 8px}.hb-town-guide small{display:block;font-size:10px;line-height:1.5;color:#5b6556}
-.hb-app.is-public-world .hb-chat-toggle{position:absolute;left:24px;bottom:25px;z-index:12;min-height:44px;background:#faf5e7ed;font-size:12px}
+.hb-chat-toggle{position:absolute;left:24px;bottom:calc(68px + env(safe-area-inset-bottom,0px));z-index:12;min-height:44px;background:#faf5e7ed;font-size:12px}
+@media(max-width:760px){.hb-chat-toggle{left:12px;bottom:calc(130px + env(safe-area-inset-bottom,0px));}}
 .hb-app.is-public-world .hb-music-player{left:auto;right:20px;bottom:25px}
 .hb-app.is-public-world .hb-chat button{min-width:44px}
 .hb-app.is-public-world .pl-name{
@@ -209,8 +210,8 @@
  box-shadow:0 2px 9px #233d2c24;letter-spacing:.01em;
 }
 .hb-app.is-public-world .hb-town-label{
- padding:5px 9px;border-radius:9px;background:#f7eed8e8;
- box-shadow:0 2px 9px #486c5333;font-size:9px;
+ padding:5px 9px;border:0;border-radius:0;background:transparent;
+ box-shadow:none;font-size:9px;color:#30493d;letter-spacing:.12em;
 }
 .hb-app.is-public-world .hb-directory{
  padding:7px 11px!important;border-radius:12px!important;
@@ -265,7 +266,7 @@
  }
  .hb-app.is-public-world .hb-bottom{
   left:auto;right:10px;bottom:calc(16px + env(safe-area-inset-bottom,0px));
-  transform:none;display:flex;flex-direction:row;gap:4px;
+  transform:none;display:grid;grid-template-columns:repeat(2,55px);gap:4px;
   max-width:none;padding:4px;border-radius:12px;
  }
  .hb-app.is-public-world .hb-bottom button{
@@ -283,4 +284,79 @@
  .hb-app.is-public-world .hb-touch{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
  .hb-app.is-public-world .hb-touch button{height:44px;min-height:44px}
  .hb-app.is-public-world .hb-top{max-height:none}
+}
+
+/* Multi-district social game guide. Keep the map scrollable on small phones. */
+.hb-town-guide .hb-town-action{background:#d7e8bf;font-weight:700;border-color:#a3b98a}
+.hb-town-guide .hb-town-action:disabled{opacity:.72}
+.hb-town-guide .hb-district-map{aspect-ratio:248/226;background:#a9c598;max-height:280px}
+.hb-town-guide .hb-district-map text{font:600 5.5px/1.15 var(--font-sans,Arial,sans-serif);fill:#405b45;letter-spacing:0}
+.hb-town-guide .hb-town-progress{display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:11px;margin:8px 0}
+.hb-town-guide .hb-town-destinations{max-height:160px;overflow-y:auto;display:grid;gap:6px;margin:8px 0;padding-right:4px}
+.hb-town-guide .hb-town-destinations>div{display:flex;flex-direction:column;border-bottom:1px solid #aebba18c;padding-bottom:5px}
+.hb-town-guide .hb-town-destinations small{font-size:10px;line-height:1.4}
+@media(max-width:760px){.hb-app.is-public-world .hb-town-guide .hb-town-guide-actions{max-width:150px;align-items:stretch}.hb-app.is-public-world .hb-town-guide section{max-height:50dvh}}
+/* Persistent activity/social tools stay collapsed while exploring. */
+.hb-life-dock{position:absolute;left:20px;top:192px;z-index:24;max-width:330px;font-size:12px;}
+.hb-venue-guide{position:absolute;left:20px;bottom:120px;z-index:12;display:flex;flex-direction:column;gap:8px;padding:12px;max-width:210px;background:#fff8ebf5;border:1px solid #dbc9aa;border-radius:7px;font-size:12px;}
+.hb-venue-guide small{font-size:10px;line-height:1.4;}
+@media(max-width:600px){.hb-venue-guide{left:12px;bottom:calc(190px + env(safe-area-inset-bottom,0px));max-width:170px;}}
+@media(max-width:760px){
+ /* The existing mobile chat slot is shared temporarily with music; this rule
+    applies to real Habitat/public interiors too, not only Public World. */
+ .hb-app:has(.hb-chat) .hb-music-player{display:none;}
+ .hb-app:not(.is-public-world):has(.hb-chat) .hb-venue-guide{bottom:calc(250px + env(safe-area-inset-bottom,0px));}
+ .hb-app:not(.is-public-world):has(.hb-venue-guide) .hb-music-player{left:auto;right:10px;bottom:calc(132px + env(safe-area-inset-bottom,0px));}
+}
+.hb-world-loading{position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:#354a3e;background:#c4d9df;}
+.hb-label-layer .pl-name{white-space:nowrap;}
+.hb-speech{width:200px;max-width:200px;white-space:normal;}
+@media(max-width:600px){
+ .hb-app.is-public-world .hb-life-dock{top:calc(180px + env(safe-area-inset-top,0px));}
+ .hb-app.is-public-world .hb-life-panel{max-height:calc(100dvh - 325px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
+}
+.hb-life-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.hb-life-dock button{border:1px solid #cbbc9f;border-radius:10px;background:#fff6e4;color:#374d40;padding:9px 12px;cursor:pointer;min-height:40px;}
+.hb-life-dock button:disabled{opacity:.55;cursor:default;}
+.hb-life-panel{margin-top:6px;padding:16px;background:#fff8ebf5;border:1px solid #dbc9aa;border-radius:16px;max-height:calc(100dvh - 285px);overflow:auto;box-shadow:0 10px 35px #324c3925;}
+.hb-life-panel h2{font-size:18px;margin:0 0 8px;}
+.hb-life-panel details{border-top:1px solid #dfd3bf;padding:12px 0;}
+.hb-life-panel summary{cursor:pointer;font-weight:700;}
+.hb-life-row{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0;}
+.hb-life-row>strong,.hb-life-row>span,.hb-life-row>small{width:100%;}
+.hb-life-row select{width:100%;padding:8px;border-radius:8px;border:1px solid #cbbc9f;}
+.hb-creator-geometry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}
+.hb-creator-geometry label{font-size:12px;}
+.hb-creator-geometry select{display:block;width:100%;padding:8px;background:#fff8ec;border:1px solid #cab998;border-radius:8px;}
+@media(max-width:600px){.hb-life-dock{left:12px;top:136px;max-width:calc(100vw - 24px);}.hb-life-actions>button{font-size:11px;padding:7px 10px;min-height:34px;}.hb-life-panel{max-width:300px;max-height:calc(100dvh - 280px);}}
+/* Keep home visits and character controls reachable on touch screens. */
+.hb-civic-project{border-left:3px solid #779281;padding:8px 12px;margin:12px 0;}
+.hb-civic-project h3{font-size:14px;margin:0 0 6px;}.hb-civic-project p{margin:6px 0;}
+.hb-activity-history{padding-left:20px;}.hb-activity-history li{margin:12px 0;}.hb-activity-history time{font-size:10px;color:#596458;}
+@media(max-width:760px){
+ .hb-app:not(.is-public-world) .hb-top>div{min-width:0;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:thin;}
+ .hb-app:not(.is-public-world) .hb-top button{flex-shrink:0;}
+ .hb-app:not(.is-public-world) .hb-top .hb-nav-worlds,
+ .hb-app:not(.is-public-world) .hb-top .hb-nav-character{display:inline-flex;align-items:center;}
+ .hb-app:not(.is-public-world) .hb-message,
+ .hb-app:not(.is-public-world) .hb-alert{bottom:calc(280px + env(safe-area-inset-bottom,0px));box-sizing:border-box;}
+ .hb-app:not(.is-public-world) .hb-life-dock{top:calc(200px + env(safe-area-inset-top,0px));}
+}
+/* Homes keep the same touch target budget as Public World. Build remains a
+ * full-width action, with four playable controls in two rows, not a tall stack
+ * obscuring the character. Worlds/Character navigation remains scrollable. */
+@media(max-width:760px){
+ /* Room names need two readable lines above Town life, not the inherited
+  * body line-height that pushed the studio title into its action button. */
+ .hb-app:not(.is-public-world) .hb-title h1{line-height:1.15;max-width:calc(100vw - 24px);}
+ .hb-app:not(.is-public-world):not(.is-editing) .hb-message,
+ .hb-app:not(.is-public-world):not(.is-editing) .hb-alert{top:calc(244px + env(safe-area-inset-top,0px));bottom:auto;}
+ .hb-app:not(.is-public-world) .hb-bottom{display:grid;grid-template-columns:repeat(2,62px);max-width:none;gap:4px;padding:4px;}
+ .hb-app:not(.is-public-world) .hb-bottom button{width:62px;min-width:0;height:44px;min-height:44px;padding:5px 3px;font-size:10px;line-height:1.15;white-space:normal;}
+ .hb-app:not(.is-public-world) .hb-bottom .hb-primary{grid-column:1/-1;width:auto;}
+ .hb-app:not(.is-public-world) .hb-chat-toggle{bottom:calc(166px + env(safe-area-inset-bottom,0px));}
+ .hb-app:not(.is-public-world) .hb-music-player{bottom:calc(214px + env(safe-area-inset-bottom,0px));}
+ .hb-app:not(.is-public-world) .hb-chat{bottom:calc(166px + env(safe-area-inset-bottom,0px));}
+ .hb-app:not(.is-public-world):has(.hb-chat) .hb-music-player{display:none;}
+ .hb-app:not(.is-public-world) .hb-venue-guide{bottom:calc(222px + env(safe-area-inset-bottom,0px));}
 }
