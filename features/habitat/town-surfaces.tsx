@@ -1,15 +1,15 @@
 'use client';
 import {TOWN_PALETTE as P} from './town-palette';
-import {useMemo,useRef,type MutableRefObject} from 'react';
+import {useLayoutEffect,useMemo,useRef,type MutableRefObject} from 'react';
 import {useFrame} from '@react-three/fiber';
 import {RoundedBox} from '@react-three/drei';
-import {CanvasTexture,Group,RepeatWrapping,SRGBColorSpace} from 'three';
+import {CanvasTexture,Group,InstancedMesh,Object3D,RepeatWrapping,SRGBColorSpace} from 'three';
 import type {Pose} from '@/features/plaza/types';
 import {townSurfaceHeight as townGroundHeight} from '@/domain/town-walk-surface';
 
 /** Original small painted textures, generated locally. No external game art. */
 const textures=new Map<string,CanvasTexture>();
-export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'|'floorboards'){
+export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'|'floorboards'|'plaster'){
  const existing=textures.get(kind);if(existing)return existing;
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
  const ctx=canvas.getContext('2d')!;
@@ -17,6 +17,16 @@ export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'|'floo
   const gradient=ctx.createRadialGradient(128,128,3,128,128,125);
   gradient.addColorStop(0,'rgba(28,52,38,.3)');gradient.addColorStop(.4,'rgba(28,52,38,.19)');gradient.addColorStop(1,'rgba(28,52,38,0)');
   ctx.fillStyle=gradient;ctx.fillRect(0,0,256,256);
+ }else if(kind==='plaster'){
+  // Neutral pigment multiplies the approved facade colour, not a new palette.
+  const wash=ctx.createLinearGradient(0,0,0,256);
+  wash.addColorStop(0,'#ddd6c9');wash.addColorStop(.18,'#fffdf6');
+  wash.addColorStop(.72,'#faf7ee');wash.addColorStop(1,'#d5cab7');
+  ctx.fillStyle=wash;ctx.fillRect(0,0,256,256);
+  for(let i=0;i<1800;i++){
+   const hash=(n:number)=>{const v=Math.sin(i*127.1+n*311.7)*43758.5453;return v-Math.floor(v);};
+   ctx.fillStyle=i%2?'#ffffff18':'#8873520b';ctx.fillRect(hash(1)*256,hash(2)*256,1,1);
+  }
  }else if(kind==='floorboards'){
   const boards=['#e8cfaa','#dfc29b','#e6caa3','#d4b891'];
   for(let row=0;row<8;row++){
@@ -44,11 +54,13 @@ export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'|'floo
   }
  }else{
   ctx.fillStyle=kind==='stone'?P.terracotta:P.grass;ctx.fillRect(0,0,256,256);
-  if(kind==='stone')for(let y=-1;y<7;y++)for(let x=-1;x<5;x++){
+  if(kind==='stone')for(let y=-1;y<13;y++)for(let x=-1;x<9;x++){
    const seed=Math.abs(Math.sin(x*14.1+y*27.7));
    ctx.fillStyle=P.pavers[Math.floor(seed*4)];
-   ctx.beginPath();ctx.roundRect(x*64+(y%2)*32+1,y*256/6+1,62,256/6-2,2);ctx.fill();
-   ctx.strokeStyle='#ddcfb230';ctx.lineWidth=1;ctx.stroke();
+   const tx=x*32+(y%2)*16,ty=y*256/12;
+   ctx.beginPath();ctx.roundRect(tx+.65,ty+.65,30.7,256/12-1.3,1.2);ctx.fill();
+   ctx.strokeStyle='#efdbc344';ctx.lineWidth=.65;ctx.stroke();
+   ctx.strokeStyle='#76513a22';ctx.beginPath();ctx.moveTo(tx+1,ty+256/12-1);ctx.lineTo(tx+31,ty+256/12-1);ctx.stroke();
   }
   for(let i=0;i<800;i++){
    const hash=(seed:number)=>{const n=Math.sin(i*127.1+seed*311.7)*43758.5453;return n-Math.floor(n);};
@@ -64,6 +76,21 @@ export function paintedTexture(kind:'stone'|'grass'|'shadow'|'roof'|'wood'|'floo
 export function GroundShadow({x=0,z=0,width=2,depth=2}:{x?:number;z?:number;width?:number;depth?:number}){
  const texture=useMemo(()=>paintedTexture('shadow'),[]);
  return <mesh position={[x,.032,z]} rotation-x={-Math.PI/2} renderOrder={1}><planeGeometry args={[width,depth]}/><meshBasicMaterial map={texture} transparent depthWrite={false} polygonOffset polygonOffsetFactor={-1}/></mesh>;
+}
+/** Soft contact grounding in light mode, batched across existing tree centers. */
+export function TreeContactShadows({trees}:{trees:ReadonlyArray<{x:number;z:number;y?:number;size:number}>}){
+ const mesh=useRef<InstancedMesh>(null),texture=useMemo(()=>paintedTexture('shadow'),[]);
+ useLayoutEffect(()=>{
+  if(!mesh.current)return;const transform=new Object3D();
+  trees.forEach((tree,i)=>{
+   transform.position.set(tree.x,(tree.y??0)+.036,tree.z);transform.rotation.x=-Math.PI/2;
+   transform.scale.set(tree.size*.95,tree.size*.78,1);transform.updateMatrix();mesh.current!.setMatrixAt(i,transform.matrix);
+  });
+  mesh.current.instanceMatrix.needsUpdate=true;mesh.current.computeBoundingSphere();
+ },[trees]);
+ return <instancedMesh ref={mesh} args={[undefined,undefined,trees.length]} renderOrder={1}>
+  <planeGeometry args={[1,1]}/><meshBasicMaterial map={texture} transparent depthWrite={false} polygonOffset polygonOffsetFactor={-1}/>
+ </instancedMesh>;
 }
 export function TownFootShadow({pose}:{pose:MutableRefObject<Pose>}){
  const root=useRef<Group>(null);

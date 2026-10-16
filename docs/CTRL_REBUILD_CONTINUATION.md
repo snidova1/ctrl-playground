@@ -1,5 +1,19 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## 2026-10-16 — user-requested visual-first center preview
+
+See [Willow Square visual pass](CTRL_TOWN_VISUAL_POLISH.md): native same-camera
+desktop/touch before–after screenshots against `424c2c2`, curved/scalloped
+canopies, panelled storefronts, smaller approved terracotta paving, flush fountain
+setts and batched tree contact shadows. Default desktop median submissions
+**1018 → 987**; mobile emulation **691 → 688**. Triangles modestly increase;
+these are ten-frame observed WebGL medians, not physical-device FPS. No changed
+collision, clock, saved state, gameplay authority, character roster or new assets.
+Full unit/API **313/313**, strict types, scoped lint and Next production passed.
+Native production input/graphics browser regression **4/4 passed (1.6m)**;
+exact-head CI is not yet claimed. Keep draft, no merge/deploy; broader rebuild
+notes remain open.
+
 ## 2026-10-16 — one owner for perspective sign DOM
 
 Checkpoint `7eadf19383674fcf8caa5992e3e601c8aa5fbe25` finished **7/7 successful GitHub workflows**. Public World passed **10/10 (3.3m)**, original town-life **7/7 (3.9m)**, daily table **1/1 (1.5m)**, waterfront civic **1/1 (2.4m)**, plus the configured Worker entry, Builder and all unit/types/lint/assets/avatar/audio/Visible Habitat gates. This closes the earlier reload timeout without increasing its 240s budget.

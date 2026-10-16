@@ -1,7 +1,26 @@
 'use client';
 import {useEffect,useMemo} from 'react';
-import {CircleGeometry,PlaneGeometry} from 'three';
+import {BufferGeometry,CircleGeometry,Float32BufferAttribute,PlaneGeometry} from 'three';
 import {paintedTexture} from './town-surfaces';
+import {TOWN_PALETTE as P} from './town-palette';
+
+/** Flush radial limestone setts frame the existing fountain, without changing
+ * its solid radius or the walk surface. One material / one draw submission. */
+export function makeFountainInlay(){
+ const vertices:number[]=[];
+ for(let i=0;i<48;i++){
+  const a=i*Math.PI/24+.008,b=(i+1)*Math.PI/24-.008;
+  const point=(r:number,t:number)=>[Math.cos(t)*r,.029,-3+Math.sin(t)*r];
+  const p=point(2.3,a),q=point(2.3,b),r=point(2.98,b),s=point(2.98,a);
+  vertices.push(...p,...q,...r,...p,...r,...s);
+ }
+ const geometry=new BufferGeometry();geometry.setAttribute('position',new Float32BufferAttribute(vertices,3));geometry.computeVertexNormals();return geometry;
+}
+export function FountainInlay(){
+ const geometry=useMemo(()=>makeFountainInlay(),[]);
+ useEffect(()=>()=>geometry.dispose(),[geometry]);
+ return <mesh geometry={geometry} dispose={null} receiveShadow><meshStandardMaterial color={P.pot} roughness={1}/></mesh>;
+}
 
 /** All path intersections use the same world UV origin and Common Ground tile size.
  * No mismatched paving scale, streaked seams or texture restart at road borders.

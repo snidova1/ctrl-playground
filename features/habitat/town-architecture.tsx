@@ -11,6 +11,7 @@ import {GroundShadow,paintedTexture} from './town-surfaces';
 import {TownAsset} from './town-assets';
 import {assignOcclusionTarget} from './town-occlusion';
 import TownRoof,{type TownRoofKind} from './town-roof';
+import {ShopCanopy,ShopJoinery} from './town-storefront-detail';
 
 const HOUSE_ROOFS:Readonly<Record<string,TownRoofKind>>={
  'WILLOW BAKERY':'gambrel','MAKERS HOUSE':'clerestory','GARDEN HOUSE':'hip',
@@ -93,7 +94,7 @@ export function TownHouse({site,detailed=true}:{site:typeof PUBLIC_WORLD_BUILDIN
  return <group position={[site.x,0,site.z]}>
   {detailed?<group>
   <GroundShadow width={w+2} depth={d+2}/>
-  <RoundedBox ref={mount} args={[w,4.12,d]} position-y={2.06} radius={.06} smoothness={1} receiveShadow><meshStandardMaterial color={site.color}/></RoundedBox>
+  <RoundedBox ref={mount} args={[w,4.12,d]} position-y={2.06} radius={.06} smoothness={1} receiveShadow><meshStandardMaterial color={site.color} map={paintedTexture('plaster')} roughness={1}/></RoundedBox>
   <mesh position-y={.23}><boxGeometry args={[w+.06,.46,d+.06]}/><meshStandardMaterial color={P.pot}/></mesh>
   <TownRoof width={w} depth={d} base={4.12} kind={kind} color={site.roof}/>
   <RoofDetail width={w} depth={d} kind={kind} color={site.roof}/>
@@ -120,7 +121,7 @@ export function MarketFront({x,name,base,roof,detailed=true}:{x:number;name:stri
  return <group position={[x,0,-9]}>
   {detailed?<group>
   <GroundShadow width={11} depth={7}/>
-  <RoundedBox ref={mount} args={[9,4.6,3.8]} position-y={2.3} radius={.06} smoothness={1}><meshStandardMaterial color={base}/></RoundedBox>
+  <RoundedBox ref={mount} args={[9,4.6,3.8]} position-y={2.3} radius={.06} smoothness={1} receiveShadow><meshStandardMaterial color={base} map={paintedTexture('plaster')} roughness={1}/></RoundedBox>
   <mesh position-y={.23}><boxGeometry args={[9.06,.46,3.86]}/><meshStandardMaterial color={P.pot}/></mesh>
   {flowerShop?<TownRoof width={9} depth={3.8} base={4.6} rise={1.8} kind='hip' color={roof}/>:<GableRoof width={9} depth={3.8} base={4.6} rise={1.1} color={roof}/>}
   {flowerShop&&<group position={[0,6.62,0]}>
@@ -131,10 +132,8 @@ export function MarketFront({x,name,base,roof,detailed=true}:{x:number;name:stri
   <ArchedDoor z={1.96}/>
   {[-2.75,2.75].map(dx=><ShutterWindow key={dx} x={dx} y={2.18} z={1.97} width={1.85} height={2.18}/>)}
   {[-4.34,4.34].map(dx=><mesh key={dx} position={[dx,2.3,1.98]}><boxGeometry args={[.2,4.6,.12]}/><meshStandardMaterial color={P.trim}/></mesh>)}
-  {Array.from({length:10},(_,i)=><group key={i}>
-   <mesh position={[-4.28+i*.95,3.45,2.4]} rotation-x={.19}><boxGeometry args={[.95,.08,2.6]}/><meshStandardMaterial color={i%2?roof:P.cream}/></mesh>
-   <mesh position={[-4.28+i*.95,3.03,3.67]}><boxGeometry args={[.95,.32,.08]}/><meshStandardMaterial color={i%2?roof:P.cream}/></mesh>
-  </group>)}
+  <ShopCanopy color={roof}/>
+  <ShopJoinery/>
   <RoundedBox args={[5,.48,.15]} position={[0,4.08,2.08]} radius={.04} smoothness={1}><meshStandardMaterial color={P.trim}/></RoundedBox>
   </group>:<TownShell x={0} z={0} width={9} depth={3.8} height={4.6} rise={flowerShop?1.8:1.1} wall={base} roof={roof} kind={flowerShop?'hip':undefined}/>}
   <TownSign visible={detailed} occlude={[body]} position={[0,4.08,2.2]} distanceFactor={10} text={name}/>

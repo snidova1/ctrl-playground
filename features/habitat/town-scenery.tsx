@@ -5,12 +5,12 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useFrame} from '@react-three/fiber';
 import TownSign from './town-sign';
 import {TownGardens} from './town-gardens';
-import {paintedTexture,TownFootShadow} from './town-surfaces';
+import {paintedTexture,TownFootShadow,TreeContactShadows} from './town-surfaces';
 import {Group,Object3D} from 'three';
 import {TownAssetInstances} from './town-assets';
 import {TownHouse,MarketFront} from './town-architecture';
 import {TownDailyProps} from './town-daily-props';
-import {TownPaving} from './town-paving';
+import {TownPaving,FountainInlay} from './town-paving';
 import {TownFountain,CanalBoat} from './town-waterfront';
 import {TOWN_HILLS} from './town-terrain';
 import {townSurfaceHeight as townGroundHeight} from '@/domain/town-walk-surface';
@@ -56,7 +56,7 @@ const leafSeeds=[...Array.from({length:72},(_,i)=>{
 }),...[[-11,-6],[11,-6],[-12,8],[12,8],[-4,-7],[4,-7]].map(([x,z])=>({x,z,h:4.1}))];
 function GreenBorder({quality}:{quality:'low'|'high'}){
  const selected=useMemo(()=>(quality==='low'?leafSeeds.filter((_,i)=>i>=72||i%2===0):leafSeeds).map((p,i)=>({x:p.x,z:p.z,y:townGroundHeight(p.x,p.z),size:p.h,yaw:i*.73})),[quality]);
- return <group>{TOWN_PLANTING_MODELS.center.map((id,index,models)=><TownAssetInstances key={id} id={id} placements={selected.filter((_,i)=>i%models.length===index)} castShadow={quality==='high'}/>)}</group>;
+ return <group><TreeContactShadows trees={selected}/>{TOWN_PLANTING_MODELS.center.map((id,index,models)=><TownAssetInstances key={id} id={id} placements={selected.filter((_,i)=>i%models.length===index)} castShadow={quality==='high'}/>)}</group>;
 }
 function RaisedGround(){
  const quays=useMemo(()=>{
@@ -141,7 +141,7 @@ export default function TownScenery({quality,onDirectory,pose,states}:{quality:'
   <GreenBorder quality={quality}/>
   {PUBLIC_WORLD_BRIDGES.map(bridge=><Bridge key={bridge.x} x={bridge.x}/>)}
   {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site} detailed={centerDetail}/>)}
-  {centerDetail&&<><TownFountain/>
+  {centerDetail&&<><FountainInlay/><TownFountain/>
   <CanalBoat x={-12} color='#b78c70'/><CanalBoat x={12} color='#82a495'/></>}
   <MarketFront x={-8} name='WILLOW CAFÉ' base={P.cream} roof={P.sage} detailed={centerDetail}/>
   <MarketFront x={8} name='FLOWER MARKET' base={P.wall} roof={P.terracotta} detailed={centerDetail}/>
