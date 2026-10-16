@@ -4,9 +4,10 @@ import {useGLTF} from '@react-three/drei';
 import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type {Material,Mesh,MeshStandardMaterial} from 'three';
 import {DEFAULT_HOUSE_SETTINGS,type HabitHouseSettings} from './habit-home';
+import {EXTERIOR_HOME} from './exterior-layout';
 
 const BASE='/assets/fantasy-town/';
-const HOUSE_POSITION:[number,number,number]=[0,0,-3];
+const HOUSE_POSITION=EXTERIOR_HOME.position;
 
 type Tint={color:string;preserveMap?:boolean;skipMeshes?:readonly string[]};
 
@@ -23,18 +24,20 @@ function tintMaterial(material:Material|Material[],tint:Tint){
 /** Kenney Fantasy Town Kit 2.0, CC0. Source and license ship with the assets. */
 function Model({name,position=[0,0,0],rotation=0,scale=1,tint}:{name:string;position?:[number,number,number];rotation?:number;scale?:number|[number,number,number];tint?:Tint}){
  const {scene}=useGLTF(`${BASE}${name}.glb`);
- const instance=useMemo(()=>{const c=clone(scene);c.traverse(o=>{if((o as Mesh).isMesh){const mesh=o as Mesh;mesh.castShadow=true;mesh.receiveShadow=true;if(tint&&!tint.skipMeshes?.includes(mesh.name))mesh.material=tintMaterial(mesh.material as Material|Material[],tint);}});return c;},[scene,tint?.color,tint?.preserveMap,tint?.skipMeshes]);
+ const skipKey=tint?.skipMeshes?.join('|');
+ const {instance,owned}=useMemo(()=>{const c=clone(scene),materials:Material[]=[];c.traverse(o=>{if((o as Mesh).isMesh){const mesh=o as Mesh;mesh.castShadow=true;mesh.receiveShadow=true;if(tint&&!tint.skipMeshes?.includes(mesh.name)){mesh.material=tintMaterial(mesh.material as Material|Material[],tint);materials.push(...(Array.isArray(mesh.material)?mesh.material:[mesh.material]));}}});return {instance:c,owned:materials};},[scene,tint?.color,tint?.preserveMap,skipKey]);
+ useEffect(()=>()=>owned.forEach(material=>material.dispose()),[owned]);
  return <group position={position} rotation-y={rotation} scale={scale}><primitive object={instance}/></group>;
 }
 
-function House({settings}:{settings:HabitHouseSettings}){
+function House({settings,night=false}:{settings:HabitHouseSettings;night?:boolean}){
  const wall=settings.timber?'wall-wood':'wall';
  const window=settings.timber?'wall-wood-window-shutters':'wall-window-shutters';
  const wallTint:Tint={color:settings.wallColor,preserveMap:false};
  const detailWallTint:Tint={color:settings.wallColor,preserveMap:true};
  const doorWallTint:Tint={color:settings.wallColor,preserveMap:false,skipMeshes:['door']};
  const roofTint:Tint={color:settings.roofColor,preserveMap:false};
- return <group position={HOUSE_POSITION} rotation-y={0}>
+ return <group position={HOUSE_POSITION} scale={EXTERIOR_HOME.scale} rotation-y={0} userData={{kind:'cottage',scale:EXTERIOR_HOME.scale}}>
   <mesh position-y={.08} receiveShadow><boxGeometry args={[6.65,.16,4.55]}/><meshStandardMaterial color='#c3b79c'/></mesh>
   <group scale={2.2}>
    {[-1,0,1].map(i=><Model key={`front-${i}`} name={i===0?'wall-door':window} position={[i,0,.5]} rotation={-Math.PI/2} tint={i===0?doorWallTint:detailWallTint}/>)}
@@ -45,22 +48,20 @@ function House({settings}:{settings:HabitHouseSettings}){
   </group>
   <Model name='stairs-wood' position={[0,0,2.25]} rotation={Math.PI/2} scale={1.2}/>
   <Model name='lantern' position={[-1.1,.1,2.45]} scale={2}/>
+  <pointLight position={[-1.1,2.8,2.6]} intensity={night?7:1.2} distance={11} decay={2} color='#ffcb83'/>
   {[-2.5,2.5].map((px,i)=><group key={px} position={[px,0,2.65]}><mesh position-y={.2} castShadow><cylinderGeometry args={[.25,.19,.4,9]}/><meshStandardMaterial color='#bd805f'/></mesh><mesh position-y={.55}><sphereGeometry args={[.35,9,6]}/><meshStandardMaterial color={i?'#9fc776':'#7da673'}/></mesh></group>)}
  </group>;
 }
 
-function Path(){return <mesh rotation={[-Math.PI/2,0,0]} position={[0,.035,5.1]} receiveShadow>
- <planeGeometry args={[1.65,11.8]}/><meshStandardMaterial color='#e6d4ad' roughness={1}/>
-</mesh>;}
 
 function marker(settings:HabitHouseSettings){return `${settings.timber?'timber':'plain'}|${settings.tall?'tall':'gable'}|${settings.roofColor}|${settings.wallColor}`;}
 function Ready({settings}:{settings:HabitHouseSettings}){const value=useMemo(()=>marker(settings),[settings]);useEffect(()=>{document.documentElement.dataset.ctrlVillageReady='true';document.documentElement.dataset.ctrlHouseCount='1';document.documentElement.dataset.ctrlHouseSettings=value;return()=>{delete document.documentElement.dataset.ctrlVillageReady;delete document.documentElement.dataset.ctrlHouseCount;delete document.documentElement.dataset.ctrlHouseSettings;};},[value]);return null;}
 
-export default function CozyVillage({houseSettings}: {houseSettings?: HabitHouseSettings}){
+export default function CozyVillage({houseSettings,night=false}: {houseSettings?: HabitHouseSettings;night?:boolean}){
  const settings={...DEFAULT_HOUSE_SETTINGS,...houseSettings};
  return <Suspense fallback={null}>
   <Ready settings={settings}/>
-  <House settings={settings}/>
-  <Path/>
+  <House settings={settings} night={night}/>
+
  </Suspense>;
 }

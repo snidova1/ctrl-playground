@@ -66,7 +66,7 @@ describe('character motion and state ownership',()=>{
   });
   it('runs all states, prioritizes seats/jumps and bounds work after tab suspension',async()=>{
     const vrm=await vrmRig('1'),states:CharacterState[]=['Idle','Walk','Run','JumpStart','JumpLoop','Land','SitDown','Seated','Interact','Victory'];
-    const runtime=new HumanoidAnimator({vrm,clips:states.map(n=>new AnimationClip(n,.3,[])),scale:1,floor:0});
+    const runtime=new HumanoidAnimator({vrm,clips:states.map(n=>new AnimationClip(n,.3,[])),scale:1,floor:0,toonMaterialCount:0});
     const motion=createCharacterMotion(),input={moving:false,sitting:false,celebrate:false,interactedAt:-Infinity,motion};
     runtime.update(1/60,input,10000);expect(runtime.state).toBe('Idle');
     input.moving=true;runtime.update(1/60,input,10000);expect(runtime.state).toBe('Walk');motion.running=true;runtime.update(1/60,input,10000);expect(runtime.state).toBe('Run');

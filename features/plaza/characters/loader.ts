@@ -3,6 +3,7 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {VRMLoaderPlugin, VRMUtils, MToonMaterial, type VRM} from '@pixiv/three-vrm';
 import {characterBudgets, type CharacterDefinition, type CharacterQuality} from './catalog';
 import {retargetHumanoid} from './retarget';
+import {adaptVrmToLilToon} from './liltoon-adapter';
 
 /** Reject external references before GLTFLoader can perform secondary requests. */
 export function validateVrmBuffer(data: ArrayBuffer) {
@@ -26,18 +27,30 @@ async function binary(url:string,signal?:AbortSignal) {
   return buffer;
 }
 export function disposeVrm(vrm:VRM) {
+  const release=vrm.scene.userData.releaseLilToonBindings;if(typeof release==='function')release();
   const textures=new Set<Texture>();
   vrm.scene.traverse(o=>{if(o instanceof SkinnedMesh && o.skeleton.boneTexture)textures.add(o.skeleton.boneTexture);});
   for(const t of textures)t.dispose();
   VRMUtils.deepDispose(vrm.scene);
 }
-export async function loadCharacter(definition:CharacterDefinition,quality:CharacterQuality,signal?:AbortSignal) {
+export async function loadCharacter(definition:CharacterDefinition,quality:CharacterQuality,signal?:AbortSignal,materialStyle:'mtoon'|'liltoon'='mtoon') {
   const [data,motionData]=await Promise.all([binary(definition.assets[quality],signal),binary('/plaza/characters/humanoid-motions.glb',signal)]);
   validateVrmBuffer(data);signal?.throwIfAborted();
-  const loader=new GLTFLoader();loader.register(parser=>new VRMLoaderPlugin(parser));
+  const lil=materialStyle==='liltoon'?await import('@mochiya/three-liltoon/vrm'):null;
+  signal?.throwIfAborted();
+  const loader=new GLTFLoader();loader.register(parser=>{
+    const plugin=new VRMLoaderPlugin(parser);
+    if(!lil)return plugin;
+    // VRM 0 compatibility rewrites material definitions in beforeRoot.
+    // Adapt AFTER that migration, but BEFORE any mesh/material dependencies load.
+    const beforeRoot=plugin.beforeRoot.bind(plugin);
+    plugin.beforeRoot=async()=>{await beforeRoot();adaptVrmToLilToon(parser.json,quality);};
+    return lil.enableLilToonVRM(plugin);
+  });
   const result=await loader.parseAsync(data,'');
   const vrm:VRM|undefined=result.userData.vrm;
   if (!vrm) throw new Error('Character has no valid humanoid.');
+  if(lil)vrm.scene.userData.releaseLilToonBindings=()=>lil.uninstallLilToonExpressionBindings(vrm);
   try {
     signal?.throwIfAborted();
     VRMUtils.removeUnnecessaryVertices(vrm.scene);
@@ -80,7 +93,8 @@ export async function loadCharacter(definition:CharacterDefinition,quality:Chara
     signal?.throwIfAborted();
     const clips=retargetHumanoid(motion,vrm);
     const scale=definition.height/height;
-    return {vrm,clips,scale,floor:-bounds.min.y*scale};
+    const toonMaterialCount=[...prepared].filter(m=>(m as Material&{isLilToonMaterial?:boolean}).isLilToonMaterial).length;
+    return {vrm,clips,scale,floor:-bounds.min.y*scale,toonMaterialCount};
   } catch(error) {disposeVrm(vrm);throw error;}
 }
 export type LoadedCharacter=Awaited<ReturnType<typeof loadCharacter>>;

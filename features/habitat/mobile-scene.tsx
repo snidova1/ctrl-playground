@@ -1,19 +1,24 @@
 'use client';
 
-import {Suspense,useEffect,useMemo,useRef,useState,type MutableRefObject} from 'react';
+import {Suspense,useEffect,useLayoutEffect,useMemo,useRef,useState,type MutableRefObject} from 'react';
 import {Canvas,useFrame,useThree,type ThreeEvent} from '@react-three/fiber';
 import {Html,OrbitControls,useGLTF,useProgress} from '@react-three/drei';
-import {ACESFilmicToneMapping,Color,Material,Mesh,Plane,Vector3} from 'three';
+import {NeutralToneMapping,Color,Material,Mesh,Plane,Vector3} from 'three';
 import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import CozyEnvironment from './cozy-environment';
 import CozyRoom from './cozy-room';
 import CozyFurniture, {supportsCozyFurniture} from './cozy-furniture';
+import StylizedAtmosphere from './stylized-atmosphere';
+import type {AtmospherePreset} from './atmosphere-presets';
 import type {HabitHouseSettings} from './habit-home';
 import type {WorldObject} from './types';
 import {getBuildAsset} from '@/features/plaza/build-assets';
 import VrmAvatar from '@/features/plaza/characters/vrm-avatar';
 import {createCharacterMotion,defaultAppearance,previewCharacter} from '@/features/plaza/characters/catalog';
 import type {Pose} from '@/features/plaza/types';
+import {enableLilToon} from '@mochiya/three-liltoon';
+import {EXTERIOR_HOME,intersectsExteriorHouse} from './exterior-layout';
+import Icon from './habit-icons';
 
 const ROOM = {minX: -5, maxX: 5, minZ: -4, maxZ: 4} as const;
 const FLOOR_PLANE = new Plane(new Vector3(0, 1, 0), 0);
@@ -37,6 +42,7 @@ interface Props {
   onMove: (id: string, x: number, z: number) => void;
   onDoor: () => void;
   quality?: 'low' | 'high';
+  atmosphere?: AtmospherePreset;
 }
 
 type DragState = {id: string; offsetX: number; offsetZ: number};
@@ -112,7 +118,7 @@ function SelectRing({active, invalid}: {active: boolean; invalid?: boolean}) {
   if (!active) return null;
   return <mesh rotation-x={-Math.PI / 2} position-y={.035}>
     <ringGeometry args={[.64, .72, 40]}/>
-    <meshBasicMaterial color={invalid ? '#dc4f45' : '#f26b39'} transparent opacity={.92}/>
+    <meshBasicMaterial color={invalid ? '#dc4f45' : '#789b82'} transparent opacity={.88}/>
   </mesh>;
 }
 
@@ -175,22 +181,21 @@ function FurnitureObject({
 }
 
 function DoorButton({inside, htmlPortal, onDoor}: {inside: boolean; htmlPortal: MutableRefObject<HTMLDivElement | null>; onDoor: () => void}) {
-  const position: [number, number, number] = inside ? [0, 1.25, 3.72] : [0, 1, -.7];
+  const position: [number, number, number] = inside ? [0, 1.25, 3.72] : EXTERIOR_HOME.door;
   return <Html portal={htmlPortal.current ? {current: htmlPortal.current} : undefined} position={position} center zIndexRange={[80, 0]} style={{pointerEvents: 'auto'}}>
     <button
       type='button'
-      aria-label={inside ? 'Keluar rumah' : 'Masuk rumah'}
+      aria-label={inside ? 'Exit home' : 'Enter home'}
+      title={inside ? 'Back to the garden' : 'Enter your cottage'}
       onClick={event => {event.stopPropagation(); onDoor();}}
       style={{
-        border: '0', borderRadius: 999, padding: '.55rem .78rem', minWidth: '6rem', minHeight: 44, fontSize: 12, whiteSpace: 'nowrap',
-        background: inside ? '#7b4d34' : '#f2d59b', color: inside ? '#fff7e8' : '#3e2f1f',
-        boxShadow: '0 10px 24px rgba(54,35,20,.28)', fontWeight: 800, touchAction: 'manipulation',
+        border:0,borderRadius:14,padding:0,minWidth:58,minHeight:46,fontSize:10,whiteSpace:'nowrap',background:'transparent',color:'#354c3b',boxShadow:'none',fontWeight:600,touchAction:'manipulation',
       }}
-    >{inside ? 'Keluar rumah' : 'Masuk rumah'}</button>
+    ><span style={{display:'inline-flex',alignItems:'center',gap:5,height:27,padding:'0 10px',borderRadius:20,background:'#fffbeded',border:'1px solid #fffef1e0',boxShadow:'0 3px 12px #293e3026',backdropFilter:'blur(8px)'}}><Icon name={inside?'arrow':'home'} size={12}/>{inside?'Exit':'Enter'}</span></button>
   </Html>;
 }
 
-function MobileAvatar({quality, htmlPortal}: {quality: 'low' | 'high'; htmlPortal: MutableRefObject<HTMLDivElement | null>}) {
+function MobileAvatar({quality, htmlPortal,onReady}: {quality: 'low' | 'high'; htmlPortal: MutableRefObject<HTMLDivElement | null>;onReady:(ready:boolean)=>void}) {
   const pose = useRef<Pose>({x: 0, z: 2.25, angle: Math.PI, moving: false});
   const target = useRef({x: 0, z: 2.25});
   const motion = useRef(createCharacterMotion());
@@ -217,6 +222,7 @@ function MobileAvatar({quality, htmlPortal}: {quality: 'low' | 'high'; htmlPorta
     } else p.moving = false;
   });
   return <VrmAvatar
+    materialStyle='liltoon' showName={false} onReady={onReady}
     htmlPortal={htmlPortal}
     definition={previewCharacter}
     appearance={defaultAppearance}
@@ -239,7 +245,7 @@ function FloorTouch({placing, onPlace, onClear, onWalk, inside}: {inside:boolean
       if (e.delta > 7) return;
       const x = clamp(e.point.x, inside ? ROOM.minX + .12 : -13, inside ? ROOM.maxX - .12 : 13);
       const z = clamp(e.point.z, inside ? ROOM.minZ + .12 : -7, inside ? ROOM.maxZ - .12 : 11);
-      if (!inside && Math.abs(x)<3.7 && z>-5.6 && z<-.4) return;
+      if (!inside && intersectsExteriorHouse(x,z)) return;
       if (placing) onPlace(x, z);
       else {onClear(); onWalk(x, z);}
     }}
@@ -253,16 +259,19 @@ function CameraAndProjection({inside, orbitEnabled}: {inside: boolean; orbitEnab
   const {camera, gl, size} = useThree();
   const controls = useRef<{target: Vector3; update: () => void} | null>(null);
   useEffect(() => {
+    const reset=()=>{
     const portrait = size.width/size.height < .85;
-    const position = inside ? (portrait ? [9, 12, 21] : [8, 8, 13]) : (portrait ? [7, 13, 24] : [10, 10, 16]);
+    const position = inside ? (portrait ? [9, 12, 21] : [8, 8, 13]) : (portrait ? [9, 12, 32] : [11.2, 8.3, 19.5]);
     camera.position.set(position[0], position[1], position[2]);
     camera.near = .08;
     camera.far = 100;
-    camera.lookAt(0, inside ? .8 : 0, inside ? 0 : -1);
+    camera.lookAt(0, inside ? .8 : 1.5, inside ? 0 : -2);
     camera.updateProjectionMatrix();
     const maybe = controls.current as {target?: Vector3; update?: () => void} | null;
-    maybe?.target?.set(0, inside ? .8 : 0, inside ? 0 : -1);
+    maybe?.target?.set(0, inside ? .8 : 1.5, inside ? 0 : -2);
     maybe?.update?.();
+    };
+    reset();window.addEventListener('habit-reset-camera',reset);return()=>window.removeEventListener('habit-reset-camera',reset);
   }, [inside, camera, size.width, size.height]);
   useEffect(() => {
     const project = (x: number, y: number, z: number) => {
@@ -286,7 +295,7 @@ function CameraAndProjection({inside, orbitEnabled}: {inside: boolean; orbitEnab
     enableDamping
     dampingFactor={.08}
     minDistance={inside ? 7.5 : 9}
-    maxDistance={inside ? 32 : 38}
+    maxDistance={inside ? 32 : 64}
     minPolarAngle={inside ? Math.PI / 5 : Math.PI / 6}
     maxPolarAngle={inside ? Math.PI / 2.28 : Math.PI / 2.18}
   />;
@@ -303,23 +312,27 @@ function SceneReadySignal({signature, onReady}: {signature: string; onReady: (si
   return null;
 }
 
-function SceneContents(props: Props & {htmlPortal: MutableRefObject<HTMLDivElement | null>; orbitEnabled: boolean; setDrag: (state: DragState | null) => void; drag: DragState | null}) {
+function ToonRendererBridge(){const gl=useThree(state=>state.gl);useLayoutEffect(()=>enableLilToon(gl),[gl]);return null;}
+
+function SceneContents(props: Props & {onAvatarReady:(ready:boolean)=>void;htmlPortal: MutableRefObject<HTMLDivElement | null>; orbitEnabled: boolean; setDrag: (state: DragState | null) => void; drag: DragState | null}) {
   const quality = props.quality ?? 'high';
   const walkAvatar = (x: number, z: number) => window.dispatchEvent(new CustomEvent('habit-mobile-avatar-target', {detail: {x, z}}));
   return <>
+    <ToonRendererBridge/>
     <color attach='background' args={[props.inside ? '#e7e2d5' : '#c6e3e4']}/>
-    <ambientLight intensity={props.inside ? .65 : .58}/>
-    <hemisphereLight args={['#fff3de', props.inside ? '#b2a28e' : '#79926b', props.inside ? 1.1 : 1.3]}/>
-    <directionalLight position={[-3, 9, 5]} intensity={props.inside ? 1.6 : 2.4} color='#fff1da' castShadow shadow-mapSize={[2048,2048]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-far={35} shadow-radius={4} shadow-bias={-.0003} shadow-normalBias={.025}/>
-    <directionalLight position={[5, 4, -2]} intensity={.3} color='#c9dfe9'/>
+    {props.inside ? <>
+      <ambientLight intensity={.65}/>
+      <hemisphereLight args={['#fff3de', '#b2a28e', 1.1]}/>
+      <directionalLight position={[-3,9,5]} intensity={1.6} color='#fff1da' castShadow shadow-mapSize={[2048,2048]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-far={35} shadow-bias={-.0003} shadow-normalBias={.025}/>
+      <directionalLight position={[5,4,-2]} intensity={.3} color='#c9dfe9'/>
+    </> : <StylizedAtmosphere preset={props.atmosphere ?? 'afternoon'} quality={quality}/>}
     <CameraAndProjection inside={props.inside} orbitEnabled={props.orbitEnabled}/>
     {props.inside ? <CozyRoom wallColor={props.houseSettings.wallColor || '#eadfc9'}/> : <>
-      <fog attach='fog' args={['#d6e6dc', 32, 76]}/>
-      <CozyEnvironment editing={false} quality={quality} houseSettings={props.houseSettings}/>
+      <CozyEnvironment editing={false} quality={quality} houseSettings={props.houseSettings} atmosphere={props.atmosphere}/>
     </>}
     <FloorTouch inside={props.inside} placing={props.placing} onPlace={props.onPlace} onClear={() => props.onSelect(null)} onWalk={walkAvatar}/>
     {props.objects.map(object => <FurnitureObject key={object.id} object={object} inside={props.inside} selected={props.selected === object.id} tint={props.colors[object.id]} drag={props.drag} setDrag={props.setDrag} onSelect={props.onSelect} onMove={props.onMove}/>)}
-    <MobileAvatar key={props.inside ? 'inside' : 'yard'} quality={quality} htmlPortal={props.htmlPortal}/>
+    <MobileAvatar key={props.inside ? 'inside' : 'yard'} quality={quality} htmlPortal={props.htmlPortal} onReady={props.onAvatarReady}/>
     <DoorButton inside={props.inside} htmlPortal={props.htmlPortal} onDoor={props.onDoor}/>
   </>;
 }
@@ -332,12 +345,15 @@ function signatureFor(props: Props) {
 export default function MobileHabitScene(props: Props) {
   const htmlPortal = useRef<HTMLDivElement | null>(null);
   const [readySignature, setReadySignature] = useState('');
+  const [avatarReady,setAvatarReady]=useState(false);
   const [drag, setDrag] = useState<DragState | null>(null);
   const signature = signatureFor(props);
-  const ready = readySignature === signature;
+  const ready = readySignature === signature&&avatarReady;
   const quality = props.quality ?? 'high';
   return <div
     data-habit-view={props.inside ? 'inside' : 'yard'}
+    data-atmosphere={props.atmosphere ?? 'afternoon'}
+    data-visual-style='stylized-references'
     data-scene-ready={ready ? 'true' : undefined}
     style={{position: 'relative', width: '100%', height: '100%', minHeight: 360, overflow: 'hidden', touchAction: 'none'}}
   >
@@ -345,15 +361,16 @@ export default function MobileHabitScene(props: Props) {
       shadows={quality === 'high'}
       dpr={quality === 'high' ? [1, 1.6] : 1}
       camera={{position: props.inside ? [9, 11, 13] : [10, 12, 16], fov: props.inside ? 46 : 48, near: .08, far: 100}}
-      gl={{toneMapping: ACESFilmicToneMapping, antialias: quality === 'high'}}
+      gl={{toneMapping: NeutralToneMapping, antialias: quality === 'high'}}
       style={{width: '100%', height: '100%', touchAction: 'none'}}
       onCreated={({gl}) => {gl.domElement.style.touchAction = 'none';}}
     >
       <Suspense fallback={null}>
-        <SceneContents {...props} quality={quality} htmlPortal={htmlPortal} orbitEnabled={!drag} drag={drag} setDrag={setDrag}/>
+        <SceneContents {...props} onAvatarReady={setAvatarReady} quality={quality} htmlPortal={htmlPortal} orbitEnabled={!drag} drag={drag} setDrag={setDrag}/>
         <SceneReadySignal signature={signature} onReady={setReadySignature}/>
       </Suspense>
     </Canvas>
     <div ref={htmlPortal} style={{position: 'absolute', inset: 0, pointerEvents: 'none'}}/>
+    {!ready&&<div className='habit-loading habit-scene-loader' role='status'><span className='habit-spinner'/><span>Preparing your home</span></div>}
   </div>;
 }
