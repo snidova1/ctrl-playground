@@ -141,6 +141,46 @@ test('signed player enters a rendered walkable multiplayer neighborhood, not a b
  expect(errors).toEqual([]);
 });
 
+test('native graphics and page return preserve signs through Common Ground',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+ await enterTown(page,'Sign Lifecycle');
+ const frame=async(name:string)=>{
+  let metric={colors:0,nonSky:0,nearBlack:1};
+  // HUD readiness precedes asynchronous model/shader readiness after a world
+  // switch. Wait on genuine pixels, retaining both thresholds and the 210s case.
+  await expect.poll(async()=>{
+   const png=await page.locator('.hb-stage canvas').screenshot({path:test.info().outputPath(name),scale:'css',timeout:45000});
+   metric=await diversity(page,png);
+   return metric.colors>24&&metric.nearBlack<.08;
+  },{timeout:45000,intervals:[300]}).toBe(true);
+  expect(metric.colors,'Navigation must retain an actual rendered world').toBeGreaterThan(24);
+  expect(metric.nearBlack,'Navigation must not leave a black WebGL placeholder').toBeLessThan(.08);
+ };
+ // Exercise the actual perspective sign, not the duplicate HUD shortcut.
+ await press(page,page.locator('.hb-directory'));
+ await expect(page.getByRole('heading',{name:'Visit a habitat.',exact:true})).toBeVisible();
+ await press(page,page.locator('.hb-panel').getByRole('button',{name:'Close',exact:true}));
+ for(const quality of ['high','low']){
+  await press(page,page.getByRole('button',{name:'Settings',exact:true}));
+  await page.locator('.hb-panel').getByRole('combobox').selectOption(quality);
+  await press(page,page.locator('.hb-panel').getByRole('button',{name:'Close',exact:true}));
+  await frame(`sign-graphics-${quality}.png`);
+ }
+ await page.goto('/account');await page.goBack();
+ await expect(page.locator('.pl-name').filter({hasText:/^You$/})).toBeVisible({timeout:60000});
+ await frame('sign-page-return.png');
+ await press(page,page.locator('.hb-top').getByRole('button',{name:'Common Ground',exact:true}));
+ await expect(page.getByRole('button',{name:'Random character ↻',exact:true})).toBeVisible();
+ await frame('sign-common-ground.png');expect(errors).toEqual([]);
+ await expect(page.locator('.hb-failure')).toHaveCount(0);
+ await press(page,page.locator('.hb-top').getByRole('button',{name:'Public World',exact:true}));
+ await expect(page.getByRole('heading',{name:'Willow Square',exact:true})).toBeVisible({timeout:45000});
+ await expect(page.locator('.hb-directory')).toBeVisible();
+ await frame('sign-public-world-return.png');expect(errors).toEqual([]);
+ const state=await(await page.request.get('/api/habitat/state')).json() as HabitatState;
+ expect(state.world?.id).toBe(PUBLIC_WORLD_ID);
+});
+
 test('a signed player can travel across genuinely rendered remote districts and complete shared work',async({page})=>{
  test.setTimeout(210000);
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));

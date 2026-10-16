@@ -1,5 +1,15 @@
 # CTRL rebuild functional checkpoint — PR #30
 
+## 2026-10-16 — one owner for perspective sign DOM
+
+Checkpoint `7eadf19383674fcf8caa5992e3e601c8aa5fbe25` finished **7/7 successful GitHub workflows**. Public World passed **10/10 (3.3m)**, original town-life **7/7 (3.9m)**, daily table **1/1 (1.5m)**, waterfront civic **1/1 (2.4m)**, plus the configured Worker entry, Builder and all unit/types/lint/assets/avatar/audio/Visible Habitat gates. This closes the earlier reload timeout without increasing its 240s budget.
+
+Additional native QA uncovered a separate transformed-label DOM cleanup race after high/low graphics, account/back navigation and return to Common Ground. Diagnostic-only native `removeChild` forwarding reproduced a detached transformed sign child under an already-empty parent. Direct Common Ground navigation alone did not reproduce it. No diagnostic patch or error suppression ships.
+
+Plain house/market/directory signs now have a single imperative DOM owner using the already-installed Three.js CSS3DRenderer, rather than independent React DOM roots embedded in the Three reconciler. Perspective scaling, existing CSS, native directory button, narrow per-building occlusion, real anchors and LOD visibility remain. No new asset downloads, GLB bytes, mesh geometry, collision, gameplay authority or character catalog changes. Player/speech labels retain their existing renderer.
+
+Two added original-input browser cases (desktop/touch) exercise the actual 3D directory button, high/low graphics, real page return, Common Ground, then signed Public World rejoin, actual nonblank pixels and empty page-error assertions. Asynchronous model/shader readiness is observed through real canvas pixels using the same color/black thresholds; no fake frames, clocks, forced input or increased 210s case budget. All original ten Public World cases remain. Latest strict types, scoped lint, Next and portable Worker production builds passed. Added native sign/graphics/page-return/Common Ground/Public World regression **2/2 passed (2.2m)**: desktop 1.2m, touch 54.6s, including the real 3D directory button and final signed rejoin. Complete twelve-case Public World regression and exact new-head GitHub CI remain pending until independently recorded.
+
 ## 2026-10-16 — real cooldown readiness after bounded rendering
 
 The GPU-budget production render gates pass **4/4 (1.2m)**: desktop/mobile center plus all six remote districts. The faster independent mobile journey exposed a test assumption: it reached the shared garden within the desktop neighbor's actual 45-second cooldown, correctly receiving `ACTIVITY_RESTING`. The existing visual test now waits for its original state-driven action control to become enabled before making the original signed request. No station-state reset, retry, fake clock, cooldown bypass, assertion removal or increased 210-second total. Scoped lint and strict TypeScript passed.

@@ -1,6 +1,7 @@
 'use client';
 import {useMemo,useRef,useCallback} from 'react';
-import {Html,RoundedBox} from '@react-three/drei';
+import {RoundedBox} from '@react-three/drei';
+import TownSign from './town-sign';
 import {BoxGeometry,BufferGeometry,Matrix4,Shape,Object3D} from 'three';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {useEffect} from 'react';
@@ -83,8 +84,8 @@ function RoofDetail({width,depth,kind,color}:{width:number;depth:number;kind:Tow
   <GableRoof width={1.65} depth={1.2} base={.7} rise={.55} color={color}/>
  </group>;
 }
-// Keep the Html root alive across LOD swaps: disposing and recreating its
-// concurrent DOM root while another renderer commits can delete its new children.
+// Keep native CSS sign anchors stable across LOD swaps; only their visibility
+// changes. Their DOM ownership is separate from the React DOM reconciler.
 export function TownHouse({site,detailed=true}:{site:typeof PUBLIC_WORLD_BUILDINGS[number];detailed?:boolean}){
  const empty=useMemo(()=>new Object3D(),[]),body=useRef(empty);
  const mount=useCallback((object:Object3D|null)=>assignOcclusionTarget(body,object,empty),[empty]);
@@ -109,7 +110,7 @@ export function TownHouse({site,detailed=true}:{site:typeof PUBLIC_WORLD_BUILDIN
   {[-w/2+.12,w/2-.12].map(x=><mesh key={x} position={[x,2.06,d/2+.06]}><boxGeometry args={[.2,4.12,.14]}/><meshStandardMaterial color={P.trim}/></mesh>)}
   <mesh position={[0,3.74,d/2+.12]}><boxGeometry args={[Math.min(w-1,4.9),.42,.16]}/><meshStandardMaterial color={P.trim}/></mesh>
   </group>:<TownShell x={0} z={0} width={w} depth={d} rise={1.6} wall={site.color} roof={site.roof} kind={kind}/>}
-  <Html style={{display:detailed?'block':'none'}} transform center occlude={[body]} position={[0,3.74,d/2+.24]} distanceFactor={8} zIndexRange={[5,0]}><span className='hb-town-label'>{site.name}</span></Html>
+  <TownSign visible={detailed} occlude={[body]} position={[0,3.74,d/2+.24]} distanceFactor={8} text={site.name}/>
  </group>;
 }
 export function MarketFront({x,name,base,roof,detailed=true}:{x:number;name:string;base:string;roof:string;detailed?:boolean}){
@@ -136,6 +137,6 @@ export function MarketFront({x,name,base,roof,detailed=true}:{x:number;name:stri
   </group>)}
   <RoundedBox args={[5,.48,.15]} position={[0,4.08,2.08]} radius={.04} smoothness={1}><meshStandardMaterial color={P.trim}/></RoundedBox>
   </group>:<TownShell x={0} z={0} width={9} depth={3.8} height={4.6} rise={flowerShop?1.8:1.1} wall={base} roof={roof} kind={flowerShop?'hip':undefined}/>}
-  <Html style={{display:detailed?'block':'none'}} transform center occlude={[body]} position={[0,4.08,2.2]} distanceFactor={10} zIndexRange={[5,0]}><span className='hb-town-label'>{name}</span></Html>
+  <TownSign visible={detailed} occlude={[body]} position={[0,4.08,2.2]} distanceFactor={10} text={name}/>
  </group>;
 }

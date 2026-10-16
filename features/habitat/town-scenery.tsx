@@ -3,7 +3,7 @@ import {TOWN_PLANTING_MODELS} from './town-planting-models';
 import {TOWN_PALETTE as P} from './town-palette';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useFrame} from '@react-three/fiber';
-import {Html} from '@react-three/drei';
+import TownSign from './town-sign';
 import {TownGardens} from './town-gardens';
 import {paintedTexture,TownFootShadow} from './town-surfaces';
 import {Group,Object3D} from 'three';
@@ -151,7 +151,7 @@ export default function TownScenery({quality,onDirectory,pose,states}:{quality:'
   {<group visible={centerDetail} ref={mountDirectory} position={[2.4,0,6]}>
    <mesh position-y={.8}><boxGeometry args={[.12,1.6,.12]}/><meshStandardMaterial color='#86745c'/></mesh>
    <mesh position-y={1.65}><boxGeometry args={[1.7,.55,.14]}/><meshStandardMaterial color={P.cream}/></mesh>
-   <Html style={{display:centerDetail?'block':'none'}} transform center occlude={[directory]} position={[0,1.65,.09]} distanceFactor={5} zIndexRange={[5,0]}><button className='hb-directory' onClick={onDirectory}>Visit habitats ↗</button></Html>
+   <TownSign visible={centerDetail} occlude={[directory]} position={[0,1.65,.09]} distanceFactor={5} onClick={onDirectory} text='Visit habitats ↗'/>
   </group>}
   {residents.map(i=><Resident key={i} index={i}/>)}
  </group>;
