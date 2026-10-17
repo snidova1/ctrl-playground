@@ -27,8 +27,8 @@ export function makeTownSquareInlay(){
  }
  const strip=(x0:number,z0:number,x1:number,z1:number,w:number)=>{
   const dx=x1-x0,dz=z1-z0,length=Math.hypot(dx,dz),nx=-dz/length*w/2,nz=dx/length*w/2,y=.043;
-  quad([x0+nx,y,z0+nz],[x0-nx,y,z0-nz],
-       [x1-nx,y,z1-nz],[x1+nx,y,z1+nz],sage);
+  quad([x0-nx,y,z0-nz],[x0+nx,y,z0+nz],
+       [x1+nx,y,z1+nz],[x1-nx,y,z1-nz],sage);
  };
  strip(0,1.52,0,4.23,.24);strip(0,-7.45,0,-9.2,.24);
  strip(-4.3,-3,-6.95,-3,.24);strip(4.3,-3,6.95,-3,.24);
