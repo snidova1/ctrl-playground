@@ -1,6 +1,8 @@
 import {expect,it} from 'vitest';
 import {TOWN_DISTRICTS,TOWN_DISTRICT_BUILDINGS,DISTRICT_PLOTS} from '../../features/habitat/town-districts';
 import {makeTownRegionParts} from '../../features/habitat/town-region-architecture';
+import {makeTownSquareInlay} from '../../features/habitat/town-square-foundation';
+import {makeTownBackdropRidge} from '../../features/habitat/town-scenery';
 import {isPublicWorldWalkable} from '../../features/habitat/public-world-geography';
 
 /** Visual rebuilds are allowed to change the plan, never to desync physical world authority. */
@@ -38,5 +40,23 @@ it('keeps the rebuilt architectural volumes finite, merged and drawable',()=>{
    expect([...positions.array].every(Number.isFinite)).toBe(true);
    part.geometry.dispose();
   }
+ }
+});
+
+it('keeps Willow Square's civic inlay flush and horizon geometry finite',()=>{
+ const inlay=makeTownSquareInlay();
+ expect(inlay.getAttribute('position').count).toBeGreaterThan(300);
+ expect(inlay.getAttribute('color').count).toBe(inlay.getAttribute('position').count);
+ const position=inlay.getAttribute('position'),normal=inlay.getAttribute('normal');
+ for(let i=0;i<position.count;i++){
+  expect(position.getY(i)).toBeGreaterThan(.039);
+  expect(position.getY(i)).toBeLessThan(.045);
+  expect(normal.getY(i)).toBeGreaterThan(.99);
+ }
+ inlay.dispose();
+ for(const phase of [.9,2.7,4.9]){
+  const ridge=makeTownBackdropRidge(phase);
+  expect([...ridge.getAttribute('position').array].every(Number.isFinite)).toBe(true);
+  ridge.dispose();
  }
 });
