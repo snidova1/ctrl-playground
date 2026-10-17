@@ -59,6 +59,8 @@ jobs:
       - name: Verify the configured Worker entry exists
         run: test -f dist/server/wrangler.json
   public-world:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -72,6 +74,19 @@ jobs:
           node-version: '22'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Install provenance-checked real CC0 glTF models for PR32
+        if: github.head_ref == 'feat/pr32-anime-world-from-scratch'
+        run: node scripts/pr32-install-cc0-meshes.mjs
+      - name: Commit approved CC0 meshes and license ledger
+        if: github.head_ref == 'feat/pr32-anime-world-from-scratch'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/pr32
+          if ! git diff --cached --quiet; then
+            git commit -m 'assets(pr32): commit verified CC0 village GLBs and provenance'
+            git push origin HEAD:feat/pr32-anime-world-from-scratch
+          fi
       - name: Public World API/geometry/bounds regression
         run: pnpm test
       - name: Strict project typecheck
@@ -93,7 +108,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ctrl-real-town-screenshots
-          path: test-results/
+          path: |
+            test-results/
+            public/assets/pr32/manifest.json
           retention-days: 14
           if-no-files-found: warn
   town-life:
