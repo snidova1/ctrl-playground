@@ -8,6 +8,7 @@ describe('PR32 painted-anime Public World foundation',()=>{
   const p=road.getAttribute('position'),n=road.getAttribute('normal'),c=road.getAttribute('color');
   expect(p.count).toBeGreaterThan(150);
   expect(c.count).toBe(p.count);
+  expect(road.getAttribute('uv').count).toBe(p.count);
   for(let i=0;i<p.count;i++){
    expect(p.getY(i)).toBeCloseTo(.065,4);
    expect(n.getY(i)).toBeGreaterThan(.99);
@@ -19,6 +20,7 @@ describe('PR32 painted-anime Public World foundation',()=>{
   const w=7,d=6,roof=makeAnimeRoof(w,d,2.1,0),p=roof.getAttribute('position');
   expect(p.count).toBeGreaterThan(35);
   expect(roof.getAttribute('color').count).toBe(p.count);
+  expect(roof.getAttribute('uv').count).toBe(p.count);
   const levels=new Set<number>();
   for(let i=0;i<p.count;i++){
    levels.add(Math.round(p.getY(i)*100));
