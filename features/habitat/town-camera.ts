@@ -8,7 +8,7 @@ export function townCameraFraction(target:Point3,desired:Point3){
  let nearest=1;
  for(const house of [...PUBLIC_WORLD_BUILDINGS,...PUBLIC_WORLD_SHOPS,...TOWN_DISTRICT_BUILDINGS]){
   const min={x:house.x-house.width/2-.65,y:-.2,z:house.z-house.depth/2-.8};
-  const max={x:house.x+house.width/2+.65,y:6.2,z:house.z+house.depth/2+1.2};
+  const max={x:house.x+house.width/2+.65,y:'levels' in house&&house.levels===3?9.1:7.2,z:house.z+house.depth/2+1.2};
   let enter=0,exit=1;
   for(const axis of ['x','y','z'] as const){
    const delta=desired[axis]-target[axis];

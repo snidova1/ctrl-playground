@@ -1,6 +1,7 @@
 import {TOWN_ACTIVITIES,TOWN_DISTRICTS,TOWN_DISTRICT_BUILDINGS} from '@/features/habitat/town-districts';
 import {TOWN_GARDEN_BEDS} from './town';
 import {TOWN_PROJECTS} from './town-projects';
+import {TOWN_VENUES} from './town-venue-directory';
 import {TOWN_WORK_SITES} from './town-routes';
 
 /** Original, deterministic walkable landscape. The mesh, camera, feet and
@@ -17,7 +18,9 @@ const hills=[
  [104,101,3.3,30,23],[111,45,2.3,23,27],[105,-99,2.9,27,20],
  [28,101,2.0,30,24],[-50,96,1.8,26,20],
 ] as const;
-const anchors=[...TOWN_ACTIVITIES,...TOWN_WORK_SITES.filter(s=>!s.worldId),...TOWN_GARDEN_BEDS,...TOWN_PROJECTS];
+// The old grid happened to flatten the ground under venue entrances. Preserve
+// their zero-height foundations explicitly after PR31 changes the home blocks.
+const anchors=[...TOWN_ACTIVITIES,...TOWN_WORK_SITES.filter(s=>!s.worldId),...TOWN_VENUES,...TOWN_GARDEN_BEDS,...TOWN_PROJECTS];
 const smooth=(v:number)=>{const t=Math.max(0,Math.min(1,v));return t*t*(3-2*t);};
 function lineDistance(x:number,z:number,ax:number,az:number,bx:number,bz:number){
  const dx=bx-ax,dz=bz-az,t=Math.max(0,Math.min(1,((x-ax)*dx+(z-az)*dz)/(dx*dx+dz*dz)));

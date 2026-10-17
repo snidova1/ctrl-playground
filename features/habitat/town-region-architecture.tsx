@@ -29,7 +29,56 @@ export function makeTownRegionParts(district:TownDistrictKind){
     append(`roof:${h.roof}`,makeTownRoof(w,d,rise,roofKind).applyMatrix4(new Matrix4().makeTranslation(h.x,height,h.z)));
     box('#f8ecd3',0,height-.035,0,w+.78,.13,d+.78);
    }
-   box('#bd957e',w*.28,height+.65,-d*.23,.55,1.5,.6);
+   // PR31 silhouette pass: layered volumes and recognizable district-specific
+   // porches, roof dormers and galleries. Everything belongs to the same
+   // batched material buckets as the structural shells.
+   const frontage=d/2+.035;
+   if(index%4===0){
+    // A roof-breaking loft is visible from the street even at medium distance.
+    const fw=Math.min(w*.42,2.9),fz=d/2-.75,fx=-w*.17;
+    box(h.wall,fx,height+.43,fz,fw,.96,1.35);
+    append(`roof:${h.roof}`,makeTownRoof(fw,1.35,.73,'gambrel')
+      .applyMatrix4(new Matrix4().makeTranslation(h.x+fx,height+.91,h.z+fz)));
+    box('#527565',fx,height+.34,fz+.705,.65,.53,.075);
+    box('#f8ecd3',fx,height+.34,fz+.75,.8,.07,.1);
+   }else if(index%4===1){
+    // A two-storey front bay changes the building's primary massing.
+    const bx=w*.26;
+    box(h.wall,bx,height*.53,frontage-.28,w*.31,height*.86,.64);
+    append(`roof:${h.roof}`,makeTownRoof(w*.33,1.05,.55,'hip')
+      .applyMatrix4(new Matrix4().makeTranslation(h.x+bx,height*.96,h.z+frontage-.3)));
+    box('#f8ecd3',bx,1.8,frontage+.1,w*.22,1.05,.1);
+    box('#527565',bx,1.8,frontage+.17,w*.17,.83,.065);
+   }else if(index%4===2){
+    // Lower, wider covered frontage for a market/studio silhouette.
+    box(`roof:${h.roof}`,0,3.06,frontage+.22,w*.76,.19,.82);
+    for(const side of [-1,1])
+     box('wood',side*w*.34,1.56,frontage+.22,.14,3.05,.14);
+    box('#f8ecd3',0,3.19,frontage+.27,w*.82,.1,.93);
+   }else{
+    // Layered veranda rail, with upper floor offset and deep shadow line.
+    box('wood',0,3.27,frontage+.27,w*.71,.16,.72);
+    box('#f8ecd3',0,3.38,frontage+.29,w*.74,.12,.75);
+    for(const side of [-1,1])
+     box('wood',side*w*.32,2.78,frontage+.56,.12,.9,.12);
+   }
+   if(district==='workshop'){
+    // Exposed timber framing unifies the maker quarter instead of plain boxes.
+    for(const side of [-1,1])
+     box('wood',side*(w/2-.34),height*.49,frontage+.03,.16,height*.92,.17);
+    box('wood',0,height*.78,frontage+.07,w*.95,.16,.15);
+   }
+   if(district==='harbor'){
+    // Wide shopfronts face the quay; projecting flat awnings stay above head height.
+    box('#527565',-w*.26,1.45,frontage+.10,w*.29,2.15,.08);
+    box('#f8ecd3',-w*.26,2.56,frontage+.15,w*.33,.12,.16);
+    box(`roof:${h.roof}`,0,3.03,frontage+.36,w*.85,.14,.84);
+   }
+   if(district==='orchard'){
+    for(const side of [-1,1])box('wood',side*w*.38,1.24,frontage+.1,.12,2.48,.14);
+    box('#f8ecd3',0,2.78,frontage+.06,w*.89,.13,.18);
+   }
+      box('#bd957e',w*.28,height+.65,-d*.23,.55,1.5,.6);
    box('#e8d6b8',w*.28,height+1.4,-d*.23,.72,.14,.77);
    box('#678b7c',0,1.15,d/2+.09,1.05,2.25,.15);
    for(const x of [-.59,.59])box('#f8ecd3',x,1.18,d/2+.17,.12,2.5,.12);

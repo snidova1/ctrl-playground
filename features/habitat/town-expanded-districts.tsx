@@ -15,7 +15,7 @@ import {TOWN_ROAD_CONNECTIONS} from '@/domain/town-terrain';
 import TownGround from './town-ground';
 import {FESTIVAL_DECK} from '@/domain/town-walk-surface';
 import TownActivityCounter from './town-activity-counter';
-import {ScenicPaving} from './town-paving';
+import {ScenicPaving,TownPaving} from './town-paving';
 
 /** Larger physical map composed of separately visible districts; not background billboards. */
 type Quality='low'|'high';
@@ -67,6 +67,31 @@ function FestivalPlatform({x,z}:{x:number;z:number}){
   {[-4,0,4].map(v=><mesh key={v} position={[v,7.0,-3.95]}><coneGeometry args={[1.3,1.7,3]}/><meshStandardMaterial color='#dfb58a'/></mesh>)}
  </group>;
 }
+/** PR31: real neighborhoods have courts and secondary walking lanes, not
+ * merely two perfectly straight orthogonal roads through a field of boxes.
+ * These flush paths are decorative walk surfaces, never new collision solids.
+ * Keep the main server-authoritative road coordinates and activity anchors.
+ */
+export function DistrictCivicLayout({district}:{district:TownDistrict}){
+ const x=district.x,z=district.z;
+ const stone=district.id==='harbor'?'#c6d8cf':district.id==='garden'?'#c9d4af':'#e5d2b6';
+ return <group>
+  {/* A shared square where the town activity and neighbors naturally meet. */}
+  <TownPaving x={x} z={z} w={16} d={16} round height={.047}/>
+  <mesh position={[x,.052,z]} rotation-x={-Math.PI/2} receiveShadow>
+   <ringGeometry args={[7.8,8.07,48]}/>
+   <meshStandardMaterial color={stone} roughness={1}/>
+  </mesh>
+  {/* Narrow secondary lanes visually break the old single-axis block grid;
+      no buildings or original walkable connectors are moved to draw them. */}
+  {district.id!=='harbor'&&district.id!=='garden'&&[-10,10].map(dx=>
+   <ScenicPaving key={dx} ax={x+dx} az={z-34} bx={x+dx} bz={z+34} width={2.15}/>
+  )}
+  {district.id==='garden'&&[-1,1].map(side=>
+   <ScenicPaving key={side} ax={x+side*6.5} az={z-18} bx={x+side*6.5} bz={z+18} width={1.5}/>
+  )}
+ </group>;
+}
 function RemoteZone({district,quality,pose,states}:{district:TownDistrict;quality:Quality;pose:MutableRefObject<Pose>;states:WorldState['states']}){
  const [visible,setVisible]=useState(()=>Math.hypot(pose.current.x-district.x,pose.current.z-district.z)<82);
  useEffect(()=>{const timer=setInterval(()=>setVisible(Math.hypot(pose.current.x-district.x,pose.current.z-district.z)<90),200);return()=>clearInterval(timer);},[pose,district]);
@@ -76,6 +101,7 @@ function RemoteZone({district,quality,pose,states}:{district:TownDistrict;qualit
   {/* Each region has its own through-street, not just scenic facades. */}
   <ScenicRoad ax={district.x-48} az={district.z} bx={district.x+48} bz={district.z} width={5.2}/>
   <ScenicRoad ax={district.x} az={district.z-44} bx={district.x} bz={district.z+44} width={4.4}/>
+  <DistrictCivicLayout district={district}/>
   <TownRegionArchitecture district={district.id}/>
   <TownRegionDressing district={district.id} quality={quality}/>
   <TownWindGrass district={district} quality={quality}/>

@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - feat/public-world-garden-life
+      - feat/townies-gameplay-stylized-world
       - feat/public-world-real-neighborhood
       - feat/public-world-and-guest-play
       - work/master-integration

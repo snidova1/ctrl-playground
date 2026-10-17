@@ -73,16 +73,28 @@ function TownShell({x,z,width,depth,height=4.12,rise=1.5,wall,roof,kind}:{x:numb
  const shape=useMemo(()=>new Shape().moveTo(-width/2-.35,0).lineTo(0,rise).lineTo(width/2+.35,0).closePath(),[width,rise]);
  return <group position={[x,0,z]}><mesh position-y={height/2} castShadow receiveShadow><boxGeometry args={[width,height,depth]}/><meshStandardMaterial color={wall} roughness={.95}/></mesh>{kind?<TownRoof width={width} depth={depth} base={height} rise={rise} kind={kind} color={roof}/>:<mesh position={[0,height,-depth/2-.35]} castShadow receiveShadow><extrudeGeometry args={[shape,{depth:depth+.7,bevelEnabled:false}]}/><meshStandardMaterial color={roof} roughness={.95}/></mesh>}</group>;
 }
+/** PR31: the six central houses must have authored rooflines at gameplay scale.
+ * Roof galleries and dormers, not repeated flat caps and tiny floating ornaments.
+ * Massing stays over the existing authoritative building volumes.
+ */
 function RoofDetail({width,depth,kind,color}:{width:number;depth:number;kind:TownRoofKind;color:string}){
- if(kind==='clerestory')return <group position={[-width*.14,5.32,0]}>
-  <mesh position-z={depth/2+.37}><boxGeometry args={[width*.38,.43,.07]}/><meshStandardMaterial color={P.forest} roughness={.4}/></mesh>
-  {[-.5,0,.5].map(x=><mesh key={x} position={[x*width*.35,0,depth/2+.43]}><boxGeometry args={[.06,.5,.08]}/><meshStandardMaterial color={P.trim}/></mesh>)}
+ if(kind==='clerestory')return <group position={[width*.08,4.16,depth*.13]}>
+  <mesh castShadow position-y={.55}><boxGeometry args={[width*.48,1.1,depth*.43]}/><meshStandardMaterial color={P.cream} roughness={1}/></mesh>
+  <TownRoof width={width*.48} depth={depth*.43} base={1.1} rise={.88} kind='clerestory' color={color}/>
+  <ShutterWindow x={0} y={.58} z={depth*.215+.065} width={Math.min(1.3,width*.3)} height={.72}/>
+  {[-1,1].map(side=><mesh key={side} position={[side*width*.2,.52,depth*.22]}>
+   <boxGeometry args={[.12,1.12,.16]}/><meshStandardMaterial color={P.wood}/>
+  </mesh>)}
  </group>;
- if(kind==='hip')return null;
- return <group position={[0,4.45,depth*.29]}>
-  <mesh position-y={.35}><boxGeometry args={[1.65,.7,1.2]}/><meshStandardMaterial color={P.cream}/></mesh>
-  <ShutterWindow x={0} y={.39} z={.64} width={.8} height={.6}/>
-  <GableRoof width={1.65} depth={1.2} base={.7} rise={.55} color={color}/>
+ if(kind==='hip')return <group position={[-width*.13,4.2,depth*.19]}>
+  <mesh castShadow position-y={.51}><boxGeometry args={[width*.32,1.02,depth*.33]}/><meshStandardMaterial color={P.wall} roughness={1}/></mesh>
+  <GableRoof width={width*.32} depth={depth*.33} base={1.01} rise={.82} color={color}/>
+  <ShutterWindow x={0} y={.57} z={depth*.165+.08} width={.88} height={.72}/>
+ </group>;
+ return <group position={[width*.09,4.42,depth*.24]}>
+  <mesh castShadow position-y={.47}><boxGeometry args={[width*.37,.94,depth*.33]}/><meshStandardMaterial color={P.cream} roughness={1}/></mesh>
+  <ShutterWindow x={0} y={.57} z={depth*.165+.08} width={1.05} height={.75}/>
+  <GableRoof width={width*.37} depth={depth*.33} base={.94} rise={.8} color={color}/>
  </group>;
 }
 // Keep native CSS sign anchors stable across LOD swaps; only their visibility
