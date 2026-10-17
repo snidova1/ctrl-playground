@@ -10,6 +10,7 @@ import {BufferGeometry,Float32BufferAttribute,Group,Object3D} from 'three';
 import {TownHouse,MarketFront} from './town-architecture';
 import {TownDailyProps} from './town-daily-props';
 import {TownPaving,FountainInlay} from './town-paving';
+import TownSquareFoundation from './town-square-foundation';
 import {TownFountain,CanalBoat} from './town-waterfront';
 import {TOWN_HILLS} from './town-terrain';
 import {townSurfaceHeight as townGroundHeight} from '@/domain/town-walk-surface';
@@ -167,7 +168,7 @@ export default function TownScenery({quality,onDirectory,pose,states}:{quality:'
   <GreenBorder quality={quality}/>
   {PUBLIC_WORLD_BRIDGES.map(bridge=><Bridge key={bridge.x} x={bridge.x}/>)}
   {PUBLIC_WORLD_BUILDINGS.map(site=><TownHouse key={site.name} site={site} detailed={centerDetail}/>)}
-  {centerDetail&&<><FountainInlay/><TownFountain/>
+  {centerDetail&&<><TownSquareFoundation/><FountainInlay/><TownFountain/>
   <CanalBoat x={-12} color='#b78c70'/><CanalBoat x={12} color='#82a495'/></>}
   <MarketFront x={-8} name='WILLOW CAFÉ' base={P.cream} roof={P.sage} detailed={centerDetail}/>
   <MarketFront x={8} name='FLOWER MARKET' base={P.wall} roof={P.terracotta} detailed={centerDetail}/>
