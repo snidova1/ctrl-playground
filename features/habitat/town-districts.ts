@@ -16,6 +16,35 @@ export const TOWN_DISTRICTS:readonly TownDistrict[]=[
 ] as const;
 /** Decorative buildings are also server-authoritative solid footprints. */
 export type TownDistrictBuilding={id:string;district:TownDistrictKind;x:number;z:number;width:number;depth:number;wall:string;roof:string;levels:number};
+/**
+ * PR31: a composed settlement plan instead of ten equal houses in two rows.
+ * Locations, footprints and IDs are SHARED server/client world authority.
+ * A clear central through-street (x = 0) and cross-street (z = 0) remain.
+ * Side lanes and communal courtyards have room to breathe between buildings.
+ */
+type DistrictPlot=readonly [dx:number,dz:number,width:number,depth:number,levels:2|3];
+export const DISTRICT_PLOTS:Readonly<Record<'residential'|'workshop'|'festival'|'orchard',readonly DistrictPlot[]>>={
+ residential:[
+  [-30,-27,7.4,7.2,2],[-18,-25,6.2,6.6,2],[-29,-11,7,7.2,3],
+  [-18,15,6.4,7.4,2],[-30,30,7.8,7.8,2],[18,-28,6.6,7.4,2],
+  [30,-16,7.2,7.4,3],[18,14,7.4,6.8,2],[30,28,7.4,7.6,2],[17,31,6.2,7.2,2],
+ ],
+ workshop:[
+  [-31,-28,8.2,8,2],[-18,-24,7.2,7.2,3],[-30,-11,7.8,7.6,2],
+  [-19,15,8,7.4,2],[-31,31,7.6,8,2],[19,-29,8,7.8,3],
+  [31,-16,7.6,7.6,2],[19,15,8,7.2,2],[31,29,8.2,8,2],[18,31,6.8,7,2],
+ ],
+ festival:[
+  [-31,-26,7.6,6.8,2],[-19,-28,6.8,6.8,2],[-31,-11,7,7.4,2],
+  [-19,15,6.6,7.8,2],[-31,29,7.8,7.2,2],[19,-27,7.4,6.8,2],
+  [31,-16,7.8,7.4,2],[19,14,7,7.4,2],[31,28,7.8,7.8,2],[18,31,6.8,7.2,2],
+ ],
+ orchard:[
+  [-30,-28,6.6,7.6,2],[-17,-25,6.6,6.8,2],[-29,-11,7,8,2],
+  [-17,15,6.4,7.2,2],[-30,30,7.6,8,3],[18,-29,6.8,7.6,2],
+  [30,-16,7.2,8,2],[18,14,7,7.4,2],[30,29,7.4,8,2],[17,31,6.4,7.2,2],
+ ],
+} as const;
 const homes:TownDistrictBuilding[]=[];
 for(const [id,cx,cz,wall,roof] of [
  ['residential',78,27,'#f3d7bd','#a5746a'],
@@ -23,11 +52,12 @@ for(const [id,cx,cz,wall,roof] of [
  ['festival',77,-73,'#f2d6ad','#ad776e'],
  ['orchard',76,80,'#e6dcbf','#7b9d75'],
 ] as const){
- for(let i=0;i<10;i++){
-  const row=Math.floor(i/5),col=i%5;
-  const x=cx+[-25,-16,-7,7,16][col],z=cz+(row===0?-14:15);
-  homes.push({id:`${id}-building-${i}`,district:id,x,z,width:5.8,depth:5.9,wall:i%3===0?'#f6e9d2':wall,roof:i%2===0?roof:'#8da68a',levels:i%5===0?3:2});
- }
+ DISTRICT_PLOTS[id].forEach(([dx,dz,width,depth,levels],i)=>{
+  // Preserve stable IDs so old world objects, maps and server checks agree.
+  homes.push({id:`${id}-building-${i}`,district:id,x:cx+dx,z:cz+dz,
+   width,depth,wall:i%3===0?'#f6e9d2':wall,
+   roof:i%3===1?'#8da68a':roof,levels});
+ });
 }
 for(const [i,x] of [-18,-6,6,18].entries())homes.push({id:`harbor-building-${i}`,district:'harbor',x,z:-87,width:7.2,depth:6.5,wall:i%2===0?'#ecdbbe':'#e9bca3',roof:i%2===0?'#7b9d9a':'#bb8a77',levels:2});
 export const TOWN_DISTRICT_BUILDINGS:readonly TownDistrictBuilding[]=homes;
