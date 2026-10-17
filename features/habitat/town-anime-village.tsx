@@ -119,13 +119,13 @@ function AnimeFootpaths(){
  * The front-facing gable + broad overhang reads at mobile gameplay distance.
  */
 export function makeAnimeRoof(w:number,d:number,rise:number,seed=0){
- const positions:number[]=[],colors:number[]=[];
+ const positions:number[]=[],colors:number[]=[],uv:number[]=[];
  const dark=new Color('#c0b8ae'),clay=new Color('#eee6d8'),gold=new Color('#fff7e6');
  const xp=[-1,-.82,-.63,-.32,0,.32,.63,.82,1];
  const yp=[0,.22,.60,.91,1,.91,.60,.22,0];
  const z0=-d/2-.65,z1=d/2+.65;
  const vertex=(x:number,y:number,z:number,light:number)=>{
-  positions.push(x,y,z);
+  positions.push(x,y,z);uv.push(x/4.5,(z+y*.6)/4.5);
   clay.clone().lerp(dark,clamp(.13+(.5-light)*.35)).lerp(gold,clamp(light*.42))
    .toArray(colors,colors.length);
  };
@@ -139,6 +139,7 @@ export function makeAnimeRoof(w:number,d:number,rise:number,seed=0){
  }
  const g=new BufferGeometry();g.setAttribute('position',new Float32BufferAttribute(positions,3));
  g.setAttribute('color',new Float32BufferAttribute(colors,3));
+ g.setAttribute('uv',new Float32BufferAttribute(uv,2));
  g.computeVertexNormals();g.computeBoundingSphere();
  return g;
 }
