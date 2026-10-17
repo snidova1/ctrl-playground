@@ -4,7 +4,7 @@ import {Html,RoundedBox} from '@react-three/drei';
 import {useFrame} from '@react-three/fiber';
 import {
  BufferGeometry,CatmullRomCurve3,Color,Float32BufferAttribute,Group,
- IcosahedronGeometry,InstancedMesh,Matrix4,Object3D,Shape,Vector3
+ IcosahedronGeometry,InstancedMesh,Object3D,Shape,Vector3
 } from 'three';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS} from './public-world-geography';
 import TownStylizedWater from './town-stylized-water';
@@ -64,8 +64,8 @@ export function makeAnimePath(points:readonly Point[],width:number,seed=0){
   const right=neutral.clone().lerp(highlight,.25+shade*.15);
   const a=band(t,-1),b=band(t,1),c=band(u,1),d=band(u,-1);
   // Keep the winding strips facing upward for front-side rendering.
-  push(a,left);push(c,right);push(b,right);
-  push(a,left);push(d,left);push(c,right);
+  push(a,left);push(b,right);push(c,right);
+  push(a,left);push(c,right);push(d,left);
  }
  const geometry=new BufferGeometry();
  geometry.setAttribute('position',new Float32BufferAttribute(xyz,3));
