@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useLayoutEffect,useMemo,useRef} from 'react';
-import {Html,RoundedBox} from '@react-three/drei';
+import {RoundedBox} from '@react-three/drei';
 import {useFrame} from '@react-three/fiber';
 import {
  BufferGeometry,CatmullRomCurve3,Color,Float32BufferAttribute,Group,
@@ -109,7 +109,7 @@ function makeRoadPaint(){
 }
 function AnimeFootpaths(){
  const paths=useMemo(()=>VILLAGE_PATHS.map((road,i)=>makeAnimePath(road.points,road.width,i)),[]);
- const roadPaint=useMemo(makeRoadPaint,[]);
+ const roadPaint=useMemo(()=>makeRoadPaint(),[]);
  useEffect(()=>()=>{paths.forEach(g=>g.dispose());roadPaint.dispose();},[paths,roadPaint]);
  return <group>{paths.map((geometry,i)=><mesh key={i} geometry={geometry} receiveShadow dispose={null}>
   <meshStandardMaterial map={roadPaint} vertexColors roughness={1} polygonOffset polygonOffsetFactor={-1}/>
@@ -266,11 +266,7 @@ function AnimeShop({x,index}:{x:number;index:number}){
   <mesh position={[0,3.25,2.20]}><boxGeometry args={[3.8,.57,.16]}/>
    <meshStandardMaterial color='#efe0bd'/></mesh>
   <TownSign text={isCafe?'WILLOW CAFÉ':'FLOWER MARKET'} position={[0,5.95,2.35]} distanceFactor={5} occlude={[]}/>
-  <Html center position={[0,3.28,2.31]} distanceFactor={15}
-   style={{font:'700 16px Georgia,serif',letterSpacing:'1px',color:'#52695c',
-    textShadow:'0 1px #fff7e4',whiteSpace:'nowrap',pointerEvents:'none'}}>
-   {isCafe?'WILLOW CAFÉ':'FLOWER MARKET'}
-  </Html>
+
  </group>;
 }
 /** Broader foliage layers and slender branched trunks, no flat sphere hedges. */
