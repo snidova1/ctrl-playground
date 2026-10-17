@@ -4,7 +4,7 @@ import {Html,RoundedBox} from '@react-three/drei';
 import {useFrame} from '@react-three/fiber';
 import {
  BufferGeometry,CatmullRomCurve3,Color,Float32BufferAttribute,Group,
- IcosahedronGeometry,InstancedMesh,Object3D,Shape,Vector3
+ IcosahedronGeometry,InstancedMesh,Object3D,Shape,Vector3,CanvasTexture,RepeatWrapping,SRGBColorSpace
 } from 'three';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS} from './public-world-geography';
 import TownSign from './town-sign';
@@ -50,10 +50,10 @@ const foliageShapes=[0,1,2].map(seed=>{
  */
 export function makeAnimePath(points:readonly Point[],width:number,seed=0){
  const curve=new CatmullRomCurve3(points.map(([x,z])=>new Vector3(x,.065,z)),false,'centripetal');
- const steps=Math.max(24,points.length*16),xyz:number[]=[],rgb:number[]=[];
+ const steps=Math.max(24,points.length*16),xyz:number[]=[],rgb:number[]=[],uv:number[]=[];
  const neutral=new Color('#e8d3ac'),edge=new Color('#b3af84'),highlight=new Color('#f4e5bf');
  const push=(v:Vector3,color:Color)=>{
-  xyz.push(v.x,v.y,v.z);color.toArray(rgb,rgb.length);
+  xyz.push(v.x,v.y,v.z);uv.push(v.x/4.5,v.z/4.5);color.toArray(rgb,rgb.length);
  };
  for(let i=0;i<steps;i++){
   const band=(t:number,side:number)=>{
@@ -71,6 +71,7 @@ export function makeAnimePath(points:readonly Point[],width:number,seed=0){
  const geometry=new BufferGeometry();
  geometry.setAttribute('position',new Float32BufferAttribute(xyz,3));
  geometry.setAttribute('color',new Float32BufferAttribute(rgb,3));
+ geometry.setAttribute('uv',new Float32BufferAttribute(uv,2));
  geometry.computeVertexNormals();geometry.computeBoundingSphere();
  return geometry;
 }
@@ -84,11 +85,34 @@ const VILLAGE_PATHS:{points:readonly Point[];width:number}[]=[
  {points:[[20,-25],[20,-18],[20,-13]],width:3.7},
  {points:[[0,-27],[0,-23],[0,-16]],width:4.1},
 ];
+function makeRoadPaint(){
+ const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
+ const ctx=canvas.getContext('2d')!;
+ ctx.fillStyle='#fffdf3';ctx.fillRect(0,0,256,256);
+ // Broad watercolor grain, not a repeating square-brick albedo.
+ for(let i=0;i<140;i++){
+  const hash=(k:number)=>{const n=Math.sin(i*127.13+k*311.71)*43758.5453;return n-Math.floor(n);};
+  const x=hash(1)*256,y=hash(2)*256,r=3+hash(3)*14;
+  const wash=ctx.createRadialGradient(x,y,0,x,y,r);
+  wash.addColorStop(0,i%2?'#8b876014':'#ffffff50');wash.addColorStop(1,'#ffffff00');
+  ctx.fillStyle=wash;ctx.fillRect(x-r,y-r,r*2,r*2);
+ }
+ ctx.lineWidth=.9;
+ for(let i=0;i<410;i++){
+  const x=(i*41.371)%256,y=(i*67.829)%256;
+  ctx.strokeStyle=i%3===0?'#96836124':'#b1a57d24';
+  ctx.beginPath();ctx.moveTo(x,y);
+  ctx.quadraticCurveTo(x+1.3,y-1.1,x+2.5+(i%3),y-.4);ctx.stroke();
+ }
+ const tex=new CanvasTexture(canvas);tex.colorSpace=SRGBColorSpace;
+ tex.wrapS=tex.wrapT=RepeatWrapping;tex.anisotropy=4;return tex;
+}
 function AnimeFootpaths(){
  const paths=useMemo(()=>VILLAGE_PATHS.map((road,i)=>makeAnimePath(road.points,road.width,i)),[]);
- useEffect(()=>()=>paths.forEach(g=>g.dispose()),[paths]);
+ const roadPaint=useMemo(makeRoadPaint,[]);
+ useEffect(()=>()=>{paths.forEach(g=>g.dispose());roadPaint.dispose();},[paths,roadPaint]);
  return <group>{paths.map((geometry,i)=><mesh key={i} geometry={geometry} receiveShadow dispose={null}>
-  <meshStandardMaterial vertexColors roughness={1} polygonOffset polygonOffsetFactor={-1}/>
+  <meshStandardMaterial map={roadPaint} vertexColors roughness={1} polygonOffset polygonOffsetFactor={-1}/>
  </mesh>)}</group>;
 }
 /** One curving roof mesh, not a triangle on top of a cube.
@@ -96,7 +120,7 @@ function AnimeFootpaths(){
  */
 export function makeAnimeRoof(w:number,d:number,rise:number,seed=0){
  const positions:number[]=[],colors:number[]=[];
- const dark=new Color('#825b52'),clay=new Color('#b67360'),gold=new Color('#d69c7a');
+ const dark=new Color('#c0b8ae'),clay=new Color('#eee6d8'),gold=new Color('#fff7e6');
  const xp=[-1,-.82,-.63,-.32,0,.32,.63,.82,1];
  const yp=[0,.22,.60,.91,1,.91,.60,.22,0];
  const z0=-d/2-.65,z1=d/2+.65;
@@ -127,7 +151,7 @@ function PainterlyRoof({w,d,rise=2,variant=0,base=3.92,color}:{
  useEffect(()=>()=>roof.dispose(),[roof]);
  return <group position-y={base}>
   <mesh geometry={roof} dispose={null} castShadow receiveShadow>
-   <meshStandardMaterial vertexColors roughness={1} color={color} side={2}/>
+   <meshStandardMaterial vertexColors map={paintedTexture('roof')} roughness={1} color={color} side={2}/>
   </mesh>
   {[-1,1].map(side=><mesh key={side} position={[0,0,side*(d/2+.53)]}
    rotation-y={side>0?0:Math.PI}>
@@ -283,7 +307,8 @@ const TREE_SITES:readonly [number,number,number,number][]=[
  [40,-5,1.18,1],[40,13,1.33,2],[39,32,1.4,0],
  [-34,37,1.18,2],[-14,39,1.16,0],[15,39,1.13,1],[34,39,1.24,2],
  [-34,-37,1.35,1],[-16,-36,1.15,0],[18,-36,1.26,1],[35,-36,1.34,2],
- [-13,17,.78,2],[13,17,.85,1],
+ [-13,17,.78,2],[13,17,.85,1],[-15,3,1.03,2],[15,3,1.05,0],
+ [-23,15,1.01,1],[23,15,1.07,2],
  [-35,-13,.93,0],[35,-13,.98,1],[-31,19,.87,0],[31,20,.9,1]
 ];
 function AnimeGrove({quality}:{quality:'low'|'high'}){
