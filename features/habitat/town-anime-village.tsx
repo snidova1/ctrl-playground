@@ -7,6 +7,7 @@ import {
  IcosahedronGeometry,InstancedMesh,Object3D,Shape,Vector3
 } from 'three';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS} from './public-world-geography';
+import TownSign from './town-sign';
 import TownStylizedWater from './town-stylized-water';
 import {TownFountain,CanalBoat} from './town-waterfront';
 import {paintedTexture} from './town-surfaces';
@@ -210,6 +211,7 @@ function AnimeCottage({site,index}:{site:typeof PUBLIC_WORLD_BUILDINGS[number];i
   <mesh position={[w*.22,5.21,-d*.18]}>
    <boxGeometry args={[.87,.12,.91]}/><meshStandardMaterial color={roof}/></mesh>
   <HandPaintedWindow x={0} y={4.7} z={d/2+.6} w={.71} h={.53}/>
+  <TownSign text={site.name} position={[0,6.52,d/2]} distanceFactor={5} occlude={[]}/>
  </group>;
 }
 function AnimeShop({x,index}:{x:number;index:number}){
@@ -238,6 +240,7 @@ function AnimeShop({x,index}:{x:number;index:number}){
    <meshStandardMaterial color='#6c8d7e'/></RoundedBox>
   <mesh position={[0,3.25,2.20]}><boxGeometry args={[3.8,.57,.16]}/>
    <meshStandardMaterial color='#efe0bd'/></mesh>
+  <TownSign text={isCafe?'WILLOW CAFÉ':'FLOWER MARKET'} position={[0,5.95,2.35]} distanceFactor={5} occlude={[]}/>
   <Html center position={[0,3.28,2.31]} distanceFactor={15}
    style={{font:'700 16px Georgia,serif',letterSpacing:'1px',color:'#52695c',
     textShadow:'0 1px #fff7e4',whiteSpace:'nowrap',pointerEvents:'none'}}>
