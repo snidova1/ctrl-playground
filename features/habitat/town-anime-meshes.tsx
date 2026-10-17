@@ -3,6 +3,7 @@ import {Suspense,useEffect,useMemo} from 'react';
 import {useGLTF} from '@react-three/drei';
 import {Box3,Color,Mesh,MeshStandardMaterial,Vector3,type Material} from 'three';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS} from './public-world-geography';
+import TownSign from './town-sign';
 
 /**
  * PR32: curated textured CC0 GLB models, not house and tree primitives.
@@ -84,6 +85,11 @@ function LoadedAnimeMesh({placement}: {placement:AnimeMeshPlacement}){
   base.position.set(-center.x*scale,-bound.min.y*scale,-center.z*scale);
   return base;
  },[scene,placement.width,placement.depth]);
+ useEffect(()=>{
+  const doc=document.documentElement;
+  doc.dataset.pr32LoadedMeshes=String(Number(doc.dataset.pr32LoadedMeshes||0)+1);
+  return()=>{doc.dataset.pr32LoadedMeshes=String(Math.max(0,Number(doc.dataset.pr32LoadedMeshes||0)-1));};
+ },[model]);
  useEffect(()=>()=>model.traverse(obj=>{
   if(obj instanceof Mesh)for(const m of [obj.material].flat())m.dispose();
  }),[model]);
@@ -94,7 +100,14 @@ function LoadedAnimeMesh({placement}: {placement:AnimeMeshPlacement}){
 export default function TownAnimeMeshes({quality}:{quality:'low'|'high'}){
  return <group name="PR32-Real-CC0-Textured-Meshes">
   {ANIME_VILLAGE_PLACEMENTS.map((p,i)=>
-   <Suspense key={'b'+i} fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>)}
+   <group key={'b'+i}>
+    <Suspense fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>
+    <group position={[p.x,0,p.z]}>
+     <TownSign text={i<PUBLIC_WORLD_BUILDINGS.length?PUBLIC_WORLD_BUILDINGS[i].name:
+      i===PUBLIC_WORLD_BUILDINGS.length?'WILLOW CAFÉ':'FLOWER MARKET'}
+      position={[0,6.3,p.depth/2]} distanceFactor={5} occlude={[]}/>
+    </group>
+   </group>)}
   {WILLOWS.filter((_,i)=>quality==='high'||i%2===0).map((p,i)=>
    <Suspense key={'t'+i} fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>)}
  </group>;
