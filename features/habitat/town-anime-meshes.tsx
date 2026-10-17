@@ -1,7 +1,7 @@
 'use client';
 import {Suspense,useEffect,useMemo} from 'react';
 import {useGLTF} from '@react-three/drei';
-import {Box3,Color,Group,Mesh,MeshStandardMaterial,Vector3} from 'three';
+import {Box3,Color,Mesh,MeshStandardMaterial,Vector3,type Material} from 'three';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS} from './public-world-geography';
 
 /**
@@ -61,7 +61,7 @@ function LoadedAnimeMesh({placement}: {placement:AnimeMeshPlacement}){
   base.traverse(obj=>{
    if(!(obj instanceof Mesh))return;
    obj.castShadow=true;obj.receiveShadow=true;
-   const prepare=(mat:unknown)=>{
+   const prepare=(mat:Material):Material=>{
     if(!(mat instanceof MeshStandardMaterial))return mat;
     const copy=mat.clone();
     copy.metalness=0;
@@ -71,7 +71,7 @@ function LoadedAnimeMesh({placement}: {placement:AnimeMeshPlacement}){
     copy.emissiveIntensity=.022;
     return copy;
    };
-   obj.material=Array.isArray(obj.material)?obj.material.map(prepare):prepare(obj.material) as typeof obj.material;
+   obj.material=Array.isArray(obj.material)?obj.material.map(prepare):prepare(obj.material);
   });
   base.updateMatrixWorld(true);
   const bound=new Box3().setFromObject(base),size=bound.getSize(new Vector3()),
