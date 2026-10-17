@@ -1,0 +1,142 @@
+{
+  "source": "Grab3D static JSON API v1",
+  "license": "CC0-1.0",
+  "models": [
+    {
+      "slug": "bakery",
+      "file": "bakery.glb",
+      "bytes": 1082932,
+      "sha256": "15aab92f75bfb5e35ed804684a87e6d0aa22d096ef294185a1038f20f9ef5b53",
+      "dimensionsMeters": [
+        8.4,
+        8.15,
+        10.22
+      ],
+      "triangles": 33742,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/buildings/bakery/",
+      "download": "https://grab3d.com/dl/bakery/bakery-light.glb"
+    },
+    {
+      "slug": "cottage-house",
+      "file": "cottage-house.glb",
+      "bytes": 728588,
+      "sha256": "36d834a29692b81a2607af3c0e57a12d8188edae60fb87268d0fdf5f9901800e",
+      "dimensionsMeters": [
+        8.84,
+        7.516,
+        6.901
+      ],
+      "triangles": 28008,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/buildings/cottage-house/",
+      "download": "https://grab3d.com/dl/cottage-house/cottage-house-light.glb"
+    },
+    {
+      "slug": "farmhouse",
+      "file": "farmhouse.glb",
+      "bytes": 1487416,
+      "sha256": "fee4a747fdcd234637e99ee8ef8ffdc6f0b6bee7ae3224cfba055789a4fc592c",
+      "dimensionsMeters": [
+        15.371,
+        10.262,
+        9.237
+      ],
+      "triangles": 39520,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/buildings/farmhouse/",
+      "download": "https://grab3d.com/dl/farmhouse/farmhouse-light.glb"
+    },
+    {
+      "slug": "flower-shop",
+      "file": "flower-shop.glb",
+      "bytes": 1000668,
+      "sha256": "f0067bf01eb39b53c120a51fc73aac8a96e3e89ba2d5beb3b65c36466b1e2e6a",
+      "dimensionsMeters": [
+        8,
+        7.15,
+        8.274
+      ],
+      "triangles": 27746,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/buildings/flower-shop/",
+      "download": "https://grab3d.com/dl/flower-shop/flower-shop-light.glb"
+    },
+    {
+      "slug": "garden-shed",
+      "file": "garden-shed.glb",
+      "bytes": 1170952,
+      "sha256": "bdb2ad22d35e612b274f047be65c515cde38bbbb145d47bf7d72529471d9402e",
+      "dimensionsMeters": [
+        3.421,
+        3.482,
+        3.686
+      ],
+      "triangles": 11860,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/buildings/garden-shed/",
+      "download": "https://grab3d.com/dl/garden-shed/garden-shed.glb"
+    },
+    {
+      "slug": "log-cabin",
+      "file": "log-cabin.glb",
+      "bytes": 3231104,
+      "sha256": "ef00245e6a0ed434c97a5a1847841217071d7d465005d6d6eef938a32936cea6",
+      "dimensionsMeters": [
+        7.533,
+        10.22,
+        6.717
+      ],
+      "triangles": 33872,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/buildings/log-cabin/",
+      "download": "https://grab3d.com/dl/log-cabin/log-cabin.glb"
+    },
+    {
+      "slug": "cafe",
+      "file": "cafe.glb",
+      "bytes": 1198180,
+      "sha256": "a63457a3ce811c4d7263476e0b292245bd506f01d63668e908da3212ab9f28db",
+      "dimensionsMeters": [
+        10.68,
+        10.1,
+        10.054
+      ],
+      "triangles": 33878,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/buildings/cafe/",
+      "download": "https://grab3d.com/dl/cafe/cafe-light.glb"
+    },
+    {
+      "slug": "willow-tree",
+      "file": "willow-tree.glb",
+      "bytes": 1951504,
+      "sha256": "723a5e44b76524d555c280bf1ba4250f713dc68fbbae74b5750cdf33e7c34a96",
+      "dimensionsMeters": [
+        6.441,
+        6.273,
+        6.802
+      ],
+      "triangles": 19458,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/nature/willow-tree/",
+      "download": "https://grab3d.com/dl/willow-tree/willow-tree.glb"
+    }
+  ]
+}
