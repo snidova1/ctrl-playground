@@ -43,7 +43,7 @@ it('keeps the rebuilt architectural volumes finite, merged and drawable',()=>{
  }
 });
 
-it('keeps Willow Square's civic inlay flush and horizon geometry finite',()=>{
+it("keeps Willow Square's civic inlay flush and horizon geometry finite",()=>{
  const inlay=makeTownSquareInlay();
  expect(inlay.getAttribute('position').count).toBeGreaterThan(300);
  expect(inlay.getAttribute('color').count).toBe(inlay.getAttribute('position').count);
