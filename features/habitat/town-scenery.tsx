@@ -6,7 +6,7 @@ import {useFrame} from '@react-three/fiber';
 import TownSign from './town-sign';
 import {TownGardens} from './town-gardens';
 import {paintedTexture,TownFootShadow,TreeContactShadows} from './town-surfaces';
-import {Group,Object3D} from 'three';
+import {BufferGeometry,Float32BufferAttribute,Group,Object3D} from 'three';
 import {TownHouse,MarketFront} from './town-architecture';
 import {TownDailyProps} from './town-daily-props';
 import {TownPaving,FountainInlay} from './town-paving';
@@ -57,6 +57,34 @@ function GreenBorder({quality}:{quality:'low'|'high'}){
  const selected=useMemo(()=>(quality==='low'?leafSeeds.filter((_,i)=>i>=72||i%2===0):leafSeeds).map((p,i)=>({x:p.x,z:p.z,y:townGroundHeight(p.x,p.z),size:p.h,yaw:i*.73})),[quality]);
  return <group><TreeContactShadows trees={selected}/><TownRoundedTrees trees={selected}/></group>;
 }
+/** A distant layered landscape replaces repeated enormous sphere blobs
+ * on the approach to Willow's waterfront. Pure visual backdrop, not a solid.
+ * One mesh per ridge with no new remote models or draw-per-rock explosion.
+ */
+export function makeTownBackdropRidge(phase:number){
+ const verts:number[]=[];
+ const height=(x:number)=>6+4.2*Math.sin(x*.028+phase)
+  +2.8*Math.sin(x*.066+phase*1.7)+2.2*Math.sin(x*.11-phase*.6);
+ for(let i=0;i<52;i++){
+  const x=-156+i*6,x1=x+6,a=height(x),b=height(x1);
+  verts.push(x,-24,0,x1,-24,0,x1,b,0,
+             x,-24,0,x1,b,0,x,a,0);
+ }
+ const geometry=new BufferGeometry();
+ geometry.setAttribute('position',new Float32BufferAttribute(verts,3));
+ geometry.computeVertexNormals();geometry.computeBoundingSphere();
+ return geometry;
+}
+function TownBackdropRidges(){
+ const geometry=useMemo(()=>[.9,2.7,4.9].map(makeTownBackdropRidge),[]);
+ useEffect(()=>()=>geometry.forEach(g=>g.dispose()),[geometry]);
+ const colors=['#afc6ad','#8da992','#799b89'];
+ return <group>{geometry.map((ridge,i)=>
+  <mesh key={i} geometry={ridge} dispose={null} position={[0,0,-178+i*14]}>
+   <meshStandardMaterial color={colors[i]} roughness={1}/>
+  </mesh>
+ )}</group>;
+}
 function RaisedGround(){
  const quays=useMemo(()=>{
   const edges=[-37.5,...PUBLIC_WORLD_BRIDGES.flatMap(b=>[b.x-PUBLIC_WORLD_BRIDGE.halfWidth,b.x+PUBLIC_WORLD_BRIDGE.halfWidth]),37.5];
@@ -76,8 +104,7 @@ function RaisedGround(){
   {TOWN_HILLS.map(([x,z,w,h],i)=>
    <mesh key={i} position={[x,-h*.32,z]} scale={[w,h,w*.6]}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial color={i%2?P.shutter:P.sage} roughness={1}/></mesh>)}
   {/* The old z=-66 ridge crossed the expanded Harbor and occluded its camera. */}
-  {[-55,-37,-18,5,25,49].map((x,i)=>
-   <mesh key={i} position={[x,-7,-154]} scale={[20,14+(i%3)*3,14]}><sphereGeometry args={[1,16,10]}/><meshStandardMaterial color={i%2?P.shutter:P.grass} roughness={1}/></mesh>)}
+  <TownBackdropRidges/>
  </>;
 }
 function Bridge({x}:{x:number}){
