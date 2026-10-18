@@ -29,7 +29,7 @@ export const willowPainterlyFragment=/* glsl */ `
  uniform float uGrain;
  varying vec2 vUv;
 
- float luminance(vec3 c){return dot(c,vec3(.2126,.7152,.0722));}
+ float willowLum(vec3 c){return dot(c,vec3(.2126,.7152,.0722));}
  float hash12(vec2 p){
   vec3 p3=fract(vec3(p.xyx)*.1031);
   p3+=dot(p3,p3.yzx+33.33);
@@ -56,12 +56,12 @@ export const willowPainterlyFragment=/* glsl */ `
      vec2 offset=vec2(float(xi),float(yi))*dir*px*1.4;
      vec3 c=texture2D(tDiffuse,clamp(uv+offset,vec2(0.),vec2(1.))).rgb;
      sum+=c;
-     float l=luminance(c);
+     float l=willowLum(c);
      squares+=l*l;
     }
    }
    vec3 mean=sum*.25;
-   float variance=max(0.,squares*.25-pow(luminance(mean),2.));
+   float variance=max(0.,squares*.25-pow(willowLum(mean),2.));
    if(variance<lowest){lowest=variance;selected=mean;}
   }
   detail=lowest;
@@ -74,12 +74,12 @@ export const willowPainterlyFragment=/* glsl */ `
   vec3 south=texture2D(tDiffuse,vUv-vec2(0.,texel.y*1.3)).rgb;
   vec3 east=texture2D(tDiffuse,vUv+vec2(texel.x*1.3,0.)).rgb;
   vec3 west=texture2D(tDiffuse,vUv-vec2(texel.x*1.3,0.)).rgb;
-  float edge=max(abs(luminance(north)-luminance(south)),
-                 abs(luminance(east)-luminance(west)));
+  float edge=max(abs(willowLum(north)-willowLum(south)),
+                 abs(willowLum(east)-willowLum(west)));
   float maxColor=max(length(north-south),length(east-west));
   float ink=smoothstep(.060,.23,edge+maxColor*.27);
   // Keep patterned paving and far leaf cards from becoming harsh black edges.
-  ink*=smoothstep(.09,.19,luminance(color))*.75;
+  ink*=smoothstep(.09,.19,willowLum(color))*.75;
   if(uPaint>.01){
    float variance;
    vec3 paint=inkWash(vUv,color,variance);
@@ -87,7 +87,7 @@ export const willowPainterlyFragment=/* glsl */ `
    color=mix(color,paint,uPaint*.60*calm*(1.0-ink));
   }
   // Warm golden-paper highlights with cool, airy shadow tint.
-  float l=luminance(color);
+  float l=willowLum(color);
   color*=mix(vec3(.965,1.,1.035),vec3(1.06,1.015,.95),smoothstep(.13,.85,l));
   color=mix(vec3(l),color,1.10);
   color=mix(color,color*vec3(.21,.15,.13),clamp(ink*uInk,0.,.55));
@@ -96,7 +96,13 @@ export const willowPainterlyFragment=/* glsl */ `
   color*=1.0+(paper-.5)*uGrain*.085;
   vec2 q=vUv-.5;
   color*=1.0-smoothstep(.37,.85,length(q))*.075;
-  gl_FragColor=vec4(clamp(color,0.,1.),1.);
+  // ShaderPass writes directly to the default framebuffer. Its raw
+  // ShaderMaterial has no automatic colorspace_fragment conversion.
+  vec3 linear=clamp(color,0.,1.);
+  vec3 display=mix(linear*12.92,
+   1.055*pow(linear,vec3(1.0/2.4))-0.055,
+   step(vec3(.0031308),linear));
+  gl_FragColor=vec4(clamp(display,0.,1.),1.);
  }
 `;
 
