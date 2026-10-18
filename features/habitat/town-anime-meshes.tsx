@@ -63,6 +63,17 @@ const WILLOWS:readonly AnimeMeshPlacement[]=[
  {id:'willow-tree',x:-33,z:37,width:11.5,depth:11.5,yaw:.8},
  {id:'willow-tree',x:35,z:-33,width:10.8,depth:10.8,yaw:.8},
 ];
+// An orchard ridge hides the flat distant development silhouette in the
+// default camera. Stagger sizes/depth so it reads as a real forest edge,
+// without placing extra solid geometry in the server-owned road corridor.
+const DISTANT_ORCHARD:readonly AnimeMeshPlacement[]=[
+ {id:'oak-tree',x:-44,z:-39,width:11.5,depth:10.5,yaw:.4},
+ {id:'willow-tree',x:-29,z:-42,width:11.0,depth:10.0,yaw:2.3},
+ {id:'cherry-blossom-tree',x:-12,z:-44,width:10.5,depth:10.1,yaw:1.4},
+ {id:'oak-tree',x:12,z:-45,width:10.2,depth:10.3,yaw:.8},
+ {id:'cherry-blossom-tree',x:30,z:-42,width:11.2,depth:10.7,yaw:1.2},
+ {id:'willow-tree',x:44,z:-40,width:11.8,depth:10.9,yaw:2.7},
+];
 export const ANIME_VILLAGE_TREE_PLACEMENTS=WILLOWS;
 const GROVE_ACCENTS:readonly AnimeMeshPlacement[]=[
  // First two paint a green / blossom silhouette beside the village houses.
@@ -187,6 +198,8 @@ export default function TownAnimeMeshes({quality}:{quality:'low'|'high'}){
    <Suspense key={'t'+i} fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>)}
   {GROVE_ACCENTS.filter((_,i)=>quality==='high'||i<2).map((p,i)=>
    <Suspense key={'grove'+i} fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>)}
+  {DISTANT_ORCHARD.filter((_,i)=>quality==='high'||i%2===0).map((p,i)=>
+   <Suspense key={'ridge'+i} fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>)}
   {FLOWER_BANKS.filter((_,i)=>quality==='high'||i%2===0).map((p,i)=>
    <Suspense key={'flowers'+i} fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>)}
  </group>;
