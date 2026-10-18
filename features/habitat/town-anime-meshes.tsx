@@ -1,7 +1,9 @@
 'use client';
-import {Suspense,useEffect,useMemo} from 'react';
+import {Suspense,useEffect,useMemo,useRef} from 'react';
+import {animate,createScope} from 'animejs';
+import 'animejs/adapters/three';
 import {useGLTF} from '@react-three/drei';
-import {Box3,Mesh,Vector3} from 'three';
+import {Box3,Mesh,Vector3,type Group} from 'three';
 import {animeMaterial} from './town-anime-material';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS} from './public-world-geography';
 import TownSign from './town-sign';
@@ -103,7 +105,28 @@ const FLOWER_BANKS:readonly AnimeMeshPlacement[]=[
 
 
 function LoadedAnimeMesh({placement}: {placement:AnimeMeshPlacement}){
+ const breezePivot=useRef<Group>(null);
  const {scene}=useGLTF('/assets/pr32/'+placement.id+'.glb');
+ // Anime.js v4 Three adapter: animate the actual GLB parent pivot, never
+ // overwrite R3F camera/controller/server-authoritative player transforms.
+ // Scope cleanup prevents stacked timers when town LOD is remounted.
+ useEffect(()=>{
+  if(!breezePivot.current||!['willow-tree','oak-tree','cherry-blossom-tree'].includes(placement.id))return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const offset=Math.abs(placement.x*13+placement.z*17);
+  const scope=createScope().add(()=>{
+   animate(breezePivot.current!,{
+    rotateZ:[-.7,.7],
+    rotateX:[-.36,.36],
+    duration:3600+(offset%7)*175,
+    delay:(offset%5)*190,
+    alternate:true,
+    loop:true,
+    ease:'inOutSine'
+   });
+  });
+  return()=>scope.revert();
+ },[placement.id,placement.x,placement.z]);
  const model=useMemo(()=>{
   const base=scene.clone(true);
   // We clone materials so disabling metallic highlights never mutates the
@@ -137,7 +160,7 @@ function LoadedAnimeMesh({placement}: {placement:AnimeMeshPlacement}){
   if(obj instanceof Mesh)for(const m of [obj.material].flat())m.dispose();
  }),[model]);
  return <group position={[placement.x,0,placement.z]} rotation-y={placement.yaw??0}>
-  <primitive object={model} dispose={null}/>
+  <group ref={breezePivot}><primitive object={model} dispose={null}/></group>
  </group>;
 }
 export default function TownAnimeMeshes({quality}:{quality:'low'|'high'}){
