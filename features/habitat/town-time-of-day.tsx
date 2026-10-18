@@ -1,6 +1,6 @@
 'use client';
-import {useEffect,useRef,type MutableRefObject} from 'react';
-import {useFrame,useThree} from '@react-three/fiber';
+import {useRef,type MutableRefObject} from 'react';
+import {useFrame} from '@react-three/fiber';
 import {Color,DirectionalLight,HemisphereLight} from 'three';
 import type {Pose} from '@/features/plaza/types';
 import {townSunRig} from './town-sun-rig';
@@ -11,14 +11,6 @@ const skyDay=new Color('#bedee6'),skyDusk=new Color('#e9c7aa'),skyNight=new Colo
 const sunDay=new Color('#fff1d8'),sunDusk=new Color('#ffd1a3'),distantAir=new Color('#efe0c8');
 export default function TownDaylight({quality,pose}:{quality:'low'|'high';pose:MutableRefObject<Pose>}){
  const sun=useRef<DirectionalLight>(null),hemi=useRef<HemisphereLight>(null),last=useRef(-1);
- const {gl}=useThree();
- // WebGLRenderer's built-in ACES grade is significantly cheaper than an
- // EffectComposer LUT/SSAO pass; restore the previous exposure on unmount.
- useEffect(()=>{
-  const previous=gl.toneMappingExposure;
-  gl.toneMappingExposure=1.055;
-  return()=>{gl.toneMappingExposure=previous;};
- },[gl]);
  useFrame(({scene,clock})=>{
   if(clock.elapsedTime-last.current<.25)return;
   last.current=clock.elapsedTime;
