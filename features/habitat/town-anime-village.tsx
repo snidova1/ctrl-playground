@@ -7,6 +7,7 @@ import {
 import TownAnimeMeshes from './town-anime-meshes';
 import TownAnimeGarden from './town-anime-garden';
 import TownAnimeDetails from './town-anime-details';
+import TownAnimeGrounding from './town-anime-grounding';
 import TownStylizedWater from './town-stylized-water';
 import {TownFountain,CanalBoat} from './town-waterfront';
 import {paintedTexture} from './town-surfaces';
@@ -187,6 +188,7 @@ export default function AnimeVillageCenter({quality}:{quality:'low'|'high'}){
   <PaintedHorizon/>
   <AnimeCanal/>
   <AnimeFootpaths/>
+  <TownAnimeGrounding quality={quality}/>
   <TownAnimeMeshes quality={quality}/>
   <TownAnimeGarden quality={quality}/>
   <TownAnimeDetails/>
