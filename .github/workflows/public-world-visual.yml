@@ -100,7 +100,11 @@ jobs:
       - name: Capture actual desktop and mobile world pixels using a signed wallet
         env:
           CTRL_QA_PRODUCTION: '1'
-        run: pnpm exec playwright test --config playwright.public-world.config.ts
+        run: |
+          if [ "$GITHUB_HEAD_REF" = "feat/pr32-anime-world-from-scratch" ]; then
+            export CTRL_PR32_ASSERT_MESHES=1
+          fi
+          pnpm exec playwright test --config playwright.public-world.config.ts
       - name: Two signed desktop/mobile neighbors complete persistent civic construction
         run: pnpm exec playwright test --config playwright.civic.config.ts --grep 'persistent waterfront'
       - name: Preserve screenshots and traces
