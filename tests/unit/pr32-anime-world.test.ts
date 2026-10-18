@@ -1,6 +1,8 @@
 import {describe,expect,it} from 'vitest';
 import {MeshStandardMaterial,MeshToonMaterial} from 'three';
 import {scenicRoadOutsideSquare} from '../../domain/town-scenic-roads';
+import {paintedCanopyCards} from '../../features/habitat/town-painted-canopy';
+import {WILLOW_PAINTERLY_SETTINGS,willowPainterlyFragment} from '../../features/habitat/town-painterly-post';
 import {townContactFootprints} from '../../features/habitat/town-anime-grounding';
 import {storybookPlantings} from '../../features/habitat/town-anime-garden';
 import {animeMaterial,makeAnimeLightRamp} from '../../features/habitat/town-anime-material';
@@ -8,6 +10,24 @@ import {makeAnimePath,makeAnimeRoof,ANIME_WORLD_PALETTE} from '../../features/ha
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS,isPublicWorldWalkable} from '../../features/habitat/public-world-geography';
 
 describe('PR32 painted-anime Public World foundation',()=>{
+ it('adapts Summer Cycle gouache/ink with a much cheaper mobile profile',()=>{
+  expect(willowPainterlyFragment).toContain('inkWash');
+  expect(willowPainterlyFragment).toContain('smoothNoise');
+  expect(willowPainterlyFragment).toContain('uInk');
+  expect(WILLOW_PAINTERLY_SETTINGS.desktop.paint).toBeGreaterThan(.5);
+  expect(WILLOW_PAINTERLY_SETTINGS.mobile.paint).toBe(0);
+  expect(WILLOW_PAINTERLY_SETTINGS.mobile.pixelRatio).toBeLessThan(1);
+ });
+ it('layers painted atlas leaf clusters over real tree meshes with mobile LOD',()=>{
+  const low=paintedCanopyCards('low'),high=paintedCanopyCards('high');
+  expect(low.length).toBe(4*26);
+  expect(high.length).toBe(8*56);
+  for(const leaf of low){
+   expect(Number.isFinite(leaf.x+leaf.y+leaf.z+leaf.ry)).toBe(true);
+   expect(leaf.size).toBeGreaterThan(1);
+  }
+ });
+
  it('grounds every authored cottage with instanced watercolor contact shade instead of costly GTAO',()=>{
   const low=townContactFootprints('low'),high=townContactFootprints('high');
   expect(low.length).toBe(12); // eight buildings + four near willows
