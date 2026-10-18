@@ -6,7 +6,7 @@
  * Run: node scripts/pr32-install-cc0-meshes.mjs
  * Source: https://grab3d.com/developers/ (static API v1)
  */
-import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {mkdir,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
 
