@@ -55,15 +55,25 @@ try{
   const response=await page.goto(demo.url,{waitUntil:'domcontentloaded',timeout:60000});
   if(!response?.ok())throw Error('Demo unavailable: '+demo.url+' '+response?.status());
   await page.waitForTimeout(1700);
-  await page.screenshot({path:path.join(out,demo.id+'-browser.png')});
   const target=selectedTarget(await getTargets(),demo.url);
+  // REA observation is the primary result; optional screenshot must never
+  // fail the research just because costly GTAO stalls software WebGL capture.
   const evidence=await reaInspect(target,demo);
+  let screenshotCaptured=false;
+  try{
+   if(demo.id!=='gtao'){
+    await page.screenshot({path:path.join(out,demo.id+'-browser.png'),timeout:12000});
+    screenshotCaptured=true;
+   }
+  }catch(error){
+   await writeFile(path.join(out,demo.id+'-screenshot-limitation.txt'),String(error));
+  }
   const entry={
    demo:demo.id,origin:new URL(demo.url).origin,url:demo.url,
    reaVersion:'6.5.0',node:process.version,cdp:'localhost',
    observedWithRea:true,consoleCapture:'not-inferred',
    evidenceFile:demo.id+'-rea-evidence.json',
-   screenshotFile:demo.id+'-browser.png',
+   screenshotFile:screenshotCaptured?demo.id+'-browser.png':null,
    evidenceKeys:Object.keys(evidence),retainedScriptSources:demo.sources,
   };
   report.push(entry);
