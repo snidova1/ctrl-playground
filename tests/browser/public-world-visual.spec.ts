@@ -75,6 +75,10 @@ test('signed player enters a rendered walkable multiplayer neighborhood, not a b
  const state=await world.json() as {world?:{id:string}|null,homeId:string|null};
  expect(state.world?.id).toBe(PUBLIC_WORLD_ID);
  expect(state.homeId).not.toBe(PUBLIC_WORLD_ID);
+ if(process.env.CTRL_PR32_ASSERT_MESHES==='1'){
+  await expect.poll(async()=>page.evaluate(()=>Number(document.documentElement.dataset.pr32LoadedMeshes||'0')),
+   {timeout:65000,intervals:[300,500,1000]}).toBeGreaterThanOrEqual(10);
+ }
  await page.waitForTimeout(1800);
  const shot=await canvas.screenshot({path:test.info().outputPath('willow-town-scene.png'),scale:'css'});
  const {colors,nonSky,nearBlack}=await diversity(page,shot);
