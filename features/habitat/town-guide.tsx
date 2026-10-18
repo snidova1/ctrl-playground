@@ -14,7 +14,17 @@ export default function TownGuide({pose,onDirectory,onActivity,onTravel,states,b
  const cooling=nearest&&states[nearest.objectId]?.usedAt?Math.max(0,Math.ceil((states[nearest.objectId].usedAt+nearest.cooldownMs-now)/1000)):0;
  return <aside className='hb-town-guide' aria-label='Public World travel and activities'>
   <div className='hb-town-guide-actions'>
-   {nearest&&<button className='hb-town-action' disabled={busy||cooling>0} onClick={()=>onActivity(nearest.id)}>
+   {nearest&&<button className='hb-town-action' disabled={busy||cooling>0} onClick={()=>{
+    // The guide samples pose every 400ms. A map travel can update the player's
+    // authoritative position before that tick; never submit the stale former
+    // district's activity and cause a misleading COME_CLOSER error.
+    const live=getNearestTownActivity(pose.current.x,pose.current.z);
+    if(!live||busy)return;
+    if(live.id!==nearest.id)setPosition({x:pose.current.x,z:pose.current.z});
+    const cooldownEnds=(states[live.objectId]?.usedAt??0)+live.cooldownMs;
+    if(cooldownEnds>Date.now())return;
+    onActivity(live.id);
+   }}>
     {cooling>0?`Neighbors helped · ${cooling}s`:nearest.verb}
    </button>}
    <button aria-expanded={open} aria-controls='town-map' onClick={()=>setOpen(v=>!v)}>{open?'Close map':'Town map'}</button>
