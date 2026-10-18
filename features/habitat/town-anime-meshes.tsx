@@ -13,7 +13,8 @@ import TownSign from './town-sign';
  */
 export const ANIME_MESH_ASSET_IDS=[
  'bakery','cottage-house','farmhouse','flower-shop','garden-shed',
- 'log-cabin','cafe','willow-tree',
+ 'log-cabin','cafe','willow-tree','oak-tree','cherry-blossom-tree',
+ 'bush','daisy-patch',
 ] as const;
 export type AnimeMeshId=(typeof ANIME_MESH_ASSET_IDS)[number];
 
@@ -54,6 +55,30 @@ const WILLOWS:readonly AnimeMeshPlacement[]=[
  {id:'willow-tree',x:35,z:-33,width:8.2,depth:8.2,yaw:.8},
 ];
 export const ANIME_VILLAGE_TREE_PLACEMENTS=WILLOWS;
+const GROVE_ACCENTS:readonly AnimeMeshPlacement[]=[
+ {id:'oak-tree',x:-25,z:33,width:7,depth:7,yaw:1.1},
+ {id:'cherry-blossom-tree',x:25,z:35,width:7,depth:7,yaw:.3},
+ {id:'oak-tree',x:-37,z:-21,width:6.7,depth:6.7,yaw:2.3},
+ {id:'cherry-blossom-tree',x:36,z:-20,width:6.8,depth:6.8,yaw:1.6},
+];
+/** Planting beds follow the edge of the WALKABLE area, not blocking a road.
+ * Meshes have no gameplay collision and never alter player/server coordinates.
+ */
+const FLOWER_BANKS:readonly AnimeMeshPlacement[]=[
+ {id:'bush',x:-7,z:17,width:2.25,depth:2.25},
+ {id:'bush',x:-10,z:15,width:2.05,depth:2.05},
+ {id:'bush',x:7,z:17,width:2.25,depth:2.25},
+ {id:'bush',x:10,z:15,width:2.05,depth:2.05},
+ {id:'bush',x:-18,z:32,width:2.4,depth:2.4},
+ {id:'bush',x:18,z:32,width:2.4,depth:2.4},
+ {id:'bush',x:-26,z:-12,width:2.5,depth:2.5},
+ {id:'bush',x:25,z:-12,width:2.5,depth:2.5},
+ {id:'daisy-patch',x:-7,z:21,width:3.5,depth:3.5,yaw:.3},
+ {id:'daisy-patch',x:8,z:21,width:3.2,depth:3.2,yaw:1.3},
+ {id:'daisy-patch',x:-17,z:29,width:3.1,depth:3.1},
+ {id:'daisy-patch',x:17,z:29,width:3.1,depth:3.1},
+];
+
 
 function LoadedAnimeMesh({placement}: {placement:AnimeMeshPlacement}){
  const {scene}=useGLTF('/assets/pr32/'+placement.id+'.glb');
@@ -112,5 +137,9 @@ export default function TownAnimeMeshes({quality}:{quality:'low'|'high'}){
    </group>)}
   {WILLOWS.filter((_,i)=>quality==='high'||i<4).map((p,i)=>
    <Suspense key={'t'+i} fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>)}
+  {GROVE_ACCENTS.filter((_,i)=>quality==='high'||i<2).map((p,i)=>
+   <Suspense key={'grove'+i} fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>)}
+  {FLOWER_BANKS.filter((_,i)=>quality==='high'||i%2===0).map((p,i)=>
+   <Suspense key={'flowers'+i} fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>)}
  </group>;
 }
