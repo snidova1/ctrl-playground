@@ -1,7 +1,8 @@
 'use client';
 import {Suspense,useEffect,useMemo} from 'react';
 import {useGLTF} from '@react-three/drei';
-import {Box3,Color,Mesh,MeshStandardMaterial,Vector3,type Material} from 'three';
+import {Box3,Mesh,Vector3} from 'three';
+import {animeMaterial} from './town-anime-material';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS} from './public-world-geography';
 import TownSign from './town-sign';
 
@@ -89,17 +90,11 @@ function LoadedAnimeMesh({placement}: {placement:AnimeMeshPlacement}){
   base.traverse(obj=>{
    if(!(obj instanceof Mesh))return;
    obj.castShadow=true;obj.receiveShadow=true;
-   const prepare=(mat:Material):Material=>{
-    if(!(mat instanceof MeshStandardMaterial))return mat;
-    const copy=mat.clone();
-    copy.metalness=0;
-    copy.roughness=Math.max(.87,copy.roughness);
-    // Very mild fill lifts shadow regions under the browser's ACES tonemap.
-    copy.emissive=new Color('#dfebd8');
-    copy.emissiveIntensity=.022;
-    return copy;
-   };
-   obj.material=Array.isArray(obj.material)?obj.material.map(prepare):prepare(obj.material);
+   const foliage=['willow-tree','oak-tree','cherry-blossom-tree','bush','daisy-patch']
+    .includes(placement.id);
+   obj.material=Array.isArray(obj.material)
+    ?obj.material.map(mat=>animeMaterial(mat,foliage))
+    :animeMaterial(obj.material,foliage);
   });
   base.updateMatrixWorld(true);
   const bound=new Box3().setFromObject(base),size=bound.getSize(new Vector3()),
