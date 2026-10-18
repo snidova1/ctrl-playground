@@ -17,6 +17,11 @@ import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS} from './public-world-geograph
  */
 type Island=readonly [number,number,number,number,number];
 const ISLANDS:readonly Island[]=[
+ // Planted shoulders of the narrow path in the default player-facing camera.
+ // Distinct smaller near-field islands break up the former empty tan cross.
+ [-7.4,2.0,2.7,3.1,56],[7.4,2.0,2.7,3.1,56],
+ [-7.9,-4.2,2.2,2.7,45],[7.9,-4.2,2.2,2.7,45],
+ [-7.9,12.7,2.9,1.8,43],[7.9,12.7,2.9,1.8,43],
  // Coffee shop and flower market flanking the fountain.
  [-12,0,3.4,5.3,45],[12,0,3.4,5.3,45],
  [-13,-6,3.6,3.2,38],[13,-6,3.6,3.2,38],
