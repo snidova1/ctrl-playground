@@ -15,6 +15,7 @@ const OUTPUT=path.resolve('public/assets/pr32');
 const MODELS=[
  'bakery','cottage-house','farmhouse','flower-shop','garden-shed',
  'log-cabin','cafe','willow-tree',
+ 'oak-tree','cherry-blossom-tree','bush','daisy-patch',
 ];
 const MAX_BYTES=5_000_000;
 const REQUIRED_ORIGIN='procedural';
