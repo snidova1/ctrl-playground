@@ -29,7 +29,7 @@ pts = [o.matrix_world @ Vector(corner) for o in asset_objs for corner in o.bound
 lo = Vector([min(v[i] for v in pts) for i in range(3)])
 hi = Vector([max(v[i] for v in pts) for i in range(3)])
 dims = hi - lo
-tris = sum(len(o.data.loop_triangles) for o in asset_objs)
+tris = sum(max(0, len(poly.vertices) - 2) for o in asset_objs for poly in o.data.polygons)
 mats = sorted({m.name for o in asset_objs for m in o.data.materials if m})
 report = {
     "asset": name,
