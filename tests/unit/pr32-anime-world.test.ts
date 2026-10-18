@@ -1,11 +1,26 @@
 import {describe,expect,it} from 'vitest';
 import {MeshStandardMaterial,MeshToonMaterial} from 'three';
 import {scenicRoadOutsideSquare} from '../../domain/town-scenic-roads';
+import {storybookPlantings} from '../../features/habitat/town-anime-garden';
 import {animeMaterial,makeAnimeLightRamp} from '../../features/habitat/town-anime-material';
 import {makeAnimePath,makeAnimeRoof,ANIME_WORLD_PALETTE} from '../../features/habitat/town-anime-village';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS,isPublicWorldWalkable} from '../../features/habitat/public-world-geography';
 
 describe('PR32 painted-anime Public World foundation',()=>{
+ it('plants actual instanced CC0 flower groups in designed garden islands, never a road or fountain',()=>{
+  const high=storybookPlantings('high'),low=storybookPlantings('low');
+  for(const kind of ['red','yellow','purple','grass'] as const){
+   expect(high[kind].length).toBeGreaterThan(10);
+   expect(low[kind].length).toBeGreaterThan(4);
+   expect(high[kind].length).toBeGreaterThanOrEqual(low[kind].length);
+   for(const plant of high[kind]){
+    expect(Number.isFinite(plant.x+plant.z)).toBe(true);
+    if(Math.abs(plant.x)<3.7)expect(plant.z< -17||plant.z>=38).toBe(true);
+    expect(Math.hypot(plant.x,plant.z+3)).toBeGreaterThanOrEqual(5.8);
+   }
+  }
+ });
+
  it('clips old brick road segments out of the authored village while retaining walkable outskirts',()=>{
   const roads=scenicRoadOutsideSquare([-78,9,78,9],34);
   expect(roads.length).toBe(2);
