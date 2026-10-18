@@ -1,8 +1,26 @@
 import {describe,expect,it} from 'vitest';
+import {MeshStandardMaterial,MeshToonMaterial} from 'three';
+import {animeMaterial,makeAnimeLightRamp} from '../../features/habitat/town-anime-material';
 import {makeAnimePath,makeAnimeRoof,ANIME_WORLD_PALETTE} from '../../features/habitat/town-anime-village';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS,isPublicWorldWalkable} from '../../features/habitat/public-world-geography';
 
 describe('PR32 painted-anime Public World foundation',()=>{
+ it('keeps original GLB textures while applying a warm illustration light ramp to buildings',()=>{
+  const original=new MeshStandardMaterial({color:'#ead4ae',roughness:.3,metalness:.6});
+  const painted=animeMaterial(original,false);
+  expect(painted).toBeInstanceOf(MeshToonMaterial);
+  expect(painted).not.toBe(original);
+  expect(original.metalness).toBe(.6);
+  expect((painted as MeshToonMaterial).gradientMap).toBeDefined();
+  const tree=animeMaterial(original,true);
+  expect(tree).toBeInstanceOf(MeshStandardMaterial);
+  expect((tree as MeshStandardMaterial).metalness).toBe(0);
+  painted.dispose();tree.dispose();original.dispose();
+  const ramp=makeAnimeLightRamp();
+  expect(ramp.image.width).toBeGreaterThanOrEqual(8);
+  ramp.dispose();
+ });
+
  it('replaces giant rectangular streets with drawable upward-facing curved footpaths',()=>{
   const road=makeAnimePath([[-35,8],[-14,9],[7,8],[35,10]],4.3,2);
   const p=road.getAttribute('position'),n=road.getAttribute('normal'),c=road.getAttribute('color');
