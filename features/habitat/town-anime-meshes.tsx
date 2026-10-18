@@ -45,24 +45,33 @@ export const ANIME_VILLAGE_PLACEMENTS:readonly AnimeMeshPlacement[]=[
  * They frame camera paths but sit outside the town's original tree obstacles.
  * The importer includes the GLB's full textures and original sculpted mesh.
  */
+/**
+ * Three depths of sculpted canopy, composed from the player's eye-level view.
+ * The four FRONT willows make an actual forested square, not miniature trees
+ * dotted against distant cube-house silhouettes. Keep the main X=0 walkway
+ * visually open, and ground tree trunks in the bordering planted plots.
+ */
 const WILLOWS:readonly AnimeMeshPlacement[]=[
- // Two landmark canopies frame the civic square, without obscuring the fountain.
- {id:'willow-tree',x:-15,z:14,width:8.2,depth:8.2,yaw:.5},
- {id:'willow-tree',x:16,z:14,width:8.2,depth:8.2,yaw:2.3},
- {id:'willow-tree',x:-38,z:12,width:9.1,depth:9.1,yaw:1.3},
- {id:'willow-tree',x:39,z:15,width:8.9,depth:8.9,yaw:2},
- // The outer grove ties Willow to the path approaching its remote districts.
- {id:'willow-tree',x:-37,z:35,width:9,depth:9,yaw:.8},
- {id:'willow-tree',x:40,z:-8,width:8,depth:8,yaw:2.9},
- {id:'willow-tree',x:-30,z:-34,width:8.3,depth:8.3,yaw:4},
- {id:'willow-tree',x:35,z:-33,width:8.2,depth:8.2,yaw:.8},
+ // First quartet is mandatory even on phones.
+ {id:'willow-tree',x:-16.2,z:4.6,width:13.2,depth:12.6,yaw:.5},
+ {id:'willow-tree',x:16.1,z:4.9,width:13.4,depth:12.7,yaw:2.3},
+ {id:'willow-tree',x:-18,z:-12.6,width:12.0,depth:11.7,yaw:1.25},
+ {id:'willow-tree',x:17.4,z:-12.9,width:12.2,depth:11.7,yaw:2.15},
+ // Midground and outer approach, high setting only.
+ {id:'willow-tree',x:-35,z:19,width:12.5,depth:12.5,yaw:1.3},
+ {id:'willow-tree',x:35,z:18,width:13.0,depth:13.0,yaw:2},
+ {id:'willow-tree',x:-33,z:37,width:11.5,depth:11.5,yaw:.8},
+ {id:'willow-tree',x:35,z:-33,width:10.8,depth:10.8,yaw:.8},
 ];
 export const ANIME_VILLAGE_TREE_PLACEMENTS=WILLOWS;
 const GROVE_ACCENTS:readonly AnimeMeshPlacement[]=[
- {id:'oak-tree',x:-25,z:33,width:7,depth:7,yaw:1.1},
- {id:'cherry-blossom-tree',x:25,z:35,width:7,depth:7,yaw:.3},
- {id:'oak-tree',x:-37,z:-21,width:6.7,depth:6.7,yaw:2.3},
- {id:'cherry-blossom-tree',x:36,z:-20,width:6.8,depth:6.8,yaw:1.6},
+ // First two paint a green / blossom silhouette beside the village houses.
+ {id:'oak-tree',x:-29.5,z:-4.5,width:11,depth:10.7,yaw:.9},
+ {id:'cherry-blossom-tree',x:29.3,z:-4.8,width:11.2,depth:10.8,yaw:.4},
+ {id:'oak-tree',x:-28.5,z:27,width:9,depth:9,yaw:1.1},
+ {id:'cherry-blossom-tree',x:28.4,z:28,width:9,depth:9,yaw:.3},
+ {id:'oak-tree',x:-36,z:-22,width:9.5,depth:9.5,yaw:2.3},
+ {id:'cherry-blossom-tree',x:36,z:-21,width:9.5,depth:9.5,yaw:1.6},
 ];
 /** Planting beds follow the edge of the WALKABLE area, not blocking a road.
  * Meshes have no gameplay collision and never alter player/server coordinates.
