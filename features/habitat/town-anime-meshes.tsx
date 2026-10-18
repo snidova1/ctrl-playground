@@ -170,7 +170,7 @@ function LoadedAnimeMesh({placement}: {placement:AnimeMeshPlacement}){
   base.scale.setScalar(scale);
   base.position.set(-center.x*scale,-bound.min.y*scale,-center.z*scale);
   return base;
- },[scene,placement.width,placement.depth]);
+ },[scene,placement.id,placement.width,placement.depth]);
  useEffect(()=>{
   const doc=document.documentElement;
   doc.dataset.pr32LoadedMeshes=String(Number(doc.dataset.pr32LoadedMeshes||0)+1);
