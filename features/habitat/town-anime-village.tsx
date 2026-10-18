@@ -1,11 +1,11 @@
 'use client';
-import {useEffect,useLayoutEffect,useMemo,useRef} from 'react';
+import {useEffect,useMemo} from 'react';
 import {
  BufferGeometry,CatmullRomCurve3,Color,Float32BufferAttribute,
- InstancedMesh,Object3D,Vector3,SphereGeometry,BackSide,CanvasTexture,RepeatWrapping,SRGBColorSpace
+ Vector3,SphereGeometry,BackSide,CanvasTexture,RepeatWrapping,SRGBColorSpace
 } from 'three';
-import {PUBLIC_WORLD_BUILDINGS} from './public-world-geography';
 import TownAnimeMeshes from './town-anime-meshes';
+import TownAnimeGarden from './town-anime-garden';
 import TownStylizedWater from './town-stylized-water';
 import {TownFountain,CanalBoat} from './town-waterfront';
 import {paintedTexture} from './town-surfaces';
@@ -126,48 +126,6 @@ export function makeAnimeRoof(w:number,d:number,rise:number,seed=0){
  g.computeVertexNormals();g.computeBoundingSphere();
  return g;
 }
-/** Batched grass and floral dots make greenery feel planted and not scattered
- * huge individual flower meshes; keep sidewalks unobstructed.
- */
-function AnimeWildflowers({quality}:{quality:'low'|'high'}){
- const sites=useMemo(()=>{
-  const list:{x:number;z:number;s:number}[]=[];
-  for(let i=0;i<380;i++){
-   const x=-45+(i*11.437)%90,z=-43+(i*19.73)%86;
-   const byStreet=Math.abs(x)<5||Math.abs(z-9)<4;
-   const byShop=z>-13&&z<-5&&Math.abs(x)<17;
-   const byHouse=PUBLIC_WORLD_BUILDINGS.some(h=>Math.abs(x-h.x)<h.width/2+4&&Math.abs(z-h.z)<h.depth/2+4);
-   const fountain=Math.hypot(x,z+3)<6;
-   if(!byStreet&&!byShop&&!byHouse&&!fountain)list.push({x,z,s:.22+(i%5)*.075});
-  }
-  return quality==='high'?list:list.filter((_,i)=>i%2===0);
- },[quality]);
- const grass=useRef<InstancedMesh>(null),petals=useRef<InstancedMesh>(null);
- useLayoutEffect(()=>{
-  const object=new Object3D();
-  sites.forEach((p,i)=>{
-   object.position.set(p.x,p.s*.3,p.z);
-   object.scale.set(p.s*.6,p.s*2.3,p.s*.6);
-   object.rotation.set(0,i*1.618,0);object.updateMatrix();
-   grass.current?.setMatrixAt(i,object.matrix);
-   object.position.y=p.s*2.25;
-   object.scale.setScalar(p.s*.44);
-   object.rotation.set(0,i*.64,0);object.updateMatrix();
-   petals.current?.setMatrixAt(i,object.matrix);
-  });
-  for(const r of [grass,petals])if(r.current){
-   r.current.instanceMatrix.needsUpdate=true;r.current.computeBoundingSphere();
-  }
- },[sites]);
- return <group>
-  <instancedMesh ref={grass} args={[undefined,undefined,sites.length]} frustumCulled={false}>
-   <coneGeometry args={[.36,1,4]}/><meshStandardMaterial color='#83a582' roughness={1} flatShading/>
-  </instancedMesh>
-  <instancedMesh ref={petals} args={[undefined,undefined,sites.length]} frustumCulled={false}>
-   <dodecahedronGeometry args={[.38,0]}/><meshStandardMaterial color='#dfbc9e' roughness={1}/>
-  </instancedMesh>
- </group>;
-}
 /** Low-cost 800-vertex sky gradient. Sky geometry is not world ground and
  * does not alter paths or collision; it fixes the old uniform grey horizon.
  */
@@ -229,7 +187,7 @@ export default function AnimeVillageCenter({quality}:{quality:'low'|'high'}){
   <AnimeCanal/>
   <AnimeFootpaths/>
   <TownAnimeMeshes quality={quality}/>
-  <AnimeWildflowers quality={quality}/>
+  <TownAnimeGarden quality={quality}/>
   <TownFountain/>
   <CanalBoat x={-12} color='#b78c70'/><CanalBoat x={12} color='#82a495'/>
  </group>;
