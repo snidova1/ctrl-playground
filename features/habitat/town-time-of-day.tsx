@@ -8,7 +8,7 @@ import {townSunRig} from './town-sun-rig';
 /** Shared visual clock: 48 real minutes per stylized town day, inspired by summer-cycle's golden-hour progression. */
 const DAY_MS=48*60*1000;
 const skyDay=new Color('#bedee6'),skyDusk=new Color('#e9c7aa'),skyNight=new Color('#9eb9cf');
-const sunDay=new Color('#fff3db'),sunDusk=new Color('#ffd0a0');
+const sunDay=new Color('#fff1d8'),sunDusk=new Color('#ffd1a3'),distantAir=new Color('#efe0c8');
 export default function TownDaylight({quality,pose}:{quality:'low'|'high';pose:MutableRefObject<Pose>}){
  const sun=useRef<DirectionalLight>(null),hemi=useRef<HemisphereLight>(null),last=useRef(-1);
  useFrame(({scene,clock})=>{
@@ -23,13 +23,13 @@ export default function TownDaylight({quality,pose}:{quality:'low'|'high';pose:M
    sun.current.target.position.set(...rig.target);
    // Three's implicit light target is not parented into the scene graph.
    sun.current.target.updateMatrixWorld();
-   sun.current.intensity=2.0+1.0*daylight+.2*dusk;
+   sun.current.intensity=1.75+.84*daylight+.18*dusk;
    sun.current.color.copy(sunDay).lerp(sunDusk,dusk*.75);
   }
   if(hemi.current)hemi.current.intensity=.72+.18*daylight;
   const sky=skyNight.clone().lerp(skyDusk,Math.min(1,daylight*.9+dusk*.6)).lerp(skyDay,daylight*.72);
   if(scene.background instanceof Color)scene.background.copy(sky);
-  if(scene.fog)scene.fog.color.copy(sky);
+  if(scene.fog)scene.fog.color.copy(sky).lerp(distantAir,.24+.18*dusk);
  });
  return <>
   <ambientLight intensity={.24}/>

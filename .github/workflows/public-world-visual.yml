@@ -2,6 +2,7 @@ name: Public World is an Actual Place
 on:
   pull_request:
     branches:
+      - feat/townies-gameplay-stylized-world
       - feat/public-world-garden-life
       - feat/public-world-real-neighborhood
       - feat/public-world-and-guest-play
@@ -71,6 +72,9 @@ jobs:
           node-version: '22'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify checked-in PR32 CC0 GLB assets and SHA256 (offline, read-only)
+        if: github.head_ref == 'feat/pr32-anime-world-from-scratch'
+        run: node scripts/pr32-verify-meshes.mjs
       - name: Public World API/geometry/bounds regression
         run: pnpm test
       - name: Strict project typecheck
@@ -84,7 +88,11 @@ jobs:
       - name: Capture actual desktop and mobile world pixels using a signed wallet
         env:
           CTRL_QA_PRODUCTION: '1'
-        run: pnpm exec playwright test --config playwright.public-world.config.ts
+        run: |
+          if [ "$GITHUB_HEAD_REF" = "feat/pr32-anime-world-from-scratch" ]; then
+            export CTRL_PR32_ASSERT_MESHES=1
+          fi
+          pnpm exec playwright test --config playwright.public-world.config.ts
       - name: Two signed desktop/mobile neighbors complete persistent civic construction
         run: pnpm exec playwright test --config playwright.civic.config.ts --grep 'persistent waterfront'
       - name: Preserve screenshots and traces
@@ -92,7 +100,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ctrl-real-town-screenshots
-          path: test-results/
+          path: |
+            test-results/
+            public/assets/pr32/manifest.json
           retention-days: 14
           if-no-files-found: warn
   town-life:

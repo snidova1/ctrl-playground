@@ -12,6 +12,7 @@ import {HARBOR_WATER} from './town-harbor-geography';
 import {TownAsset} from './town-assets';
 import {CanvasTexture,SRGBColorSpace} from 'three';
 import {TOWN_ROAD_CONNECTIONS} from '@/domain/town-terrain';
+import {scenicRoadOutsideSquare} from '@/domain/town-scenic-roads';
 import TownGround from './town-ground';
 import {FESTIVAL_DECK} from '@/domain/town-walk-surface';
 import TownActivityCounter from './town-activity-counter';
@@ -116,7 +117,7 @@ function RemoteZone({district,quality,pose,states}:{district:TownDistrict;qualit
 export default function TownExpandedDistricts({pose,quality,states}:{pose:MutableRefObject<Pose>;quality:Quality;states:WorldState['states']}){
  return <group>
   <TownGround/>
-  {TOWN_ROAD_CONNECTIONS.map(([ax,az,bx,bz],i)=><ScenicRoad key={i} ax={ax} az={az} bx={bx} bz={bz}/>)}
+  {TOWN_ROAD_CONNECTIONS.flatMap(road=>scenicRoadOutsideSquare(road)).map(([ax,az,bx,bz],i)=><ScenicRoad key={i} ax={ax} az={az} bx={bx} bz={bz}/>)}
   {TOWN_DISTRICTS.filter(d=>d.id!=='center').map(d=><RemoteZone key={d.id} district={d} quality={quality} pose={pose} states={states}/>)}
  </group>;
 }
