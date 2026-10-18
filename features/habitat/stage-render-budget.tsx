@@ -1,12 +1,23 @@
 'use client';
-import {useEffect,useRef} from 'react';
+import {useEffect,useMemo,useRef} from 'react';
+import {WillowPainterlyPost} from './town-painterly-post';
 import {useFrame,useThree,type RootState} from '@react-three/fiber';
 
 /** Bound GPU submissions in the light profile without changing the simulation
  * clock or input cadence. Slow GPUs otherwise accumulate work across two live
  * worlds, delaying native controls, screenshots and even document navigation. */
-export default function StageRenderBudget({quality}:{quality:'low'|'high'}){
+export default function StageRenderBudget({quality,painterly=false}:{quality:'low'|'high';painterly?:boolean}){
  const next=useRef(0),pending=useRef<WebGLSync|null>(null),get=useThree(state=>state.get);
+ const renderer=useThree(s=>s.gl),scene=useThree(s=>s.scene),camera=useThree(s=>s.camera);
+ const width=useThree(s=>s.size.width),height=useThree(s=>s.size.height);
+ // The single existing render owner switches between direct WebGL and one
+ // painterly composer. Never mount a second useFrame takeover or RAF loop.
+ const profile=quality==='high'&&width>=700?'desktop':'mobile';
+ const painter=useMemo(()=>painterly
+  ?new WillowPainterlyPost(renderer,scene,camera,1,1,profile)
+  :null,[painterly,renderer,scene,camera,profile]);
+ useEffect(()=>{painter?.setSize(width,height);},[painter,width,height]);
+ useEffect(()=>()=>painter?.dispose(),[painter]);
  useEffect(()=>{
   let previous:RootState['frameloop']|null=null;
   const leave=()=>{if(previous===null)previous=get().frameloop;get().setFrameloop('never');};
@@ -37,7 +48,8 @@ export default function StageRenderBudget({quality}:{quality:'low'|'high'}){
   }
   if(quality==='low'&&frameloop==='always'&&now<next.current)return;
   next.current=now+1/30;
-  gl.render(scene,camera);
+  if(painter)painter.render(1/30);
+  else gl.render(scene,camera);
   if(quality==='low'&&frameloop==='always'&&gpu){
    pending.current=gpu.fenceSync(gpu.SYNC_GPU_COMMANDS_COMPLETE,0);
    gpu.flush();
