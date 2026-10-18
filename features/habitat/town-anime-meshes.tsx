@@ -78,6 +78,27 @@ const FLOWER_BANKS:readonly AnimeMeshPlacement[]=[
  {id:'daisy-patch',x:8,z:21,width:3.2,depth:3.2,yaw:1.3},
  {id:'daisy-patch',x:-17,z:29,width:3.1,depth:3.1},
  {id:'daisy-patch',x:17,z:29,width:3.1,depth:3.1},
+ // Real textured flowers edge both sides of the player-facing central road.
+ // Place these in authored clusters, rather than procedural confetti dots.
+ {id:'bush',x:-6.3,z:11.1,width:2.2,depth:2.2,yaw:.2},
+ {id:'bush',x:-7.5,z:14.2,width:2.8,depth:2.8,yaw:1.4},
+ {id:'bush',x:-7.1,z:24,width:2.8,depth:2.8,yaw:2},
+ {id:'bush',x:6.2,z:10.7,width:2.2,depth:2.2,yaw:2.8},
+ {id:'bush',x:7.7,z:14.8,width:2.9,depth:2.9,yaw:2.1},
+ {id:'bush',x:7.1,z:24,width:2.8,depth:2.8,yaw:.5},
+ {id:'daisy-patch',x:-5.2,z:11.6,width:2.7,depth:2.6,yaw:2.2},
+ {id:'daisy-patch',x:-6.2,z:15.1,width:3.5,depth:2.7,yaw:.4},
+ {id:'daisy-patch',x:-5.7,z:19.2,width:3.2,depth:3.4,yaw:1.3},
+ {id:'daisy-patch',x:-7.4,z:25.8,width:3.4,depth:3.0,yaw:.9},
+ {id:'daisy-patch',x:5.3,z:11.5,width:2.8,depth:2.6,yaw:.3},
+ {id:'daisy-patch',x:6.1,z:15.7,width:3.4,depth:2.7,yaw:1.1},
+ {id:'daisy-patch',x:5.9,z:19.3,width:3.2,depth:3.3,yaw:2.5},
+ {id:'daisy-patch',x:7.6,z:25.3,width:3.3,depth:3.1,yaw:.7},
+ // A foreground botanical frame without obstructing the native movement lane.
+ {id:'bush',x:-13.8,z:11.5,width:3,depth:3,yaw:.9},
+ {id:'bush',x:13.8,z:12,width:3.1,depth:3.1,yaw:2.1},
+ {id:'daisy-patch',x:-12.3,z:9.7,width:3.9,depth:2.9,yaw:1.2},
+ {id:'daisy-patch',x:12.5,z:9.7,width:4,depth:2.9,yaw:2.6},
 ];
 
 
