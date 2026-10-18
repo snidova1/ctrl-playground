@@ -1,10 +1,22 @@
 import {describe,expect,it} from 'vitest';
 import {MeshStandardMaterial,MeshToonMaterial} from 'three';
+import {scenicRoadOutsideSquare} from '../../domain/town-scenic-roads';
 import {animeMaterial,makeAnimeLightRamp} from '../../features/habitat/town-anime-material';
 import {makeAnimePath,makeAnimeRoof,ANIME_WORLD_PALETTE} from '../../features/habitat/town-anime-village';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS,isPublicWorldWalkable} from '../../features/habitat/public-world-geography';
 
 describe('PR32 painted-anime Public World foundation',()=>{
+ it('clips old brick road segments out of the authored village while retaining walkable outskirts',()=>{
+  const roads=scenicRoadOutsideSquare([-78,9,78,9],34);
+  expect(roads.length).toBe(2);
+  for(const [ax,az,bx,bz] of roads){
+   const mx=(ax+bx)/2,mz=(az+bz)/2;
+   expect(Math.hypot(mx,mz)).toBeGreaterThanOrEqual(34);
+  }
+  expect(scenicRoadOutsideSquare([-8,4,8,4],34)).toEqual([]);
+  expect(scenicRoadOutsideSquare([60,8,85,8],34)).toEqual([[60,8,85,8]]);
+ });
+
  it('keeps original GLB textures while applying a warm illustration light ramp to buildings',()=>{
   const original=new MeshStandardMaterial({color:'#ead4ae',roughness:.3,metalness:.6});
   const painted=animeMaterial(original,false);
