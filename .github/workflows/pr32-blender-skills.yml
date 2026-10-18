@@ -1,0 +1,76 @@
+name: PR32 Blender Skills Asset Proof
+on:
+  push:
+    branches:
+      - feat/pr32-anime-world-from-scratch
+    paths:
+      - .github/workflows/pr32-blender-skills.yml
+      - tools/pr32-blender/**
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-asset-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read a pinned version of the third-party Blender Agent Skills
+        uses: actions/checkout@v4
+        with:
+          repository: EL4CTEO/blender-skills
+          ref: 71d031dab8bc6729504d11a78cbe91945401045f
+          path: .third-party/blender-skills
+          persist-credentials: false
+      - name: Cache official Blender 5.2.2 LTS distribution
+        uses: actions/cache@v4
+        with:
+          path: /tmp/ctrl-pr32-blender
+          key: blender-5.2.2-linux-x64-v1
+      - name: Install official Blender LTS and verify upstream SHA256
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ctrl-pr32-blender
+          if [ ! -x /tmp/ctrl-pr32-blender/blender-5.2.2-linux-x64/blender ]; then
+            curl -fLSs --retry 3 https://download.blender.org/release/Blender5.2/blender-5.2.2-linux-x64.tar.xz -o /tmp/ctrl-pr32-blender/blender-5.2.2-linux-x64.tar.xz
+            curl -fLSs --retry 3 https://download.blender.org/release/Blender5.2/blender-5.2.2.sha256 -o /tmp/ctrl-pr32-blender/blender-5.2.2.sha256
+            (cd /tmp/ctrl-pr32-blender && grep -F 'blender-5.2.2-linux-x64.tar.xz' blender-5.2.2.sha256 | sha256sum -c -)
+            tar -xf /tmp/ctrl-pr32-blender/blender-5.2.2-linux-x64.tar.xz -C /tmp/ctrl-pr32-blender
+            rm /tmp/ctrl-pr32-blender/blender-5.2.2-linux-x64.tar.xz
+          fi
+          /tmp/ctrl-pr32-blender/blender-5.2.2-linux-x64/blender --version | head -3
+      - name: Audit original bakery and willow GLBs; render honest lookdev images
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p test-results/pr32-blender
+          BLENDER=/tmp/ctrl-pr32-blender/blender-5.2.2-linux-x64/blender
+          for asset in bakery willow-tree; do
+            "$BLENDER" -b --factory-startup --python tools/pr32-blender/audit-and-preview.py -- "public/assets/pr32/${asset}.glb" "test-results/pr32-blender"
+          done
+      - name: Run upstream blender-asset-qa and game-optimization metrics
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p test-results/pr32-blender
+          BLENDER=/tmp/ctrl-pr32-blender/blender-5.2.2-linux-x64/blender
+          SKILLS=.third-party/blender-skills/skills
+          for asset in bakery willow-tree; do
+            echo "Inspecting $asset with pinned EL4CTEO skills"
+            "$BLENDER" -b "test-results/pr32-blender/${asset}-asset.blend" --python "$SKILLS/blender-asset-qa/scripts/qa_check.py" -- --profile game > "test-results/pr32-blender/${asset}-qa.log" 2>&1
+            echo "QA $asset exit: $?"
+            "$BLENDER" -b "test-results/pr32-blender/${asset}-asset.blend" --python "$SKILLS/blender-game-optimization/scripts/mesh_stats.py" -- --budget mobile > "test-results/pr32-blender/${asset}-budget.log" 2>&1
+            echo "Budget $asset exit: $?"
+          done
+          # Auditing is evidence collection only; the GLBs are not auto-published.
+          # A separate, manually reviewed acceptance must approve asset replacement.
+          exit 0
+      - name: Upload GLB quality audit and actual Blender 5.2 studio previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr32-blender-asset-audit
+          path: test-results/pr32-blender/
+          if-no-files-found: warn
+          retention-days: 14
