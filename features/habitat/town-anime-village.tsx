@@ -41,7 +41,7 @@ export function makeAnimePath(points:readonly Point[],width:number,seed=0){
  };
  for(let i=0;i<steps;i++){
   const band=(t:number,side:number)=>{
-   const p=curve.getPoint(t),tangent=curve.getTangent(t),r=width*(.5+.045*Math.sin(t*13+seed));
+   const p=curve.getPoint(t),tangent=curve.getTangent(t),r=width*(.5+.072*Math.sin(t*13+seed)+.021*Math.cos(t*37+seed*2));
    return new Vector3(p.x-tangent.z*side*r,p.y,p.z+tangent.x*side*r);
   };
   const t=i/steps,u=(i+1)/steps,shade=(i%7)/7;
@@ -60,14 +60,14 @@ export function makeAnimePath(points:readonly Point[],width:number,seed=0){
  return geometry;
 }
 const VILLAGE_PATHS:{points:readonly Point[];width:number}[]=[
- {points:[[-38,9],[-23,8],[-8,8],[7,8],[23,9],[38,10]],width:3.75},
- {points:[[0,39],[-.7,27],[1,15],[.6,5],[-.4,-8],[0,-16]],width:3.72},
- {points:[[-26,37],[-23,26],[-21,17],[-24,9]],width:2.4},
- {points:[[27,36],[23,26],[21,17],[23,9]],width:2.5},
- {points:[[-28,-11],[-13,-12],[-5,-12]],width:2.7},
- {points:[[28,-11],[14,-12],[5,-12]],width:2.7},
- {points:[[20,-25],[20,-18],[20,-13]],width:3.7},
- {points:[[0,-27],[0,-23],[0,-16]],width:4.1},
+ {points:[[-38,9],[-23,8],[-8,8],[7,8],[23,9],[38,10]],width:2.9},
+ {points:[[0,39],[-.7,27],[1,15],[.6,5],[-.4,-8],[0,-16]],width:2.76},
+ {points:[[-26,37],[-23,26],[-21,17],[-24,9]],width:2.15},
+ {points:[[27,36],[23,26],[21,17],[23,9]],width:2.2},
+ {points:[[-28,-11],[-13,-12],[-5,-12]],width:2.25},
+ {points:[[28,-11],[14,-12],[5,-12]],width:2.25},
+ {points:[[20,-25],[20,-18],[20,-13]],width:3.0},
+ {points:[[0,-27],[0,-23],[0,-16]],width:3.2},
 ];
 function makeRoadPaint(){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
@@ -78,7 +78,7 @@ function makeRoadPaint(){
   const hash=(k:number)=>{const n=Math.sin(i*127.13+k*311.71)*43758.5453;return n-Math.floor(n);};
   const x=hash(1)*256,y=hash(2)*256,r=3+hash(3)*14;
   const wash=ctx.createRadialGradient(x,y,0,x,y,r);
-  wash.addColorStop(0,i%2?'#8b876014':'#ffffff50');wash.addColorStop(1,'#ffffff00');
+  wash.addColorStop(0,i%2?'#80634138':'#f8e6c874');wash.addColorStop(1,'#ffffff00');
   ctx.fillStyle=wash;ctx.fillRect(x-r,y-r,r*2,r*2);
  }
  ctx.lineWidth=.9;
