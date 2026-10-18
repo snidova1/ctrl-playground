@@ -59,15 +59,10 @@ jobs:
       - name: Verify the configured Worker entry exists
         run: test -f dist/server/wrangler.json
   public-world:
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-        with:
-          # The PR synthetic merge commit cannot be pushed back to its head.
-          ref: ${{ github.head_ref || github.ref_name }}
       - uses: pnpm/action-setup@v4
         with:
           version: 11.25.0
@@ -77,19 +72,9 @@ jobs:
           node-version: '22'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Install provenance-checked real CC0 glTF models for PR32
+      - name: Verify checked-in PR32 CC0 GLB assets and SHA256 (offline, read-only)
         if: github.head_ref == 'feat/pr32-anime-world-from-scratch'
-        run: node scripts/pr32-install-cc0-meshes.mjs
-      - name: Commit approved CC0 meshes and license ledger
-        if: github.head_ref == 'feat/pr32-anime-world-from-scratch'
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/assets/pr32
-          if ! git diff --cached --quiet; then
-            git commit -m 'assets(pr32): commit verified CC0 village GLBs and provenance'
-            git push origin HEAD:feat/pr32-anime-world-from-scratch
-          fi
+        run: node scripts/pr32-verify-meshes.mjs
       - name: Public World API/geometry/bounds regression
         run: pnpm test
       - name: Strict project typecheck
