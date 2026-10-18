@@ -10,7 +10,6 @@ import TownAnimeDetails from './town-anime-details';
 import TownAnimeGrounding from './town-anime-grounding';
 import TownStylizedWater from './town-stylized-water';
 import {TownFountain,CanalBoat} from './town-waterfront';
-import {paintedTexture} from './town-surfaces';
 
 /**
  * PR32: a NEW authored village scene, not an extension of the procedural
