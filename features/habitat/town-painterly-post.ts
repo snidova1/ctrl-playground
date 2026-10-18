@@ -14,14 +14,14 @@ import {RenderPass} from 'three/examples/jsm/postprocessing/RenderPass.js';
 import {ShaderPass} from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import {Vector2,type WebGLRenderer,type Scene,type Camera} from 'three';
 
-const vertexShader=/* glsl */ \`
+const vertexShader=/* glsl */ `
  varying vec2 vUv;
  void main(){
   vUv=uv;
   gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
  }
-\`;
-export const willowPainterlyFragment=/* glsl */ \`
+`;
+export const willowPainterlyFragment=/* glsl */ `
  uniform sampler2D tDiffuse;
  uniform vec2 uResolution;
  uniform float uPaint;
@@ -98,7 +98,7 @@ export const willowPainterlyFragment=/* glsl */ \`
   color*=1.0-smoothstep(.37,.85,length(q))*.075;
   gl_FragColor=vec4(clamp(color,0.,1.),1.);
  }
-\`;
+`;
 
 export type PainterlyProfile='desktop'|'mobile';
 export const WILLOW_PAINTERLY_SETTINGS={
