@@ -5,6 +5,7 @@ import {
  Vector3,SphereGeometry,BackSide,CanvasTexture,RepeatWrapping,SRGBColorSpace
 } from 'three';
 import TownAnimeMeshes from './town-anime-meshes';
+import TownPaintedCanopy from './town-painted-canopy';
 import TownAnimeGarden from './town-anime-garden';
 import TownAnimeDetails from './town-anime-details';
 import TownAnimeGrounding from './town-anime-grounding';
@@ -189,6 +190,7 @@ export default function AnimeVillageCenter({quality}:{quality:'low'|'high'}){
   <AnimeFootpaths/>
   <TownAnimeGrounding quality={quality}/>
   <TownAnimeMeshes quality={quality}/>
+  <TownPaintedCanopy quality={quality}/>
   <TownAnimeGarden quality={quality}/>
   <TownAnimeDetails/>
   <TownFountain/>
