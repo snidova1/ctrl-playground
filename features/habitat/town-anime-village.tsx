@@ -2,7 +2,7 @@
 import {useEffect,useLayoutEffect,useMemo,useRef} from 'react';
 import {
  BufferGeometry,CatmullRomCurve3,Color,Float32BufferAttribute,
- InstancedMesh,Object3D,Vector3,CanvasTexture,RepeatWrapping,SRGBColorSpace
+ InstancedMesh,Object3D,Vector3,SphereGeometry,BackSide,CanvasTexture,RepeatWrapping,SRGBColorSpace
 } from 'three';
 import {PUBLIC_WORLD_BUILDINGS} from './public-world-geography';
 import TownAnimeMeshes from './town-anime-meshes';
@@ -59,8 +59,8 @@ export function makeAnimePath(points:readonly Point[],width:number,seed=0){
  return geometry;
 }
 const VILLAGE_PATHS:{points:readonly Point[];width:number}[]=[
- {points:[[-38,9],[-23,8],[-8,8],[7,8],[23,9],[38,10]],width:4.35},
- {points:[[0,39],[-.7,27],[1,15],[.6,5],[-.4,-8],[0,-16]],width:4.6},
+ {points:[[-38,9],[-23,8],[-8,8],[7,8],[23,9],[38,10]],width:3.75},
+ {points:[[0,39],[-.7,27],[1,15],[.6,5],[-.4,-8],[0,-16]],width:3.72},
  {points:[[-26,37],[-23,26],[-21,17],[-24,9]],width:2.4},
  {points:[[27,36],[23,26],[21,17],[23,9]],width:2.5},
  {points:[[-28,-11],[-13,-12],[-5,-12]],width:2.7},
@@ -168,6 +168,32 @@ function AnimeWildflowers({quality}:{quality:'low'|'high'}){
   </instancedMesh>
  </group>;
 }
+/** Low-cost 800-vertex sky gradient. Sky geometry is not world ground and
+ * does not alter paths or collision; it fixes the old uniform grey horizon.
+ */
+function AnimeSkyDome(){
+ const geometry=useMemo(()=>{
+  const sphere=new SphereGeometry(255,40,24);
+  const p=sphere.getAttribute('position'),colors=new Float32Array(p.count*3);
+  const horizon=new Color('#f6dfba'),middle=new Color('#c9dfe0'),upper=new Color('#93c4d7'),c=new Color();
+  for(let i=0;i<p.count;i++){
+   const t=Math.max(0,Math.min(1,(p.getY(i)/255+.025)/.56));
+   c.copy(horizon).lerp(middle,Math.min(1,t*1.7))
+    .lerp(upper,Math.max(0,(t-.3)/.7));
+   // A warm asymmetrical glow near the horizon reads like watercolor wash.
+   const glow=Math.max(0,1-Math.abs(p.getX(i)/255-.39)*4)
+    *Math.max(0,1-Math.abs(p.getY(i)/255)*5);
+   c.lerp(new Color('#fff3c9'),glow*.23);
+   c.toArray(colors,i*3);
+  }
+  sphere.setAttribute('color',new Float32BufferAttribute(colors,3));
+  return sphere;
+ },[]);
+ useEffect(()=>()=>geometry.dispose(),[geometry]);
+ return <mesh geometry={geometry} frustumCulled={false} renderOrder={-100} dispose={null}>
+  <meshBasicMaterial vertexColors side={BackSide} depthWrite={false} fog={false} toneMapped={false}/>
+ </mesh>;
+}
 function PaintedHorizon(){
  const shapes=useMemo(()=>[0,1,2].map(k=>{
   const pts:number[]=[];
@@ -198,6 +224,7 @@ function AnimeCanal(){
 }
 export default function AnimeVillageCenter({quality}:{quality:'low'|'high'}){
  return <group name="PR32-Painted-Anime-Village">
+  <AnimeSkyDome/>
   <PaintedHorizon/>
   <AnimeCanal/>
   <AnimeFootpaths/>
