@@ -1,0 +1,36 @@
+name: PR32 REA Three.js Evidence
+on:
+  push:
+    branches: [feat/pr32-anime-world-from-scratch]
+    paths:
+      - scripts/pr32-rea-threejs-capture.mjs
+      - .github/workflows/pr32-rea-threejs.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture-threejs-examples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Passive REA evidence of Three.js toon, sky and GTAO demos
+        run: node scripts/pr32-rea-threejs-capture.mjs
+      - name: Preserve audited runtime observations and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrl-pr32-threejs-rea-evidence
+          path: test-results/pr32-threejs-rea/
+          if-no-files-found: warn
+          retention-days: 14
