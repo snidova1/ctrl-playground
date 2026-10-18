@@ -137,6 +137,74 @@
       "aiContent": false,
       "source": "https://grab3d.com/models/nature/willow-tree/",
       "download": "https://grab3d.com/dl/willow-tree/willow-tree.glb"
+    },
+    {
+      "slug": "oak-tree",
+      "file": "oak-tree.glb",
+      "bytes": 798316,
+      "sha256": "5bce65829cf50194c9634da1c6a4f9abade8fa121630b8a042f2a850496e3d5a",
+      "dimensionsMeters": [
+        7.638,
+        7.52,
+        6.856
+      ],
+      "triangles": 20978,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/nature/oak-tree/",
+      "download": "https://grab3d.com/dl/oak-tree/oak-tree-light.glb"
+    },
+    {
+      "slug": "cherry-blossom-tree",
+      "file": "cherry-blossom-tree.glb",
+      "bytes": 861188,
+      "sha256": "dd0f3d254a45a502c566f0ce54f91cdc079b628d600625eb609600c0fb47ffd2",
+      "dimensionsMeters": [
+        5.457,
+        4.908,
+        4.31
+      ],
+      "triangles": 23112,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/nature/cherry-blossom-tree/",
+      "download": "https://grab3d.com/dl/cherry-blossom-tree/cherry-blossom-tree-light.glb"
+    },
+    {
+      "slug": "bush",
+      "file": "bush.glb",
+      "bytes": 1410856,
+      "sha256": "29e6c09939cf45327c9a1086515b78e383a62c30b0abe085f4348d30863bb695",
+      "dimensionsMeters": [
+        1.327,
+        1.263,
+        1.091
+      ],
+      "triangles": 11570,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/nature/bush/",
+      "download": "https://grab3d.com/dl/bush/bush.glb"
+    },
+    {
+      "slug": "daisy-patch",
+      "file": "daisy-patch.glb",
+      "bytes": 2220912,
+      "sha256": "24229bcd8bd66a1d2c10a6d05acc1fa709200704b5c1768da1583db124ef8c7a",
+      "dimensionsMeters": [
+        0.614,
+        0.559,
+        0.174
+      ],
+      "triangles": 11778,
+      "license": "CC0-1.0",
+      "origin": "procedural",
+      "aiContent": false,
+      "source": "https://grab3d.com/models/nature/daisy-patch/",
+      "download": "https://grab3d.com/dl/daisy-patch/daisy-patch.glb"
     }
   ]
 }
