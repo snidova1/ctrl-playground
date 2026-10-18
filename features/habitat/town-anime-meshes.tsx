@@ -42,12 +42,14 @@ export const ANIME_VILLAGE_PLACEMENTS:readonly AnimeMeshPlacement[]=[
  * The importer includes the GLB's full textures and original sculpted mesh.
  */
 const WILLOWS:readonly AnimeMeshPlacement[]=[
- {id:'willow-tree',x:-39,z:14,width:8.4,depth:8.4,yaw:.5},
- {id:'willow-tree',x:38,z:22,width:8.7,depth:8.7,yaw:2},
- {id:'willow-tree',x:-37,z:35,width:9,depth:9,yaw:1.3},
+ // Two landmark canopies frame the civic square, without obscuring the fountain.
+ {id:'willow-tree',x:-15,z:14,width:8.2,depth:8.2,yaw:.5},
+ {id:'willow-tree',x:16,z:14,width:8.2,depth:8.2,yaw:2.3},
+ {id:'willow-tree',x:-38,z:12,width:9.1,depth:9.1,yaw:1.3},
+ {id:'willow-tree',x:39,z:15,width:8.9,depth:8.9,yaw:2},
+ // The outer grove ties Willow to the path approaching its remote districts.
+ {id:'willow-tree',x:-37,z:35,width:9,depth:9,yaw:.8},
  {id:'willow-tree',x:40,z:-8,width:8,depth:8,yaw:2.9},
- {id:'willow-tree',x:-37,z:-9,width:8,depth:8,yaw:2.2},
- {id:'willow-tree',x:31,z:38,width:8.4,depth:8.4,yaw:3.8},
  {id:'willow-tree',x:-30,z:-34,width:8.3,depth:8.3,yaw:4},
  {id:'willow-tree',x:35,z:-33,width:8.2,depth:8.2,yaw:.8},
 ];
@@ -108,7 +110,7 @@ export default function TownAnimeMeshes({quality}:{quality:'low'|'high'}){
       position={[0,6.3,p.depth/2]} distanceFactor={5} occlude={[]}/>
     </group>
    </group>)}
-  {WILLOWS.filter((_,i)=>quality==='high'||i%2===0).map((p,i)=>
+  {WILLOWS.filter((_,i)=>quality==='high'||i<4).map((p,i)=>
    <Suspense key={'t'+i} fallback={null}><LoadedAnimeMesh placement={p}/></Suspense>)}
  </group>;
 }
