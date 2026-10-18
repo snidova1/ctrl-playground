@@ -1,12 +1,25 @@
 import {describe,expect,it} from 'vitest';
 import {MeshStandardMaterial,MeshToonMaterial} from 'three';
 import {scenicRoadOutsideSquare} from '../../domain/town-scenic-roads';
+import {townContactFootprints} from '../../features/habitat/town-anime-grounding';
 import {storybookPlantings} from '../../features/habitat/town-anime-garden';
 import {animeMaterial,makeAnimeLightRamp} from '../../features/habitat/town-anime-material';
 import {makeAnimePath,makeAnimeRoof,ANIME_WORLD_PALETTE} from '../../features/habitat/town-anime-village';
 import {PUBLIC_WORLD_BUILDINGS,PUBLIC_WORLD_SHOPS,isPublicWorldWalkable} from '../../features/habitat/public-world-geography';
 
 describe('PR32 painted-anime Public World foundation',()=>{
+ it('grounds every authored cottage with instanced watercolor contact shade instead of costly GTAO',()=>{
+  const low=townContactFootprints('low'),high=townContactFootprints('high');
+  expect(low.length).toBe(12); // eight buildings + four near willows
+  expect(high.length).toBe(16); // eight buildings + eight scene trees
+  for(const shade of high){
+   expect(shade.width).toBeGreaterThan(1);
+   expect(shade.depth).toBeGreaterThan(1);
+   expect(shade.strength).toBeGreaterThan(0);
+   expect(Number.isFinite(shade.x+shade.z)).toBe(true);
+  }
+ });
+
  it('plants actual instanced CC0 flower groups in designed garden islands, never a road or fountain',()=>{
   const high=storybookPlantings('high'),low=storybookPlantings('low');
   for(const kind of ['red','yellow','purple','grass'] as const){
