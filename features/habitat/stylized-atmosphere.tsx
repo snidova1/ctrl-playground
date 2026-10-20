@@ -59,7 +59,7 @@ void main(){
   #include <colorspace_fragment>
 }`;
 
-export default function StylizedAtmosphere({preset, quality}: {preset: AtmospherePreset; quality:'low'|'high'}) {
+export default function StylizedAtmosphere({preset, quality, still=false, extent=66, focus}: {preset: AtmospherePreset; quality:'low'|'high'; still?:boolean;extent?:number;focus?:{current:{x:number;y?:number;z:number}}}) {
   const current=useRef(lookFor(preset));
   const transition=useRef({from:lookFor(preset),to:lookFor(preset),elapsed:3.6});
   const sun=useRef<DirectionalLight>(null),fill=useRef<HemisphereLight>(null),fog=useRef<Fog>(null),sky=useRef<Mesh>(null);
@@ -81,20 +81,20 @@ export default function StylizedAtmosphere({preset, quality}: {preset: Atmospher
     for(const key of NUMBER_KEYS)look[key]=state.from[key]+(state.to[key]-state.from[key])*t;
     const az=look.azimuth*Math.PI/180,el=look.elevation*Math.PI/180;
     direction.set(Math.sin(az)*Math.cos(el),Math.sin(el),Math.cos(az)*Math.cos(el));
-    if(sun.current){sun.current.position.copy(direction).multiplyScalar(28);sun.current.color.copy(look.sun);sun.current.intensity=look.intensity;}
+    if(sun.current){sun.current.position.copy(direction).multiplyScalar(28);if(focus){sun.current.target.position.set(focus.current.x,focus.current.y??0,focus.current.z);sun.current.target.updateMatrixWorld();sun.current.position.add(sun.current.target.position);}sun.current.color.copy(look.sun);sun.current.intensity=look.intensity;}
     if(fill.current){fill.current.color.copy(look.fill);fill.current.groundColor.copy(look.ground);fill.current.intensity=look.hemisphere;}
     if(ambient.current){ambient.current.color.copy(look.fill);ambient.current.intensity=look.ambient;}
     if(fog.current)fog.current.color.copy(look.fog);
     if(sky.current)sky.current.position.copy(camera.position);
-    uniforms.uTime.value=clock.elapsedTime;uniforms.uNight.value=look.night;
+    uniforms.uTime.value=still?0:clock.elapsedTime;uniforms.uNight.value=look.night;
   });
   return <>
     <ambientLight ref={ambient}/>
     <hemisphereLight ref={fill}/>
     <directionalLight ref={sun} castShadow={quality==='high'} shadow-mapSize={[2048,2048]} shadow-camera-left={-23} shadow-camera-right={23} shadow-camera-top={23} shadow-camera-bottom={-23} shadow-camera-near={.1} shadow-camera-far={85} shadow-bias={-.00015} shadow-normalBias={.035}/>
-    <fog ref={fog} attach='fog' args={['#c6d8bb',24,66]}/>
+    <fog ref={fog} attach='fog' args={['#c6d8bb',extent*.36,extent]}/>
     <mesh ref={sky} material={material} renderOrder={-1000} frustumCulled={false}>
-      <sphereGeometry args={[85,32,16]}/>
+      <sphereGeometry args={[Math.max(85,extent*1.4),32,16]}/>
     </mesh>
   </>;
 }

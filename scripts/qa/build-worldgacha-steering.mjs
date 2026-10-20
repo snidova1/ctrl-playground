@@ -1,0 +1,4 @@
+import {createRequire} from 'node:module';import {readFile,writeFile} from 'node:fs/promises';import {dirname} from 'node:path';
+const base=process.env.CTRL_WORLD_TOOLS??'/tmp/ctrl-world-build-tools',require=createRequire(base+'/package.json');const {build}=await import(require.resolve('esbuild'));
+const output='public/worlds/worldgacha/steering.js';await build({entryPoints:['scripts/world/yuka-driver.mjs'],outfile:output,bundle:true,minify:true,format:'esm',platform:'browser',target:'es2020',nodePaths:[base+'/node_modules'],legalComments:'eof',banner:{js:'/* YUKA 0.7.8 (MIT) · Copyright Mugen87. Full license: steering.LICENSE.txt */'}});
+const license=await readFile(dirname(require.resolve('yuka/package.json'))+'/LICENSE','utf8');await writeFile('public/worlds/worldgacha/steering.LICENSE.txt',license);console.log('Bundled YUKA steering:',(await readFile(output)).length,'bytes');

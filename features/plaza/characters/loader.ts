@@ -3,6 +3,7 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {VRMLoaderPlugin, VRMUtils, MToonMaterial, type VRM} from '@pixiv/three-vrm';
 import {characterBudgets, type CharacterDefinition, type CharacterQuality} from './catalog';
 import {retargetHumanoid} from './retarget';
+import {createCharacterBinaryCache} from './binary-cache';
 import {adaptVrmToLilToon} from './liltoon-adapter';
 
 /** Reject external references before GLTFLoader can perform secondary requests. */
@@ -16,16 +17,7 @@ export function validateVrmBuffer(data: ArrayBuffer) {
   if (!json.extensions?.VRM && !json.extensions?.VRMC_vrm) throw new Error('This file does not contain a VRM humanoid.');
   if ([...(json.buffers??[]),...(json.images??[])].some(item=>item.uri!==undefined)) throw new Error('Character assets must be self-contained.');
 }
-async function binary(url:string,signal?:AbortSignal) {
-  if (!url.startsWith('/plaza/characters/') || url.includes('..') || url.includes('?')) throw new Error('Character source is not approved.');
-  const response=await fetch(url,{signal});
-  if (!response.ok) throw new Error('Character file is unavailable.');
-  const size=Number(response.headers.get('content-length'));
-  if (size>characterBudgets.maxAssetBytes) throw new Error('Character exceeds the file budget.');
-  const buffer=await response.arrayBuffer();
-  if (buffer.byteLength>characterBudgets.maxAssetBytes) throw new Error('Character exceeds the file budget.');
-  return buffer;
-}
+const binary=createCharacterBinaryCache();
 export function disposeVrm(vrm:VRM) {
   const release=vrm.scene.userData.releaseLilToonBindings;if(typeof release==='function')release();
   const textures=new Set<Texture>();

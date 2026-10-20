@@ -1,0 +1,91 @@
+{
+  "source": "https://tools.oyasumi-gamedev.com/worldgacha/",
+  "preset": "Suburban neighborhood",
+  "seed": 361374982,
+  "buildings": [
+    {
+      "name": "cafe",
+      "sourceBuilding": 5470,
+      "seed": 361374982,
+      "width": 5.696843888144972,
+      "depth": 10.987066013971408,
+      "height": 9.641780689358711,
+      "sourceCenter": [
+        14.387798319174529,
+        3.832838702306171
+      ],
+      "triangles": 18,
+      "bytes": 2448
+    },
+    {
+      "name": "home-rose",
+      "sourceBuilding": 5471,
+      "seed": 361374982,
+      "width": 6.250750021613218,
+      "depth": 9.265754335867273,
+      "height": 8.515357434749603,
+      "sourceCenter": [
+        1.4432865783295021,
+        -19.047875559745723
+      ],
+      "triangles": 45,
+      "bytes": 3992
+    },
+    {
+      "name": "home-sage",
+      "sourceBuilding": 5938,
+      "seed": 361374982,
+      "width": 5.555448490544234,
+      "depth": 9.895724872825681,
+      "height": 8.778670571744442,
+      "sourceCenter": [
+        27.645145699313847,
+        -3.223223113488121
+      ],
+      "triangles": 20,
+      "bytes": 2616
+    },
+    {
+      "name": "home-cream",
+      "sourceBuilding": 6652,
+      "seed": 361374982,
+      "width": 6.1467528746929005,
+      "depth": 11.009279200527228,
+      "height": 8.441344857215881,
+      "sourceCenter": [
+        -27.774243482987714,
+        -4.206211577341125
+      ],
+      "triangles": 20,
+      "bytes": 2832
+    },
+    {
+      "name": "home-blue",
+      "sourceBuilding": 5473,
+      "seed": 361374982,
+      "width": 5.836082538357021,
+      "depth": 11.059296520892564,
+      "height": 8.229766070842743,
+      "sourceCenter": [
+        -7.893364046448246,
+        -28.40642939794982
+      ],
+      "triangles": 22,
+      "bytes": 2984
+    },
+    {
+      "name": "shop",
+      "sourceBuilding": 5472,
+      "seed": 361374982,
+      "width": 6.149462434754261,
+      "depth": 9.181815553752267,
+      "height": 9.654643952846527,
+      "sourceCenter": [
+        -2.622630307452402,
+        -24.314674549707796
+      ],
+      "triangles": 20,
+      "bytes": 2604
+    }
+  ]
+}

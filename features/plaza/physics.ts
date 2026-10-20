@@ -1,5 +1,6 @@
 import type {PlazaObject,Vec2} from './types';
+import {PUBLIC_LIFE_OBSTACLES} from './public-life-layout';
 export interface Obstacle{x:number;z:number;w:number;d:number;}
 export const walls:Obstacle[]=[{x:1,z:-10,w:32,d:1},{x:17,z:0,w:1,d:24},{x:-17,z:0,w:1,d:24},{x:0,z:15,w:36,d:1},{x:8,z:-8,w:14,d:.6},{x:1.2,z:-6.4,w:.45,d:3.8},{x:14.8,z:-6.4,w:.45,d:3.8},{x:3,z:-4.7,w:4,d:.5},{x:12.6,z:-4.7,w:4.8,d:.5},{x:-6.5,z:-6,w:7,d:5.5},{x:-7,z:1,w:3.4,d:1},{x:6.2,z:-6.4,w:1.2,d:1.2},{x:2.6,z:-7.3,w:1.2,d:.6}];
-export function blocked(p:Vec2,objects:PlazaObject[]=[],radius=.32){return walls.some(o=>Math.abs(p.x-o.x)<o.w/2+radius&&Math.abs(p.z-o.z)<o.d/2+radius)||objects.some(o=>{const r=(o.kind==='bench'?1.35:.65)*o.scale;return Math.abs(p.x-o.x)<r+radius&&Math.abs(p.z-o.z)<.6*o.scale+radius;});}
+export function blocked(p:Vec2,objects:PlazaObject[]=[],radius=.32){return [...walls,...PUBLIC_LIFE_OBSTACLES].some(o=>Math.abs(p.x-o.x)<o.w/2+radius&&Math.abs(p.z-o.z)<o.d/2+radius)||objects.some(o=>{const r=(o.kind==='bench'?1.35:.65)*o.scale;return Math.abs(p.x-o.x)<r+radius&&Math.abs(p.z-o.z)<.6*o.scale+radius;});}
 export function moveWithCollision(from:Vec2,to:Vec2,objects:PlazaObject[]=[]):Vec2{let x=from.x,z=from.z;const steps=Math.max(1,Math.ceil(Math.hypot(to.x-x,to.z-z)/.16)),dx=(to.x-x)/steps,dz=(to.z-z)/steps;for(let i=0;i<steps;i++){if(!blocked({x:x+dx,z},objects))x+=dx;if(!blocked({x,z:z+dz},objects))z+=dz;}return {x:Math.max(-16,Math.min(16,x)),z:Math.max(-9,Math.min(14,z))};}

@@ -1,0 +1,1 @@
+Upstream README declares MIT. Source: https://github.com/craftzdog/ghibli-style-shader
