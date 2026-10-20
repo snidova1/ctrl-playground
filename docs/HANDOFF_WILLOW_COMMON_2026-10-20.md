@@ -24,11 +24,10 @@ Read `docs/willow-storybook-startup-pass.md`, `docs/anime-world-pass.md`, `docs/
 
 The owner said the visual result is better but wants further polish. Do **not** respond with another filter-only pass. Highest-impact next direction, based on the actual browser capture:
 
-1. Make the broad yellow paths less flat and rectangular: irregular margins, compacted/darker worn soil, stepping stones and sparse grass intrusion while preserving pointer/nav masks.
-2. Improve composition/depth: layered distant tree silhouettes, varied horizon, restrained atmospheric haze; preserve playability/readability.
-3. Soften lighting: warm highlights with cool green-blue shade, gentler contact shadows, less uniformly saturated ground.
-4. Individualize buildings with gameplay-readable identities (cafe/shop/home gardens) instead of repeating a cottage kit.
-5. Bring character shading and HUD closer to the scene without reducing input visibility, mobile legibility or accessibility.
+1. ✅ The first path/depth pass is now present: `storybook-ground-detail.tsx` adds 130 low, flush path-wear stones without touching nav; `distant-grove.tsx` adds three rounded, fogged horizon layers outside the navigation basin; `ghibli-shaders.ts` moves the ground from bright yellow toward compacted olive earth.
+2. Individualize buildings with gameplay-readable identities (cafe/shop/home gardens) instead of repeating a cottage kit.
+3. Continue lighting cautiously: warm highlights with cool green-blue shade and gentler contact shadows, without losing input/character readability.
+4. Bring character shading and HUD closer to the scene without reducing input visibility, mobile legibility or accessibility.
 
 Before visual changes, take/inspect an **actual browser capture** and protect the working degraded-startup and mobile inputs with the existing QA scripts.
 
