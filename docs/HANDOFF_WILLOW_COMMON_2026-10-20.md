@@ -1,5 +1,11 @@
 # Handoff — Willow Common / public anime village (2026-10-20)
 
+## Product source of truth vs implementation status
+
+Owner-directed hierarchy: **Willow Common is one of the primary Public World areas**, not a disposable study. **Common Ground is a small non-holder waiting-room/landing**, not the core plaza or the product. Do not mistake legacy courtyard features or the preview URL for the intended product hierarchy.
+
+The current `/world-preview` implementation is still **technically isolated** from authenticated Habitat worlds, shared saved profiles/world state, holder authorization and authoritative multiplayer. This correction establishes product direction; it does **not** automatically finish auth/holder integration or prove an integrated Public World has shipped. Local interactions and six NPC residents are not shared persistence or online-player presence. Preserve the existing backend authorization boundaries while integrating and verify the real access flow separately.
+
 ## Start here
 
 - **Repository:** `snidova1/ctrl-playground`
@@ -8,7 +14,7 @@
 - **Primary implementation:** `features/worldgacha/`
 - **Route entry:** `app/world-preview/`
 - **Published static content:** `public/worlds/neighborhood/` and `public/worlds/worldgacha/`
-- **Latest scope:** a WebGL, playable anime/painterly village called **Willow Common**. It is deliberately not the older Habitat/Plaza experience.
+- **Product role / current scope:** **Willow Common**, a primary Public World area, currently implemented as a playable WebGL anime/painterly village. Its renderer and local state remain separate from the older Habitat/Plaza implementations; that technical isolation does not make it a disposable study.
 
 Read `docs/willow-storybook-startup-pass.md`, `docs/anime-world-pass.md`, `docs/ghibli-visual-pass.md`, and `docs/worldgacha-public-world.md` before altering assets or the render pipeline.
 
@@ -64,6 +70,7 @@ CTRL_PREVIEW_URL='https://<current-tunnel>.trycloudflare.com/world-preview?build
 
 ## Important non-goals / guardrails
 
+- Do not claim completed Public World authentication, holder gating, shared persistence or authoritative multiplayer from this product correction. Preserve server-side signed-wallet verification, holder checks, private-world concealment, owner/editor/visitor ACLs, asset allowlists and request/object limits; demo balances must not authorize paid generation.
 - Do not claim this is a physical mobile-FPS test: the 390×844 run is browser viewport emulation.
 - Keep `test-results/` untracked; it contains evidence captures and is intentionally ignored.
 - Preserve licensing/provenance details and credits at `public/worlds/neighborhood/credits/index.html`. VRoid assets are not claimed as CC0.

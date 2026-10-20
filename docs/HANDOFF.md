@@ -1,3 +1,18 @@
+# Product source of truth — owner clarification, 2026-10-20
+
+This clarification supersedes older product framing below; the dated integration results remain historical evidence, not a new release claim.
+
+- **Willow Common is one of the primary Public World areas**, not a disposable study or a side demo. Its current route name does not reduce its intended product importance.
+- **Common Ground is a small non-holder waiting-room/landing**, not the core plaza or the product. The older courtyard workshop is existing implementation, not the intended product hierarchy.
+- **Product direction is not shipped integration.** Willow Common currently runs as a technically isolated `/world-preview` implementation in `features/worldgacha/`. Signed-wallet authentication, holder authorization, shared profiles, saved-world persistence and authoritative multiplayer are not automatically integrated by this correction. Implement and verify those paths before claiming Public World access is complete; NPCs must never count as real players.
+- Preserve existing server-side wallet verification, holder checks, private-world concealment, ACLs, request/object budgets and asset allowlists. Do not authorize from demo balances or weaken backend boundaries to make entry appear connected. Preserve asset licenses/provenance; VRoid assets are not CC0.
+
+Common Ground now mounts a compact waiting room at `/courtyard` and before Habitat sign-in; the legacy workshop is not mounted on that route. See `docs/common-ground-lobby-pass.md` for current entry behavior, passing checks and remaining access-integration limits.
+
+Current Willow Common implementation and guardrails: `docs/HANDOFF_WILLOW_COMMON_2026-10-20.md` and `docs/worldgacha-public-world.md`. Older Common Ground, guest-entry and publication descriptions below describe their dated checkpoints, not the corrected product hierarchy or proof of current Public World integration.
+
+---
+
 # CTRL integration handoff — 2026-10-11
 
 Runtime checkpoint: `27b6daf6c0ca139640d7d8ddffc3ab540662a67e` on `work/visual-integration`, based on PR #13 (`work/master-integration`). `main` remains unchanged at `cbe941bd369424f00c70fdd9c8d1a85f1e76a717`. Reviewed PRs #15–#19 are integrated without rewriting worker or GPT-6 history.

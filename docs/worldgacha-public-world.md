@@ -1,8 +1,14 @@
-# CTRL Riverside — World Gacha playable district study
+# CTRL Public World — Willow Common and World Gacha implementation provenance
 
-Route: `/world-preview`. This is deliberately an **isolated local prototype**, not a replacement for authenticated Habitat worlds or courtyard multiplayer. No NPC is added to real-player counts. No PR workflows are part of this work.
+## Product hierarchy vs current implementation
 
-## Actually used
+**Willow Common is one of the primary Public World areas**, not a disposable district study. **Common Ground is a small non-holder waiting-room/landing**, not the core plaza or the product. This owner-directed hierarchy supersedes older framing that treated the courtyard as the core product or Willow Common as merely a study.
+
+Current route: `/world-preview`, implemented in `features/worldgacha/`. It remains **technically isolated** from authenticated Habitat worlds and courtyard multiplayer. Correcting the product direction does **not** automatically complete signed-wallet authentication, holder gating, shared profiles, saved-world persistence or authoritative multiplayer for Willow Common. Integrate and verify those separately before claiming a connected Public World is shipped; do not replace or bypass existing backend authorization. No NPC is added to real-player counts. No PR workflows are part of this work.
+
+The current storybook village, startup behavior and QA sequence are documented in `docs/HANDOFF_WILLOW_COMMON_2026-10-20.md`. The Riverside export/build notes below retain the earlier World Gacha source provenance and technical constraints; they are not a claim that the current village is just the original generated river district or that every earlier control applies to it.
+
+## World Gacha source pipeline — actually used
 
 - **World Gacha / MIYADAIKU**: the official browser tool generated and exported the actual town GLB, seed `361374981`, Riverside country town, region 2 km / resolution 256, near district 300 m. Source: https://tools.oyasumi-gamedev.com/worldgacha/ . Its About text permits generated exports in commercial/noncommercial projects without requiring credit; tool code is not copied. Preserve the GLB copyright field. `recipe.json` is a CTRL provenance/settings snapshot, **not** the tool's importable recipe format.
 - **donmccurdy/glTF-Transform**, pinned 4.5.1 (MIT): prune/deduplicate/weld/join/quantize, including registered `KHR_mesh_quantization`. Original detailed tree meshes are replaced with a small deterministic instanced tree population; their original positions are preserved in the build report. The raw 56 MB source is outside public files, `/home/celeng/ctrl-world-source/world_river_361374981.glb`; it exceeds a normal Cloudflare static-file limit and must not be shipped as-is.
@@ -34,10 +40,12 @@ CTRL_WORLD_ORIGIN=http://localhost:3043 node scripts/qa/worldgacha-smoke.mjs
 
 The export helper connects to an agent-owned already-open World Gacha browser. Discover its current CDP URL rather than assuming the old browser profile/port survives. Current runtime dependencies and the application lockfile are unchanged.
 
-## Controls and constraints
+## Earlier Riverside controls and ongoing technical constraints
 
 - PC: WASD/arrows, Shift run, drag orbit, wheel zoom, click a navigable street to route there, T atmosphere.
 - Phone: touch direction buttons, drag/pinch, tap a navigable street.
 - Desktop/mobile graphics budgets, reduced ambient motion, home reset and overview.
-- Generated river district is a large geographic area, not an enterable-building simulation. Building interiors, full-world editor/persistence, authoritative multiplayer positions, and richer NPC schedules still need integration before making this the default public world.
+- The generated Riverside source district is a large geographic area, not an enterable-building simulation. Building interiors, full-world editor/persistence, authoritative multiplayer positions, and richer NPC schedules are not supplied merely by the generation pipeline. Willow Common's intended primary Public World role does not mean these capabilities, or its auth/holder integration, are finished.
+- Preserve existing server-side signed-wallet/holder checks, private-world concealment, owner/editor/visitor ACLs, request/object budgets and asset allowlists. Keep credentials server-only and demo balances non-authorizing. Product direction is not permission to weaken those boundaries.
+- Preserve all source/export copyright fields, local dependency licenses and `public/worlds/neighborhood/credits/index.html`; VRoid assets are not CC0. Courtyard CC0 asset claims must not be generalized to every Willow Common asset.
 - Software-rendered WSL screenshots are functional evidence, **not** an FPS guarantee on real phones.

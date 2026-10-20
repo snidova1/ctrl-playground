@@ -39,7 +39,7 @@ export default defineConfig({
       NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: '',
     },
     timeout: 150000,
-    reuseExistingServer: false,
+    reuseExistingServer: process.env.CTRL_TEST_REUSE_SERVER === '1',
   },
   reporter: [['list']],
 });

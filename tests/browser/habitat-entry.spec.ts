@@ -31,7 +31,7 @@ for (const route of ['/', '/habitat', '/worlds/editor']) {
     await expect(entry).toBeVisible({timeout: 30000});
     await expect(headerConnect).toBeVisible();
     await expect(connect).toBeVisible();
-    await expect(page.locator('.hb-brand')).toContainText('HABITAT');
+    await expect(page.locator('.hb-brand')).toContainText('COMMON GROUND');
     for (const name of ['Worlds', 'Character', 'Keys']) {
       await expect(page.locator('.hb-top').getByRole('button', {name, exact: true})).toHaveCount(0);
     }
@@ -115,4 +115,39 @@ test('a signed wallet completes setup and signs back into the same Habitat witho
   expect(restored.profile).toEqual(initial.profile);
   expect(errors, 'Wallet sign-in and restoration must not produce unhandled browser errors').toEqual([]);
   await page.screenshot({path: test.info().outputPath('returning-wallet-habitat.png'), fullPage: true});
+});
+
+// Common Ground is deliberately a small lobby, not the legacy buildable plaza.
+test('Common Ground opens as a compact waiting room without creating a guest identity',async({page})=>{
+ const errors:string[]=[],writes:string[]=[];
+ page.on('pageerror',error=>errors.push(error.message));
+ page.on('request',request=>{if(request.method()==='POST')writes.push(new URL(request.url()).pathname);});
+ await page.goto('/courtyard');
+ await expect(page.getByRole('heading',{name:/Come in/})).toBeVisible();
+ await expect(page.getByRole('link',{name:'Connect & continue'})).toHaveAttribute('href','/habitat');
+ await expect(page.getByRole('link',{name:'Wallet & access'})).toHaveAttribute('href','/account');
+ await expect(page.getByRole('button',{name:'Build',exact:true})).toHaveCount(0);
+ await expect(page.locator('canvas[data-lobby-ready="true"]')).toBeVisible({timeout:60000});
+ await expect(page.locator('canvas')).toHaveAttribute('data-lobby-footprint','8x7');
+ await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const before=await page.locator('main').getAttribute('data-product-area');
+ expect(before).toBe('non-holder-lobby');
+ await press(page,page.getByRole('button',{name:'Change the light'}));
+ await page.screenshot({path:test.info().outputPath('common-ground-lobby.png'),fullPage:true});
+ expect(writes).toEqual([]);
+ expect(errors).toEqual([]);
+ await press(page,page.getByRole('link',{name:'Connect & continue'}));
+ // App Router navigation may wait for the cold Habitat bundle on low-memory dev hosts.
+ await expect(page).toHaveURL(/\/habitat$/,{timeout:30000});
+ await expect(page.locator('.hb-entry')).toBeVisible();
+ expect((await page.request.get('/api/habitat/state')).status()).toBe(401);
+});
+
+test('Common Ground UI remains available when the optional VRM download fails',async({page})=>{
+ await page.route('**/*.vrm',route=>route.abort('failed'));
+ await page.goto('/courtyard');
+ await expect(page.locator('canvas[data-lobby-ready="true"]')).toBeVisible({timeout:60000});
+ await expect(page.getByRole('link',{name:'Connect & continue'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:/Come in/})).toBeVisible();
+ await page.screenshot({path:test.info().outputPath('common-ground-without-avatar.png'),fullPage:true});
 });
