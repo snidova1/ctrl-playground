@@ -73,7 +73,9 @@ describe('character motion and state ownership',()=>{
     motion.airborne=true;motion.jumpTime=.05;runtime.update(1/60,input,10000);expect(runtime.state).toBe('JumpStart');motion.jumpTime=.3;runtime.update(1/60,input,10000);expect(runtime.state).toBe('JumpLoop');
     motion.airborne=false;motion.landedAt=10000;runtime.update(1/60,input,10050);expect(runtime.state).toBe('Land');
     input.sitting=true;for(let i=0;i<30;i++)runtime.update(1/60,input,10200+i*16);expect(runtime.state).toBe('Seated');
-    input.sitting=false;input.moving=false;input.interactedAt=11000;runtime.update(1/60,input,11050);expect(runtime.state).toBe('Interact');input.celebrate=true;runtime.update(1/60,input,11060);expect(runtime.state).toBe('Victory');
+    input.sitting=false;input.moving=false;input.interactedAt=11000;runtime.update(1/60,input,11050);expect(runtime.state).toBe('StandUp');expect(runtime.activeGesture).toBeNull();
+    for(let i=0;i<30;i++)runtime.update(1/60,input,11066+i*16);expect(runtime.state).toBe('Idle');expect(runtime.activeGesture).toBeNull();
+    input.interactedAt=12000;runtime.update(1/60,input,12010);expect(runtime.state).toBe('Interact');input.celebrate=true;runtime.update(1/60,input,12020);expect(runtime.state).toBe('Victory');
     const before=runtime.mixer.time;runtime.update(20,input,12000);expect(runtime.mixer.time-before).toBeLessThanOrEqual(.051);runtime.dispose();
   });
 });

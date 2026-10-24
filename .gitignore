@@ -12,10 +12,12 @@
 
 # testing
 /coverage
+/.vitest/
 
 # next.js
 /.next/
 /.next-node/
+/.next-airi-complete/
 /.vinext/
 /out/
 
@@ -52,3 +54,8 @@ next-env.d.ts
 /test-results/
 /ctrl-local.sqlite*
 /tsconfig.tsbuildinfo
+
+# Local diagnostics and Python caches
+__pycache__/
+*.py[cod]
+/tests/unit/__seated-diagnostic.ts

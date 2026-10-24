@@ -1,3 +1,20 @@
+/* Warm parchment HUD: scoped to Habitat, with all existing actions preserved. */
+.hb-app .hb-top { top:12px; left:20px; right:20px; padding:10px 15px; border:1px solid #d7ccb2; border-radius:20px; background:#faf5e9f0; box-shadow:0 5px 22px #4c503916,inset 0 1px 0 #fffdf5; backdrop-filter:blur(10px); }
+.hb-app .hb-brand,.hb-app .hb-brand strong { color:#425b45; }
+.hb-app .hb-brand span,.hb-app .hb-status { color:#73816a; }
+.hb-app .hb-top button { min-height:42px; background:#f8f3e6; color:#485e46; border:1px solid #d8cfb7; border-radius:12px; box-shadow:0 2px 0 #766a4310; }
+.hb-app .hb-top button:hover { background:#e9ecdb; border-color:#adbaa0; }
+.hb-app .hb-title { top:97px; left:24px; max-width:min(420px,calc(100vw - 48px)); padding:10px 14px; border-left:3px solid #9eae84; border-radius:3px 15px 15px 3px; background:linear-gradient(90deg,#faf5e9e0,#faf5e900); }
+.hb-app .hb-title h1 { font-size:clamp(21px,2vw,29px); line-height:1.15; margin:6px 0; }
+.hb-app .hb-comparison { color:#64785c; border-color:#d7ccb2; background:#faf5e9f2; }
+@media(max-width:700px) {
+ .hb-app .hb-top { top:8px; left:10px; right:10px; padding:8px 10px; border-radius:17px; }
+ .hb-app .hb-top>div { gap:5px; }
+ .hb-app .hb-top button { min-height:44px; padding:8px 9px; }
+ .hb-app .hb-title { top:93px; left:14px; max-width:calc(100vw - 54px); padding:8px 11px; }
+ .hb-app .hb-comparison { left:auto; right:12px; bottom:185px; gap:0; padding:8px 10px; }
+ .hb-app .hb-comparison span { display:none; }
+}
 /* Habitat comparison skin: original builder layout and interactions stay intact. */
 .hb-app { color:#34493e; background:#bfe4e7; font-family:var(--font-geist-sans),Arial,sans-serif; }
 .hb-app button { border-color:#c5cfb4; border-radius:14px; background:#fffaf0; box-shadow:0 3px 0 #34493e0d; transition:background .15s,transform .15s; }
@@ -14,3 +31,15 @@
 .hb-comparison span { letter-spacing:.08em; color:#648271; }
 .hb-comparison a { color:#3c5747; font-weight:700; text-underline-offset:3px; }
 @media(max-width:700px) { .hb-comparison { left:12px; bottom:82px; font-size:10px; gap:8px; } .hb-top { padding:12px; } .hb-top>div { gap:4px; flex-wrap:wrap; justify-content:flex-end; } .hb-top>div button { padding:8px; font-size:11px; } .hb-status { display:none; } }
+
+.hb-emotes { display:flex; gap:4px; }
+.hb-emotes button { flex:1; min-width:44px; min-height:44px; }
+/* Mobile analog movement; desktop keyboard controls remain unchanged. */
+.hb-app .hb-analog-stick { display:none; position:absolute; z-index:12; left:calc(16px + env(safe-area-inset-left,0px)); bottom:calc(20px + env(safe-area-inset-bottom,0px)); width:120px; height:120px; box-sizing:border-box; border:1px solid #dce3ccaa; border-radius:50%; background:radial-gradient(circle,#faf5e933 0 35%,#40584755 36% 37%,#293e3680 38%); box-shadow:0 5px 22px #263d3626,inset 0 1px 0 #fffaf03d; place-items:center; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; cursor:grab; }
+.hb-app .hb-analog-stick:active { cursor:grabbing; }
+.hb-app .hb-analog-thumb { width:48px; height:48px; box-sizing:border-box; border:2px solid #fff8e4bb; border-radius:50%; background:radial-gradient(circle at 35% 28%,#fff9e9,#c6d2b9); box-shadow:0 3px 10px #142f3340,inset 0 1px 0 #fffdf3; pointer-events:none; }
+@media(pointer:coarse) {
+ .hb-app .hb-analog-stick { display:grid; }
+ .hb-app .hb-bottom { left:auto; right:calc(8px + env(safe-area-inset-right,0px)); transform:none; flex-direction:column; }
+ .hb-app .hb-comparison { left:auto; right:calc(12px + env(safe-area-inset-right,0px)); bottom:calc(200px + env(safe-area-inset-bottom,0px)); }
+}

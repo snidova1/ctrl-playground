@@ -1,0 +1,328 @@
+{
+  "id": "darkness-studio",
+  "supportedCharacterIds": [
+    "ctrl-anime-female-studio"
+  ],
+  "source": "https://raw.githubusercontent.com/madjin/vrm-samples/master/vroid/beta/Darkness_Shibu.vrm",
+  "officialLicenseSource": "https://vroid.pixiv.help/hc/en-us/articles/360012381793",
+  "license": "CC0-1.0",
+  "sourceOriginalSha256": "0b50573d2d054d98c0a6fc5a5ce872e1b2c8bff8718476ff72a9a68c48674fd8",
+  "sourceSanitizedSha256": "2042b669feb2be528ee49eb5c4d260143f7162d336826cbd821fdfc24634ee1d",
+  "targetSha256": "adfd242317aaabc773f31f7fff7b013979fbb5baa47e97427a78913d9cb4e979",
+  "artifactSha256": "2c47a691252486347fd98e63f02daf80d8e1c36ee707c92a36926f7f1de61d12",
+  "bytes": 1887960,
+  "triangles": 2882,
+  "weightedBones": [
+    "J_Bip_C_Hips",
+    "J_Sec_L_SkirtSide1",
+    "J_Sec_L_SkirtSide2",
+    "J_Sec_R_SkirtSide1",
+    "J_Sec_R_SkirtSide2",
+    "J_Bip_C_Spine",
+    "J_Bip_C_Chest",
+    "J_Bip_C_UpperChest",
+    "J_Sec_L_Bust1",
+    "J_Sec_L_Bust2",
+    "J_Sec_R_Bust1",
+    "J_Sec_R_Bust2",
+    "J_Bip_C_Neck",
+    "J_Bip_C_Head",
+    "J_Bip_L_Shoulder",
+    "J_Bip_L_UpperArm",
+    "J_Bip_L_LowerArm",
+    "J_Sec_L_LowerSleeve",
+    "J_Sec_L_TipSleeve",
+    "J_Bip_L_Hand",
+    "J_Bip_L_Ring1",
+    "J_Bip_R_Shoulder",
+    "J_Bip_R_UpperArm",
+    "J_Bip_R_LowerArm",
+    "J_Sec_R_LowerSleeve",
+    "J_Sec_R_TipSleeve",
+    "J_Bip_R_Hand",
+    "J_Bip_R_Ring1",
+    "J_Bip_L_UpperLeg",
+    "J_Sec_L_SkirtBack1",
+    "J_Sec_L_SkirtBack2",
+    "J_Sec_L_SkirtFront1",
+    "J_Sec_L_SkirtFront2",
+    "J_Bip_L_LowerLeg",
+    "J_Bip_L_Foot",
+    "J_Bip_L_ToeBase",
+    "J_Bip_R_UpperLeg",
+    "J_Sec_R_SkirtBack1",
+    "J_Sec_R_SkirtBack2",
+    "J_Sec_R_SkirtFront1",
+    "J_Sec_R_SkirtFront2",
+    "J_Bip_R_LowerLeg",
+    "J_Bip_R_Foot",
+    "J_Bip_R_ToeBase"
+  ],
+  "restWarpMaxMeters": 0.0004826327729392895,
+  "binding": "sum(weight * inverse(targetInverseBind) * sourceInverseBind * position); new target inverse binds; runtime skeleton references actual target raw bones",
+  "textures": [
+    {
+      "sourceTexture": 17,
+      "sourceSize": [
+        2048,
+        2048
+      ],
+      "outputSize": [
+        1024,
+        1024
+      ],
+      "sourceSha256": "134a7f913d18b1167e6f8c0e2e709a7bc08ecbb1864874e82ffbf37becf0ef6c"
+    },
+    {
+      "sourceTexture": 18,
+      "sourceSize": [
+        512,
+        512
+      ],
+      "outputSize": [
+        512,
+        512
+      ],
+      "sourceSha256": "b02bcd41543fbf2cf43fdd77663b43c4e4be256799cab6c0525cf219e3973360"
+    }
+  ],
+  "geometryPolicy": "All source garment triangles/UVs/normalized weights retained; positions/normals rest-warped only. No body, hair, faces or unused binary.",
+  "materialPolicy": "Original source KHR_materials_unlit color artwork + alpha mask. Unused normal/emission maps removed; no MToon shader parity claim.",
+  "originalMToon": [
+    {
+      "name": "F00_002_01_Tops_01_CLOTH",
+      "renderQueue": 2450,
+      "shader": "VRM/MToon",
+      "floatProperties": {
+        "_Cutoff": 0.5,
+        "_BumpScale": 1,
+        "_ReceiveShadowRate": 1,
+        "_ShadingGradeRate": 1,
+        "_ShadeShift": -0.6,
+        "_ShadeToony": 0,
+        "_LightColorAttenuation": 0,
+        "_IndirectLightIntensity": 0.1,
+        "_OutlineWidth": 0.075,
+        "_OutlineScaledMaxDistance": 4.63,
+        "_OutlineLightingMix": 1,
+        "_DebugMode": 0,
+        "_BlendMode": 1,
+        "_OutlineWidthMode": 1,
+        "_OutlineColorMode": 0,
+        "_CullMode": 0,
+        "_OutlineCullMode": 1,
+        "_SrcBlend": 1,
+        "_DstBlend": 0,
+        "_ZWrite": 1
+      },
+      "vectorProperties": {
+        "_Color": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "_ShadeColor": [
+          0.823907554,
+          0.8117647,
+          0.968627453,
+          1
+        ],
+        "_MainTex": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_ShadeTexture": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_BumpMap": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_ReceiveShadowTexture": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_ShadingGradeTexture": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_SphereAdd": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_EmissionColor": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "_EmissionMap": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_OutlineWidthTexture": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_OutlineColor": [
+          0.274509817,
+          0.09019608,
+          0.1254902,
+          1
+        ]
+      },
+      "textureProperties": {
+        "_MainTex": 17,
+        "_ShadeTexture": 17,
+        "_BumpMap": 1,
+        "_SphereAdd": 6,
+        "_EmissionMap": 2
+      },
+      "keywordMap": {
+        "MTOON_OUTLINE_COLOR_FIXED": true,
+        "MTOON_OUTLINE_WIDTH_WORLD": true,
+        "_ALPHATEST_ON": true,
+        "_NORMALMAP": true
+      },
+      "tagMap": {
+        "RenderType": "Opaque"
+      }
+    },
+    {
+      "name": "F00_002_01_Shoes_01_CLOTH",
+      "renderQueue": 2450,
+      "shader": "VRM/MToon",
+      "floatProperties": {
+        "_Cutoff": 0.5,
+        "_BumpScale": 1,
+        "_ReceiveShadowRate": 1,
+        "_ShadingGradeRate": 1,
+        "_ShadeShift": -0.6,
+        "_ShadeToony": 0,
+        "_LightColorAttenuation": 0,
+        "_IndirectLightIntensity": 0.1,
+        "_OutlineWidth": 0.075,
+        "_OutlineScaledMaxDistance": 4.63,
+        "_OutlineLightingMix": 1,
+        "_DebugMode": 0,
+        "_BlendMode": 1,
+        "_OutlineWidthMode": 1,
+        "_OutlineColorMode": 1,
+        "_CullMode": 0,
+        "_OutlineCullMode": 1,
+        "_SrcBlend": 1,
+        "_DstBlend": 0,
+        "_ZWrite": 1
+      },
+      "vectorProperties": {
+        "_Color": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "_ShadeColor": [
+          0.823907554,
+          0.8117647,
+          0.968627453,
+          1
+        ],
+        "_MainTex": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_ShadeTexture": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_BumpMap": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_ReceiveShadowTexture": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_ShadingGradeTexture": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_SphereAdd": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_EmissionColor": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "_EmissionMap": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_OutlineWidthTexture": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "_OutlineColor": [
+          0.274509817,
+          0.09019608,
+          0.1254902,
+          1
+        ]
+      },
+      "textureProperties": {
+        "_MainTex": 18,
+        "_ShadeTexture": 18,
+        "_BumpMap": 1,
+        "_SphereAdd": 6,
+        "_EmissionMap": 2
+      },
+      "keywordMap": {
+        "MTOON_OUTLINE_COLOR_MIXED": true,
+        "MTOON_OUTLINE_WIDTH_WORLD": true,
+        "_ALPHATEST_ON": true,
+        "_NORMALMAP": true
+      },
+      "tagMap": {
+        "RenderType": "Opaque"
+      }
+    }
+  ],
+  "fitStatus": "CPU regression required; browser acceptance pending parent wiring"
+}

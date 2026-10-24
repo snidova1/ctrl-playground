@@ -2,9 +2,9 @@
 
 ## Product source of truth vs implementation status
 
-Owner-directed hierarchy: **Willow Common is one of the primary Public World areas**, not a disposable study. **Common Ground is a small non-holder waiting-room/landing**, not the core plaza or the product. Do not mistake legacy courtyard features or the preview URL for the intended product hierarchy.
+Owner-directed hierarchy: **CTRL is friend.tech with worlds; anyone can trade anyone's member Keys without acquiring their Habitat/build rights. Willow Common is a primary Public World area. Common Ground is a small OPEN-AIR playable landing**, not an enclosed room: random noneditable guest avatar, walk/look only. Verified wallet → custom saved avatar → Public World, with no Key purchase needed to explore. Owner Key → personal buildable/visitable Habitat is separate; preserve the approved Habitat garden/home.
 
-The current `/world-preview` implementation is still **technically isolated** from authenticated Habitat worlds, shared saved profiles/world state, holder authorization and authoritative multiplayer. This correction establishes product direction; it does **not** automatically finish auth/holder integration or prove an integrated Public World has shipped. Local interactions and six NPC residents are not shared persistence or online-player presence. Preserve the existing backend authorization boundaries while integrating and verify the real access flow separately.
+`/world-preview` remains the standalone technical preview. New product route `/public-world` checks the real signed-wallet profile API and feeds the saved avatar into the same Willow renderer; `POST /api/habitat/public-profile` saves identity without granting/creating/joining a Habitat. This is an avatar/entry bridge, NOT authoritative multiplayer, deployed Key purchases, ownership-gated provisioning or shared Willow world state. Local interactions and six NPCs are not real online players. Preserve existing backend authorization/private-world boundaries. See `common-ground-open-air-pass.md` for current QA and limits.
 
 ## Start here
 

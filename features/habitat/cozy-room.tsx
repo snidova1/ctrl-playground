@@ -3,6 +3,7 @@
 import {useEffect,useMemo} from 'react';
 import {RoundedBox} from '@react-three/drei';
 import {CanvasTexture,DoubleSide,RepeatWrapping,SRGBColorSpace} from 'three';
+import RoomDetails from './room-details';
 
 interface CozyRoomProps {
   wallColor: string;
@@ -178,6 +179,7 @@ export default function CozyRoom({wallColor}: CozyRoomProps) {
     <BackWainscot/>
     <LeftWainscot/>
     <LargeWindow/>
+    <RoomDetails/>
 
     <Trim position={[0, 3.46, -3.93]} size={[10.05, .11, .18]} color='#dfbf97'/>
     <Trim position={[-4.93, 3.46, 0]} size={[.18, .11, 8.05]} color='#dfbf97'/>

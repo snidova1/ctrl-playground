@@ -1,4 +1,6 @@
-# Common Ground: compact waiting-room pass
+# HISTORICAL / REJECTED — Common Ground enclosed waiting-room pass
+
+**Superseded by owner correction.** The enclosed room/diorama below was rejected. Common Ground must be small, OPEN-AIR and playable, with random noneditable guest avatars. Wallet → saved custom avatar → Public World; owner Key → personal Habitat separately. See `common-ground-open-air-pass.md` for current implementation. These old test results prove only that historical room build, not approval of its product direction.
 
 ## Product role
 

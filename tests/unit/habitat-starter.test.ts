@@ -5,15 +5,15 @@ import {layoutSchema} from '@/features/habitat/types';
 describe('Editable starter home',()=>{
  it('ships a real, fully-editable starter world with unique IDs and valid transforms',()=>{
   const objects=createStarterWorld();
-  expect(STARTER_TEMPLATE_ID).toBe('garden-courtyard-v1');
+  expect(STARTER_TEMPLATE_ID).toBe('empty-plot-v2');
   expect(objects.length).toBe(STARTER_WORLD_OBJECT_COUNT);
-  expect(objects.length).toBeGreaterThan(20);
+  expect(objects.length).toBeGreaterThanOrEqual(7);
   expect(objects.length).toBeLessThan(70);
   expect(layoutSchema.safeParse(objects).success).toBe(true);
   expect(new Set(objects.map(o=>o.id)).size).toBe(objects.length);
   expect(objects.some(o=>o.behavior==='seat')).toBe(true);
   expect(objects.some(o=>o.behavior==='light')).toBe(true);
-  expect(objects.some(o=>o.assetId.includes('tree'))).toBe(true);
+  expect(objects.some(o=>o.assetId.startsWith('nature-kit/')||o.assetId==='building-kit/floor')).toBe(false);
   expect(inspectStarterSourceAssets()).toEqual([]);
  });
  it('never reseeds edited/cleared, visited, or unauthorized worlds',()=>{

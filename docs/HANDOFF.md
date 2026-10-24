@@ -1,4 +1,12 @@
-# Product source of truth — owner clarification, 2026-10-20
+# Current product source of truth — open-air Common Ground, 2026-10-20
+
+**Owner correction supersedes the enclosed room pass and older wording below.** CTRL is friend.tech with worlds: anyone may trade anyone's member Keys, without acquiring Habitat ownership/build rights. Common Ground is a small OPEN-AIR playable landing, with a random noneditable guest avatar, walk/look only. Wallet verification → customizable saved avatar → Public World (Willow Common etc), with no Key purchase required to explore. Owner Key/personal Habitat and its build rights are a separate layer. Preserve the approved Habitat garden/home/builder.
+
+Current source: `/` and `/courtyard` → `features/common-ground/lobby.tsx`; `/public-world` → signed-profile check + Willow Common with saved appearance; `POST /api/habitat/public-profile` upserts avatar WITHOUT provisioning/joining a home. The legacy Habitat onboarding remains backward-compatible. See `docs/common-ground-open-air-pass.md` for actual QA and limits. Older room screenshots and the following checkpoint are historical, not the current design. No on-chain Key release or authoritative Public World multiplayer is claimed.
+
+---
+
+# Historical product clarification before the final open-air correction
 
 This clarification supersedes older product framing below; the dated integration results remain historical evidence, not a new release claim.
 

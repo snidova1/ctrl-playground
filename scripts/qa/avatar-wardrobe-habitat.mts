@@ -1,0 +1,31 @@
+import {chromium} from '@playwright/test';
+import {installSignedWallet} from '../../tests/browser/helpers/wallet';
+import {mkdir,writeFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const dir='test-results/avatar-wardrobe-habitat';await mkdir(dir,{recursive:true});
+const chosenHair=process.env.CTRL_AVATAR_QA_HAIR??'vroid-short';
+const browser=await chromium.launch({executablePath:'/home/celeng/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell',args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
+const page=await browser.newPage({baseURL:process.env.CTRL_AVATAR_QA_ORIGIN??'http://127.0.0.1:3173',viewport:{width:1280,height:900}});page.setDefaultTimeout(90000);const errors:string[]=[];page.on('pageerror',e=>{errors.push(e.message);console.log('PAGEERROR',e.message);});page.on('console',m=>{if(m.type()==='error')console.log('CONSOLE',m.text().slice(0,500));});page.on('requestfailed',r=>console.log('REQUEST_FAILED',r.url(),r.failure()?.errorText));
+try{
+ const network=await (await page.request.get('/api/network')).json();await installSignedWallet(page,network.chainId);await page.goto('/habitat',{waitUntil:'domcontentloaded'});
+ await page.locator('.wallet-options').getByRole('button',{name:'Connect wallet',exact:true}).click();
+ await page.getByRole('button',{name:'Sign in to Habitat',exact:true}).click();
+ const creator=page.getByRole('region',{name:'3D character creator'});await creator.waitFor();
+ await page.waitForFunction(()=>document.querySelector('.hb-avatar-preview')?.getAttribute('data-avatar-ready')==='true');
+ await creator.getByRole('button',{name:'Female',exact:true}).click();
+ await creator.getByRole('button',{name:'Clear accessories',exact:true}).click();
+ await creator.getByRole('combobox',{name:'Body & outfit model',exact:true}).selectOption('alternate');
+ await creator.getByRole('combobox',{name:'Hairstyle',exact:true}).selectOption(chosenHair);
+ await creator.getByRole('combobox',{name:'Costume',exact:true}).selectOption('darkness-studio');
+ await page.waitForFunction(hair=>document.documentElement.dataset.ctrlAvatarWardrobe==='darkness-studio'&&document.documentElement.dataset.ctrlAvatarHairStyle===hair,chosenHair);
+ await creator.getByRole('textbox',{name:'Name',exact:true}).fill('Gothic Wardrobe QA');
+ const creatorInstance=await page.evaluate(()=>document.documentElement.dataset.ctrlAvatarInstance);
+ await page.getByRole('button',{name:'Enter my world draft',exact:true}).click();
+ await page.getByRole('button',{name:'Build my world +',exact:true}).waitFor();
+ await page.waitForFunction(previous=>!document.querySelector('.hb-avatar-preview')&&document.documentElement.dataset.ctrlAvatarWardrobe==='darkness-studio'&&!!document.documentElement.dataset.ctrlAvatarInstance&&document.documentElement.dataset.ctrlAvatarInstance!==previous,creatorInstance);
+ await page.waitForTimeout(1800);await page.screenshot({path:`${dir}/desktop-habitat.png`});
+ const before=await (await page.request.get('/api/habitat/state')).json();assert.equal(before.profile.appearance.wardrobeId,'darkness-studio');assert.equal(before.profile.appearance.hairStyleId,chosenHair);
+ await page.reload({waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Build my world +',exact:true}).waitFor();await page.waitForFunction(()=>document.documentElement.dataset.ctrlAvatarWardrobe==='darkness-studio'&&!!document.documentElement.dataset.ctrlAvatarInstance);await page.waitForTimeout(800);
+ const after=await (await page.request.get('/api/habitat/state')).json();assert.deepEqual(after.profile.appearance,before.profile.appearance);assert.deepEqual(errors,[]);
+ await writeFile(`${dir}/report.json`,JSON.stringify({errors,appearance:after.profile.appearance,reloadPreserved:true},null,2));console.log('PASS signed Habitat creation + reload, independent costume and hair');
+}catch(e){console.log('DIAG',JSON.stringify(await page.evaluate(()=>({alerts:[...document.querySelectorAll('[role=alert]')].map(e=>e.textContent),data:{...document.documentElement.dataset},buttons:[...document.querySelectorAll('button')].map(e=>e.textContent)}))));await page.screenshot({path:`${dir}/failure.png`,fullPage:true});throw e;}finally{await browser.close();}

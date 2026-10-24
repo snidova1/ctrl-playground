@@ -1,11 +1,15 @@
 import {z} from 'zod';
+import {normalizeLifeState,type LifeState} from '@/domain/cozy-life';
+import {isCozyLayoutClear} from '@/features/habitat/cozy-life-layout';
 import {one, query, exec, batch, statement} from '@/db';
 import {identity, rateLimit} from '@/server/wallet/auth';
 import {settings} from '@/server/env';
 import {AppError, safeError} from '@/server/errors';
 import {collideWorld, type WorldProfile, type WorldObject} from '@/features/habitat/types';
+import {isHouseObject} from '@/features/habitat/modular-house';
+import {interactionDistanceTo} from '@/features/habitat/furniture-interactions';
 import {getBuildAsset} from '@/features/plaza/build-assets';
-import {characterCatalog, normalizeAppearance, seededAppearance, validVariant, type CharacterAppearance, type CharacterGender} from '@/features/plaza/characters/catalog';
+import {resolveCharacter, normalizeAppearance, seededModularAppearance as seededAppearance, validVariant, type CharacterAppearance, type CharacterGender} from '@/features/plaza/characters/catalog';
 import {
   layoutSchema, motionSchema, worldIdSchema, worldEditorSavePayloadSchema,
   characterProfileInputSchema, poseInputSchema, presenceInputSchema,
@@ -42,8 +46,10 @@ function parsedAppearance(profile:ProfileRow):CharacterAppearance{
   return normalizeAppearance(saved,gender,profile.variant);
 }
 function appearance(profile: ProfileRow): CharacterProfile {
-  const saved=parsedAppearance(profile),gender=saved.gender;
-  return {...profile,appearance:saved,variant:saved.variantId,loadout:{version:1,characterId:characterCatalog[gender].id,variantId:saved.variantId,appearance:saved,accessories:[]}};
+  const saved=parsedAppearance(profile);
+  const accessories: Array<{assetId:string;bone:'head'|'neck'|'chest'}> = [];
+  for(const key of ['headwearId','eyewearId','earringId','neckwearId','backwearId'] as const){const id=saved[key];if(id&&id!=='none')accessories.push({assetId:`ctrl-${key}-${id}`,bone:key==='backwearId'?'chest':key==='neckwearId'?'neck':'head'});}
+  return {...profile,appearance:saved,variant:saved.variantId,loadout:{version:1,characterId:resolveCharacter(saved).id,variantId:saved.variantId,appearance:saved,accessories}};
 }
 async function permissions(w: Row, user: string): Promise<WorldPermissions> {
   if (w.owner_id === user) return {role: 'owner', canVisit: true, canEdit: true, canManage: true};
@@ -93,21 +99,29 @@ async function state(user: Principal, worldId?: string): Promise<HabitatState> {
   };
 }
 async function save(user: Principal, id: string, revision: number, input: WorldObject[]) {
-  const {access} = await readWorld(id, user.id);
+  const {world,access} = await readWorld(id, user.id);
   if (!access.canEdit) throw new AppError('EDITOR_REQUIRED', 403);
   const objects = layoutSchema.parse(input);
+  // Furniture-editor invitations never transfer ownership of the building.
+  // Parsing normalizes property order before comparing reserved structural records.
+  const structure=(items:WorldObject[])=>JSON.stringify(items.filter(isHouseObject).sort((a,b)=>a.id.localeCompare(b.id)));
+  if(!access.canManage&&structure(objects)!==structure(layoutSchema.parse(JSON.parse(world.layout))))throw new AppError('OWNER_REQUIRED',403,'Only the Habitat owner can modify the house.');
   for (const object of objects) {
-    if (!getBuildAsset(object.assetId) && !builtins.has(object.assetId)) throw new AppError('UNKNOWN_ASSET', 422);
+    if (!getBuildAsset(object.assetId) && !builtins.has(object.assetId) && !isHouseObject(object)) throw new AppError('UNKNOWN_ASSET', 422);
     if (object.behavior === 'portal' && object.target) {
       worldIdSchema.parse(object.target);
       await readWorld(object.target, user.id);
     }
   }
-  // Revision and authorization are checked inside the write as well as before it.
+  const life=await one<{revision:number;state:string}>('SELECT revision,state FROM cozy_life_states WHERE profile_id=?',world.owner_id);
+  if(life&&!isCozyLayoutClear(objects,normalizeLifeState(JSON.parse(life.state) as LifeState)))throw new AppError('COZY_LAYOUT_BLOCKED',422,'Pindahkan kebun atau simpan perabot buatan ke tas sebelum membangun di tempat yang sama.');
+  // Revision, authorization and concurrent life placement are checked inside the write.
+
   const result = await batch([
     statement(`UPDATE habitat_worlds SET layout=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?
-      AND (owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=habitat_worlds.id AND m.profile_id=? AND m.role='editor'))`,
-    JSON.stringify(objects), Date.now(), id, revision, user.id, user.id),
+      AND (owner_id=? OR EXISTS (SELECT 1 FROM habitat_members m WHERE m.world_id=habitat_worlds.id AND m.profile_id=? AND m.role='editor'))
+      AND COALESCE((SELECT revision FROM cozy_life_states WHERE profile_id=?),0)=?`,
+    JSON.stringify(objects), Date.now(), id, revision, user.id, user.id, world.owner_id, life?.revision??0),
     statement(`DELETE FROM habitat_object_state WHERE world_id=? AND object_id NOT IN
       (SELECT json_extract(value,'$.id') FROM habitat_worlds w,json_each(w.layout) WHERE w.id=?)`, id, id),
   ]);
@@ -153,21 +167,26 @@ export async function handleHabitat(r: Request, path: string[]) {
       const profile = await one<ProfileRow>('SELECT id,name,character,variant,appearance FROM habitat_profiles WHERE id=?', user.id);
       return reply({profile: profile ? appearance(profile) : null});
     }
-    if (r.method === 'POST' && p === 'profile') {
+    if (r.method === 'POST' && (p === 'profile' || p === 'public-profile')) {
       const data = characterProfileInputSchema.parse(await body(r));
       const previous = await one<ProfileRow>('SELECT * FROM habitat_profiles WHERE id=?', user.id);
       const gender:CharacterGender=data.character;
       const randomized=()=>seededAppearance(crypto.randomUUID(),gender);
-      const saved=data.randomize?randomized():data.appearance?{...data.appearance,gender}:previous&&previous.character===gender?parsedAppearance(previous):seededAppearance(crypto.randomUUID(),gender);
+      const saved=data.randomize?randomized():data.appearance?normalizeAppearance(data.appearance,gender,data.variant??'original'):previous&&previous.character===gender?parsedAppearance(previous):seededAppearance(crypto.randomUUID(),gender);
       const resolved:CharacterAppearance={...saved,variantId:data.variant?validVariant(data.variant):saved.variantId};
       const variant = resolved.variantId;
       const now = Date.now();
       await batch([
         statement(`INSERT INTO habitat_profiles(id,name,character,variant,appearance,created_at) VALUES(?,?,?,?,?,?)
           ON CONFLICT(id) DO UPDATE SET name=excluded.name,character=excluded.character,variant=excluded.variant,appearance=excluded.appearance`, user.id, data.name, data.character, variant, JSON.stringify({...resolved,variantId:variant}), now),
-        statement(`INSERT OR IGNORE INTO habitat_worlds(id,owner_id,name,visibility,layout,created_at,updated_at)
-          VALUES(?,?,?,'private','[]',?,?)`, crypto.randomUUID(), user.id, `${data.name}'s place`, now, now),
+        // A public avatar is not Habitat ownership; only legacy onboarding creates a home.
+        ...(p === 'profile' ? [statement(`INSERT OR IGNORE INTO habitat_worlds(id,owner_id,name,visibility,layout,created_at,updated_at)
+          VALUES(?,?,?,'private','[]',?,?)`, crypto.randomUUID(), user.id, `${data.name}'s place`, now, now)] : []),
       ]);
+      if (p === 'public-profile') {
+        const profile = await one<ProfileRow>('SELECT id,name,character,variant,appearance FROM habitat_profiles WHERE id=?', user.id);
+        return reply({profile: profile ? appearance(profile) : null});
+      }
       return reply(await state(user));
     }
     if (r.method === 'POST' && p === 'assets/resolve') {
@@ -294,7 +313,7 @@ export async function handleHabitat(r: Request, path: string[]) {
       const object = current.world.objects.find(o => o.id === id);
       if (!object) throw new AppError('OBJECT_NOT_FOUND', 404);
       const position = await one<{x: number; z: number}>('SELECT x,z FROM habitat_presence WHERE profile_id=? AND world_id=? AND seen_at>?', user.id, world.id, Date.now() - TTL);
-      if (!position || Math.hypot(position.x - object.x, position.z - object.z) > 3.5) throw new AppError('COME_CLOSER', 422);
+      if (!position || interactionDistanceTo(position, object) > 3.5) throw new AppError('COME_CLOSER', 422);
       const target = object.behavior === 'switch' ? current.world.objects.find(o => o.id === object.target) : object;
       if (!target) throw new AppError('TARGET_REQUIRED', 422);
       if (['light', 'door', 'spin'].includes(target.behavior)) {

@@ -5,6 +5,7 @@ import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type {Material,Mesh,MeshStandardMaterial} from 'three';
 import {DEFAULT_HOUSE_SETTINGS,type HabitHouseSettings} from './habit-home';
 import {EXTERIOR_HOME} from './exterior-layout';
+import CottageDetails from './cottage-details';
 
 const BASE='/assets/fantasy-town/';
 const HOUSE_POSITION=EXTERIOR_HOME.position;
@@ -30,7 +31,7 @@ function Model({name,position=[0,0,0],rotation=0,scale=1,tint}:{name:string;posi
  return <group position={position} rotation-y={rotation} scale={scale}><primitive object={instance}/></group>;
 }
 
-function House({settings,night=false}:{settings:HabitHouseSettings;night?:boolean}){
+function House({settings,night=false,quality='high'}:{settings:HabitHouseSettings;night?:boolean;quality?:'low'|'high'}){
  const wall=settings.timber?'wall-wood':'wall';
  const window=settings.timber?'wall-wood-window-shutters':'wall-window-shutters';
  const wallTint:Tint={color:settings.wallColor,preserveMap:false};
@@ -47,9 +48,9 @@ function House({settings,night=false}:{settings:HabitHouseSettings;night?:boolea
    <Model name='chimney' position={[.75,1.28,-.3]} scale={.65}/>
   </group>
   <Model name='stairs-wood' position={[0,0,2.25]} rotation={Math.PI/2} scale={1.2}/>
-  <Model name='lantern' position={[-1.1,.1,2.45]} scale={2}/>
-  <pointLight position={[-1.1,2.8,2.6]} intensity={night?7:1.2} distance={11} decay={2} color='#ffcb83'/>
-  {[-2.5,2.5].map((px,i)=><group key={px} position={[px,0,2.65]}><mesh position-y={.2} castShadow><cylinderGeometry args={[.25,.19,.4,9]}/><meshStandardMaterial color='#bd805f'/></mesh><mesh position-y={.55}><sphereGeometry args={[.35,9,6]}/><meshStandardMaterial color={i?'#9fc776':'#7da673'}/></mesh></group>)}
+  <Model name='lantern' position={[-3.1,.1,2.8]} scale={.95}/>
+  <pointLight position={[-3.1,1.55,2.8]} intensity={night?7:1.2} distance={11} decay={2} color='#ffcb83'/>
+  <CottageDetails night={night} quality={quality}/>
  </group>;
 }
 
@@ -57,11 +58,11 @@ function House({settings,night=false}:{settings:HabitHouseSettings;night?:boolea
 function marker(settings:HabitHouseSettings){return `${settings.timber?'timber':'plain'}|${settings.tall?'tall':'gable'}|${settings.roofColor}|${settings.wallColor}`;}
 function Ready({settings}:{settings:HabitHouseSettings}){const value=useMemo(()=>marker(settings),[settings]);useEffect(()=>{document.documentElement.dataset.ctrlVillageReady='true';document.documentElement.dataset.ctrlHouseCount='1';document.documentElement.dataset.ctrlHouseSettings=value;return()=>{delete document.documentElement.dataset.ctrlVillageReady;delete document.documentElement.dataset.ctrlHouseCount;delete document.documentElement.dataset.ctrlHouseSettings;};},[value]);return null;}
 
-export default function CozyVillage({houseSettings,night=false}: {houseSettings?: HabitHouseSettings;night?:boolean}){
+export default function CozyVillage({houseSettings,night=false,quality='high',hideHome=false}: {houseSettings?: HabitHouseSettings;night?:boolean;quality?:'low'|'high';hideHome?:boolean}){
  const settings={...DEFAULT_HOUSE_SETTINGS,...houseSettings};
  return <Suspense fallback={null}>
-  <Ready settings={settings}/>
-  <House settings={settings} night={night}/>
+  {!hideHome&&<><Ready settings={settings}/>
+  <House settings={settings} night={night} quality={quality}/></>}
 
  </Suspense>;
 }

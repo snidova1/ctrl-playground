@@ -54,6 +54,7 @@ export default defineConfig(async ({ command, mode }) => {
 
   return {
     define: {
+      'process.env.NEXT_PUBLIC_CTRL_MODULAR_COLLECTIONS':JSON.stringify(cloudflareBuild.target==='cloudflare-staging'?'disabled':process.env.NEXT_PUBLIC_CTRL_MODULAR_COLLECTIONS??'enabled'),
       "process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID": JSON.stringify(
         publicWalletEnv.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "",
       ),

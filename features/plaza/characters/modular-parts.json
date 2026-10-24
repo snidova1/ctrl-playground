@@ -1,0 +1,962 @@
+[
+  {
+    "family": "drophunter",
+    "slot": "accessory",
+    "id": "hipbelt",
+    "name": "Hipbelt",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/accessories/hipbelt.vrm",
+      "low": "/plaza/characters/modular/drophunter/accessories/hipbelt-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "accessory",
+    "id": "legstrapandcompress",
+    "name": "Legstrapandcompress",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/accessories/legstrapandcompress.vrm",
+      "low": "/plaza/characters/modular/drophunter/accessories/legstrapandcompress-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "body",
+    "id": "drophunter",
+    "name": "Drophunter",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/body/drophunter-soft-anime.vrm",
+      "low": "/plaza/characters/modular/drophunter/body/drophunter-soft-anime-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "top",
+    "id": "croptop",
+    "name": "Croptop",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/chest/croptop.vrm",
+      "low": "/plaza/characters/modular/drophunter/chest/croptop-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "top",
+    "id": "dress",
+    "name": "Dress",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/chest/dress.vrm",
+      "low": "/plaza/characters/modular/drophunter/chest/dress-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "top",
+    "id": "fulljacket",
+    "name": "Fulljacket",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/chest/fulljacket.vrm",
+      "low": "/plaza/characters/modular/drophunter/chest/fulljacket-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "top",
+    "id": "hoodie",
+    "name": "Hoodie",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/chest/hoodie.vrm",
+      "low": "/plaza/characters/modular/drophunter/chest/hoodie-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "top",
+    "id": "jumpsuittop",
+    "name": "Jumpsuittop",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/chest/jumpsuittop.vrm",
+      "low": "/plaza/characters/modular/drophunter/chest/jumpsuittop-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "top",
+    "id": "lightshirt",
+    "name": "Lightshirt",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/chest/lightshirt.vrm",
+      "low": "/plaza/characters/modular/drophunter/chest/lightshirt-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "top",
+    "id": "shirt",
+    "name": "Shirt",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/chest/shirt.vrm",
+      "low": "/plaza/characters/modular/drophunter/chest/shirt-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "top",
+    "id": "sweater",
+    "name": "Sweater",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/chest/sweater.vrm",
+      "low": "/plaza/characters/modular/drophunter/chest/sweater-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "top",
+    "id": "tanktop",
+    "name": "Tanktop",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/chest/tanktop.vrm",
+      "low": "/plaza/characters/modular/drophunter/chest/tanktop-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "top",
+    "id": "tuckedshirt",
+    "name": "Tuckedshirt",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/chest/tuckedshirt.vrm",
+      "low": "/plaza/characters/modular/drophunter/chest/tuckedshirt-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "eyes",
+    "id": "regulareyes",
+    "name": "Regulareyes",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/eyes/regulareyes-soft-anime.vrm",
+      "low": "/plaza/characters/modular/drophunter/eyes/regulareyes-soft-anime-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "shoes",
+    "id": "designershoes",
+    "name": "Designershoes",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/feet/designershoes.vrm",
+      "low": "/plaza/characters/modular/drophunter/feet/designershoes-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "shoes",
+    "id": "designertallboots",
+    "name": "Designertallboots",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/feet/designertallboots.vrm",
+      "low": "/plaza/characters/modular/drophunter/feet/designertallboots-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "shoes",
+    "id": "dressboots",
+    "name": "Dressboots",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/feet/dressboots.vrm",
+      "low": "/plaza/characters/modular/drophunter/feet/dressboots-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "shoes",
+    "id": "dressboots2",
+    "name": "Dressboots2",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/feet/dressboots2.vrm",
+      "low": "/plaza/characters/modular/drophunter/feet/dressboots2-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "shoes",
+    "id": "hightop",
+    "name": "Hightop",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/feet/hightop.vrm",
+      "low": "/plaza/characters/modular/drophunter/feet/hightop-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "shoes",
+    "id": "shortboots",
+    "name": "Shortboots",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/feet/shortboots.vrm",
+      "low": "/plaza/characters/modular/drophunter/feet/shortboots-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "shoes",
+    "id": "sneakers",
+    "name": "Sneakers",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/feet/sneakers.vrm",
+      "low": "/plaza/characters/modular/drophunter/feet/sneakers-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "shoes",
+    "id": "tallboots",
+    "name": "Tallboots",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/feet/tallboots.vrm",
+      "low": "/plaza/characters/modular/drophunter/feet/tallboots-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "shoes",
+    "id": "tennisshoes",
+    "name": "Tennisshoes",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/feet/tennisshoes.vrm",
+      "low": "/plaza/characters/modular/drophunter/feet/tennisshoes-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "shoes",
+    "id": "thinshoe",
+    "name": "Thinshoe",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/feet/thinshoe.vrm",
+      "low": "/plaza/characters/modular/drophunter/feet/thinshoe-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "hair",
+    "id": "buns",
+    "name": "Buns",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/head/buns.vrm",
+      "low": "/plaza/characters/modular/drophunter/head/buns-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "hair",
+    "id": "curledbangs",
+    "name": "Curledbangs",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/head/curledbangs.vrm",
+      "low": "/plaza/characters/modular/drophunter/head/curledbangs-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "hair",
+    "id": "dreds",
+    "name": "Dreds",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/head/dreds.vrm",
+      "low": "/plaza/characters/modular/drophunter/head/dreds-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "hair",
+    "id": "longspike",
+    "name": "Longspike",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/head/longspike.vrm",
+      "low": "/plaza/characters/modular/drophunter/head/longspike-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "hair",
+    "id": "ponytail",
+    "name": "Ponytail",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/head/ponytail.vrm",
+      "low": "/plaza/characters/modular/drophunter/head/ponytail-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "hair",
+    "id": "short",
+    "name": "Short",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/head/short.vrm",
+      "low": "/plaza/characters/modular/drophunter/head/short-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "hair",
+    "id": "shortband",
+    "name": "Shortband",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/head/shortband.vrm",
+      "low": "/plaza/characters/modular/drophunter/head/shortband-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "hair",
+    "id": "shortcurve",
+    "name": "Shortcurve",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/head/shortcurve.vrm",
+      "low": "/plaza/characters/modular/drophunter/head/shortcurve-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "hair",
+    "id": "straight",
+    "name": "Straight",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/head/straight.vrm",
+      "low": "/plaza/characters/modular/drophunter/head/straight-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "hair",
+    "id": "swept",
+    "name": "Swept",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/head/swept.vrm",
+      "low": "/plaza/characters/modular/drophunter/head/swept-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "bottom",
+    "id": "abovekneeshorts",
+    "name": "Abovekneeshorts",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/legs/abovekneeshorts.vrm",
+      "low": "/plaza/characters/modular/drophunter/legs/abovekneeshorts-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "bottom",
+    "id": "cargopants",
+    "name": "Cargopants",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/legs/cargopants.vrm",
+      "low": "/plaza/characters/modular/drophunter/legs/cargopants-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "bottom",
+    "id": "casualshorts",
+    "name": "Casualshorts",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/legs/casualshorts.vrm",
+      "low": "/plaza/characters/modular/drophunter/legs/casualshorts-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "bottom",
+    "id": "doublebeltpants",
+    "name": "Doublebeltpants",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/legs/doublebeltpants.vrm",
+      "low": "/plaza/characters/modular/drophunter/legs/doublebeltpants-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "bottom",
+    "id": "jumpsuitpants",
+    "name": "Jumpsuitpants",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/legs/jumpsuitpants.vrm",
+      "low": "/plaza/characters/modular/drophunter/legs/jumpsuitpants-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "bottom",
+    "id": "skirt",
+    "name": "Skirt",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/legs/skirt.vrm",
+      "low": "/plaza/characters/modular/drophunter/legs/skirt-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "bottom",
+    "id": "sportshorts",
+    "name": "Sportshorts",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/legs/sportshorts.vrm",
+      "low": "/plaza/characters/modular/drophunter/legs/sportshorts-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "bottom",
+    "id": "sportshortswithanklebands",
+    "name": "Sportshortswithanklebands",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/legs/sportshortswithanklebands.vrm",
+      "low": "/plaza/characters/modular/drophunter/legs/sportshortswithanklebands-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "bottom",
+    "id": "waistshorts",
+    "name": "Waistshorts",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/legs/waistshorts.vrm",
+      "low": "/plaza/characters/modular/drophunter/legs/waistshorts-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "outer",
+    "id": "halfjacket",
+    "name": "Halfjacket",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/outer/halfjacket.vrm",
+      "low": "/plaza/characters/modular/drophunter/outer/halfjacket-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "outer",
+    "id": "jacket",
+    "name": "Jacket",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/outer/jacket.vrm",
+      "low": "/plaza/characters/modular/drophunter/outer/jacket-mobile.vrm"
+    }
+  },
+  {
+    "family": "drophunter",
+    "slot": "outer",
+    "id": "shortjacket",
+    "name": "Shortjacket",
+    "assets": {
+      "high": "/plaza/characters/modular/drophunter/outer/shortjacket.vrm",
+      "low": "/plaza/characters/modular/drophunter/outer/shortjacket-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "accessory",
+    "id": "bandolier",
+    "name": "Bandolier",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/accessories/bandolier.vrm",
+      "low": "/plaza/characters/modular/neurohacker/accessories/bandolier-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "accessory",
+    "id": "beltandbag",
+    "name": "Beltandbag",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/accessories/beltandbag.vrm",
+      "low": "/plaza/characters/modular/neurohacker/accessories/beltandbag-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "accessory",
+    "id": "chestrig",
+    "name": "Chestrig",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/accessories/chestrig.vrm",
+      "low": "/plaza/characters/modular/neurohacker/accessories/chestrig-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "accessory",
+    "id": "combatgloves",
+    "name": "Combatgloves",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/accessories/combatgloves.vrm",
+      "low": "/plaza/characters/modular/neurohacker/accessories/combatgloves-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "accessory",
+    "id": "fingergloves",
+    "name": "Fingergloves",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/accessories/fingergloves.vrm",
+      "low": "/plaza/characters/modular/neurohacker/accessories/fingergloves-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "accessory",
+    "id": "legbandages",
+    "name": "Legbandages",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/accessories/legbandages.vrm",
+      "low": "/plaza/characters/modular/neurohacker/accessories/legbandages-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "accessory",
+    "id": "ninjagloves",
+    "name": "Ninjagloves",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/accessories/ninjagloves.vrm",
+      "low": "/plaza/characters/modular/neurohacker/accessories/ninjagloves-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "body",
+    "id": "neurohacker",
+    "name": "Neurohacker",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/body/neurohacker-soft-anime.vrm",
+      "low": "/plaza/characters/modular/neurohacker/body/neurohacker-soft-anime-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "top",
+    "id": "combatvest",
+    "name": "Combatvest",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/chest/combatvest.vrm",
+      "low": "/plaza/characters/modular/neurohacker/chest/combatvest-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "top",
+    "id": "dressjacket",
+    "name": "Dressjacket",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/chest/dressjacket.vrm",
+      "low": "/plaza/characters/modular/neurohacker/chest/dressjacket-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "top",
+    "id": "dressrobe",
+    "name": "Dressrobe",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/chest/dressrobe.vrm",
+      "low": "/plaza/characters/modular/neurohacker/chest/dressrobe-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "top",
+    "id": "fancysuit",
+    "name": "Fancysuit",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/chest/fancysuit.vrm",
+      "low": "/plaza/characters/modular/neurohacker/chest/fancysuit-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "top",
+    "id": "fulljacket",
+    "name": "Fulljacket",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/chest/fulljacket.vrm",
+      "low": "/plaza/characters/modular/neurohacker/chest/fulljacket-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "top",
+    "id": "logotee",
+    "name": "Logotee",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/chest/logotee.vrm",
+      "low": "/plaza/characters/modular/neurohacker/chest/logotee-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "top",
+    "id": "simpleshirt",
+    "name": "Simpleshirt",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/chest/simpleshirt.vrm",
+      "low": "/plaza/characters/modular/neurohacker/chest/simpleshirt-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "top",
+    "id": "slottedshirt",
+    "name": "Slottedshirt",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/chest/slottedshirt.vrm",
+      "low": "/plaza/characters/modular/neurohacker/chest/slottedshirt-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "top",
+    "id": "streetware",
+    "name": "Streetware",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/chest/streetware.vrm",
+      "low": "/plaza/characters/modular/neurohacker/chest/streetware-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "top",
+    "id": "sweater",
+    "name": "Sweater",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/chest/sweater.vrm",
+      "low": "/plaza/characters/modular/neurohacker/chest/sweater-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "eyes",
+    "id": "regulareyes",
+    "name": "Regulareyes",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/eyes/regulareyes-soft-anime.vrm",
+      "low": "/plaza/characters/modular/neurohacker/eyes/regulareyes-soft-anime-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "shoes",
+    "id": "boots",
+    "name": "Boots",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/foot/boots.vrm",
+      "low": "/plaza/characters/modular/neurohacker/foot/boots-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "shoes",
+    "id": "dressshoes",
+    "name": "Dressshoes",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/foot/dressshoes.vrm",
+      "low": "/plaza/characters/modular/neurohacker/foot/dressshoes-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "shoes",
+    "id": "fantasyboots",
+    "name": "Fantasyboots",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/foot/fantasyboots.vrm",
+      "low": "/plaza/characters/modular/neurohacker/foot/fantasyboots-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "shoes",
+    "id": "hikingboots",
+    "name": "Hikingboots",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/foot/hikingboots.vrm",
+      "low": "/plaza/characters/modular/neurohacker/foot/hikingboots-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "shoes",
+    "id": "runningshoes",
+    "name": "Runningshoes",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/foot/runningshoes.vrm",
+      "low": "/plaza/characters/modular/neurohacker/foot/runningshoes-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "shoes",
+    "id": "shroudedboots",
+    "name": "Shroudedboots",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/foot/shroudedboots.vrm",
+      "low": "/plaza/characters/modular/neurohacker/foot/shroudedboots-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "shoes",
+    "id": "simpleshoes",
+    "name": "Simpleshoes",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/foot/simpleshoes.vrm",
+      "low": "/plaza/characters/modular/neurohacker/foot/simpleshoes-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "shoes",
+    "id": "sinchboots",
+    "name": "Sinchboots",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/foot/sinchboots.vrm",
+      "low": "/plaza/characters/modular/neurohacker/foot/sinchboots-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "shoes",
+    "id": "strapedboots",
+    "name": "Strapedboots",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/foot/strapedboots.vrm",
+      "low": "/plaza/characters/modular/neurohacker/foot/strapedboots-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "shoes",
+    "id": "tallboots",
+    "name": "Tallboots",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/foot/tallboots.vrm",
+      "low": "/plaza/characters/modular/neurohacker/foot/tallboots-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "hair",
+    "id": "braided",
+    "name": "Braided",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/head/braided.vrm",
+      "low": "/plaza/characters/modular/neurohacker/head/braided-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "hair",
+    "id": "hair1",
+    "name": "Hair1",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/head/hair1.vrm",
+      "low": "/plaza/characters/modular/neurohacker/head/hair1-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "hair",
+    "id": "hair2",
+    "name": "Hair2",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/head/hair2.vrm",
+      "low": "/plaza/characters/modular/neurohacker/head/hair2-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "hair",
+    "id": "hair3",
+    "name": "Hair3",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/head/hair3.vrm",
+      "low": "/plaza/characters/modular/neurohacker/head/hair3-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "hair",
+    "id": "hair4",
+    "name": "Hair4",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/head/hair4.vrm",
+      "low": "/plaza/characters/modular/neurohacker/head/hair4-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "hair",
+    "id": "hair5",
+    "name": "Hair5",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/head/hair5.vrm",
+      "low": "/plaza/characters/modular/neurohacker/head/hair5-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "hair",
+    "id": "hairshort",
+    "name": "Hairshort",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/head/hairshort.vrm",
+      "low": "/plaza/characters/modular/neurohacker/head/hairshort-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "hair",
+    "id": "short",
+    "name": "Short",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/head/short.vrm",
+      "low": "/plaza/characters/modular/neurohacker/head/short-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "hair",
+    "id": "straight",
+    "name": "Straight",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/head/straight.vrm",
+      "low": "/plaza/characters/modular/neurohacker/head/straight-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "hair",
+    "id": "straightdown",
+    "name": "Straightdown",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/head/straightdown.vrm",
+      "low": "/plaza/characters/modular/neurohacker/head/straightdown-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "bottom",
+    "id": "cargopants",
+    "name": "Cargopants",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/legs/cargopants.vrm",
+      "low": "/plaza/characters/modular/neurohacker/legs/cargopants-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "bottom",
+    "id": "cargoshorts",
+    "name": "Cargoshorts",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/legs/cargoshorts.vrm",
+      "low": "/plaza/characters/modular/neurohacker/legs/cargoshorts-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "bottom",
+    "id": "rolleduppants",
+    "name": "Rolleduppants",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/legs/rolleduppants.vrm",
+      "low": "/plaza/characters/modular/neurohacker/legs/rolleduppants-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "bottom",
+    "id": "shorts",
+    "name": "Shorts",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/legs/shorts.vrm",
+      "low": "/plaza/characters/modular/neurohacker/legs/shorts-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "bottom",
+    "id": "shortsandsweats",
+    "name": "Shortsandsweats",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/legs/shortsandsweats.vrm",
+      "low": "/plaza/characters/modular/neurohacker/legs/shortsandsweats-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "bottom",
+    "id": "streetpants",
+    "name": "Streetpants",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/legs/streetpants.vrm",
+      "low": "/plaza/characters/modular/neurohacker/legs/streetpants-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "bottom",
+    "id": "suitpants",
+    "name": "Suitpants",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/legs/suitpants.vrm",
+      "low": "/plaza/characters/modular/neurohacker/legs/suitpants-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "bottom",
+    "id": "tightjeans",
+    "name": "Tightjeans",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/legs/tightjeans.vrm",
+      "low": "/plaza/characters/modular/neurohacker/legs/tightjeans-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "bottom",
+    "id": "workingpants",
+    "name": "Workingpants",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/legs/workingpants.vrm",
+      "low": "/plaza/characters/modular/neurohacker/legs/workingpants-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "outer",
+    "id": "longjacket",
+    "name": "Longjacket",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/outer/longjacket.vrm",
+      "low": "/plaza/characters/modular/neurohacker/outer/longjacket-mobile.vrm"
+    }
+  },
+  {
+    "family": "neurohacker",
+    "slot": "outer",
+    "id": "robe",
+    "name": "Robe",
+    "assets": {
+      "high": "/plaza/characters/modular/neurohacker/outer/robe.vrm",
+      "low": "/plaza/characters/modular/neurohacker/outer/robe-mobile.vrm"
+    }
+  }
+]

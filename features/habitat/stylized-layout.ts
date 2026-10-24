@@ -1,11 +1,13 @@
 // Shared ground/grass mask, following stylized-scene's shared path blend.
 import {intersectsExteriorHouse} from './exterior-layout';
+import {cottageBorderContains} from './cottage-layout';
 export const POND = {x:15.8,z:-3.65,rx:3.55,rz:2.4} as const;
 export function pathCenter(z:number){return Math.sin((z+.6)*.28)*.72;}
 export function smoothMask(a:number,b:number,value:number){const t=Math.max(0,Math.min(1,(value-a)/(b-a)));return t*t*(3-2*t);}
 export function pathWeight(x:number,z:number){return (1-smoothMask(.78,1.32,Math.abs(x-pathCenter(z))))*smoothMask(-1,-.4,z)*(1-smoothMask(13.5,15,z));}
 export function grassAllowed(x:number,z:number){
  if(intersectsExteriorHouse(x,z,0,0,.3))return false;
+ if(cottageBorderContains(x,z))return false;
  if(pathWeight(x,z)>.04)return false;
  if((x/POND.rx-POND.x/POND.rx)**2+(z/POND.rz-POND.z/POND.rz)**2<1.28)return false;
  if((x/4.8)**2+((z-1.5)/3.3)**2<1)return false;

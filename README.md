@@ -1,8 +1,8 @@
 # CTRL — Public World, Willow Common and Habitat
 
-CTRL's intended product centers on Public World areas and personal Habitat worlds. **Willow Common is one of the primary Public World areas**, not a disposable visual study. **Common Ground is a small non-holder waiting-room/landing**, not the core plaza or the product itself. The older courtyard object workshop is an existing subsystem, not the definition of Common Ground's intended role.
+**CTRL is a friend.tech-style social economy with worlds.** Anyone can trade someone else's member Keys; buying those Keys does not transfer Habitat ownership or build rights. **Common Ground is a small OPEN-AIR playable landing**, not an enclosed waiting room: visitors immediately receive a random, non-customizable guest avatar and can walk/look around. A verified wallet unlocks avatar customization and **Public World**, including Willow Common. Exploring Public World does not require buying a Key. A personal, buildable Habitat and owner Key are a separate ownership layer.
 
-**Current status: playable alpha components, not a completed integrated Public World.** Willow Common is playable at `/world-preview`, but that implementation remains technically isolated from signed-wallet/holder authorization, saved Habitat worlds and authoritative multiplayer. Correcting the product hierarchy does **not** automatically finish authentication or holder integration. Existing courtyard code has five authored object types, durable shared objects, guest sessions and lightweight presence; those capabilities must not be attributed to Willow Common without implementation and verification. This is not an unrestricted world generator or a mainnet token launch.
+**Current status: playable alpha, not a mainnet release.** `/` and `/courtyard` open Common Ground; `/public-world` checks the signed-wallet profile API and loads Willow Common using the saved avatar. The new `POST /api/habitat/public-profile` saves identity/appearance without creating or joining a private Habitat. `/world-preview` remains the standalone technical preview. Shared multiplayer/presence, on-chain Key purchase/deployment and ownership-gated Habitat provisioning are not completed by this entry pass. Existing saved Habitat visuals, builder and authorization are preserved. NPCs are not online players. See [the current open-air handoff](docs/common-ground-open-air-pass.md).
 
 ## Run
 
@@ -16,7 +16,7 @@ pnpm dev:next
 # Open http://localhost:3000
 ```
 
-No wallet or paid credentials are needed to enter the Common Ground waiting room or try the isolated Willow Common preview. Legacy courtyard workshop code and durable object/inventory APIs remain in the repo, but that workshop is not mounted by the Common Ground route. This is not a claim of shared persistence or holder access in Willow Common.
+No wallet or paid credentials are needed to explore Common Ground. Guests cannot edit avatars or build there. Wallet sign-in is required by the product Public World entry, not by the standalone `/world-preview` development route. Legacy courtyard workshop code and durable object/inventory APIs remain in the repo, unmounted by Common Ground.
 
 ## What works — separate implementations
 
@@ -35,7 +35,7 @@ The following are existing courtyard/Habitat subsystem capabilities, **not** com
 
 ## VRoid / VRM characters
 
-The existing courtyard and Habitat renderers use the approved Victoria and Fumiriya VRoid assets. Habitat signed-wallet profiles persist an allowlisted appearance and replicate it to other visitors; this does not establish a shared identity/profile in `/world-preview`. The optional `/character-preview` route remains available for isolated renderer QA.
+The courtyard, Habitat and Public World renderers use the approved Victoria and Fumiriya VRoid assets. Public World now receives the allowlisted appearance saved for the signed wallet; the standalone `/world-preview` still defaults to its preview avatar. This is shared identity, not a claim of shared multiplayer state. The optional `/character-preview` route remains available for isolated renderer QA.
 
 ```sh
 CTRL_CHARACTER_PREVIEW=1 pnpm dev:next
@@ -48,7 +48,7 @@ WASD/arrows walk, Shift runs, Space jumps; touch uses the existing joystick plus
 
 ## Product policy and existing designer limits
 
-Product hierarchy: Willow Common belongs to the primary Public World experience; Common Ground is only the compact non-holder entry/waiting area. Route names and legacy plaza code do not override that hierarchy. Public World authentication/holder access still needs explicit integration and verification; a working preview or an existing wallet endpoint is not proof it has shipped.
+Product hierarchy: Common Ground is the open-air guest landing; verified wallet identity/custom avatar opens Public World (Willow Common etc) without a Key purchase. Member Key trading and owner-Key Habitat ownership/build rights are distinct. The old live object designer below is a legacy subsystem policy, not a Public World entry requirement. The avatar bridge does not imply a deployed Key economy or authoritative multiplayer.
 
 For the existing live object designer: **Hold CTRL → pass a configurable balance threshold → access the live designer.** Tokens stay in the wallet. No allocation, lock, staking or burn is required. `config/plaza.ts` owns the threshold and operational allowances. Demo wallet balances never authorize paid object generation. This designer policy is not evidence of Public World holder gating.
 
@@ -58,10 +58,10 @@ The model converts a request into a safe recipe using five authored behaviors. I
 
 | Area | Location |
 | --- | --- |
-| Willow Common — primary Public World area; current isolated preview | `app/world-preview/`, `features/worldgacha/` |
+| Willow Common — Public World with saved avatar; standalone development preview | `app/public-world/`, `features/common-ground/public-world.tsx`, `app/world-preview/`, `features/worldgacha/` |
 | Willow Common assets, navigation and provenance | `public/worlds/neighborhood/`, `public/worlds/worldgacha/` |
-| Common Ground — compact non-holder waiting-room/landing | `app/courtyard/`, `features/common-ground/` (legacy workshop in `features/plaza/` remains unmounted) |
-| Habitat entry, personal worlds and builder | `app/page.tsx`, `app/habitat/`, `features/habitat/`, `server/habitat/` |
+| Common Ground — small open-air playable guest landing | `app/page.tsx`, `app/courtyard/`, `features/common-ground/` (legacy workshop remains unmounted) |
+| Habitat entry, personal worlds and builder — preserved | `app/habitat/`, `features/habitat/`, `server/habitat/` |
 | Existing courtyard session, presence, object and inventory API | `server/plaza/service.ts` |
 | Existing holder access and wallet (not automatically integrated into Willow Common) | `features/wallet/`, `server/wallet/` |
 | Configurable plaza limits | `config/plaza.ts` |
@@ -69,7 +69,7 @@ The model converts a request into a safe recipe using five authored behaviors. I
 | Free models and licenses | `public/plaza/` |
 | Tests | `tests/unit/plaza.test.ts`, `scripts/test-plaza-render.mjs` |
 
-At this checkpoint, `/courtyard` renders the compact Common Ground waiting room, while `/` and `/habitat` use that same scene before sign-in and preserve the existing signed-wallet Habitat flow. `/world-preview` still renders Willow Common separately. See [Common Ground lobby implementation and verified checks](docs/common-ground-lobby-pass.md). This wiring describes implementation, not a finished product entry/access flow. `/account` is the holder passport; `/worlds` and `/worlds/editor` relate to Habitat worlds. Earlier mission-workbench routes such as `/commands`, `/work`, `/archive`, `/machine` and `/lab`, and their CONTROL support/execution systems, remain separate from the courtyard designer's threshold-only access loop.
+`/` and `/courtyard` now render the same open-air playable Common Ground; `/public-world` loads Willow Common using the signed wallet's saved avatar. `/habitat` retains the approved personal home/builder. See [current Common Ground implementation and QA](docs/common-ground-open-air-pass.md); the enclosed-room pass was rejected and is historical. `/account` remains the legacy holder passport, and `/worlds` / `/worlds/editor` remain Habitat routes. Earlier mission-workbench routes such as `/commands`, `/work`, `/archive`, `/machine` and `/lab` remain separate from this product entry and the old courtyard designer's threshold-only access loop.
 
 ## Check
 

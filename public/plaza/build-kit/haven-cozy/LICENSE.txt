@@ -1,0 +1,3 @@
+Models: Poly Haven and contributors. CC0 1.0 Universal. https://polyhaven.com/license
+See provenance.json for original asset URLs, authors and source-file metadata.
+Thumbnails are renders made by CTRL from the CC0 model assets, not upstream preview images.

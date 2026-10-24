@@ -1,0 +1,112 @@
+{
+  "source": "https://dist.ayaka.moe/vrm-models/VRoid-Hub/AvatarSample-A/AvatarSample_A.vrm",
+  "sourceSha256": "2a0ccd84880b03d7b65503d8b6287f7a97f3bb4fab70a5fd0a47b433c97827f5",
+  "author": "VRoid Project",
+  "changes": "Embedded texture resizing only; complete original body, face, hair, clothes, VRM rig, expressions and metadata retained.",
+  "assets": [
+    {
+      "quality": "high",
+      "url": "/plaza/characters/airi-reference/avatar-sample-a.vrm",
+      "bytes": 9756736,
+      "sha256": "6a5dcbeadd098688d1c2d671dcfd89f57803ab60aed2aaa42348a250599dfc15"
+    },
+    {
+      "quality": "low",
+      "url": "/plaza/characters/airi-reference/avatar-sample-a-mobile.vrm",
+      "bytes": 8041444,
+      "sha256": "f0db8f81504937f578147a7bb435d89450ab7fe81b0af9b03bd51a643f1656ea"
+    }
+  ],
+  "AvatarSample_B": {
+    "source": "https://dist.ayaka.moe/vrm-models/VRoid-Hub/AvatarSample-B/AvatarSample_B.vrm",
+    "sourceSHA256": "7fca4a77fdc60ab2c78a9907430744562626180125fa386eb74fb2ea15c2e518",
+    "embeddedMeta": {
+      "allowedUserName": "Everyone",
+      "author": "VRoid Project",
+      "commercialUssageName": "Allow",
+      "contactInformation": "https://www.pixiv.net/support.php?mode=select_vroid",
+      "licenseName": "Other",
+      "otherLicenseUrl": "https://hub.vroid.com/license?allowed_to_use_user=everyone&characterization_allowed_user=everyone&corporate_commercial_use=allow&credit=unnecessary&modification=allow&personal_commercial_use=profit&redistribution=allow&sexual_expression=allow&version=1&violent_expression=allow",
+      "otherPermissionUrl": "https://hub.vroid.com/license?allowed_to_use_user=everyone&characterization_allowed_user=everyone&corporate_commercial_use=allow&credit=unnecessary&modification=allow&personal_commercial_use=profit&redistribution=allow&sexual_expression=allow&version=1&violent_expression=allow",
+      "sexualUssageName": "Allow",
+      "texture": 6,
+      "title": "AvatarSample_B",
+      "version": "1.0",
+      "violentUssageName": "Allow"
+    },
+    "assets": {
+      "high": {
+        "path": "public/plaza/characters/airi-reference/avatar-sample-b.vrm",
+        "bytes": 10540196,
+        "sha256": "94403540186360f109eb897719bf013901ca3f99b7b0c99a312144c09308fad8"
+      },
+      "low": {
+        "path": "public/plaza/characters/airi-reference/avatar-sample-b-mobile.vrm",
+        "bytes": 8506624,
+        "sha256": "9e10c4fdcdefc4c8bc3f59ce376b235eedb56f97ea2a2abd60e87dc1f21bc38a"
+      }
+    }
+  },
+  "models": [
+    {
+      "gender": "airi-a",
+      "sourceSHA256": "2a0ccd84880b03d7b65503d8b6287f7a97f3bb4fab70a5fd0a47b433c97827f5",
+      "embeddedLicense": {
+        "allowedUserName": "Everyone",
+        "author": "VRoid Project",
+        "commercialUssageName": "Allow",
+        "contactInformation": "https://www.pixiv.net/support.php?mode=select_vroid",
+        "licenseName": "Other",
+        "otherLicenseUrl": "https://hub.vroid.com/license?allowed_to_use_user=everyone&characterization_allowed_user=everyone&corporate_commercial_use=allow&credit=unnecessary&modification=allow&personal_commercial_use=profit&redistribution=allow&sexual_expression=allow&version=1&violent_expression=allow",
+        "otherPermissionUrl": "https://hub.vroid.com/license?allowed_to_use_user=everyone&characterization_allowed_user=everyone&corporate_commercial_use=allow&credit=unnecessary&modification=allow&personal_commercial_use=profit&redistribution=allow&sexual_expression=allow&version=1&violent_expression=allow",
+        "sexualUssageName": "Allow",
+        "texture": 6,
+        "title": "AvatarSample_A",
+        "version": "1.0",
+        "violentUssageName": "Allow"
+      },
+      "files": {
+        "high": {
+          "file": "avatar-sample-a.vrm",
+          "bytes": 9756736,
+          "sha256": "6a5dcbeadd098688d1c2d671dcfd89f57803ab60aed2aaa42348a250599dfc15"
+        },
+        "low": {
+          "file": "avatar-sample-a-mobile.vrm",
+          "bytes": 8041444,
+          "sha256": "f0db8f81504937f578147a7bb435d89450ab7fe81b0af9b03bd51a643f1656ea"
+        }
+      }
+    },
+    {
+      "gender": "airi-b",
+      "sourceSHA256": "7fca4a77fdc60ab2c78a9907430744562626180125fa386eb74fb2ea15c2e518",
+      "embeddedLicense": {
+        "allowedUserName": "Everyone",
+        "author": "VRoid Project",
+        "commercialUssageName": "Allow",
+        "contactInformation": "https://www.pixiv.net/support.php?mode=select_vroid",
+        "licenseName": "Other",
+        "otherLicenseUrl": "https://hub.vroid.com/license?allowed_to_use_user=everyone&characterization_allowed_user=everyone&corporate_commercial_use=allow&credit=unnecessary&modification=allow&personal_commercial_use=profit&redistribution=allow&sexual_expression=allow&version=1&violent_expression=allow",
+        "otherPermissionUrl": "https://hub.vroid.com/license?allowed_to_use_user=everyone&characterization_allowed_user=everyone&corporate_commercial_use=allow&credit=unnecessary&modification=allow&personal_commercial_use=profit&redistribution=allow&sexual_expression=allow&version=1&violent_expression=allow",
+        "sexualUssageName": "Allow",
+        "texture": 6,
+        "title": "AvatarSample_B",
+        "version": "1.0",
+        "violentUssageName": "Allow"
+      },
+      "files": {
+        "high": {
+          "file": "avatar-sample-b.vrm",
+          "bytes": 10540196,
+          "sha256": "94403540186360f109eb897719bf013901ca3f99b7b0c99a312144c09308fad8"
+        },
+        "low": {
+          "file": "avatar-sample-b-mobile.vrm",
+          "bytes": 8506624,
+          "sha256": "9e10c4fdcdefc4c8bc3f59ce376b235eedb56f97ea2a2abd60e87dc1f21bc38a"
+        }
+      }
+    }
+  ]
+}

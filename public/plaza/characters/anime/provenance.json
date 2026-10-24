@@ -1,0 +1,215 @@
+{
+  "models": [
+    {
+      "gender": "female",
+      "source": "https://raw.githubusercontent.com/pixiv/three-vrm/dev/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm",
+      "sourceSha256": "12c2b97e95e700783a6a550dc0eee2d7880aeedccef9ae67bc4c5a2f0f2631a2",
+      "embeddedLicense": {
+        "allowAntisocialOrHateUsage": false,
+        "allowExcessivelySexualUsage": true,
+        "allowExcessivelyViolentUsage": true,
+        "allowPoliticalOrReligiousUsage": true,
+        "allowRedistribution": true,
+        "authors": [
+          "pixiv Inc."
+        ],
+        "avatarPermission": "everyone",
+        "commercialUsage": "corporation",
+        "copyrightInformation": "(c) 2022 pixiv Inc.",
+        "creditNotation": "unnecessary",
+        "licenseUrl": "https://vrm.dev/licenses/1.0/",
+        "modification": "allowModificationRedistribution",
+        "name": "VRM1_Constraint_Twist_Sample",
+        "thumbnailImage": 18,
+        "version": "v1.0.1"
+      },
+      "files": {
+        "high": {
+          "file": "female.vrm",
+          "bytes": 10776032,
+          "sha256": "12c2b97e95e700783a6a550dc0eee2d7880aeedccef9ae67bc4c5a2f0f2631a2"
+        },
+        "low": {
+          "file": "female-mobile.vrm",
+          "bytes": 6864248,
+          "sha256": "8676ea1957eaf59be5012622cbee5b15b542cf9c4f4a7cd37c1cb568c01a7da8"
+        }
+      },
+      "meshes": 3,
+      "materials": [
+        "Body_00_SKIN",
+        "Bottoms_01_CLOTH",
+        "Shoes_01_CLOTH",
+        "Tops_01_CLOTH",
+        "HairBack_00_HAIR",
+        "FaceMouth_00_FACE",
+        "EyeIris_00_EYE",
+        "Face_00_SKIN",
+        "EyeWhite_00_EYE",
+        "FaceEyeline_00_FACE",
+        "FaceBrow_00_FACE",
+        "EyeHighlight_00_EYE",
+        "Hair_00_HAIR"
+      ],
+      "images": 19,
+      "skins": 3
+    },
+    {
+      "gender": "male",
+      "source": "https://raw.githubusercontent.com/madjin/vrm-samples/master/vroid/beta/HairSample_Male.vrm",
+      "sourceSha256": "7aeca142dabbc26ba0f5b9c998c8f3cb6df341287d67788427ac837223785a3f",
+      "embeddedLicense": {
+        "version": "",
+        "author": "",
+        "contactInformation": "",
+        "reference": "",
+        "title": "HairSample_Male",
+        "texture": 24,
+        "allowedUserName": "Everyone",
+        "violentUssageName": "Allow",
+        "sexualUssageName": "Allow",
+        "commercialUssageName": "Allow",
+        "otherPermissionUrl": "",
+        "licenseName": "CC0",
+        "otherLicenseUrl": ""
+      },
+      "files": {
+        "high": {
+          "file": "male.vrm",
+          "bytes": 18481892,
+          "sha256": "7aeca142dabbc26ba0f5b9c998c8f3cb6df341287d67788427ac837223785a3f"
+        },
+        "low": {
+          "file": "male-mobile.vrm",
+          "bytes": 9470120,
+          "sha256": "a1006df07798399c394e878ae30290a2ea4017f8b10e320b61a6444e87667f97"
+        }
+      },
+      "meshes": 3,
+      "materials": [
+        "M00_000_00_FaceBrow_00_FACE",
+        "M00_000_00_FaceMouth_00_FACE",
+        "M00_000_00_EyeIris_00_EYE",
+        "M00_000_00_EyeHighlight_00_EYE",
+        "M00_000_00_EyeWhite_00_EYE",
+        "M00_000_00_Face_00_SKIN",
+        "M00_000_00_FaceEyelash_00_FACE",
+        "M00_000_00_FaceEyeline_00_FACE",
+        "M00_000_00_EyeExtra_01_EYE",
+        "M00_001_01_Body_00_SKIN",
+        "M00_006_01_Tops_01_CLOTH",
+        "M00_001_01_Bottoms_01_CLOTH",
+        "M00_001_01_Shoes_01_CLOTH",
+        "F00_000_Hair_00_HAIR"
+      ],
+      "images": 25,
+      "skins": 3
+    },
+    {
+      "gender": "female-studio",
+      "source": "https://raw.githubusercontent.com/madjin/vrm-samples/master/vroid/beta/HairSample_Female.vrm",
+      "sourceSha256": "adfd242317aaabc773f31f7fff7b013979fbb5baa47e97427a78913d9cb4e979",
+      "embeddedLicense": {
+        "version": "",
+        "author": "",
+        "contactInformation": "",
+        "reference": "",
+        "title": "HairSample_Female",
+        "texture": 24,
+        "allowedUserName": "Everyone",
+        "violentUssageName": "Allow",
+        "sexualUssageName": "Allow",
+        "commercialUssageName": "Allow",
+        "otherPermissionUrl": "",
+        "licenseName": "CC0",
+        "otherLicenseUrl": ""
+      },
+      "files": {
+        "high": {
+          "file": "female-studio.vrm",
+          "bytes": 17518216,
+          "sha256": "adfd242317aaabc773f31f7fff7b013979fbb5baa47e97427a78913d9cb4e979"
+        },
+        "low": {
+          "file": "female-studio-mobile.vrm",
+          "bytes": 9490968,
+          "sha256": "79ef263f85e23956815fec0755dbde93f6447c7a0c44cdf9ea76390d369b13f5"
+        }
+      },
+      "meshes": 3,
+      "materials": [
+        "F00_000_00_FaceMouth_00_FACE",
+        "F00_000_00_EyeWhite_00_EYE",
+        "F00_000_00_FaceEyeline_00_FACE",
+        "F00_000_00_FaceEyelash_00_FACE",
+        "F00_000_00_FaceBrow_00_FACE",
+        "F00_000_00_EyeIris_00_EYE",
+        "F00_000_00_EyeHighlight_00_EYE",
+        "F00_000_00_Face_00_SKIN",
+        "F00_000_00_EyeExtra_01_EYE",
+        "F00_002_02_Body_00_SKIN",
+        "F00_002_01_Tops_01_CLOTH",
+        "F00_002_01_Shoes_01_CLOTH",
+        "F00_000_Hair_00_HAIR_01",
+        "F00_000_Hair_00_HAIR_02"
+      ],
+      "images": 25,
+      "skins": 3
+    },
+    {
+      "gender": "male-studio",
+      "source": "https://raw.githubusercontent.com/madjin/vrm-samples/master/vroid/beta/Sakurada_Fumiriya.vrm",
+      "sourceSha256": "d8fb05f33e377df028cb6b9d58c441ce68326c41fa23f6c735d40c65ae3dc710",
+      "embeddedLicense": {
+        "version": "",
+        "author": "",
+        "contactInformation": "",
+        "reference": "",
+        "title": "Sakurada Fumiriya",
+        "texture": 29,
+        "allowedUserName": "Everyone",
+        "violentUssageName": "Allow",
+        "sexualUssageName": "Allow",
+        "commercialUssageName": "Allow",
+        "otherPermissionUrl": "",
+        "licenseName": "CC0",
+        "otherLicenseUrl": ""
+      },
+      "files": {
+        "high": {
+          "file": "male-studio.vrm",
+          "bytes": 19342280,
+          "sha256": "d8fb05f33e377df028cb6b9d58c441ce68326c41fa23f6c735d40c65ae3dc710"
+        },
+        "low": {
+          "file": "male-studio-mobile.vrm",
+          "bytes": 10913676,
+          "sha256": "9d0b278011409a509895fcf41655d0558fd516a13509443a9f31ec9d4bfee786"
+        }
+      },
+      "meshes": 3,
+      "materials": [
+        "M00_000_00_FaceBrow_00_FACE",
+        "M00_000_00_FaceMouth_00_FACE",
+        "M00_000_00_EyeIris_00_EYE",
+        "M00_000_00_EyeHighlight_00_EYE",
+        "M00_000_00_EyeWhite_00_EYE",
+        "M00_000_00_Face_00_SKIN",
+        "M00_000_00_FaceEyelash_00_FACE",
+        "M00_000_00_FaceEyeline_00_FACE",
+        "M00_000_00_EyeExtra_01_EYE",
+        "M00_001_01_Body_00_SKIN",
+        "M00_001_01_Tops_01_CLOTH",
+        "M00_001_01_AccessoryNeck_01_CLOTH",
+        "M00_001_01_Bottoms_01_CLOTH",
+        "M00_001_01_Shoes_01_CLOTH",
+        "M00_000_HairBack_00_HAIR",
+        "F00_000_Hair_00_HAIR_01",
+        "F00_000_Hair_00_HAIR_02"
+      ],
+      "images": 30,
+      "skins": 3
+    }
+  ],
+  "preparation": "Desktop original VRM; phone identical geometry/rig/expressions with maximum 1024px embedded textures. Original licensing preserved."
+}

@@ -1,4 +1,5 @@
-/** Official Kenney CC0 models. Bounds are rest-pose world dimensions in authored units.
+import {HAVEN_BUILD_ASSETS} from './haven-build-assets';
+/** Official Kenney and Poly Haven CC0 models. Bounds are rest-pose world dimensions in authored units.
  * Lazy-load only selected models; thumbnails are optimized local WebP files.
  * collision is a conservative editor hint, not a triangle collider or behavior claim. */
 export const BUILD_ASSET_CATEGORIES = ['architecture', 'furniture', 'nature', 'food', 'roads', 'playground'] as const;
@@ -999,7 +1000,8 @@ export const BUILD_ASSETS: readonly BuildAsset[] = [
 {"id":"platformer-kit/tree-pine-small","name":"Tree pine small","category":"playground","url":"/plaza/build-kit/platformer-kit/tree-pine-small.glb","thumbnailUrl":"/plaza/build-kit/platformer-kit/thumbs/tree-pine-small.webp","bounds":[0.66394,1.39768,0.66394],"center":[0.0,0.69884,0.0],"groundOffset":0.0,"collision":"solid","sourcePack":"platformer-kit","bytes":22440,"animationClips":[]},
 {"id":"platformer-kit/tree-pine-snow","name":"Tree pine snow","category":"playground","url":"/plaza/build-kit/platformer-kit/tree-pine-snow.glb","thumbnailUrl":"/plaza/build-kit/platformer-kit/thumbs/tree-pine-snow.webp","bounds":[0.94848,1.99668,0.94848],"center":[0.0,0.99834,0.0],"groundOffset":-0.0,"collision":"solid","sourcePack":"platformer-kit","bytes":22412,"animationClips":[]},
 {"id":"platformer-kit/tree-pine-snow-small","name":"Tree pine snow small","category":"playground","url":"/plaza/build-kit/platformer-kit/tree-pine-snow-small.glb","thumbnailUrl":"/plaza/build-kit/platformer-kit/thumbs/tree-pine-snow-small.webp","bounds":[0.66394,1.39768,0.66394],"center":[0.0,0.69884,0.0],"groundOffset":0.0,"collision":"solid","sourcePack":"platformer-kit","bytes":22452,"animationClips":[]},
-{"id":"platformer-kit/tree-snow","name":"Tree snow","category":"playground","url":"/plaza/build-kit/platformer-kit/tree-snow.glb","thumbnailUrl":"/plaza/build-kit/platformer-kit/thumbs/tree-snow.webp","bounds":[1.0889,1.93088,1.10862],"center":[0.00578,0.96544,0.00334],"groundOffset":-0.0,"collision":"solid","sourcePack":"platformer-kit","bytes":42696,"animationClips":[]}
+{"id":"platformer-kit/tree-snow","name":"Tree snow","category":"playground","url":"/plaza/build-kit/platformer-kit/tree-snow.glb","thumbnailUrl":"/plaza/build-kit/platformer-kit/thumbs/tree-snow.webp","bounds":[1.0889,1.93088,1.10862],"center":[0.00578,0.96544,0.00334],"groundOffset":-0.0,"collision":"solid","sourcePack":"platformer-kit","bytes":42696,"animationClips":[]},
+...HAVEN_BUILD_ASSETS,
 ];
 const assetById = new Map(BUILD_ASSETS.map(asset => [asset.id, asset]));
 export function getBuildAsset(id: string): BuildAsset | undefined { return assetById.get(id); }

@@ -4,7 +4,7 @@ import {handleApi} from '@/server/api';
 import {exec, one} from '@/db';
 import {BUILD_ASSETS} from '@/features/plaza/build-assets';
 import {motionSchema, type HabitatState, type WorldObject} from '@/domain/habitat';
-import {eyeVariants,hairVariants,outfitVariants,skinVariants} from '@/features/plaza/characters/catalog';
+import {decorationDefaults,eyeVariants,hairVariants,outfitVariants,skinVariants} from '@/features/plaza/characters/catalog';
 
 const origin = 'http://localhost:3000';
 function call(path: string, cookie = '', data?: unknown, method = data === undefined ? 'GET' : 'POST', extra: Record<string, string> = {}) {
@@ -53,17 +53,23 @@ describe('persistent wallet worlds through real API and SQLite', () => {
     expect(eyeVariants.map(v=>v.id)).toContain(state.profile?.appearance?.eyeId);
     expect(skinVariants.map(v=>v.id)).toContain(state.profile?.appearance?.skinId);
     expect(state.profile?.appearance?.gender).toBe('male');
-    expect(state.profile?.loadout.characterId).toBe('vroid-fumiriya');
+    expect(state.profile?.appearance?.lookId).toBe('original');
+    expect(state.profile?.loadout.characterId).toBe('ctrl-modular-neurohacker');
+    expect(state.profile?.appearance?.modular?.family).toBe('neurohacker');
     expect(state.profile?.loadout.appearance).toEqual(state.profile?.appearance);
     expect((await load(p.cookie, p.world.id)).profile).toEqual(state.profile);
     expect((await one<{n: number}>('SELECT COUNT(*) AS n FROM habitat_worlds WHERE owner_id=?', p.id))?.n).toBe(1);
     const chosen={version:1 as const,gender:'female' as const,variantId:'sage' as const,hairId:'auburn' as const,eyeId:'jade' as const,skinId:'warm' as const};
+    const normalizedChosen={...decorationDefaults,...chosen};
     const saved=await (await call('habitat/profile',p.cookie,{name:'Styled',character:'female',variant:'sage',appearance:chosen})).json() as HabitatState;
-    expect(saved.profile?.appearance).toEqual(chosen);
-    expect((await load(p.cookie,p.world.id)).profile?.appearance).toEqual(chosen);
+    expect(saved.profile?.appearance).toEqual(normalizedChosen);
+    expect((await load(p.cookie,p.world.id)).profile?.appearance).toEqual(normalizedChosen);
     const randomized=await (await call('habitat/profile',p.cookie,{name:'Randomized',character:'female',randomize:true})).json() as HabitatState;
-    expect(randomized.profile?.appearance).not.toEqual(chosen);
+    expect(randomized.profile?.appearance).not.toEqual(normalizedChosen);
     expect(randomized.profile?.appearance?.gender).toBe('female');
+    const renamed=await (await call('habitat/profile',p.cookie,{name:'Renamed',character:'female'})).json() as HabitatState;
+    expect(renamed.profile?.appearance).toEqual(randomized.profile?.appearance);
+    expect((await load(p.cookie,p.world.id)).profile?.appearance).toEqual(randomized.profile?.appearance);
     expect((await call('habitat/profile', p.cookie, {name: 'Invalid', character: 'male', variant: 'remote-url'})).status).toBe(422);
     expect((await call('habitat/profile',p.cookie,{name:'Invalid',character:'female',appearance:{...chosen,hairId:'remote-url'}})).status).toBe(422);
     expect((await call('habitat/profile', p.cookie, {name: 'Invalid', character: 'male', ownerId: 'other'})).status).toBe(422);
@@ -164,6 +170,19 @@ describe('persistent wallet worlds through real API and SQLite', () => {
     expect((await load(owner.cookie, owner.world.id)).players).toEqual([]);
     expect((await call(path, visitor.cookie)).status).toBe(404);
     expect((await call('habitat/join', visitor.cookie, {id: owner.world.id})).status).toBe(404);
+  });
+  it('uses visible furniture bounds rather than a distant scaled model center', async () => {
+    const p=await player('Sekar'),asset=BUILD_ASSETS.find(a=>a.id==='furniture-kit/bench');expect(asset).toBeTruthy();
+    const bench=object({assetId:asset!.id,name:'Bench',behavior:'seat',x:4.2,z:6,scale:4});
+    expect((await call('habitat/save',p.cookie,{worldId:p.world.id,revision:0,objects:[bench]})).status).toBe(200);
+    expect((await call('habitat/join',p.cookie,{id:p.world.id})).status).toBe(200);
+    expect((await call('habitat/use',p.cookie,{id:bench.id})).status).toBe(200);
+  });
+  it('rejects raised furniture outside vertical reach even at the same XZ location', async () => {
+    const p=await player('Laras'),lamp=object({assetId:'ctrl-lamp',behavior:'light',y:7});
+    expect((await call('habitat/save',p.cookie,{worldId:p.world.id,revision:0,objects:[lamp]})).status).toBe(200);
+    await call('habitat/join',p.cookie,{id:p.world.id});
+    expect((await call('habitat/use',p.cookie,{id:lamp.id})).status).toBe(422);
   });
   it('persists real interaction state and cleans it on object deletion', async () => {
     const p = await player(), lamp = object({assetId: 'ctrl-lamp', behavior: 'light'});

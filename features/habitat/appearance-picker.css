@@ -1,0 +1,78 @@
+/* Shared dressing-room surface. All rules stay inside this picker. */
+.ctrl-appearance-picker {
+  --picker-paper: #faf6eb;
+  --picker-ink: #2e4038;
+  --picker-moss: #4c6758;
+  --picker-clay: #b46f4e;
+  --picker-rule: #2e40382b;
+  --picker-cloth: #a7c5b3;
+  --picker-hair: #675247;
+  color: var(--picker-ink);
+  background: var(--picker-paper);
+  font-size: 14px;
+  line-height: 1.45;
+  min-width: 0;
+  container-type: inline-size;
+  padding: 4px 2px 14px;
+}
+.ctrl-appearance-picker *, .ctrl-appearance-picker *::before, .ctrl-appearance-picker *::after { box-sizing: border-box; }
+.ctrl-appearance-picker .ctrl-picker-heading { margin-bottom: 20px; }
+.ctrl-appearance-picker .ctrl-picker-heading h3 { margin: 0; color: var(--picker-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 23px; font-weight: 500; letter-spacing: -.025em; line-height: 1.2; }
+.ctrl-appearance-picker .ctrl-picker-heading p { margin: 7px 0 0; font-size: 11px; color: #56675b; }
+.ctrl-appearance-picker .ctrl-picker-block { border: 0; border-top: 1px solid var(--picker-rule); padding: 17px 0 20px; margin: 0; }
+.ctrl-appearance-picker h4, .ctrl-appearance-picker legend { margin: 0 0 12px; padding: 0; color: var(--picker-ink); font-size: 13px; font-weight: 650; letter-spacing: .015em; }
+.ctrl-appearance-picker .ctrl-picker-select { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; color: var(--picker-ink); font-size: 12px; font-weight: 600; }
+.ctrl-appearance-picker .ctrl-picker-select > span { flex: 0 1 36%; }
+.ctrl-appearance-picker .ctrl-picker-select select { min-width: 0; width: 62%; max-width: 260px; height: auto; min-height: 36px; padding: 7px 22px 7px 9px; border: 1px solid var(--picker-rule); border-radius: 3px; background-color: #fffdf5; color: var(--picker-ink); font: inherit; font-weight: 400; box-shadow: none; }
+.ctrl-appearance-picker .ctrl-picker-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+.ctrl-appearance-picker .ctrl-picker-card { position: relative; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; width: 100%; min-width: 0; padding: 0 0 12px; overflow: hidden; color: var(--picker-ink); background: #fffdf6; border: 1px solid var(--picker-rule); border-radius: 4px; text-align: left; font: inherit; line-height: 1.35; cursor: pointer; box-shadow: none; transition: border-color 140ms ease, background-color 140ms ease; }
+.ctrl-appearance-picker .ctrl-picker-card:hover { border-color: var(--picker-moss); background-color: #f3f1e5; }
+.ctrl-appearance-picker .ctrl-picker-card[aria-pressed='true'] { border-color: var(--picker-moss); background: #edf0e5; box-shadow: inset 0 -3px 0 var(--picker-moss); }
+.ctrl-appearance-picker .ctrl-picker-card-name { display: block; margin: 10px 11px 0; font-size: 12px; font-weight: 650; }
+.ctrl-appearance-picker .ctrl-picker-card small { margin: 5px 11px 0; color: #5a695e; font-size: 10px; font-weight: 400; line-height: 1.5; }
+.ctrl-appearance-picker .ctrl-picker-check { display: inline-grid; flex-shrink: 0; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: transparent; color: transparent; font-size: 12px; font-weight: 700; line-height: 1; }
+.ctrl-appearance-picker [aria-pressed='true'] > .ctrl-picker-check { color: var(--picker-paper); background: var(--picker-moss); }
+.ctrl-appearance-picker .ctrl-picker-card > .ctrl-picker-check { position: absolute; right: 7px; top: 7px; z-index: 2; }
+.ctrl-appearance-picker .ctrl-picker-card-art { display: grid; place-items: center; width: 100%; height: 118px; overflow: hidden; background: linear-gradient(160deg, #f5eddb, #ede8d8); border-bottom: 1px solid #2e403811; }
+.ctrl-appearance-picker .ctrl-picker-card:nth-child(3n + 2) .ctrl-picker-card-art { background: linear-gradient(160deg, #edf0e3, #e4e8d8); }
+.ctrl-appearance-picker .ctrl-picker-card:nth-child(3n) .ctrl-picker-card-art { background: linear-gradient(160deg, #f2e6db, #eee0d1); }
+.ctrl-appearance-picker .ctrl-picker-card-art > svg { width: 94px; height: 106px; }
+.ctrl-appearance-picker .ctrl-picker-photo{display:block;width:100%;height:100%;object-fit:contain;background:#e9e5d9;}
+.ctrl-appearance-picker .ctrl-picker-card-art:has(>.ctrl-picker-photo){display:block;background:#e9e5d9;}
+@media(max-width:700px){.ctrl-appearance-picker .ctrl-picker-heading{display:none}}
+.ctrl-appearance-picker .ctrl-picker-drawing-cloth { fill: var(--picker-cloth); stroke: #4c6758; stroke-width: 1.35; stroke-linejoin: round; }
+.ctrl-appearance-picker .ctrl-picker-drawing-hair { fill: var(--picker-hair); stroke: #4a443c; stroke-width: 1.1; stroke-linejoin: round; }
+.ctrl-appearance-picker .ctrl-picker-drawing-face { fill: #edd8bc; stroke: #8e7560; stroke-width: 1; }
+.ctrl-appearance-picker .ctrl-picker-drawing-line { stroke: #4c6758; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.ctrl-appearance-picker .ctrl-picker-drawing-ground { opacity: .25; }
+.ctrl-appearance-picker .ctrl-picker-look-drawing { position: relative; display: block; width: 120px; height: 118px; }
+.ctrl-appearance-picker .ctrl-picker-look-hair { position: absolute; top: 3px; left: 26px; width: 70px; height: 78px; }
+.ctrl-appearance-picker .ctrl-picker-look-outfit { position: absolute; top: 57px; left: 24px; width: 74px; height: 76px; }
+.ctrl-appearance-picker .ctrl-picker-look-drawing svg { display: block; width: 100%; height: 100%; }
+.ctrl-appearance-picker .ctrl-picker-motif { position: absolute; top: 28px; left: 10px; color: var(--picker-clay); font-size: 18px; opacity: .8; }
+.ctrl-appearance-picker .ctrl-picker-grid-small .ctrl-picker-card-art { height: 110px; }
+.ctrl-appearance-picker .ctrl-picker-swatches { min-width: 0; margin: 0; padding: 17px 0 20px; border: 0; border-top: 1px solid var(--picker-rule); }
+.ctrl-appearance-picker .ctrl-picker-swatches legend { float: left; width: 100%; margin: 0 0 12px; }
+.ctrl-appearance-picker .ctrl-picker-swatches > div { display: flex; flex-wrap: wrap; gap: 12px 16px; clear: both; }
+.ctrl-appearance-picker .ctrl-picker-swatches button { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 44px; min-height: 64px; padding: 3px 1px; color: var(--picker-ink); border: 0; border-radius: 2px; background: transparent; box-shadow: none; font: inherit; font-size: 10px; cursor: pointer; }
+.ctrl-appearance-picker .ctrl-picker-swatch { display: grid; place-items: center; width: 35px; height: 35px; border: 1px solid #2e40383b; border-radius: 50%; outline: 2px solid transparent; outline-offset: 3px; }
+.ctrl-appearance-picker .ctrl-picker-swatches [aria-pressed='true'] .ctrl-picker-swatch { outline-color: var(--picker-moss); }
+.ctrl-appearance-picker .ctrl-picker-swatches [aria-pressed='true'] .ctrl-picker-check { color: var(--picker-paper); background: var(--picker-moss); }
+.ctrl-appearance-picker .ctrl-picker-swatches [aria-pressed='true'] > span:last-child { font-weight: 700; }
+.ctrl-appearance-picker .ctrl-picker-accessories { border-top: 1px solid var(--picker-rule); }
+.ctrl-appearance-picker .ctrl-picker-accessories summary { min-height: 48px; padding: 15px 0; color: var(--picker-ink); font-size: 13px; font-weight: 600; cursor: pointer; }
+.ctrl-appearance-picker .ctrl-picker-accessories summary span { display: inline-block; margin-left: 9px; color: #5a695e; font-size: 10px; font-weight: 400; }
+.ctrl-appearance-picker .ctrl-picker-clear { display: block; margin: 0 0 12px auto; padding: 6px 0; color: var(--picker-moss); background: none; border: 0; border-radius: 0; font: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ctrl-appearance-picker .ctrl-picker-accessory-styles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; margin-bottom: 17px; }
+.ctrl-appearance-picker .ctrl-picker-accessory-styles button { position: relative; display: flex; flex-direction: column; padding: 12px 22px 12px 0; background: none; color: var(--picker-ink); border: 0; border-bottom: 1px solid var(--picker-rule); border-radius: 0; text-align: left; font: inherit; font-size: 12px; cursor: pointer; box-shadow: none; }
+.ctrl-appearance-picker .ctrl-picker-accessory-styles .ctrl-picker-check { position: absolute; right: 0; top: 12px; }
+.ctrl-appearance-picker .ctrl-picker-accessory-styles small { margin-top: 4px; color: #5a695e; font-size: 10px; }
+.ctrl-appearance-picker .ctrl-picker-accessory-styles [aria-pressed='true'] { border-bottom-color: var(--picker-moss); }
+.ctrl-appearance-picker .ctrl-picker-accessory-fields { display: grid; gap: 4px; }
+.ctrl-appearance-picker button:focus-visible, .ctrl-appearance-picker select:focus-visible, .ctrl-appearance-picker summary:focus-visible { outline: 2px solid var(--picker-clay); outline-offset: 3px; }
+@container (min-width: 470px) {
+  .ctrl-appearance-picker .ctrl-picker-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ctrl-appearance-picker .ctrl-picker-card { transition: none; }
+}

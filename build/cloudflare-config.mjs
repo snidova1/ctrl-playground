@@ -132,6 +132,7 @@ function stagingCloudflareConfig({ d1, r2 }, env) {
       CTRL_MODE: "production",
       DEMO_AUTH_ENABLED: "false",
       CTRL_PUBLIC_RELEASE: "false",
+      ...(env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim() ? { NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID.trim() } : {}),
     },
     d1_databases: d1
       ? [

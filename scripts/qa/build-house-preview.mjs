@@ -1,0 +1,5 @@
+import{createRequire}from'node:module';import{mkdir,symlink,writeFile}from'node:fs/promises';import{resolve}from'node:path';
+const require=createRequire(import.meta.url),{build}=require(require.resolve('esbuild',{paths:[require.resolve('vite')]}));
+const out='/tmp/ctrl-house-preview';await mkdir(out,{recursive:true});for(const name of['worlds','plaza','assets'])await symlink(resolve('public',name),`${out}/${name}`,'dir').catch(e=>{if(e.code!=='EEXIST')throw e;});
+await build({define:{'process.env.NEXT_PUBLIC_CTRL_MODULAR_COLLECTIONS':JSON.stringify('disabled')},entryPoints:['scripts/qa/house-preview.jsx'],jsx:'automatic',bundle:true,format:'esm',platform:'browser',outdir:out,logLevel:'warning'});
+await writeFile(`${out}/index.html`,'<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/house-preview.css"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden}*{box-sizing:border-box}</style></head><body><div id="root"></div><script type="module" src="/house-preview.js"></script></body></html>');console.log('HOUSE_SOURCE_BUNDLE_PASS',out);

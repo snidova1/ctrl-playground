@@ -1,2 +1,2 @@
-import HabitatApp from '@/features/habitat/app';
-export default function Home(){return <HabitatApp advancedBuilder/>;}
+import CommonGroundLobby from '@/features/common-ground/lobby';
+export default function Home(){return <CommonGroundLobby/>;}

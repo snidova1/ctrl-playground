@@ -22,9 +22,9 @@ try{
   const project=(x,y,z)=>page.evaluate(([x,y,z])=>window.__habitProject(x,y,z),[x,y,z]);
   const response=await page.goto(`${origin}/preview`,{waitUntil:'domcontentloaded',timeout:90000});assert.equal(response.status(),200);
   await ready('yard');await page.waitForFunction(()=>JSON.parse(localStorage.getItem('ctrl-habit-local-v2'))?.room?.length===8);
-  const toon=await page.evaluate(()=>({materials:Number(document.documentElement.dataset.ctrlAvatarToonCount),expressions:Number(document.documentElement.dataset.ctrlAvatarExpressionCount)}));
-  assert(toon.materials>0,'Actual lilToon materials must be loaded, not only the dependency');
-  assert(toon.expressions>0,'VRM expressions must remain available');
+  const avatar=await page.evaluate(()=>({renderer:document.documentElement.dataset.ctrlAvatarRenderer,meshes:Number(document.documentElement.dataset.ctrlAvatarMeshCount),materials:Number(document.documentElement.dataset.ctrlAvatarMaterialCount)}));
+  assert.equal(avatar.renderer,'anime-vrm-mtoon','Live world must use the rebuilt authored model');
+  assert(avatar.meshes>0&&avatar.materials>0,'Actual model geometry and materials must be mounted');
   const doorBox=await page.getByRole('button',{name:'Enter home',exact:true}).boundingBox();assert(doorBox.height>=44,'Door remains touch accessible');
   assert.equal(await page.getByRole('button',{name:/Masuk rumah|Keluar rumah|Tas perabot/}).count(),0,'HUD uses English');
   assert.equal(await page.getByRole('alert').filter({hasText:/We couldn't open your home|VRoid character unavailable/}).count(),0);assert.equal(await page.getByRole('button',{name:'Edit home',exact:true}).count(),0);
@@ -59,7 +59,7 @@ try{
   await page.waitForTimeout(1000);await page.screenshot({path:`test-results/habit-${label}-room.png`});
   await click('Exit home');await ready('yard');
   assert.deepEqual(errors,[],'No browser runtime errors');assert.deepEqual(assetFailures,[],'No missing visual assets');assert.deepEqual(api,[],'No wallet/private APIs');
-  results.push({device:label,toon,englishHud:true,doorTouchTargetHeight:doorBox.height,atmospherePresets:['afternoon','golden','sunset','dusk'],shaderErrorsChecked:true,enterExit:true,manualPlacement:true,dragInput:mobile?'CDP touch':'mouse',rotateColor:true,reloadPersistence:true,remove:true,wallPaint:true,pageErrors:errors});
+  results.push({device:label,avatar,englishHud:true,doorTouchTargetHeight:doorBox.height,atmospherePresets:['afternoon','golden','sunset','dusk'],shaderErrorsChecked:true,enterExit:true,manualPlacement:true,dragInput:mobile?'CDP touch':'mouse',rotateColor:true,reloadPersistence:true,remove:true,wallPaint:true,pageErrors:errors});
   await context.close();
  }
  await writeFile('test-results/preview-smoke.json',JSON.stringify({url:`${origin}/preview`,browser:browser.version(),originalProceduralFurniture:true,devices:results},null,2));

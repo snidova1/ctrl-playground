@@ -1,0 +1,6 @@
+Vita costume artwork and geometry: pixiv Inc., official VRoid beta sample.
+CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
+Official model license: https://vroid.pixiv.help/hc/en-us/articles/360014900113
+To the extent possible under law, pixiv Inc. waived copyright and related rights.
+Modified by CTRL: garment extraction, normalized weights, female-studio rest-binding, used-data pruning, 1024px PNG artwork.
+Only this garment is included; this license does not cover unrelated VRoid presets.

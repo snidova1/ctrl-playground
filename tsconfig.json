@@ -40,7 +40,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     ".next-node/types/**/*.ts",
-    ".next-node/dev/types/**/*.ts"
+    ".next-node/dev/types/**/*.ts",
+    ".next-airi-complete/types/**/*.ts",
+    ".next-airi-complete/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

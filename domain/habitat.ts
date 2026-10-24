@@ -1,7 +1,10 @@
 import {z} from 'zod';
 import {layoutSchema, motionSchema, worldObjectSchema} from '@/features/habitat/types';
 import type {WorldRecord, WorldState, WorldProfile} from '@/features/habitat/types';
-import type {CharacterLoadout as CatalogLoadout} from '@/features/plaza/characters/catalog';
+import {decorationCatalog,hairStyles,type CharacterLoadout as CatalogLoadout} from '@/features/plaza/characters/catalog';
+import {wardrobeStyles} from '@/features/plaza/characters/wardrobe-catalog';
+import {isModularAppearance,modularFamilies} from '@/features/plaza/characters/modular-catalog';
+const catalogId=<T extends readonly {id:string}[]>(items:T)=>z.enum(items.map(item=>item.id) as [T[number]['id'],...T[number]['id'][]]).optional();
 
 // Keep the existing flat transform wire format used by the courtyard renderer.
 export {worldObjectSchema, layoutSchema, motionSchema};
@@ -33,8 +36,22 @@ export const characterProfileInputSchema = z.object({
     gender:z.enum(['female','male']),
     variantId:z.enum(['original','sage','clay','slate']),
     hairId:z.enum(['source','espresso','ink','auburn','silver']),
+    hairStyleId:catalogId(hairStyles),
+    wardrobeId:catalogId(wardrobeStyles),
     eyeId:z.enum(['source','hazel','ocean','jade','violet']),
     skinId:z.enum(['source','warm','rose','deep']),
+    modular:z.object({family:z.enum(modularFamilies),hair:z.string().max(50),top:z.string().max(50),bottom:z.string().max(50),shoes:z.string().max(50),outer:z.string().max(50).optional(),accessory:z.string().max(50).optional()}).strict().refine(isModularAppearance,'Unknown or incompatible modular part').optional(),
+    // Accept historical male/alternate saves; normalizeAppearance in the service repairs
+    // only the retired look to signature (do not reject/reset the whole appearance).
+    lookId:catalogId(decorationCatalog.lookId),
+    headwearId:catalogId(decorationCatalog.headwearId),
+    eyewearId:catalogId(decorationCatalog.eyewearId),
+    earringId:catalogId(decorationCatalog.earringId),
+    // Explicit old-save compatibility, not arbitrary invalid-ID coercion.
+    neckwearId:z.union([catalogId(decorationCatalog.neckwearId),z.literal('pendant')]).transform(id=>id==='pendant'?'none' as const:id),
+    backwearId:catalogId(decorationCatalog.backwearId),
+    expressionId:catalogId(decorationCatalog.expressionId),
+    accessoryColorId:catalogId(decorationCatalog.accessoryColorId),
   }).strict().optional(),
   randomize: z.boolean().optional(),
 }).strict();

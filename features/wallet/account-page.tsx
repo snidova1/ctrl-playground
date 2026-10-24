@@ -6,6 +6,7 @@ import {mutate} from '@/lib/api-client';
 import type {Account} from '@/domain/types';
 import {PageHead,ErrorState,DemoBand,MachineLoading} from '@/components/states';
 import {DemoAccess} from './access';
+import {protectReownModal} from './reown-modal';
 import {plazaPolicy} from '@/config/plaza';
 import {Dialog,DialogContent,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 const WalletConnect=lazy(()=>import('./wallet-connect'));
@@ -41,6 +42,7 @@ export default function AccountPage(){
     <p className='notice'>Access uses a balance threshold checked by the server. No token transfer, burn, lock, or allocation is needed. Daily model limits keep the shared service within its operating budget.</p>
    </div>
   </div>}
-  <Dialog open={walletOpen} onOpenChange={setWalletOpen}><DialogContent className='ctrl-dialog'><DialogTitle className='dialog-title'>WALLET ACCESS</DialogTitle><DialogDescription className='dialog-desc'>Connect a wallet and sign a session challenge. The signature does not authorize a token transfer.</DialogDescription><Suspense fallback={<MachineLoading title='PREPARING CONNECTORS'/>}><WalletConnect onVerified={()=>{setWalletOpen(false);refresh();}}/></Suspense></DialogContent></Dialog>
+  {/* AppKit has its own body-level modal/focus management; don't trap it here. */}
+  <Dialog modal={false} open={walletOpen} onOpenChange={setWalletOpen}><DialogContent className='ctrl-dialog' onInteractOutside={protectReownModal} onEscapeKeyDown={protectReownModal}><DialogTitle className='dialog-title'>WALLET ACCESS</DialogTitle><DialogDescription className='dialog-desc'>Connect a wallet and sign a session challenge. The signature does not authorize a token transfer.</DialogDescription><Suspense fallback={<MachineLoading title='PREPARING CONNECTORS'/>}><WalletConnect onVerified={()=>{setWalletOpen(false);refresh();}}/></Suspense></DialogContent></Dialog>
  </div>;
 }

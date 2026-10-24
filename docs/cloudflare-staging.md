@@ -26,7 +26,7 @@ Configure environment `staging` secret:
 
 Runtime application secrets such as `ORBIO_API_KEY` and `WORKER_SECRET` must be installed directly on `ctrl-staging` using Wrangler secrets, not bundled into Vite or committed. Consult `.env.example` for application configuration. Secrets are not supplied to PR verification jobs.
 
-Cloudflare credentials are currently not configured in this workspace. Resource creation, remote migrations, deployment and browser acceptance cannot run until valid account access is supplied. GitHub authentication alone is not Cloudflare deployment authorization.
+Credentials are never committed. The owner-managed CLI currently loads them from `/home/celeng/.config/ctrl/cloudflare-staging.env`; CI uses its secret store. Check the configured external credential source and verify token status before declaring account access missing. Never print token bodies or signed D1 export URLs. GitHub authentication alone is not Cloudflare deployment authorization.
 
 ## Local build and release
 
@@ -58,4 +58,4 @@ Before enabling production or moving any users, verify on the actual staging URL
 - Builder edits and persistence after reload, including a second session.
 - D1/R2 upload/download and saved world data.
 
-These browser checks and live remote migrations are **not yet verified**. The visual comparison branch `visual/habitat-cozy-comparison` is separate and is not automatically included in this infrastructure branch.
+Acceptance is release-specific, not a permanent claim about the latest dirty worktree. Keep built-worker and hosted browser evidence under `test-results/` and the corresponding release notes. Chromium mobile/touch emulation is not a physical Bitget/iPhone test. The staging/local-only `/habitat-test` playground has independent browser-local saves and never replaces real owned-Habitat authorization or server persistence; see `docs/habitat-test.md`. The visual comparison branch `visual/habitat-cozy-comparison` remains separate and is not automatically included in this infrastructure branch.

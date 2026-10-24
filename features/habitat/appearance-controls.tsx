@@ -1,0 +1,36 @@
+'use client';
+import {availableAuthoredLooks,availableHairStyles,decorationCatalog,decorationDefaults,normalizeAppearance,seededAppearance,seededModularAppearance,newModularAppearance,resolveCharacter,type CharacterAppearance,type DecorationKey,type HairStyleId} from '@/features/plaza/characters/catalog';
+import {modularFamilies,modularFamilyLabels,modularOptions,type ModularAppearance} from '@/features/plaza/characters/modular-catalog';
+import {accessoryStyles,applyAccessoryStyle,clearAvatarAccessories,matchesAccessoryStyle} from '@/features/plaza/characters/accessory-styles';
+import {availableWardrobeStyles,type WardrobeStyleId} from '@/features/plaza/characters/wardrobe-catalog';
+import './appearance-controls.css';
+import {modularCollectionEnabled} from '../plaza/characters/catalog';
+import {airiLookPresets} from '../plaza/characters/airi-look-presets';
+const labels:Record<DecorationKey,string>={lookId:'Body & outfit model',headwearId:'Headwear',eyewearId:'Eyewear',earringId:'Earrings',neckwearId:'Neckwear',backwearId:'Carry & back',expressionId:'Expression',accessoryColorId:'Accessory color'};
+export default function AppearanceControls({appearance,onChange,randomize=true}:{appearance:CharacterAppearance;onChange:(a:CharacterAppearance)=>void;randomize?:boolean}){
+ const selected=normalizeAppearance(appearance,appearance.gender,appearance.variantId),native=selected.modular;
+ const complete=!native&&selected.gender==='female'&&(selected.lookId==='airi'||selected.lookId==='airi-b');
+ const looks=availableAuthoredLooks(selected.gender),hairstyles=availableHairStyles(selected.gender,selected.lookId),garments=availableWardrobeStyles(resolveCharacter(selected).id);
+ const decorationKeys=(Object.keys(decorationCatalog) as DecorationKey[]).filter(key=>key!=='lookId'&&key!=='expressionId');
+ const pickModel=(value:string)=>{if(value.startsWith('modular:')){onChange(newModularAppearance(value==='modular:drophunter'?'female':'male'));}else if(value==='airi'||value==='airi-b'){onChange({...selected,...decorationDefaults,gender:'female',modular:undefined,lookId:value,variantId:'original',hairId:'source',hairStyleId:'source',wardrobeId:'source',eyeId:'source',skinId:'source'});}else{onChange({...selected,modular:undefined,lookId:value as CharacterAppearance['lookId']});}};
+ const part=(slot:Exclude<keyof ModularAppearance,'family'>,value:string)=>{if(native)onChange({...selected,modular:{...native,[slot]:value}});};
+ return <div className='ctrl-appearance-controls'>
+  <div role='group' aria-label='Character model and compatible styles'>
+   <div className='ctrl-style-heading'><strong>Character &amp; outfit</strong></div>
+   <p className='ctrl-style-note'>{complete?'Personalize native hair and clothing on this exact character rig. Your face, body and saved identity stay unchanged.':'Choose a base, then independently mix its authored hair, clothes and shoes.'}</p>
+   {complete&&<div className='ctrl-coordinated-looks' role='group' aria-label='Coordinated looks'>{airiLookPresets.map(preset=><button type='button' key={preset.id} aria-label={`Apply ${preset.name}`} aria-pressed={selected.lookId===preset.lookId&&selected.hairStyleId===preset.hairStyleId&&selected.wardrobeId===preset.wardrobeId&&selected.variantId===preset.variantId&&selected.hairId===preset.hairId} onClick={()=>onChange({...selected,lookId:preset.lookId,hairStyleId:preset.hairStyleId,wardrobeId:preset.wardrobeId,hairId:preset.hairId,variantId:preset.variantId,modular:undefined})}>{preset.name}</button>)}</div>}
+   <div className='ctrl-decoration-fields'>
+    <label>Base character model<select aria-label={labels.lookId} value={native?`modular:${native.family}`:selected.lookId??'original'} onChange={e=>pickModel(e.target.value)}>{modularCollectionEnabled&&<optgroup label='Modular collections'>{modularFamilies.map(family=><option key={family} value={`modular:${family}`}>{modularFamilyLabels[family]}</option>)}</optgroup>}<optgroup label='Complete characters'>{looks.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</optgroup></select></label>
+    {native?(<>{(['hair','top','bottom','shoes','outer','accessory'] as const).map(slot=><label key={slot}>{{hair:'Hairstyle',top:'Top',bottom:'Bottom',shoes:'Shoes',outer:'Outer layer',accessory:'Native accessory'}[slot]}<select aria-label={{hair:'Hairstyle',top:'Top',bottom:'Bottom',shoes:'Shoes',outer:'Outer layer',accessory:'Native accessory'}[slot]} value={native[slot]??'none'} onChange={e=>part(slot,e.target.value)}>{(slot==='outer'||slot==='accessory')&&<option value='none'>None</option>}{modularOptions(native.family,slot).map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>)}</>):(<><label>Hairstyle<select aria-label='Hairstyle' value={selected.hairStyleId??'source'} onChange={e=>onChange({...selected,hairStyleId:e.target.value as HairStyleId})}>{hairstyles.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Costume<select aria-label='Costume' value={selected.wardrobeId??'source'} onChange={e=>onChange({...selected,wardrobeId:e.target.value as WardrobeStyleId})}>{garments.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label></>)}
+    <label>Expression<select aria-label='Expression' value={selected.expressionId??decorationDefaults.expressionId} onChange={e=>onChange({...selected,expressionId:e.target.value as CharacterAppearance['expressionId']})}>{decorationCatalog.expressionId.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+   </div>
+   <small className='ctrl-appearance-help'>{native?'Native modular parts share this character’s authored rig. Changing clothes or hair preserves your body and face. Optional outer layers may overlap bulky tops.':'Only compatible hair and costume choices are shown. Colors are tints, not haircuts.'}</small>
+  </div>
+  {!complete&&<><div className='ctrl-style-heading'><strong>Accessory styles</strong><button type='button' onClick={()=>onChange({...clearAvatarAccessories(selected),...(native?{modular:{...native,accessory:'none'}}:{})})}>Clear accessories</button></div>
+  <p className='ctrl-style-note'>Optional coordinated accessories; your hair and clothing stay unchanged.</p>
+  <div className='ctrl-style-presets' role='group' aria-label='Accessory style presets'>{accessoryStyles.map(style=><button type='button' key={style.id} aria-pressed={matchesAccessoryStyle(selected,style.id)} onClick={()=>onChange(applyAccessoryStyle(selected,style.id))}><strong>{style.name}</strong><small>{style.detail}</small></button>)}</div>
+  <div className='ctrl-decoration-fields'>{decorationKeys.map(key=><label key={key}>{labels[key]}<select aria-label={labels[key]} value={selected[key]??decorationDefaults[key]} onChange={e=>onChange({...selected,[key]:e.target.value})}>{decorationCatalog[key].map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>)}</div>
+  </>}
+  {randomize&&<button type='button' className='ctrl-random-look' onClick={()=>onChange(selected.lookId==='airi'||selected.lookId==='airi-b'?{...selected,expressionId:'neutral',lookId:Math.random()<.5?'airi':'airi-b'}:(native?seededModularAppearance:seededAppearance)(crypto.randomUUID(),selected.gender))}>↻ Randomize this character</button>}
+ </div>;
+}
