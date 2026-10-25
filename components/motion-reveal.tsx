@@ -1,3 +1,0 @@
-"use client";
-import {useRef,useEffect} from "react";
-export function MotionReveal({children,className=""}:{children:React.ReactNode;className?:string}){const ref=useRef<HTMLDivElement>(null);useEffect(()=>{if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;let cancel=false;let context:{revert:()=>void}|null=null;void import("gsap").then(({gsap})=>{if(cancel||!ref.current)return;context=gsap.context(()=>{gsap.fromTo(ref.current,{opacity:0,y:12},{opacity:1,y:0,duration:.55,ease:"power3.out",clearProps:"all"});},ref);});return()=>{cancel=true;context?.revert();};},[]);return <div ref={ref} className={className}>{children}</div>;}

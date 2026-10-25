@@ -1,3 +1,0 @@
-"use client";
-import {useCallback,useRef,useState} from "react";
-export function useAudioManager(){const [muted,setMuted]=useState(true);const context=useRef<AudioContext|null>(null);const cue=useCallback(()=>{if(muted)return;context.current??=new AudioContext();const oscillator=context.current.createOscillator(),gain=context.current.createGain();gain.gain.setValueAtTime(.018,context.current.currentTime);gain.gain.exponentialRampToValueAtTime(.001,context.current.currentTime+.12);oscillator.frequency.value=320;oscillator.type="sine";oscillator.connect(gain);gain.connect(context.current.destination);oscillator.start();oscillator.stop(context.current.currentTime+.12);},[muted]);return {muted,toggle:()=>setMuted(v=>!v),cue};}

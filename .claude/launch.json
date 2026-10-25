@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "willow-dev",
+      "runtimeExecutable": "C:\\Users\\ONEPER~1\\AppData\\Local\\Temp\\claude\\D--Claude\\697c9a03-c48b-4413-8b11-3246fa6e0916\\scratchpad\\tools\\node-v22.21.1-win-x64\\node.exe",
+      "runtimeArgs": ["scripts/dev-node.mjs", "3000"],
+      "port": 3000
+    }
+  ]
+}

@@ -1,1 +1,0 @@
-const origin=process.env.APP_ORIGIN??'http://localhost:3000';const response=await fetch(`${origin}/api/missions`);if(!response.ok)throw new Error(`Seed request failed (${response.status})`);console.log('Demo exhibition seeded.');

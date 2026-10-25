@@ -1,4 +1,0 @@
-import {it,expect} from 'vitest';
-import {verifyAgentRegistration,healthyHeartbeat} from '@/server/launch/validation';
-it('requires an indexed agent matching the configured CTRL token and a launch transaction',()=>{const token='0x'+'1'.repeat(40),a={agentId:'1',token,owner:'0x'+'2'.repeat(40),agentWallet:'0x'+'3'.repeat(40),launchTx:'0x'+'a'.repeat(64)};expect(verifyAgentRegistration(a,token)?.agentId).toBe('1');expect(verifyAgentRegistration(a,'0x'+'4'.repeat(40))).toBeNull();expect(verifyAgentRegistration({...a,launchTx:null},token)).toBeNull();});
-it('does not treat a pre-dispatch ping, future time or stale worker as healthy',()=>{const now=Date.now(),at=new Date(now).toISOString();expect(healthyHeartbeat({at,healthy:true},now)).toBe(true);expect(healthyHeartbeat({at},now)).toBe(false);expect(healthyHeartbeat({at,healthy:true},now+180001)).toBe(false);expect(healthyHeartbeat({at,healthy:true},now-1)).toBe(false);});

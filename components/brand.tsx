@@ -1,1 +1,0 @@
-export function BrandMark({className=''}:{className?:string}){return <svg className={className} viewBox='0 0 120 120' aria-hidden='true' focusable='false'><path d='M104 16H16v88h88V80H40V40h64Z' fill='currentColor'/><path d='M60 48h24v24H60Z' fill='#e34925'/></svg>;}

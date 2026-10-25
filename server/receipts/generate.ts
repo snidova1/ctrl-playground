@@ -1,7 +1,0 @@
-import type { Mission, MissionEvent, Artifact, Receipt, Mode } from "@/domain/types";
-import { canonical, hash } from "./hash";
-export async function generateReceipt(mission:Mission,events:MissionEvent[],artifacts:Artifact[],mode:Mode,usageIds:string[],settled=true):Promise<Receipt>{
- const core={version:"ctrl-receipt/1",missionId:mission.id,command:mission.command,wallet:mission.creator,submittedAt:mission.createdAt,startedAt:mission.startedAt,finishedAt:mission.finishedAt??new Date().toISOString(),status:mission.status==="COMPLETE"?"COMPLETE" as const:"FAILED" as const,plan:["Classify the command","Bound resources and tools","Retrieve source material","Produce an artifact","Verify and publish a receipt"],events,models:[...new Set(events.filter(e=>e.tool==="MODEL ROUTER"&&e.provider).map(e=>e.provider!))],tools:[...new Set(events.filter(e=>e.tool).map(e=>e.tool!))],compute:{currency:"USD" as const,consumed:mission.consumed,budget:mission.budget,settled},orbio:{mode,usageIds},control:mission.control,ctrlActions:[] as Receipt["ctrlActions"],artifacts,result:mission.result??"The machine stopped before producing a final result.",errors:mission.error?[mission.error]:[],demo:mission.demo};
- return {...core,verification:{algorithm:"SHA-256",hash:await hash(canonical(core)),onchain:false}};
-}
-export async function verifyReceipt(receipt:Receipt):Promise<boolean>{const {verification,...core}=receipt;return await hash(canonical(core))===verification.hash;}

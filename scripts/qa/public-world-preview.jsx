@@ -1,1 +1,0 @@
-import React from 'react';import{createRoot}from'react-dom/client';import World from'../../features/worldgacha/app';import{defaultAppearance}from'../../features/plaza/characters/catalog';createRoot(document.getElementById('root')).render(<World playerName='Ayu Prameswari' playerAppearance={{...defaultAppearance,lookId:'airi'}}/>);

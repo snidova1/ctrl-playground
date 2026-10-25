@@ -1,9 +1,0 @@
-import {chromium} from '@playwright/test';import {mkdir,writeFile} from 'node:fs/promises';
-const out='/home/celeng/ctrl-world-source';await mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true,executablePath:'/home/celeng/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell',args:['--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader']});
-try{const page=await browser.newPage({viewport:{width:960,height:640},acceptDownloads:true});page.setDefaultTimeout(120000);page.on('pageerror',e=>console.log('PAGE',String(e)));await page.goto('https://tools.oyasumi-gamedev.com/worldgacha/',{waitUntil:'domcontentloaded',timeout:120000});await page.waitForFunction(()=>window.__wg?.set);console.log('Tool loaded');
-await page.evaluate(async()=>{document.getElementById('optLow').checked=true;for(const [id,v] of Object.entries({forestD:'0',forestM:'0',optCrowd:'0',optLod:'30'}))document.getElementById(id).value=v;await window.__wg.set({...window.__wg.S,type:'suburb',seed:361374982,size:2000,res:256});});console.log('Suburban neighborhood generated');
-await page.evaluate(()=>{const e=document.getElementById('core');e.value='300';e.dispatchEvent(new Event('change',{bubbles:true}));});await page.waitForFunction(()=>window.__wg.OUT?.coreSize===300);console.log('Near district selected');
-const metadata=await page.evaluate(()=>({S:window.__wg.S,near:window.__wg.OUT.nc,h0:window.__wg.OUT.h0,town:window.__wg.R.town,osm:window.__wg.OUT.osm,core:window.__wg.OUT.coreSize}));await writeFile(out+'/neighborhood-source.json',JSON.stringify(metadata));
-const download=page.waitForEvent('download',{timeout:120000});await page.locator('#glb').click();const file=await download;await file.saveAs(out+'/neighborhood-source.glb');console.log('EXPORTED',file.suggestedFilename());
-}finally{await browser.close();}

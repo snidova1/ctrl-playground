@@ -1,2 +1,5 @@
-import HabitatApp from '@/features/habitat/app';
-export default function Habitat(){return <HabitatApp advancedBuilder/>;}
+import {HabitatPage} from '@/game/client/pages';
+export const metadata = {title: 'Habitat'};
+export default function Page() {
+  return <HabitatPage />;
+}

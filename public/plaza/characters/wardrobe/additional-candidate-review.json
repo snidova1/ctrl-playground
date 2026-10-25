@@ -1,9 +1,0 @@
-{
-  "accepted": ["vita-studio"],
-  "rejected": [
-    {"source": "Sendagaya_Shino", "reason": "Six weighted skirt bones missing on actual female-studio target", "missingWeightedBones": ["J_Sec_L_SkirtBack", "J_Sec_L_SkirtFront", "J_Sec_L_SkirtSide", "J_Sec_R_SkirtBack", "J_Sec_R_SkirtFront", "J_Sec_R_SkirtSide"], "evidence": "scripts/assets/cc0-costumes/rig-compatibility.json"},
-    {"source": "Sendagaya_Shibu", "reason": "Same six weighted skirt bones missing on female-studio target; no guessed remapping", "evidence": "scripts/assets/cc0-costumes/rig-compatibility.json"},
-    {"source": "Vivi", "reason": "All bones map, but Darkness weighted-rest-warp alone does not fit actual female-studio torso. Real CPU raycast hit cloth inside body on both shipped target qualities. Candidate GLB deliberately removed, not registered.", "observedRestTorsoClearanceMeters": -0.004630977306084083, "requiredClearanceMeters": 0.001, "restWarpMaxMeters": 0.22437147112597947, "rejectedCandidateSha256": "ab3ebf47d9b076bf04d7755cbc3435689d081957c32ebb657f3db14d77c2e0e3", "failedTest": "avatar-additional-wardrobe.test.ts: no central torso skin penetration", "fitRepairRequired": "Actual shape fitting with new source/body coverage tests; do not expose with current rest-warp only."}
-  ],
-  "decision": "One verified additional outfit rather than publish mismatched mesh/body. No source skin masking or geometry change permitted to hide failed fit."
-}
