@@ -16,7 +16,7 @@ import {HOBBIES} from '@/game/core/npcs';
 import type {CreatureSpawn} from '@/game/core/spawns';
 
 export type Scene = 'common-ground' | 'town' | 'home' | 'room';
-export type Panel = null | 'bag' | 'shop' | 'cook' | 'craft' | 'collection' | 'quests' | 'hobbies' | 'friends' | 'keys' | 'settings' | 'map' | 'wardrobe' | 'mail' | 'home' | 'emotes';
+export type Panel = null | 'bag' | 'shop' | 'cook' | 'craft' | 'collection' | 'quests' | 'hobbies' | 'friends' | 'keys' | 'settings' | 'map' | 'wardrobe' | 'mail' | 'home' | 'emotes' | 'renovate';
 
 export interface Target {
   id: string; label: string; icon: string; x: number; z: number; radius: number; priority?: number;
@@ -140,6 +140,8 @@ function celebrate(rt: Runtime, events: LifeEvent[]) {
         const item = ITEMS[e.item];
         const rare = (item?.rarity ?? 1) >= 3 || e.first;
         rt.ui.set({catchCard: {item: e.item, size: e.size, first: e.first}});
+        // Hold the catch up high, like a proud angler.
+        if (item?.kind === 'fish') rt.player.motion.current.hold = {item: e.item, size: e.size ?? 30, until: performance.now() + 2600};
         rt.setAnim('cheer', rt.player.motion.current.tool, 1700, 'happy');
         rt.emote(rare ? 'wow' : 'star');
         if (rare) sfx.success(); else sfx.coin();

@@ -20,12 +20,14 @@ import {Effects} from './three/effects';
 import {skyAt} from './three/palette';
 import {TownWorld} from './three/town';
 import {HomeWorld, homeWalkable, type Decor} from './three/home';
-import {preloadAvatars} from './three/vrm';
+import {avatarLoads, preloadAvatars} from './three/vrm';
 import {Hud} from './ui/hud';
 import {BagPanel, CollectionPanel, CookPanel, CraftPanel, EmotesPanel, HobbiesPanel, MapPanel, QuestsPanel, SettingsPanel, ShopPanel, PanelFrame} from './ui/panels';
 import {FriendsPanel, KeysPanel} from './ui/social';
 import {AvatarEditor} from './ui/creator';
 import {DecorTray} from './ui/decor';
+import {RenovateTray} from './ui/renovate';
+import type {House} from '@/game/core/house';
 import './ui/game.css';
 
 export type Variant = 'common-ground' | 'public' | 'preview';
@@ -124,6 +126,30 @@ function useKeyboard(rt: Runtime) {
   }, [rt]);
 }
 
+/** Cozy loading screen until the town's models and the first avatars are ready (25 s cap). */
+function LoadingVeil({rt}: {rt: Runtime}) {
+  const [state, setState] = useState({ready: false, done: 0, pending: 0});
+  useEffect(() => {
+    const started = performance.now();
+    const check = () => {
+      const ready = avatarLoads.done > 0 && avatarLoads.pending === 0 && rt.targets.size > 0;
+      setState(s => (s.ready ? s : {ready: ready || performance.now() - started > 25000, done: avatarLoads.done, pending: avatarLoads.pending}));
+    };
+    avatarLoads.listeners.add(check);
+    const id = setInterval(check, 400);
+    return () => {avatarLoads.listeners.delete(check); clearInterval(id);};
+  }, [rt]);
+  if (state.ready) return null;
+  const total = state.done + state.pending;
+  const pct = total ? Math.round((state.done / total) * 100) : 10;
+  return <div className="wc-loading" style={{zIndex: 25}}>
+    <div className="leaf">🌷</div>
+    <div style={{fontSize: 20}}>Waking up the town…</div>
+    <div style={{width: 220, height: 10, borderRadius: 6, background: '#efe2cc', overflow: 'hidden'}}><div style={{width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg,#8fd6c0,#ffd36b)', transition: 'width .4s'}} /></div>
+    <div style={{fontSize: 12, color: '#8a7560'}}>Neighbours are getting dressed ({state.done}/{total || '…'})</div>
+  </div>;
+}
+
 function spawnFor(scene: Scene, from: Scene | null) {
   if (scene === 'home') return from === 'room' ? {x: HOUSE.doorX, z: HOUSE.doorZ + 1.6, angle: 0} : {x: 0, z: 11.5, angle: Math.PI};
   if (scene === 'room') return {x: ROOM_DOOR.x, z: ROOM_DOOR.z - 0.6, angle: Math.PI};
@@ -143,6 +169,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
   const [saving, setSaving] = useState(false);
   const [decor, setDecor] = useState<Decor>({selected: null, placing: null, rotation: 0});
   const [players, setPlayers] = useState<RemotePlayer[]>([]);
+  const [housePreview, setHousePreview] = useState<House | null>(null);
   const gotoRef = useRef<(s: Scene) => void>(() => undefined);
   const rt = useMemo(() => createRuntime({
     scene: initialScene, backend: server ? serverLife : localLife, look: profile.appearance, spawn: spawnFor(initialScene, null),
@@ -256,6 +283,8 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
   };
   const changeLayout = (next: Layout) => {setLayout(next); setDirty(true);};
 
+  // Pull the camera back so the whole cottage is in view while renovating.
+  useEffect(() => {if (panel === 'renovate' && scene === 'home') {rt.camera.distance = 14; rt.camera.pitch = 0.34; rt.camera.yaw = 0; rt.player.pos.set(0, 0, 6); rt.player.angle = Math.PI;}}, [panel, scene, rt]);
   // Visual-only QA override: ?hour=13 shows the sky at that town hour. Gameplay time is untouched.
   const skyOffset = useMemo(() => {
     const h = Number(new URLSearchParams(window.location.search).get('hour'));
@@ -282,7 +311,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
       <Suspense fallback={null}>
         {(scene === 'town' || scene === 'common-ground') && <TownWorld rt={rt} variant={variant} players={players} quality={quality} playerName={profile.name} />}
         {(scene === 'home' || scene === 'room') && home && <HomeWorld rt={rt} layout={layout} garden={garden} ownGarden={isOwnHome} canEdit={home.canEdit} inside={scene === 'room'}
-          decorating={decorating} decor={decor} setDecor={setDecor} onLayout={changeLayout} players={players} quality={quality} playerName={profile.name} night={night} />}
+          decorating={decorating} decor={decor} setDecor={setDecor} onLayout={changeLayout} players={players} quality={quality} playerName={profile.name} night={night} house={housePreview ?? home.house} />}
       </Suspense>
       <Effects quality={quality} />
     </Canvas>
@@ -290,6 +319,11 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
     {decorating && home && <DecorTray life={life} layout={layout} inside={scene === 'room'} decor={decor} setDecor={setDecor} onLayout={changeLayout}
       onSave={() => void saveLayout()} saving={saving} dirty={dirty} onClose={() => {if (dirty) void saveLayout(); ui.set({decorating: false, panel: null}); setDecor({selected: null, placing: null, rotation: 0});}} />}
     {home && !isOwnHome && (scene === 'home' || scene === 'room') && <div className="wc-zone" style={{top: 110, opacity: 1}}>Visiting {home.ownerName}&apos;s home</div>}
+    {panel === 'renovate' && home && (home.isOwner ? <RenovateTray house={housePreview ?? home.house} onPreview={setHousePreview} houseLevel={life?.houseLevel ?? 0} coins={life?.coins ?? 0} inside={scene === 'room'} saving={saving}
+      onUpgrade={async size => {const ev = await rt.act({type: 'upgrade-house', size}); if (ev) {setHousePreview({...(housePreview ?? home.house), size}); rt.toast('Your home grew bigger!', 'rare', '🏡'); rt.emote('star', 'cheer', 1500);}}}
+      onSave={async () => {if (!housePreview) {close(); return;} setSaving(true); try {const view = await homeBackend.saveHouse(home, housePreview); setHome(view); setHousePreview(null); rt.toast('Renovation saved!', 'good', '🏠');} catch (e) {rt.toast(e instanceof Error ? e.message : 'Could not save.', 'bad');} finally {setSaving(false);}}}
+      onClose={() => {setHousePreview(null); close();}} />
+      : <PanelFrame title="Renovate" icon="🏠" onClose={close}><div className="wc-empty">Only the owner can renovate this home.</div></PanelFrame>)}
     {panel === 'bag' && <BagPanel rt={rt} arg={panelArg} onClose={close} />}
     {panel === 'shop' && <ShopPanel rt={rt} arg={panelArg} onClose={close} />}
     {panel === 'cook' && <CookPanel rt={rt} onClose={close} />}
@@ -309,6 +343,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
       {server && <div className="wc-row"><div className="grow"><h4>Wallet</h4><p>Sign out of this browser.</p></div><button className="wc-btn" onClick={() => void api('auth/logout', {method: 'POST', body: {}}).then(() => {window.location.href = '/';})}>Sign out</button></div>}
     </>} />}
     {overlay}
-    {fade && <div style={{position: 'absolute', inset: 0, background: '#fffaf0', zIndex: 30, transition: 'opacity .3s'}} />}
+    <LoadingVeil rt={rt} />
+    {fade &&<div style={{position: 'absolute', inset: 0, background: '#fffaf0', zIndex: 30, transition: 'opacity .3s'}} />}
   </div>;
 }

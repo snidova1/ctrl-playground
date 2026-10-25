@@ -1,5 +1,6 @@
 import type {Appearance} from './appearance';
 import type {Layout} from './home';
+import type {House} from './house';
 import type {LifeEvent, LifeState, Plot} from './life';
 import type {QuestDef} from './quests';
 
@@ -10,7 +11,7 @@ export interface PlayerPose {x: number; z: number; angle: number; anim: Anim}
 export interface RemotePlayer extends PublicProfile, PlayerPose {emote: string; emoteAt: number; inside?: boolean; friend?: boolean}
 
 export interface HomePermissions {role: 'owner' | 'editor' | 'friend' | 'visitor'; canVisit: boolean; canEdit: boolean; canManage: boolean}
-export interface HomeWorld {id: string; ownerId: string; ownerName: string; name: string; visibility: 'public' | 'private'; revision: number; layout: Layout}
+export interface HomeWorld {id: string; ownerId: string; ownerName: string; name: string; visibility: 'public' | 'private'; revision: number; layout: Layout; house: House}
 export interface HabitatState {
   profile: PublicProfile | null;
   homeId: string | null;

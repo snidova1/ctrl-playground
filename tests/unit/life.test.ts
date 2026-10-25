@@ -125,6 +125,15 @@ describe('life reducer', () => {
     expect(() => act(s, {type: 'claim-quest', quest: quest.id})).toThrow('ALREADY_CLAIMED');
   });
 
+  it('upgrades the cottage one size at a time for coins', () => {
+    let s = {...createLifeState(1_000), coins: 30_000};
+    expect(() => act(s, {type: 'upgrade-house', size: 2})).toThrow('UPGRADE_IN_ORDER');
+    ({state: s} = act(s, {type: 'upgrade-house', size: 1}));
+    expect(s.houseLevel).toBe(1);
+    expect(s.coins).toBe(24_000);
+    expect(() => act(s, {type: 'upgrade-house', size: 1})).toThrow('ALREADY_UPGRADED');
+  });
+
   it('normalizes broken or legacy saves without crashing', () => {
     expect(normalizeLife({version: 1, inventory: {turnip: 3}}).version).toBe(2);
     const s = normalizeLife({...createLifeState(1), inventory: {bogus: 5, turnip: 2}});

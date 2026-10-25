@@ -23,7 +23,7 @@ try {
     await page.waitForTimeout(3500);
     await shot('creator');
     await page.getByRole('button', {name: 'Move in!'}).click();
-    await page.waitForFunction(() => window.__willow?.ui.get().life && window.__willow.targets.size > 20, null, {timeout: 180000});
+    await page.waitForFunction(() => window.__willow?.ui.get().life && window.__willow.targets.has('npc-marlo') && window.__willow.targets.has('station-store'), null, {timeout: 300000});
     await page.waitForTimeout(3000);
     step(`${device.name}: town loaded`, {ms: Date.now() - t0});
     await shot('town-spawn');
@@ -31,7 +31,7 @@ try {
 
     // Walk with the keyboard / joystick-equivalent input.
     await run(() => {window.__willow.input.z = -1;});
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => window.__willow.player.pos.z < 10.5, null, {timeout: 60000}).catch(() => undefined);
     await run(() => {window.__willow.input.z = 0;});
     const moved = await run(() => ({x: window.__willow.player.pos.x, z: window.__willow.player.pos.z}));
     step(`${device.name}: walked`, moved);
@@ -68,6 +68,22 @@ try {
       });
       step('cast and bite', fish);
       await shot('fishing-bite');
+      // Win the reel through the real UI: press and hold the action button.
+      const reelButton = page.locator('.wc-action').last();
+      const box = await reelButton.boundingBox();
+      if (box) {
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.down();
+        for (let i = 0; i < 28; i++) {
+          await page.waitForTimeout(120);
+          const t = await run(() => document.querySelector('.wc-tension b')?.style.left ?? null);
+          if (!t) break;
+          const v = parseFloat(t);
+          if (v > 62) {await page.mouse.up(); await page.waitForTimeout(90); await page.mouse.down();}
+        }
+        await page.mouse.up();
+        await shot('fishing-reel');
+      }
       const reel = await run(async () => {
         const rt = window.__willow;
         rt.ui.set({fishing: null});
@@ -130,6 +146,19 @@ try {
       await run(() => window.__willow.ui.set({decorating: true}));
       await page.waitForTimeout(800);
       await shot('home-decorate');
+      await run(() => window.__willow.ui.set({decorating: false, panel: null}));
+      // Renovation: restyle the cottage outside, preview live, save.
+      await run(async () => {const rt = window.__willow; rt.goto('home'); await new Promise(r => setTimeout(r, 2500)); rt.player.pos.set(0, 0, 4); rt.player.angle = Math.PI; rt.camera.yaw = 0; rt.camera.distance = 9; rt.openPanel('renovate');});
+      await page.waitForTimeout(1500);
+      await shot('renovate-before');
+      for (const label of ['Brick', 'Barn', 'Arched', 'Save']) {
+        await page.getByRole('button', {name: label, exact: true}).first().click();
+        await page.waitForTimeout(700);
+      }
+      await page.waitForTimeout(1500);
+      await shot('renovate-after');
+      const saved = await run(() => JSON.parse(localStorage.getItem('willow-preview-house-v1') ?? 'null'));
+      step('renovated home', {saved});
     }
     await context.close();
   }

@@ -175,10 +175,18 @@ export function preloadAvatars() {
   for (let i = 0; i < BODY_FILES.length; i++) void template(i).catch(() => undefined);
 }
 
+/** How many avatars are still loading (drives the loading screen). */
+export const avatarLoads = {pending: 0, done: 0, listeners: new Set<() => void>()};
+function notifyLoads() {avatarLoads.listeners.forEach(l => l());}
+
 export interface AvatarInstance {vrm: VRM; clips: THREE.AnimationClip[]; scale: number; floor: number; dispose: () => void}
 
 /** Fresh VRM (own skeleton, springs, expressions) sharing the template's GPU textures. */
 export async function createAvatar(look: Appearance): Promise<AvatarInstance> {
+  avatarLoads.pending++; notifyLoads();
+  try {return await buildAvatar(look);} finally {avatarLoads.pending--; avatarLoads.done++; notifyLoads();}
+}
+async function buildAvatar(look: Appearance): Promise<AvatarInstance> {
   const t = await template(look.body);
   const vrm = await parseVrm(await fetchBytes(BODY_FILES[look.body]), true);
   const colors = lookColors(look);

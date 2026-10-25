@@ -81,6 +81,18 @@ describe('api', () => {
     expect(claim.data.state.inventory['carrot-seed']).toBe(5); // 4 starter seeds + the gift
   });
 
+  it('lets only the owner renovate, within the purchased size', async () => {
+    const home = (await call<HabitatState>(alice.cookie, 'habitat/state')).data;
+    const house = {...home.world!.house, wall: 3, siding: 1, roofStyle: 2};
+    const ok = await call<HabitatState>(alice.cookie, 'habitat/house', {worldId: home.world!.id, house});
+    expect(ok.status).toBe(200);
+    expect(ok.data.world?.house.siding).toBe(1);
+    const tooBig = await call<{code: string}>(alice.cookie, 'habitat/house', {worldId: home.world!.id, house: {...house, size: 2}});
+    expect(tooBig.data.code).toBe('HOUSE_SIZE_LOCKED');
+    const intruder = await call<{code: string}>(bob.cookie, 'habitat/house', {worldId: home.world!.id, house});
+    expect(intruder.status).toBe(403);
+  });
+
   it('rejects placing furniture you do not own', async () => {
     const state = (await call<HabitatState>(alice.cookie, 'habitat/state')).data;
     const layout = [...state.world!.layout, {id: crypto.randomUUID(), assetId: 'fountain', x: 10, z: -9, rotation: 0, room: false}];

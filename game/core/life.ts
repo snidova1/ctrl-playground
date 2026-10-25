@@ -9,6 +9,7 @@ import {resolveCreature} from './spawns';
 import {HOBBIES, NPC_BY_ID, type Hobby} from './npcs';
 import {QUEST_BY_ID, dailyQuests, type Counter} from './quests';
 import {pickWeighted} from './rng';
+import {HOUSE_SIZES} from './house';
 
 export interface Plot {crop: string | null; plantedAt: number | null; waters: 0 | 1 | 2; readyAt: number | null}
 export interface LifeState {
@@ -30,6 +31,8 @@ export interface LifeState {
   daily: {day: string; counters: Partial<Record<Counter, number>>; claimed: string[]; talked: string[]; gifted: string[]};
   npcs: Record<string, number>;
   stats: {fish: number; bugs: number; birds: number; harvests: number; dishes: number; crafted: number; coinsEarned: number};
+  /** Highest cottage size bought (index into HOUSE_SIZES). */
+  houseLevel: number;
 }
 
 export type LifeEvent =
@@ -78,11 +81,11 @@ export function createLifeState(now = Date.now()): LifeState {
     inventory: {
       'turnip-seed': 6, 'carrot-seed': 4,
       'bed-single': 1, 'table-round': 1, chair: 2, 'rug-round': 1, 'lamp-table': 1, 'potted-plant': 1, bookcase: 1,
-      'flowers-yellow': 2, fence: 6, 'log-seat': 1,
+      'flowers-yellow': 2, fence: 6, 'log-seat': 1, 'picket-fence': 4, boardwalk: 6, 'wood-wall': 2,
     },
     collection: {}, plots: [], fishing: null, caught: [], foraged: {day: realDay(now), ids: []},
     daily: {day: realDay(now), counters: {}, claimed: [], talked: [], gifted: []}, npcs: {},
-    stats: {fish: 0, bugs: 0, birds: 0, harvests: 0, dishes: 0, crafted: 0, coinsEarned: 0},
+    stats: {fish: 0, bugs: 0, birds: 0, harvests: 0, dishes: 0, crafted: 0, coinsEarned: 0}, houseLevel: 0,
   };
   state.plots = Array.from({length: plotCount(state)}, emptyPlot);
   return state;
@@ -105,6 +108,7 @@ export function normalizeLife(input: unknown, now = Date.now()): LifeState {
     foraged: s.foraged?.day ? s.foraged : fresh.foraged,
     daily: s.daily?.day ? {...fresh.daily, ...s.daily} : fresh.daily,
     plots: Array.isArray(s.plots) ? s.plots.slice(0, 12) : [],
+    houseLevel: Number.isSafeInteger(s.houseLevel) ? Math.max(0, Math.min(HOUSE_SIZES.length - 1, s.houseLevel)) : 0,
   };
   while (next.plots.length < plotCount(next)) next.plots.push(emptyPlot());
   return next;
@@ -130,6 +134,7 @@ export const lifeActionSchema = z.discriminatedUnion('type', [
   z.object({type: z.literal('talk'), npc: id}).strict(),
   z.object({type: z.literal('gift'), npc: id, item: id}).strict(),
   z.object({type: z.literal('claim-quest'), quest: id}).strict(),
+  z.object({type: z.literal('upgrade-house'), size: z.number().int().min(1).max(HOUSE_SIZES.length - 1)}).strict(),
 ]);
 export type LifeAction = z.infer<typeof lifeActionSchema>;
 
@@ -428,6 +433,16 @@ export function applyLifeAction(input: LifeState, raw: LifeAction, now: number, 
       s.npcs[npc.id] = (s.npcs[npc.id] ?? 0) + (loved ? 6 : 2);
       xp(null, XP.gift); bump('gift');
       events.push({type: 'dialog', npc: npc.id, line: loved ? `Oh! I love ${ITEMS[action.item].name}! Thank you so much!` : 'How thoughtful, thank you!', hearts: s.npcs[npc.id]});
+      break;
+    }
+    case 'upgrade-house': {
+      if (action.size <= s.houseLevel) throw new LifeError('ALREADY_UPGRADED', 'Your home is already that size.');
+      if (action.size !== s.houseLevel + 1) throw new LifeError('UPGRADE_IN_ORDER', 'Upgrade one size at a time.');
+      const price = HOUSE_SIZES[action.size].price;
+      if (s.coins < price) throw new LifeError('NOT_ENOUGH_COINS', 'Not enough coins.');
+      s.coins -= price; s.houseLevel = action.size;
+      events.push({type: 'coins', amount: -price});
+      xp(null, 120);
       break;
     }
     case 'claim-quest': {

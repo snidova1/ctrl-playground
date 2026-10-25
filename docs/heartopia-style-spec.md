@@ -29,6 +29,12 @@ This spec turns what is **publicly observable** about the Heartopia-style genre 
 - **Buildings**: clapboard siding and shingle roofs; Scandinavian red `#b9473d` with white trim and dark green roofs, plus pastel shops.
 - **Water**: turquoise shallow `#79e3e6` → deep `#22a9d9`, shore foam, ripple highlights.
 
+- **Leaves**: each card carries ~34 overlapping ovate leaves; colour shifts from warm sun green `#c4e874` to deep teal `#1f5a50` with the card normal (blossoms: `#fff0f5` → `#e08aaa`). Low quality uses 55% of the cards.
+
+## 3b. Habitat
+- Cottage restyling lives in `game/core/house.ts` (palette indices, validated by zod on the server). The front door stays on `HOUSE.doorZ` for every size so the yard layout never breaks.
+- Build kit pieces are ordinary furniture items flagged in `BUILD_KIT`; the decorate tray splits them into Decor / Build.
+
 ## 4. Characters
 - Anime VRM bodies with heads scaled ×1.72 (chibi), height 1.42 m. Faces always react: surprised at a bite, happy on catches and level-ups, sad on misses, sleepy emote, talking mouth flaps.
 - Fashion: 38 patterned outfits, 12 hats, 10 accessories as owned items.

@@ -1,5 +1,6 @@
 'use client';
-import {FURNITURE, ITEMS} from '@/game/core/items';
+import {useState} from 'react';
+import {BUILD_KIT, FURNITURE, ITEMS} from '@/game/core/items';
 import {countPlaced, type Layout} from '@/game/core/home';
 import type {LifeState} from '@/game/core/life';
 import type {Decor} from '../three/home';
@@ -12,7 +13,8 @@ export function DecorTray({life, layout, inside, decor, setDecor, onLayout, onSa
   onLayout: (l: Layout) => void; onSave: () => void; onClose: () => void; saving: boolean; dirty: boolean;
 }) {
   const placed = countPlaced(layout);
-  const owned = FURNITURE.filter(f => (life?.inventory[f.id] ?? 0) > 0 && (inside ? f.zone !== 'yard' : f.zone !== 'room'));
+  const [tab, setTab] = useState<'decor' | 'build'>('decor');
+  const owned = FURNITURE.filter(f => (life?.inventory[f.id] ?? 0) > 0 && (inside ? f.zone !== 'yard' : f.zone !== 'room') && (inside || (tab === 'build') === BUILD_KIT.has(f.id)));
   const selected = decor.selected ? layout.find(o => o.id === decor.selected) : null;
   return <div onPointerDown={e => e.stopPropagation()} style={{position: 'absolute', left: 0, right: 0, bottom: 0, padding: '10px 12px max(12px, env(safe-area-inset-bottom))', background: 'rgba(255,250,240,.97)', borderRadius: '26px 26px 0 0', boxShadow: '0 -6px 30px rgba(80,60,40,.18)', zIndex: 9}}>
     <div style={{display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap'}}>
@@ -21,6 +23,7 @@ export function DecorTray({life, layout, inside, decor, setDecor, onLayout, onSa
       {(decor.placing || selected) && <button className="wc-btn" onClick={() => {sfx.tap(); setDecor({...decor, rotation: (decor.rotation + 1) % 4});}}>⟳ Rotate</button>}
       {selected && <button className="wc-btn" onClick={() => {sfx.tap(); onLayout(layout.filter(o => o.id !== selected.id)); setDecor({selected: null, placing: null, rotation: 0});}}>📦 Store</button>}
       {(decor.placing || selected) && <button className="wc-btn" onClick={() => setDecor({selected: null, placing: null, rotation: 0})}>Cancel</button>}
+      {!inside && <><button className={`wc-tab ${tab === 'decor' ? 'on' : ''}`} onClick={() => setTab('decor')}>🌷 Decor</button><button className={`wc-tab ${tab === 'build' ? 'on' : ''}`} onClick={() => setTab('build')}>🧱 Build</button></>}
       <button className="wc-btn primary" disabled={saving || !dirty} onClick={onSave}>{saving ? 'Saving…' : 'Save'}</button>
       <button className="wc-btn warm" onClick={onClose}>Done</button>
     </div>
@@ -31,7 +34,7 @@ export function DecorTray({life, layout, inside, decor, setDecor, onLayout, onSa
           onClick={() => {if (free <= 0) return; sfx.tap(); setDecor({selected: null, placing: f.id, rotation: decor.rotation});}}>
           <ItemIcon id={f.id} size={40} /><span className="t">{f.name}</span><span className="n">×{free}</span>
         </button>;
-      }) : <div className="wc-empty" style={{padding: 10}}>No furniture for this area. Buy some at the General Store or craft it at the workbench.</div>}
+      }) : <div className="wc-empty" style={{padding: 10}}>Nothing here yet. Buy pieces at the General Store (Furniture tab) or craft them at your workbench.</div>}
     </div>
   </div>;
 }

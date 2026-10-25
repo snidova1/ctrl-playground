@@ -1,4 +1,8 @@
 import type {Metadata, Viewport} from 'next';
+import '@fontsource/nunito/500.css';
+import '@fontsource/nunito/700.css';
+import '@fontsource/nunito/800.css';
+import '@fontsource/nunito/900.css';
 import './globals.css';
 
 export const metadata: Metadata = {

@@ -7,21 +7,40 @@ import {CROP_BY_ID, FURNITURE_BY_ID} from '@/game/core/items';
 import {footprint, insideArea, type Layout, type Placed} from '@/game/core/home';
 import type {Plot} from '@/game/core/life';
 import type {Building} from '@/game/core/map';
+import {DEFAULT_HOUSE, DOOR_COLORS, HOUSE_SIZES, ROOF_COLORS, TRIM_COLORS, WALL_COLORS, type House} from '@/game/core/house';
 import type {Runtime} from '../runtime';
 import {useStore} from '../store';
 import {startFishing, hobbyReady} from '../actions';
 import {Cottage} from './buildings';
 import {Kit} from './kit';
 import {Player} from './player';
-import {Grass} from './foliage';
+import {Bushes, FlowerField, Grass, Trees, type TreeSpec} from './foliage';
 import {canvasTexture, toon} from './materials';
 import {Remote} from './remote';
+import {Bobber} from './bobber';
 import type {RemotePlayer} from '@/game/core/api-types';
 
 const flat = () => 0;
+// Garden dressing beyond the fence: soft trees, hydrangeas and bell flowers like the town.
+const HOME_TREES: TreeSpec[] = [[-21, -15, 'pine'], [21, -16, 'round'], [-23, 3, 'blossom'], [23, 5, 'round'], [-20, 17, 'fruit'], [20, 18, 'birch'], [-9, -18, 'round'], [10, -19, 'pine'], [-26, -6, 'round'], [26, -4, 'blossom'], [-14, 21, 'round'], [14, 21, 'round']].map(([x, z, kind]) => ({x: x as number, z: z as number, s: 1.1, kind: kind as TreeSpec['kind']}));
+const HOME_BUSHES = [[-15.5, -12], [15.5, -12], [-15.5, 13.5], [15.5, 13.5], [-4.8, -3], [4.8, -3], [-18.5, 0], [18.5, 2], [-6, 16], [6, 16]].map(([x, z]) => ({x, z}));
+const HOME_FLOWERS = [{x: -19, z: 8, r: 2.5, color: '#7fd0f5'}, {x: 19, z: -7, r: 2.4, color: '#b9a0f5'}, {x: -10, z: -16, r: 2.2, color: '#f9b8d2'}, {x: 11, z: 17, r: 2.4, color: '#fdfdfb'}];
+const GRASS_BOUNDS = {minX: -30, maxX: 30, minZ: -26, maxZ: 28};
+function grassAllowed(x: number, z: number) {
+  if (Math.abs(x - HOUSE.x) < HOUSE.w / 2 + 0.8 && Math.abs(z - HOUSE.z) < HOUSE.d / 2 + 2.6) return false; // house + porch
+  const a = plotPosition(0), b = plotPosition(11);
+  if (x > a.x - 1.2 && x < b.x + 1.2 && z > a.z - 1.2 && z < b.z + 1.2) return false; // garden beds
+  if (Math.abs(x) < 1.4 && z > -2 && z < 14.5) return false; // front path
+  if (homeWaterAt(x, z) || Math.hypot((x - HOME_STATIONS.pond.x) / (HOME_STATIONS.pond.rx + 0.5), (z - HOME_STATIONS.pond.z) / (HOME_STATIONS.pond.rz + 0.5)) < 1) return false;
+  return true;
+}
 
 const box = new THREE.BoxGeometry(1, 1, 1);
-const HOUSE_DEF: Building = {id: 'my-house', name: 'Home', x: HOUSE.x, z: HOUSE.z, w: HOUSE.w, d: HOUSE.d, facing: 'south', wall: '#fff1dc', roof: '#f08f7a', trim: '#ffffff', kind: 'home'};
+/** The cottage keeps its front door on the same line whatever its size, so the yard layout stays valid. */
+function houseBuilding(house: House): Building {
+  const size = HOUSE_SIZES[house.size] ?? HOUSE_SIZES[0];
+  return {id: 'my-house', name: 'Home', x: HOUSE.x, z: HOUSE.doorZ - size.d / 2, w: size.w, d: size.d, facing: 'south', wall: WALL_COLORS[house.wall], roof: ROOF_COLORS[house.roof], trim: TRIM_COLORS[house.trim], kind: 'home'};
+}
 
 export interface Decor {selected: string | null; placing: string | null; rotation: number}
 
@@ -162,23 +181,39 @@ function HomeGround({quality}: {quality: 'high' | 'low'}) {
     <mesh position={[pond.x, WATER_Y + 0.2, pond.z]} scale={[pond.rx, 1, pond.rz]}><cylinderGeometry args={[1, 1, 0.05, 32]} /><meshToonMaterial color="#6cc7e6" transparent opacity={0.9} /></mesh>
     <mesh position={[pond.x, 0.02, pond.z]} scale={[pond.rx + 0.4, 1, pond.rz + 0.4]}><cylinderGeometry args={[1, 1, 0.06, 32]} /><meshToonMaterial color="#d8c8a0" /></mesh>
     {fences.map((f, i) => <Kit key={i} model="nature-kit/fence_simple" position={[f.x, 0, f.z]} rotation={f.r} scale={1.1} shadows={false} />)}
-    {[[-20, -14], [20, -15], [-22, 4], [22, 6], [-19, 17], [19, 18], [-8, -17], [9, -18]].map(([x, z], i) => <Kit key={i} model={`nature-kit/${['tree_oak', 'tree_default', 'tree_fat'][i % 3]}`} position={[x, 0, z]} rotation={i} scale={3.2} />)}
-    <Grass count={quality === 'high' ? 5000 : 2000} light={light} />
+    <Trees trees={HOME_TREES} density={quality === 'high' ? 1 : 0.55} height={flat} />
+    <Bushes spots={HOME_BUSHES} height={flat} />
+    <FlowerField patches={HOME_FLOWERS} count={quality === 'high' ? 700 : 350} height={flat} />
+    <Grass count={quality === 'high' ? 7000 : 3000} light={light} bounds={GRASS_BOUNDS} town={false} allow={grassAllowed} />
   </>;
 }
 
-function Room({night}: {night: number}) {
-  const wallpaper = useMemo(() => canvasTexture(256, 256, ctx => {
-    ctx.fillStyle = '#fbe9d4'; ctx.fillRect(0, 0, 256, 256);
-    ctx.fillStyle = '#f6d6c0';
-    for (let x = 0; x < 256; x += 32) ctx.fillRect(x, 0, 12, 256);
-    ctx.fillStyle = '#f2b8a8';
-    for (let y = 16; y < 256; y += 64) for (let x = 22; x < 256; x += 32) {ctx.beginPath(); ctx.arc(x, y + (x % 64 ? 32 : 0), 4, 0, Math.PI * 2); ctx.fill();}
-  }), []);
+function wallpaperTexture(kind: number) {
+  return canvasTexture(256, 256, ctx => {
+    const bg = ['#fbe9d4', '#e6f5ec', '#ece4f8', '#d8b48a', '#e4f0fb', '#fff1f4'][kind] ?? '#fbe9d4';
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, 256, 256);
+    if (kind === 0) {ctx.fillStyle = '#f2b8a8'; for (let y = 16; y < 256; y += 32) for (let x = 16 + (y % 64 ? 16 : 0); x < 256; x += 32) {ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();}}
+    if (kind === 1) {ctx.fillStyle = '#c9ead6'; for (let x = 0; x < 256; x += 32) ctx.fillRect(x, 0, 14, 256);}
+    if (kind === 2) {ctx.fillStyle = '#dccdf2'; for (let y = 0; y < 256; y += 64) for (let x = 0; x < 256; x += 64) {ctx.beginPath(); ctx.moveTo(x + 32, y + 8); ctx.lineTo(x + 56, y + 32); ctx.lineTo(x + 32, y + 56); ctx.lineTo(x + 8, y + 32); ctx.fill();}}
+    if (kind === 3) for (let x = 0; x < 256; x += 32) {ctx.fillStyle = x % 64 ? '#cfa77c' : '#c79d70'; ctx.fillRect(x, 0, 32, 256); ctx.fillStyle = '#a9805a'; ctx.fillRect(x, 0, 2, 256);}
+    if (kind === 4) {ctx.fillStyle = 'rgba(140,180,230,0.35)'; for (let i = 0; i < 256; i += 32) {ctx.fillRect(i, 0, 12, 256); ctx.fillRect(0, i, 256, 12);}}
+    if (kind === 5) {for (let y = 20; y < 256; y += 48) for (let x = 20 + (y % 96 ? 24 : 0); x < 256; x += 48) {ctx.fillStyle = '#f4a3bf'; for (let k = 0; k < 5; k++) {const a = (k / 5) * Math.PI * 2; ctx.beginPath(); ctx.arc(x + Math.cos(a) * 6, y + Math.sin(a) * 6, 5, 0, Math.PI * 2); ctx.fill();} ctx.fillStyle = '#ffe27a'; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();}}
+    ctx.fillStyle = 'rgba(0,0,0,0.06)'; ctx.fillRect(0, 220, 256, 36);
+  });
+}
+function floorTexture(kind: number) {
+  return canvasTexture(256, 256, ctx => {
+    if (kind <= 1) for (let i = 0; i < 8; i++) {ctx.fillStyle = kind === 0 ? (i % 2 ? '#d9a877' : '#cf9c6b') : (i % 2 ? '#8a5f42' : '#7d543a'); ctx.fillRect(0, i * 32, 256, 32); ctx.fillStyle = kind === 0 ? '#b98557' : '#5f3f2b'; ctx.fillRect(((i * 97) % 256), i * 32, 3, 32); ctx.fillRect(0, i * 32, 256, 2);}
+    if (kind === 2) for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {ctx.fillStyle = (x + y) % 2 ? '#f5efe4' : '#e46a5c'; ctx.fillRect(x * 32, y * 32, 32, 32);}
+    if (kind === 3) for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {ctx.fillStyle = '#f2ebdc'; ctx.fillRect(x * 64, y * 64, 64, 64); ctx.strokeStyle = '#d9cdb5'; ctx.lineWidth = 3; ctx.strokeRect(x * 64, y * 64, 64, 64);}
+    if (kind === 4) {ctx.fillStyle = '#c9b8e6'; ctx.fillRect(0, 0, 256, 256); ctx.fillStyle = 'rgba(255,255,255,0.25)'; for (let i = 0; i < 300; i++) ctx.fillRect((i * 53) % 256, (i * 97) % 256, 2, 2);}
+  });
+}
+
+function Room({night, wallpaperKind = 0, floorKind = 0}: {night: number; wallpaperKind?: number; floorKind?: number}) {
+  const wallpaper = useMemo(() => wallpaperTexture(wallpaperKind), [wallpaperKind]);
   wallpaper.wrapS = wallpaper.wrapT = THREE.RepeatWrapping; wallpaper.repeat.set(4, 1.5);
-  const floor = useMemo(() => canvasTexture(256, 256, ctx => {
-    for (let i = 0; i < 8; i++) {ctx.fillStyle = i % 2 ? '#d9a877' : '#cf9c6b'; ctx.fillRect(0, i * 32, 256, 32); ctx.fillStyle = '#b98557'; ctx.fillRect(((i * 97) % 256), i * 32, 3, 32);}
-  }), []);
+  const floor = useMemo(() => floorTexture(floorKind), [floorKind]);
   floor.wrapS = floor.wrapT = THREE.RepeatWrapping; floor.repeat.set(3, 3);
   const w = ROOM_BOUNDS.maxX - ROOM_BOUNDS.minX, d = ROOM_BOUNDS.maxZ - ROOM_BOUNDS.minZ;
   return <>
@@ -195,9 +230,9 @@ function Room({night}: {night: number}) {
   </>;
 }
 
-export function HomeWorld({rt, layout, garden, ownGarden, canEdit, inside, decorating, decor, setDecor, onLayout, players, quality, playerName, night}: {
+export function HomeWorld({rt, layout, garden, ownGarden, canEdit, inside, decorating, decor, setDecor, onLayout, players, quality, playerName, night, house = DEFAULT_HOUSE}: {
   rt: Runtime; layout: Layout; garden: Pick<Plot, 'crop' | 'waters' | 'readyAt'>[]; ownGarden: boolean; canEdit: boolean; inside: boolean;
-  decorating: boolean; decor: Decor; setDecor: (d: Decor) => void; onLayout: (l: Layout) => void; players: RemotePlayer[]; quality: 'high' | 'low'; playerName?: string; night: number;
+  decorating: boolean; decor: Decor; setDecor: (d: Decor) => void; onLayout: (l: Layout) => void; players: RemotePlayer[]; quality: 'high' | 'low'; playerName?: string; night: number; house?: House;
 }) {
   const items = layout.filter(o => o.room === inside);
   // Interaction stations.
@@ -232,9 +267,9 @@ export function HomeWorld({rt, layout, garden, ownGarden, canEdit, inside, decor
     return () => ids.forEach(id => rt.targets.delete(id));
   }, [rt, inside, items]);
   return <>
-    {inside ? <Room night={night} /> : <Suspense fallback={null}><HomeGround quality={quality} /></Suspense>}
+    {inside ? <Room night={night} wallpaperKind={house.wallpaper} floorKind={house.floor} /> : <Suspense fallback={null}><HomeGround quality={quality} /></Suspense>}
     {!inside && <>
-      <Cottage b={HOUSE_DEF} night={night} />
+      <Cottage b={houseBuilding(house)} night={night} style={{siding: house.siding, roofStyle: house.roofStyle, windows: house.windows, door: DOOR_COLORS[house.door], porch: house.porch, chimney: house.chimney, flowerBoxes: house.flowerBoxes}} />
       <Plots rt={rt} garden={garden} own={ownGarden} />
       <Mailbox />
       <group position={[HOME_STATIONS.workbench.x, 0, HOME_STATIONS.workbench.z]}>
@@ -250,6 +285,7 @@ export function HomeWorld({rt, layout, garden, ownGarden, canEdit, inside, decor
       {decorating && canEdit && <Decorator rt={rt} layout={layout} room={inside} decor={decor} setDecor={setDecor} onChange={onLayout} />}
     </Suspense>
     {players.filter(p => !!p.inside === inside).map(p => <Remote key={p.id} p={p} height={flat} />)}
+    {!inside && <Bobber rt={rt} waterY={WATER_Y + 0.2} />}
     <Player rt={rt} name={playerName} />
   </>;
 }

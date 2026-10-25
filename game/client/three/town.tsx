@@ -20,6 +20,7 @@ import {Kit} from './kit';
 import {Creatures} from './creatures';
 import {Player} from './player';
 import {Remote} from './remote';
+import {Bobber} from './bobber';
 import {toon} from './materials';
 import {mulberry32} from '@/game/core/rng';
 
@@ -149,25 +150,6 @@ function Sparkle({x, y, z}: {x: number; y: number; z: number}) {
   </mesh>;
 }
 
-function Bobber({rt}: {rt: Runtime}) {
-  const fishing = useStore(rt.ui, s => s.fishing);
-  const target = useStore(rt.ui, s => s.fishTarget);
-  const ref = useRef<THREE.Group>(null);
-  useFrame(({clock}) => {
-    const g = ref.current;
-    if (!g || !fishing || !target) return;
-    const t = clock.elapsedTime;
-    const bite = fishing.phase === 'bite' || fishing.phase === 'reel';
-    g.position.set(target.x, WATER_Y + 0.05 + (bite ? Math.sin(t * 30) * 0.06 - 0.08 : Math.sin(t * 2.5) * 0.03), target.z);
-  });
-  if (!fishing || !target || fishing.phase === 'cast') return null;
-  return <group ref={ref}>
-    <mesh><sphereGeometry args={[0.09, 12, 8]} /><meshToonMaterial color="#ffffff" /></mesh>
-    <mesh position={[0, 0.07, 0]}><sphereGeometry args={[0.07, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} /><meshToonMaterial color="#e8473d" /></mesh>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}><ringGeometry args={[0.15, 0.2, 24]} /><meshBasicMaterial color="#ffffff" transparent opacity={0.5} /></mesh>
-  </group>;
-}
-
 /** Fishing spot detection: offer "Fish" whenever the player faces water. */
 function WaterEdge({rt, where}: {rt: Runtime; where: 'town' | 'home'}) {
   const tick = useRef(0);
@@ -267,7 +249,7 @@ export function TownWorld({rt, variant, players, quality, playerName}: {rt: Runt
   return <>
     <TownTerrain />
     <Water night={lampNight} />
-    <Trees trees={TREES} />
+    <Trees trees={TREES} density={quality === 'high' ? 1 : 0.55} />
     <Grass count={quality === 'high' ? 26000 : 11000} light={light} />
     <Bushes spots={dressing.bushes} />
     <FlowerField patches={dressing.patches} count={quality === 'high' ? 2600 : 1200} />
@@ -284,7 +266,7 @@ export function TownWorld({rt, variant, players, quality, playerName}: {rt: Runt
     {variant !== 'common-ground' && <Creatures rt={rt} />}
     {variant !== 'common-ground' && <WaterEdge rt={rt} where="town" />}
     <Stations rt={rt} variant={variant} />
-    <Bobber rt={rt} />
+    <Bobber rt={rt} waterY={WATER_Y} />
     {players.map(p => <Remote key={p.id} p={p} height={heightAt} />)}
     <Player rt={rt} name={playerName} />
   </>;

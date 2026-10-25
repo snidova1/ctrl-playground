@@ -202,7 +202,25 @@ export const FURNITURE: FurnitureDef[] = [
   furn('tent', 'Camping Tent', 'nature-kit/tent_detailedOpen', 'yard', [2, 2], 1100),
   furn('big-pot', 'Clay Planter', 'nature-kit/pot_large', 'yard', [1, 1], 110, {craft: [{id: 'stone', count: 3}]}),
   furn('statue', 'Stone Statue', 'nature-kit/statue_head', 'yard', [1, 1], 2600),
+  // Build kit: modular pieces for sheds, garden walls, decks and paths in the Habitat yard.
+  furn('wood-wall', 'Wooden Wall', 'fantasy-town/wall-wood', 'yard', [1, 1], 120, {craft: [{id: 'wood', count: 4}]}),
+  furn('stone-wall', 'Stone Wall', 'fantasy-town/wall', 'yard', [1, 1], 160, {craft: [{id: 'stone', count: 4}]}),
+  furn('window-wall', 'Shuttered Window Wall', 'fantasy-town/wall-wood-window-shutters', 'yard', [1, 1], 220, {craft: [{id: 'wood', count: 5}]}),
+  furn('stone-window-wall', 'Stone Window Wall', 'fantasy-town/wall-window-shutters', 'yard', [1, 1], 260),
+  furn('door-wall', 'Doorway Wall', 'fantasy-town/wall-door', 'yard', [1, 1], 280),
+  furn('wood-stairs', 'Wooden Stairs', 'fantasy-town/stairs-wood', 'yard', [1, 1], 200, {craft: [{id: 'wood', count: 5}]}),
+  furn('picket-fence', 'Picket Fence', 'fantasy-town/fence', 'yard', [1, 1], 70, {craft: [{id: 'wood', count: 2}]}),
+  furn('garden-gate', 'Garden Gate', 'fantasy-town/fence-gate', 'yard', [1, 1], 140),
+  furn('boardwalk', 'Boardwalk Plank', 'nature-kit/path_wood', 'yard', [1, 1], 30, {craft: [{id: 'wood', count: 1}]}),
+  furn('stepping-stones', 'Stepping Stones', 'nature-kit/path_stoneCircle', 'yard', [1, 1], 30, {craft: [{id: 'stone', count: 1}]}),
+  furn('garden-bridge', 'Garden Bridge', 'nature-kit/bridge_wood', 'yard', [1, 2], 600),
+  furn('flower-planter', 'Flower Planter', 'nature-kit/pot_small', 'yard', [1, 1], 60),
+  furn('flower-cart', 'Flower Cart', 'fantasy-town/cart', 'yard', [2, 1], 900),
+  furn('pine-sapling', 'Little Pine', 'nature-kit/tree_pineSmallA', 'yard', [1, 1], 160),
+  furn('fruit-tree', 'Fruit Tree', 'nature-kit/tree_default', 'yard', [2, 2], 480),
+  furn('hedge', 'Garden Hedge', 'nature-kit/plant_bushLarge', 'yard', [1, 1], 90, {craft: [{id: 'wildflower', count: 2}]}),
 ];
+export const BUILD_KIT = new Set(['wood-wall', 'stone-wall', 'window-wall', 'stone-window-wall', 'door-wall', 'wood-stairs', 'picket-fence', 'garden-gate', 'boardwalk', 'stepping-stones', 'garden-bridge', 'fence', 'fence-gate', 'stone-path']);
 
 export interface FashionDef extends ItemDef {kind: 'fashion'; buy: number; slot: 'top' | 'bottom' | 'hat' | 'accessory'; index: number}
 export const FASHION: FashionDef[] = [

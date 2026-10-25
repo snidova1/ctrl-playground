@@ -6,6 +6,7 @@ import {readJson, reply, requireJsonWrite, walletPrincipal, type Principal} from
 import {appearanceSchema, nameSchema, normalizeAppearance, randomAppearance} from '@/game/core/appearance';
 import {countPlaced, layoutSchema, readStoredLayout, starterLayout} from '@/game/core/home';
 import {fashionNeeded} from '@/game/core/wardrobe';
+import {houseSchema, readHouse} from '@/game/core/house';
 import {HOME_BOUNDS, ROOM_BOUNDS} from '@/game/core/map';
 import {publicLife, normalizeLife} from '@/game/core/life';
 import {ANIMS, type HabitatState, type HomePermissions, type PublicProfile, type RemotePlayer} from '@/game/core/api-types';
@@ -13,7 +14,7 @@ import {keysConfig} from '@/server/keys/config';
 import {readWorldKeys, prepareOwnerClaim, verifyOwnerClaim} from '@/server/keys/service';
 import {loadLife} from '@/server/life/store';
 
-interface WorldRow {id: string; owner_id: string; name: string; visibility: 'public' | 'private'; revision: number; layout: string}
+interface WorldRow {id: string; owner_id: string; name: string; visibility: 'public' | 'private'; revision: number; layout: string; house?: string}
 interface ProfileRow {id: string; name: string; appearance: string}
 interface PresenceRow {world_id: string; x: number; z: number; seen_at: number; session_id: string; sequence: number; motion: string}
 const TTL = 15_000;
@@ -27,6 +28,7 @@ const presenceInput = z.object({
 }).strict();
 const saveInput = z.object({worldId: uuid, revision: z.number().int().min(0), layout: layoutSchema}).strict();
 const settingsInput = z.object({name: z.string().trim().min(2).max(40), visibility: z.enum(['public', 'private']), revision: z.number().int().min(0)}).strict();
+const houseInput = z.object({worldId: uuid, house: houseSchema}).strict();
 const memberInput = z.object({wallet: z.string().regex(/^0x[0-9a-fA-F]{40}$/), role: z.enum(['editor', 'visitor'])}).strict();
 
 export function toProfile(row: ProfileRow): PublicProfile {
@@ -79,7 +81,7 @@ async function state(user: Principal, worldId?: string): Promise<HabitatState> {
   return {
     profile: profileRow ? toProfile(profileRow) : null,
     homeId: home?.id ?? null,
-    world: w ? {id: w.id, ownerId: w.owner_id, ownerName: owner?.name ?? 'Neighbour', name: w.name, visibility: w.visibility, revision: w.revision, layout: readStoredLayout(w.layout)} : null,
+    world: w ? {id: w.id, ownerId: w.owner_id, ownerName: owner?.name ?? 'Neighbour', name: w.name, visibility: w.visibility, revision: w.revision, layout: readStoredLayout(w.layout), house: readHouse(w.house)} : null,
     permissions: selected?.access ?? null,
     players: players.map(p => {
       let motion: {anim?: string; inside?: boolean} = {};
@@ -196,6 +198,15 @@ export async function handleHabitat(r: Request, path: string[]): Promise<Respons
       if (!result.meta.changes) throw new AppError('STALE_PRESENCE', 409);
       const current = await state(user, data.worldId);
       return reply({players: current.players, revision: current.world?.revision ?? 0});
+    }
+    if (r.method === 'POST' && p === 'house') {
+      const data = houseInput.parse(await body());
+      const world = await one<WorldRow>('SELECT * FROM habitat_worlds WHERE id=?', data.worldId);
+      // Renovating the building is owner-only; editors may only move furniture.
+      if (!world || world.owner_id !== user.id) throw new AppError('OWNER_REQUIRED', 403, 'Only the owner can renovate this home.');
+      if (data.house.size > (await loadLife(user.id)).houseLevel) throw new AppError('HOUSE_SIZE_LOCKED', 422, 'Buy the bigger home first.');
+      await exec('UPDATE habitat_worlds SET house=?,revision=revision+1,updated_at=? WHERE id=? AND owner_id=?', JSON.stringify(data.house), Date.now(), world.id, user.id);
+      return reply(await state(user, world.id));
     }
     if (r.method === 'POST' && p === 'save') {
       const data = saveInput.parse(await body());

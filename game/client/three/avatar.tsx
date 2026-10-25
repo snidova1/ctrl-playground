@@ -6,9 +6,10 @@ import type {VRM} from '@pixiv/three-vrm';
 import {lookColors, type Appearance} from '@/game/core/appearance';
 import {canvasTexture, toon} from './materials';
 import {createAvatar, HEAD_SCALE, type AvatarInstance} from './vrm';
+import {Fish3D} from './fish-model';
 
 export type Tool = 'none' | 'rod' | 'net' | 'can' | 'camera' | 'pan';
-export interface AvatarMotion {anim: string; speed: number; tool: Tool; actionAt: number; emote?: string; emoteAt?: number; mood?: 'happy' | 'sad' | 'surprised' | 'relaxed' | 'sleepy' | 'focus' | null}
+export interface AvatarMotion {anim: string; speed: number; tool: Tool; actionAt: number; emote?: string; emoteAt?: number; mood?: 'happy' | 'sad' | 'surprised' | 'relaxed' | 'sleepy' | 'focus' | null; hold?: {item: string; size: number; until: number} | null}
 
 const G = {
   stick: new THREE.CylinderGeometry(0.012, 0.016, 1, 6),
@@ -185,6 +186,7 @@ function poseOverrides(vrm: VRM, anim: string, t: number) {
 export function Avatar({look, motion, name, nameColor}: {look: Appearance; motion: MutableRefObject<AvatarMotion>; name?: string; nameColor?: string}) {
   const [instance, setInstance] = useState<AvatarInstance | null>(null);
   const [tool, setTool] = useState<Tool>(motion.current.tool);
+  const [held, setHeld] = useState<{item: string; size: number} | null>(null);
   const lookKey = JSON.stringify(look);
   useEffect(() => {
     let alive = true, created: AvatarInstance | null = null;
@@ -201,6 +203,8 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
   useFrame((_, rawDt) => {
     const m = motion.current;
     if (m.tool !== tool) setTool(m.tool);
+    const holding = m.hold && performance.now() < m.hold.until ? m.hold : null;
+    if ((holding?.item ?? null) !== (held?.item ?? null)) setHeld(holding ? {item: holding.item, size: holding.size} : null);
     if (!instance || !animator) return;
     const dt = Math.min(rawDt, 0.1);
     clock.current += dt;
@@ -250,10 +254,14 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
   const neck = instance?.vrm.humanoid.getNormalizedBoneNode('neck') ?? null;
   const chest = instance?.vrm.humanoid.getNormalizedBoneNode('upperChest') ?? instance?.vrm.humanoid.getNormalizedBoneNode('chest') ?? null;
   const colors = lookColors(look);
+  // The held-fish group is always mounted and comes first: inserting a sibling next to the
+  // bone portals made R3F attach it to the scene root.
   return <group>
-    {instance ? <group position={[0, instance.floor, 0]} scale={instance.scale}>
+    <group position={[0, 1.66, 0.12]} rotation={[0, Math.PI / 2, 0.2]} visible={!!held}>{held && <Fish3D species={held.item} sizeCm={held.size} />}</group>
+    {instance ?<group position={[0, instance.floor, 0]} scale={instance.scale}>
       <primitive object={instance.vrm.scene} />
-      {hand && tool !== 'none' && createPortal(<group rotation={tool === 'rod' ? [0.35, 0.2, 1.25] : tool === 'net' ? [0.3, 0.2, 1.1] : [0, 0, 0]}><ToolProp tool={tool} /></group>, hand)}
+      {tool === 'rod' && <group position={[0.06 / instance.scale, 0.86 / instance.scale, 0.3 / instance.scale]} rotation={[1.0, 0, 0]} scale={1 / instance.scale}><ToolProp tool="rod" /></group>}
+      {hand && tool !== 'none' && tool !== 'rod' && createPortal(<group rotation={tool === 'net' ? [0.3, 0.2, 1.1] : [0, 0, 0]}><ToolProp tool={tool} /></group>, hand)}
       {head && createPortal(<group scale={HEAD_SCALE * 0.62} position={[0, 0.02, 0.01]}>
         {look.hat > 0 && <Hat hat={look.hat} color={colors.hat} />}
         {look.accessory > 0 && <Accessory id={look.accessory} where="head" color={colors.hat} />}
@@ -265,7 +273,7 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
       <circleGeometry args={[0.34, 20]} />
       <meshBasicMaterial color="#2a2a3a" transparent opacity={0.16} depthWrite={false} />
     </mesh>
-    {name && <NameTag name={name} color={nameColor} y={1.78} />}
+    {name && <NameTag name={name} color={nameColor} y={held ? 2.6 : 1.78} />}
     <Emote motion={motion} />
   </group>;
 }

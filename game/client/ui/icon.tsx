@@ -1,12 +1,14 @@
 'use client';
 import {FASHION_BY_ID, ITEMS, type ItemDef} from '@/game/core/items';
 import {OUTFITS, outfitItemId} from '@/game/core/wardrobe';
+import {FishIcon} from './fish-icon';
 
 /** Item artwork: Kenney thumbnails where they exist, otherwise a soft vector glyph in the item colour. */
 export function ItemIcon({id, size = 48, silhouette = false}: {id: string; size?: number; silhouette?: boolean}) {
   const item = ITEMS[id];
   if (!item) return <span style={{fontSize: size * 0.6}}>❔</span>;
   if (item.kind === 'fashion') return <FashionIcon id={id} size={size} />;
+  if (item.kind === 'fish') return <FishIcon id={id} size={size} silhouette={silhouette} />;
   if (item.thumb && !silhouette) return <img src={item.thumb} alt="" width={size} height={size} style={{objectFit: 'contain', imageRendering: 'auto'}} draggable={false} />;
   return <Glyph item={item} size={size} silhouette={silhouette} />;
 }

@@ -10,6 +10,7 @@ import {zoneName} from '@/game/core/map';
 import {finishFishing} from '../actions';
 import {ItemIcon, Stars} from './icon';
 import {sfx} from '../audio';
+import {FishIcon} from './fish-icon';
 
 export function Joystick({rt}: {rt: Runtime}) {
   const base = useRef<HTMLDivElement>(null), knob = useRef<HTMLElement>(null);
@@ -99,6 +100,14 @@ function DialogBox({rt}: {rt: Runtime}) {
   </div>;
 }
 
+/** The catch, splashing in a little pool on the card (no second WebGL context, so phones stay light). */
+function SpinningFish({id}: {id: string; size?: number}) {
+  return <div className="wc-catch-pool">
+    <span className="ripple" /><span className="ripple r2" />
+    <div className="fish"><FishIcon id={id} size={150} silhouette={false} /></div>
+  </div>;
+}
+
 function CatchCard({rt}: {rt: Runtime}) {
   const card = useStore(rt.ui, s => s.catchCard);
   if (!card) return null;
@@ -106,7 +115,7 @@ function CatchCard({rt}: {rt: Runtime}) {
   return <div className="wc-scrim" onPointerDown={e => {e.stopPropagation(); rt.ui.set({catchCard: null});}}>
     <div className="wc-rays" />
     <div className="wc-catch">
-      <div className="big"><ItemIcon id={card.item} size={110} /></div>
+      <div className="big">{item?.kind === 'fish' ? <SpinningFish id={card.item} size={card.size} /> : <ItemIcon id={card.item} size={110} />}</div>
       <div><Stars n={item?.rarity ?? 1} /></div>
       <h2>{card.quality !== undefined ? `Photo: ${item?.name}` : `You got ${item?.name}!`}</h2>
       {card.size !== undefined && <div className="size">{card.size} cm</div>}
@@ -248,6 +257,7 @@ export function Hud({rt, name, social, keys, variant}: {rt: Runtime; name: strin
       {social && <button className="wc-icon-btn" onClick={() => rt.openPanel('friends')}>💌<span>Friends</span>{mail > 0 && <b className="wc-badge">{mail}</b>}</button>}
       {keys && <button className="wc-icon-btn" onClick={() => rt.openPanel('keys')}>🔑<span>Keys</span></button>}
       {(scene === 'home' || scene === 'room') && <button className={`wc-icon-btn`} onClick={() => rt.ui.set({decorating: !decorating, panel: decorating ? null : 'home'})}>🛋️<span>Decorate</span></button>}
+      {(scene === 'home' || scene === 'room') && <button className="wc-icon-btn" onClick={() => rt.openPanel('renovate')}>🏠<span>Renovate</span></button>}
       <button className="wc-icon-btn" onClick={() => rt.openPanel('map')}>🗺️<span>Map</span></button>
       <button className="wc-icon-btn" onClick={() => rt.openPanel('settings')}>⚙️<span>Settings</span></button>
     </div>}

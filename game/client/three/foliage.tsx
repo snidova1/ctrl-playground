@@ -13,21 +13,30 @@ let leafTex: THREE.Texture | null = null;
 /** A clump of soft leaves on a transparent card (white; tinted per vertex). */
 function leafTexture() {
   if (leafTex) return leafTex;
-  leafTex = canvasTexture(128, 128, ctx => {
-    ctx.clearRect(0, 0, 128, 128);
+  leafTex = canvasTexture(256, 256, ctx => {
+    ctx.clearRect(0, 0, 256, 256);
     const random = mulberry32(3);
-    ctx.fillStyle = 'rgb(225,225,225)'; ctx.beginPath(); ctx.arc(64, 64, 24, 0, Math.PI * 2); ctx.fill();
-    for (let i = 0; i < 10; i++) {
-      const a = random() * Math.PI * 2, r = 16 + random() * 26;
-      ctx.save(); ctx.translate(64 + Math.cos(a) * r * 0.75, 64 + Math.sin(a) * r * 0.75); ctx.rotate(a + Math.PI / 2);
-      const g = ctx.createLinearGradient(0, -28, 0, 28);
-      g.addColorStop(0, 'rgb(255,255,255)'); g.addColorStop(1, 'rgb(195,195,195)');
+    // Dense spray of overlapping ovate leaves (birch / linden), drawn back-to-front:
+    // deeper leaves darker, front leaves lighter, each with a soft rim and midrib.
+    const leaves: {x: number; y: number; a: number; s: number; k: number}[] = [];
+    for (let i = 0; i < 34; i++) {
+      const t = i / 34, a = random() * Math.PI * 2, r = Math.sqrt(random()) * 84;
+      leaves.push({x: 128 + Math.cos(a) * r, y: 128 + Math.sin(a) * r, a: a + Math.PI / 2 + (random() - 0.5) * 0.9, s: 0.55 + random() * 0.35, k: 0.62 + t * 0.38});
+    }
+    for (const l of leaves) {
+      ctx.save(); ctx.translate(l.x, l.y); ctx.rotate(l.a); ctx.scale(l.s, l.s);
+      const v = Math.round(255 * l.k);
+      const g = ctx.createLinearGradient(-14, -30, 14, 30);
+      g.addColorStop(0, `rgb(${v},${v},${v})`); g.addColorStop(1, `rgb(${Math.round(v * 0.82)},${Math.round(v * 0.82)},${Math.round(v * 0.82)})`);
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.quadraticCurveTo(18, -6, 0, 28); ctx.quadraticCurveTo(-18, -6, 0, -28); ctx.fill();
-      ctx.strokeStyle = 'rgba(150,150,150,0.55)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(0, 22); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -34); ctx.bezierCurveTo(20, -18, 20, 14, 0, 30); ctx.bezierCurveTo(-20, 14, -20, -18, 0, -34); ctx.fill();
+      ctx.strokeStyle = `rgba(${Math.round(v * 0.6)},${Math.round(v * 0.6)},${Math.round(v * 0.6)},0.55)`; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = `rgba(${Math.round(v * 0.7)},${Math.round(v * 0.7)},${Math.round(v * 0.7)},0.6)`; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(0, 30); ctx.stroke();
       ctx.restore();
     }
   });
+  leafTex.anisotropy = 8;
   return leafTex;
 }
 let grassTex: THREE.Texture | null = null;
@@ -68,10 +77,12 @@ function toGeometry(b: Builder) {
   g.setIndex(b.idx);
   return g;
 }
+const SHADOW_TEAL = new THREE.Color('#1f5a50'), SUN_GREEN = new THREE.Color('#c4e874');
+const BLOSSOM_SHADOW = new THREE.Color('#e08aaa'), BLOSSOM_SUN = new THREE.Color('#fff0f5');
 const tmpN = new THREE.Vector3(), tmpU = new THREE.Vector3(), tmpW = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0), RIGHT = new THREE.Vector3(1, 0, 0);
 
 /** Leaf cards over a blob, with normals pointing out of the blob for soft round shading. */
-function leafBlob(b: Builder, cx: number, cy: number, cz: number, r: number, cards: number, base: THREE.Color, random: () => number, size: number) {
+function leafBlob(b: Builder, cx: number, cy: number, cz: number, r: number, cards: number, base: THREE.Color, random: () => number, size: number, shadow = SHADOW_TEAL, sun = SUN_GREEN) {
   const c = new THREE.Color();
   for (let i = 0; i < cards; i++) {
     const t = (i + 0.5) / cards;
@@ -87,9 +98,9 @@ function leafBlob(b: Builder, cx: number, cy: number, cz: number, r: number, car
     const ux = tmpU.x * cr + tmpW.x * sr, uy = tmpU.y * cr + tmpW.y * sr, uz = tmpU.z * cr + tmpW.z * sr;
     const vx = tmpW.x * cr - tmpU.x * sr, vy = tmpW.y * cr - tmpU.y * sr, vz = tmpW.z * cr - tmpU.z * sr;
     const s = size * (0.8 + random() * 0.45);
-    // Lit tops, cooler undersides: the painterly canopy gradient.
-    const shade = 0.74 + (n.y + 1) * 0.19 + (random() - 0.5) * 0.1;
-    c.copy(base).multiplyScalar(shade).offsetHSL((random() - 0.5) * 0.02, 0.03, n.y > 0.4 ? 0.05 : 0);
+    // Hue-shifted painterly light: warm yellow-green toward the sun, deep teal in shadow.
+    const lit = Math.min(1, Math.max(0, 0.5 + 0.5 * (n.y * 0.85 + n.x * 0.35 + n.z * 0.15) + (random() - 0.5) * 0.12));
+    c.copy(base).lerp(shadow, 0.55 * (1 - lit)).lerp(sun, 0.4 * lit * lit);
     const start = b.pos.length / 3;
     for (const [a, d, u, v] of [[-1, -1, 0, 0], [1, -1, 1, 0], [1, 1, 1, 1], [-1, 1, 0, 1]]) {
       b.pos.push(px + (ux * a + vx * d) * s, py + (uy * a + vy * d) * s, pz + (uz * a + vz * d) * s);
@@ -137,13 +148,13 @@ const LEAF_COLORS: Record<string, string[]> = {
 };
 
 /** Whole forest in five draw calls: leaf cards, inner canopy, fir tiers, trunks and birch bark. */
-export function Trees({trees}: {trees: TreeSpec[]}) {
+export function Trees({trees, density = 1, height = heightAt}: {trees: TreeSpec[]; density?: number; height?: (x: number, z: number) => number}) {
   const geo = useMemo(() => {
     const random = mulberry32(17);
     const b = newBuilder();
     const inner: THREE.BufferGeometry[] = [], pines: THREE.BufferGeometry[] = [], trunks: THREE.BufferGeometry[] = [], birch: THREE.BufferGeometry[] = [];
     for (const t of trees) {
-      const y0 = heightAt(t.x, t.z), s = t.s;
+      const y0 = height(t.x, t.z), s = t.s;
       const kind = t.kind === 'round' && random() < 0.22 ? 'birch' : t.kind;
       if (kind === 'pine') {
         const trunkH = 1.3 * s, total = trunkH + 3.4 * s;
@@ -160,17 +171,18 @@ export function Trees({trees}: {trees: TreeSpec[]}) {
       if (kind === 'birch') {tg.deleteAttribute('normal'); tg.computeVertexNormals(); birch.push(tg);}
       else trunks.push(colored(tg, new THREE.Color('#8a5f40')));
       const palette = LEAF_COLORS[kind] ?? LEAF_COLORS.round;
-      const blobs = kind === 'birch' ? 3 : 4 + Math.floor(random() * 3);
+      const blobs = kind === 'birch' ? 4 : 5 + Math.floor(random() * 3);
       const top = y0 + trunkH + 0.9 * s;
       for (let k = 0; k < blobs; k++) {
-        const r = (kind === 'birch' ? 0.9 : 1.05 + random() * 0.45) * s;
+        const r = (kind === 'birch' ? 0.75 + random() * 0.3 : 0.85 + random() * 0.6) * s;
         const a = random() * Math.PI * 2, d = k === 0 ? 0 : (0.7 + random() * 0.4) * s;
-        const cx = t.x + Math.cos(a) * d, cy = top + (k === 0 ? 0.45 * s : (random() - 0.2) * 0.8 * s), cz = t.z + Math.sin(a) * d;
+        const cx = t.x + Math.cos(a) * d, cy = top + (k === 0 ? 0.55 * s : (random() - 0.3) * 1.1 * s), cz = t.z + Math.sin(a) * d;
         const base = new THREE.Color(palette[Math.floor(random() * palette.length)]);
         const ball = new THREE.IcosahedronGeometry(r * 0.78, 2);
         ball.scale(1, 0.85, 1); ball.translate(cx, cy, cz);
-        inner.push(colored(ball, base.clone().multiplyScalar(0.6)));
-        leafBlob(b, cx, cy, cz, r, 78, base, random, 0.33 * s);
+        const blossom = kind === 'blossom';
+        inner.push(colored(ball, base.clone().lerp(blossom ? BLOSSOM_SHADOW : SHADOW_TEAL, 0.7)));
+        leafBlob(b, cx, cy, cz, r, Math.round(70 * density), base, random, 0.44 * s, blossom ? BLOSSOM_SHADOW : SHADOW_TEAL, blossom ? BLOSSOM_SUN : SUN_GREEN);
       }
       if (kind === 'fruit') for (let k = 0; k < 7; k++) {
         const a = random() * Math.PI * 2;
@@ -180,7 +192,7 @@ export function Trees({trees}: {trees: TreeSpec[]}) {
       }
     }
     return {cards: toGeometry(b), inner: mergeGeometries(inner), pines: pines.length ? mergeGeometries(pines) : null, trunks: mergeGeometries(trunks), birch: birch.length ? mergeGeometries(birch) : null};
-  }, [trees]);
+  }, [trees, density, height]);
   const mats = useMemo(() => {
     const leaves = new THREE.MeshToonMaterial({vertexColors: true, gradientMap: toonGradient(), map: leafTexture(), alphaTest: 0.42, side: THREE.DoubleSide});
     windify(leaves, 0.03);
@@ -214,8 +226,8 @@ export function Bushes({spots, flowerChance = 0.65, height = heightAt}: {spots: 
     for (const p of spots) {
       const y = height(p.x, p.z);
       const r = 0.55 + random() * 0.35;
-      leafBlob(b, p.x, y + r * 0.7, p.z, r, 44, new THREE.Color(['#5aaa44', '#66b74e', '#4d9b3e'][Math.floor(random() * 3)]), random, 0.22);
-      leafBlob(b, p.x + r * 0.6, y + r * 0.55, p.z + r * 0.2, r * 0.7, 26, new THREE.Color('#5fae48'), random, 0.2);
+      leafBlob(b, p.x, y + r * 0.7, p.z, r, 40, new THREE.Color(['#5aaa44', '#66b74e', '#4d9b3e'][Math.floor(random() * 3)]), random, 0.3);
+      leafBlob(b, p.x + r * 0.6, y + r * 0.55, p.z + r * 0.2, r * 0.7, 24, new THREE.Color('#5fae48'), random, 0.28);
       if (random() < flowerChance) {
         const hue = new THREE.Color(hues[Math.floor(random() * hues.length)]);
         for (let k = 0; k < 5; k++) {
@@ -346,7 +358,7 @@ void main(){
 }`;
 
 /** Soft grass clumps (crossed painted cards) carpeting the green areas. */
-export function Grass({count, light, bounds = TOWN_BOUNDS, town = true}: {count: number; light: THREE.Color; bounds?: {minX: number; maxX: number; minZ: number; maxZ: number}; town?: boolean}) {
+export function Grass({count, light, bounds = TOWN_BOUNDS, town = true, allow}: {count: number; light: THREE.Color; bounds?: {minX: number; maxX: number; minZ: number; maxZ: number}; town?: boolean; allow?: (x: number, z: number) => boolean}) {
   const {mesh, material} = useMemo(() => {
     const quads: THREE.BufferGeometry[] = [];
     for (let k = 0; k < 2; k++) {
@@ -375,6 +387,7 @@ export function Grass({count, light, bounds = TOWN_BOUNDS, town = true}: {count:
         if (isPathAt(x, z, 1.25) || Math.hypot(x - PLAZA.x, z - PLAZA.z) < PLAZA.r + 0.3) continue;
         if (BUILDINGS.some(bd => Math.abs(x - bd.x) < bd.w / 2 + 0.5 && Math.abs(z - bd.z) < bd.d / 2 + 0.5)) continue;
       }
+      if (allow && !allow(x, z)) continue;
       const y = town ? heightAt(x, z) : 0;
       if (town && y < WATER_Y + 0.12) continue;
       e.set(0, random() * Math.PI, 0); q.setFromEuler(e);
@@ -389,7 +402,7 @@ export function Grass({count, light, bounds = TOWN_BOUNDS, town = true}: {count:
     matrices.forEach((mat, i) => instanced.setMatrixAt(i, mat));
     instanced.frustumCulled = false;
     return {mesh: instanced, material};
-  }, [count, bounds, town]);
+  }, [count, bounds, town, allow]);
   material.uniforms.uLight.value.copy(light);
   return <primitive object={mesh} />;
 }

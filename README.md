@@ -24,6 +24,8 @@ In-game coins, items, levels and fashion are **nonfinancial** and never converti
 - **Shops**: General Store (seeds, ingredients, furniture), Petal Boutique (38 outfits with fabric patterns, 12 hats, 10 accessories), sell anything.
 - **Daily requests**, town level, energy, album/collection, NPC friendship hearts and gifts, emotes, day/night cycle (48-minute town day) and weather.
 - **Social**: real-player presence in town and homes, friend requests, gifts by mail, home visits.
+- **Habitat renovation** (owner only): wall colour and finish (clapboard, brick, stucco, log), roof colour and style (gable, steep, barn), trim, door, window shape, porch, chimney, flower boxes, interior wallpaper and floor, and three house sizes bought with coins. Stored in `habitat_worlds.house` (`drizzle/0009_house_renovation.sql`).
+- **Build kit** for the yard: wooden and stone walls, window and doorway walls, stairs, picket fences and gates, boardwalk, stepping stones, a garden bridge, hedges, planters and trees — bought or crafted, then placed in Decorate → Build.
 
 ## Run
 

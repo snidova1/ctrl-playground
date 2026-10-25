@@ -2,6 +2,8 @@
 .wc-root { position: fixed; inset: 0; overflow: hidden; background: #bfe3f7; touch-action: none; user-select: none; -webkit-user-select: none; }
 .wc-root canvas { display: block; touch-action: none; }
 .wc-hud { position: absolute; inset: 0; pointer-events: none; font-family: "Nunito", ui-rounded, "SF Pro Rounded", system-ui, sans-serif; color: #5b4636; }
+.wc-root, .wc-root button, .wc-root input { font-family: "Nunito", ui-rounded, system-ui, sans-serif; }
+.wc-panel, .wc-catch, .wc-dialog, .wc-landing { font-family: "Nunito", ui-rounded, system-ui, sans-serif; color: #5b4636; }
 .wc-hud > * { pointer-events: auto; }
 .wc-hud button { cursor: pointer; border: 0; font: inherit; }
 
@@ -22,10 +24,10 @@
 .wc-zone { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); padding: 6px 18px; border-radius: 999px; background: rgba(90,70,54,.45); color: #fffaf0; font-weight: 800; font-size: 13px; pointer-events: none; transition: opacity .6s; white-space: nowrap; }
 
 /* Side menu */
-.wc-menu { position: absolute; right: 12px; top: 72px; display: grid; gap: 8px; }
-.wc-icon-btn { width: 54px; height: 54px; border-radius: 18px; background: rgba(255,250,240,.94); display: grid; place-content: center; font-size: 22px; box-shadow: 0 4px 0 rgba(214,190,150,.6), 0 8px 18px rgba(80,60,40,.12); position: relative; transition: transform .12s; }
+.wc-menu { position: absolute; right: 12px; top: 70px; display: grid; gap: 8px; max-height: calc(100vh - 230px); overflow-y: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+.wc-icon-btn { width: 58px; min-height: 60px; padding: 6px 2px 5px; border-radius: 18px; background: rgba(255,250,240,.95); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 22px; line-height: 1; box-shadow: 0 4px 0 rgba(214,190,150,.6), 0 8px 18px rgba(80,60,40,.12); position: relative; transition: transform .12s; }
 .wc-icon-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(214,190,150,.6); }
-.wc-icon-btn span { position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 900; color: #9b8167; white-space: nowrap; }
+.wc-icon-btn span { display: block; max-width: 56px; font-size: 10px; line-height: 1.1; font-weight: 900; color: #8f7459; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wc-badge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #ff7a8a; color: white; font-size: 11px; font-weight: 900; display: grid; place-content: center; }
 
 /* Action cluster */
@@ -33,7 +35,7 @@
 .wc-action { min-width: 92px; height: 92px; border-radius: 50%; background: radial-gradient(circle at 40% 30%, #ffffff, #fff1d6); box-shadow: 0 6px 0 #e7c993, 0 12px 26px rgba(120,80,30,.22); display: grid; place-content: center; text-align: center; font-size: 34px; position: relative; transition: transform .1s; }
 .wc-action:active { transform: translateY(4px); box-shadow: 0 2px 0 #e7c993; }
 .wc-action.idle { opacity: .55; }
-.wc-action-label { position: absolute; bottom: 104px; right: 0; padding: 8px 14px; background: rgba(255,250,240,.96); border-radius: 16px; font-weight: 900; font-size: 14px; white-space: nowrap; box-shadow: 0 3px 0 rgba(214,190,150,.6); animation: wc-pop .25s ease-out; }
+.wc-action-label { position: absolute; bottom: 104px; right: 0; max-width: min(260px, 70vw); overflow: hidden; text-overflow: ellipsis; padding: 8px 14px; background: rgba(255,250,240,.96); border-radius: 16px; font-weight: 900; font-size: 14px; white-space: nowrap; box-shadow: 0 3px 0 rgba(214,190,150,.6); animation: wc-pop .25s ease-out; }
 .wc-small-actions { display: grid; gap: 10px; }
 .wc-round { width: 58px; height: 58px; border-radius: 50%; background: rgba(255,250,240,.94); font-size: 24px; box-shadow: 0 4px 0 rgba(214,190,150,.6); display: grid; place-content: center; }
 .wc-round.on { background: #ffe39a; }
@@ -41,7 +43,7 @@
 /* Joystick */
 .wc-stick { position: absolute; left: max(22px, env(safe-area-inset-left)); bottom: max(26px, env(safe-area-inset-bottom)); width: 132px; height: 132px; border-radius: 50%; background: rgba(255,250,240,.35); border: 3px solid rgba(255,250,240,.7); touch-action: none; }
 .wc-stick i { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: rgba(255,250,240,.95); box-shadow: 0 4px 0 rgba(214,190,150,.7); }
-.wc-keys-hint { position: absolute; left: 16px; bottom: 16px; padding: 8px 12px; border-radius: 14px; background: rgba(90,70,54,.4); color: #fffaf0; font-size: 12px; font-weight: 700; pointer-events: none; }
+.wc-keys-hint { position: absolute; left: 16px; bottom: 16px; max-width: calc(100vw - 340px); padding: 8px 12px; border-radius: 14px; background: rgba(90,70,54,.4); color: #fffaf0; font-size: 12px; font-weight: 700; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Toasts */
 .wc-toasts { position: absolute; top: 110px; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; justify-items: center; pointer-events: none; }
@@ -102,6 +104,12 @@
 .wc-catch { width: min(360px, calc(100vw - 40px)); padding: 26px 22px 20px; border-radius: 32px; text-align: center; background: radial-gradient(circle at 50% 0%, #fff7d6, #fffaf0 60%); box-shadow: 0 8px 0 #e8d3ad, 0 30px 70px rgba(60,40,20,.35); animation: wc-bounce .5s cubic-bezier(.3,1.6,.5,1); }
 .wc-catch .big { width: 140px; height: 140px; margin: 0 auto 6px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, #ffffff, #ffefc7); }
 .wc-catch h2 { margin: 6px 0 2px; font-size: 24px; }
+.wc-catch-pool { position: relative; width: 196px; height: 140px; border-radius: 28px; overflow: hidden; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 35%, #e9f8ff 0%, #a6dcf2 52%, #5eb2d8 100%); box-shadow: inset 0 -12px 26px rgba(30,90,140,.28), 0 4px 0 #cfe6f2; }
+.wc-catch-pool .fish { animation: wc-swim 2.4s ease-in-out infinite; filter: drop-shadow(0 8px 4px rgba(20,70,110,.25)); }
+.wc-catch-pool .ripple { position: absolute; left: 50%; top: 72%; width: 120px; height: 26px; margin-left: -60px; border-radius: 50%; border: 2px solid rgba(255,255,255,.7); animation: wc-ripple 2.4s ease-out infinite; }
+.wc-catch-pool .ripple.r2 { animation-delay: 1.2s; }
+@keyframes wc-swim { 0%, 100% { transform: translateY(2px) rotate(-6deg); } 50% { transform: translateY(-8px) rotate(5deg); } }
+@keyframes wc-ripple { from { transform: scale(.4); opacity: .9; } to { transform: scale(1.5); opacity: 0; } }
 .wc-catch .size { font-weight: 900; color: #6fa8dc; }
 .wc-catch .first { display: inline-block; margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: #ff7a8a; color: white; font-weight: 900; font-size: 12px; }
 @keyframes wc-bounce { from { transform: scale(.4) rotate(-6deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
@@ -168,7 +176,8 @@
   .wc-bars { min-width: 86px; }
   .wc-name { font-size: 13px; }
   .wc-menu { top: 64px; gap: 6px; }
-  .wc-icon-btn { width: 46px; height: 46px; font-size: 19px; border-radius: 15px; }
+  .wc-icon-btn { width: 50px; min-height: 52px; font-size: 19px; border-radius: 15px; }
+  .wc-icon-btn span { font-size: 9px; }
   .wc-action { min-width: 82px; height: 82px; font-size: 30px; }
   .wc-round { width: 52px; height: 52px; font-size: 21px; }
   .wc-pill { padding: 6px 10px; font-size: 13px; }
