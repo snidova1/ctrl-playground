@@ -6,8 +6,8 @@ import {mulberry32} from '@/game/core/rng';
 import {canvasTexture, shared, toon} from './materials';
 
 const C = {
-  grassA: new THREE.Color('#9fd36f'), grassB: new THREE.Color('#7fc25c'), meadow: new THREE.Color('#c3dd7a'),
-  forest: new THREE.Color('#5f9e55'), sand: new THREE.Color('#f4e2b0'), wetSand: new THREE.Color('#e2c98f'),
+  grassA: new THREE.Color('#86cc56'), grassB: new THREE.Color('#6cbb47'), meadow: new THREE.Color('#a6d566'),
+  forest: new THREE.Color('#4f8f4a'), sand: new THREE.Color('#f4e2b0'), wetSand: new THREE.Color('#e2c98f'),
   path: new THREE.Color('#e8cf9c'), pathEdge: new THREE.Color('#c9b07a'), bed: new THREE.Color('#d9c8a0'),
 };
 
@@ -55,14 +55,14 @@ export function TownTerrain() {
 function Plaza() {
   const texture = useMemo(() => {
     const t = canvasTexture(512, 512, ctx => {
-      ctx.fillStyle = '#eadfca'; ctx.fillRect(0, 0, 512, 512);
+      ctx.fillStyle = '#d9ccb2'; ctx.fillRect(0, 0, 512, 512);
       const random = mulberry32(9);
       for (let ring = 0; ring < 11; ring++) {
         const r = 30 + ring * 22, count = Math.round((Math.PI * 2 * r) / 30);
         for (let k = 0; k < count; k++) {
           const a = (k / count) * Math.PI * 2 + ring * 0.2;
           ctx.save(); ctx.translate(256 + Math.cos(a) * r, 256 + Math.sin(a) * r); ctx.rotate(a);
-          const tone = 220 + Math.floor(random() * 25);
+          const tone = 196 + Math.floor(random() * 26);
           ctx.fillStyle = `rgb(${tone},${tone - 12},${tone - 30})`;
           ctx.beginPath(); ctx.roundRect(-12, -9, 24, 18, 6); ctx.fill();
           ctx.restore();
@@ -124,13 +124,13 @@ void main(){
   vec2 duv = (vWorld.xz - uBounds.xy) / uBounds.zw;
   float depth = (duv.x < 0.0 || duv.x > 1.0 || duv.y < 0.0 || duv.y > 1.0) ? 1.0 : texture2D(uDepth, duv).r;
   vec3 col = mix(uShallow, uDeep, smoothstep(0.02, 0.7, depth));
-  col = mix(col, uSky, 0.18);
+  col = mix(col, uSky, 0.06);
   float ripple = n2(vWorld.xz * 1.7 + vec2(uTime * 0.8, uTime * 0.5)) * n2(vWorld.xz * 2.3 - vec2(uTime * 0.6, -uTime * 0.4));
   col += vec3(0.85, 0.95, 1.0) * smoothstep(0.55, 0.9, ripple) * 0.35 * (1.0 - uNight * 0.6);
   float foamLine = smoothstep(0.09, 0.0, depth + sin(uTime * 2.0 + vWorld.x * 2.0 + vWorld.z) * 0.012);
   col = mix(col, vec3(1.0), foamLine * 0.85);
   col *= 1.0 - uNight * 0.45;
-  float alpha = mix(0.72, 0.92, smoothstep(0.0, 0.6, depth));
+  float alpha = mix(0.82, 0.96, smoothstep(0.0, 0.5, depth));
   gl_FragColor = vec4(col, max(alpha, foamLine));
   #include <fog_fragment>
 }`;
@@ -152,7 +152,7 @@ export function Water({night = 0}: {night?: number}) {
       vertexShader: waterVertex, fragmentShader: waterFragment, transparent: true, fog: true, depthWrite: false,
       uniforms: {
         ...THREE.UniformsLib.fog, uTime: shared.uTime, uDepth: {value: depthTex}, uBounds: {value: new THREE.Vector4(bounds.x, bounds.z, bounds.w, bounds.d)},
-        uShallow: {value: new THREE.Color('#8fe6dc')}, uDeep: {value: new THREE.Color('#3aa0d8')}, uSky: {value: new THREE.Color('#bfe3f7')}, uNight: {value: 0},
+        uShallow: {value: new THREE.Color('#79e3e6')}, uDeep: {value: new THREE.Color('#22a9d9')}, uSky: {value: new THREE.Color('#bfe3f7')}, uNight: {value: 0},
       },
     });
   }, []);

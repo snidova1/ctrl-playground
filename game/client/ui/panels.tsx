@@ -286,7 +286,7 @@ export function SettingsPanel({rt, onClose, quality, setQuality, extra}: {rt: Ru
     <div className="wc-row"><div className="grow"><h4>Graphics</h4><p>Low quality helps older phones.</p></div>
       <button className={`wc-btn ${quality === 'high' ? 'primary' : ''}`} onClick={() => setQuality('high')}>High</button>
       <button className={`wc-btn ${quality === 'low' ? 'primary' : ''}`} onClick={() => setQuality('low')}>Low</button></div>
-    <div className="wc-row"><div className="grow"><h4>Camera</h4><p>Drag to look around, pinch or scroll to zoom.</p></div><button className="wc-btn" onClick={() => {rt.camera.yaw = 0; rt.camera.pitch = 0.62; rt.camera.distance = 11;}}>Reset</button></div>
+    <div className="wc-row"><div className="grow"><h4>Camera</h4><p>Drag to look around, pinch or scroll to zoom.</p></div><button className="wc-btn" onClick={() => {rt.camera.yaw = 0; rt.camera.pitch = 0.3; rt.camera.distance = 5.8;}}>Reset</button></div>
     {extra}
     <p style={{fontSize: 12, color: '#9b8167'}}>Coins, items and levels are in-game only. They are never tokens and are not tradable for CTRL.</p>
   </PanelFrame>;

@@ -5,14 +5,19 @@ import * as THREE from 'three';
 export const shared = {uTime: {value: 0}, uWind: {value: 1}};
 
 let gradient: THREE.DataTexture | null = null;
-/** Four soft bands: the cel-shaded but gentle look of cozy life sims. */
+/** Smooth, bright falloff: shadows stay soft and luminous (painterly, not hard cel bands). */
 export function toonGradient() {
   if (gradient) return gradient;
-  const steps = [150, 196, 232, 255];
-  const data = new Uint8Array(steps.length * 4);
-  steps.forEach((v, i) => data.set([v, v, v, 255], i * 4));
-  gradient = new THREE.DataTexture(data, steps.length, 1, THREE.RGBAFormat);
-  gradient.minFilter = gradient.magFilter = THREE.NearestFilter;
+  const n = 32;
+  const data = new Uint8Array(n * 4);
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    const s = t * t * (3 - 2 * t);
+    const v = Math.round(150 + (255 - 150) * s);
+    data.set([v, v, Math.min(255, v + 6), 255], i * 4);
+  }
+  gradient = new THREE.DataTexture(data, n, 1, THREE.RGBAFormat);
+  gradient.minFilter = gradient.magFilter = THREE.LinearFilter;
   gradient.generateMipmaps = false;
   gradient.needsUpdate = true;
   return gradient;

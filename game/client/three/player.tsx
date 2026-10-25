@@ -15,6 +15,7 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
   const pick = useRef(0);
   const stepT = useRef(0);
   const camPos = useRef(new THREE.Vector3());
+  const lastDrag = useRef(0);
 
   // Drag to orbit, wheel to zoom. Joystick/UI elements stop propagation themselves.
   useEffect(() => {
@@ -32,18 +33,18 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
       if (pinch.size === 2) {
         const [a, b] = [...pinch.values()];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
-        rt.camera.distance = THREE.MathUtils.clamp(rt.camera.distance * (pinchDist / Math.max(1, d)), 4, 18);
+        rt.camera.distance = THREE.MathUtils.clamp(rt.camera.distance * (pinchDist / Math.max(1, d)), 3, 12);
         pinchDist = d; return;
       }
       if (!dragging || dragging.id !== e.pointerId) return;
       const dx = e.clientX - dragging.x, dy = e.clientY - dragging.y;
       dragging.x = e.clientX; dragging.y = e.clientY;
-      rt.camera.yaw -= dx * 0.006;
+      rt.camera.yaw -= dx * 0.006; lastDrag.current = performance.now();
       const photo = rt.ui.get().photo;
-      rt.camera.pitch = THREE.MathUtils.clamp(rt.camera.pitch + dy * 0.004, photo ? -0.35 : 0.25, photo ? 0.7 : 1.25);
+      rt.camera.pitch = THREE.MathUtils.clamp(rt.camera.pitch + dy * 0.004, photo ? -0.35 : 0.05, photo ? 0.7 : 1.05);
     };
     const up = (e: PointerEvent) => {pinch.delete(e.pointerId); if (dragging?.id === e.pointerId) dragging = null;};
-    const wheel = (e: WheelEvent) => {e.preventDefault(); rt.camera.distance = THREE.MathUtils.clamp(rt.camera.distance + e.deltaY * 0.01, 4, 18);};
+    const wheel = (e: WheelEvent) => {e.preventDefault(); rt.camera.distance = THREE.MathUtils.clamp(rt.camera.distance + e.deltaY * 0.006, 3, 12);};
     el.addEventListener('pointerdown', down); window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     el.addEventListener('wheel', wheel, {passive: false});
     return () => {
@@ -100,19 +101,36 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     // Camera.
     const photo = ui.photo;
     const f = rt.camera.focus;
-    f.lerp(new THREE.Vector3(p.pos.x, p.pos.y + (photo ? 1.25 : 1.0), p.pos.z), Math.min(1, dt * (photo ? 14 : 7)));
-    const dist = photo ? 2.4 : rt.camera.distance;
+    // Over-the-shoulder follow: the camera eases in behind the character while it walks,
+    // unless the player has just dragged the view or is walking back toward the lens.
+    if (!photo && p.speed > 0.5 && performance.now() - lastDrag.current > 1600) {
+      let diff = (p.angle + Math.PI) - rt.camera.yaw;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      if (Math.abs(diff) < 2.3) rt.camera.yaw += diff * Math.min(1, dt * 1.1);
+    }
+    f.lerp(new THREE.Vector3(p.pos.x, p.pos.y + (photo ? 1.25 : 1.05), p.pos.z), Math.min(1, dt * (photo ? 14 : 8)));
+    let dist = photo ? 2.4 : rt.camera.distance;
+    if (!photo) {
+      // Pull in when a wall or trunk sits between the character and the lens.
+      for (let i = 1; i <= 14; i++) {
+        const d = (i / 14) * dist;
+        const cx = f.x + Math.sin(rt.camera.yaw) * Math.cos(rt.camera.pitch) * d, cz = f.z + Math.cos(rt.camera.yaw) * Math.cos(rt.camera.pitch) * d;
+        if (rt.cameraBlocked(cx, cz)) {dist = Math.max(1.4, d - 0.5); break;}
+      }
+    }
     const pitch = photo ? rt.camera.pitch * 0.4 : rt.camera.pitch;
     const yaw = rt.camera.yaw;
     const want = new THREE.Vector3(f.x + Math.sin(yaw) * Math.cos(pitch) * dist, f.y + Math.sin(pitch) * dist, f.z + Math.cos(yaw) * Math.cos(pitch) * dist);
-    const ground = rt.height(want.x, want.z) + 0.6;
+    const ground = rt.height(want.x, want.z) + 0.45;
     if (want.y < ground) want.y = ground;
-    camPos.current.lerp(want, Math.min(1, dt * (photo ? 12 : 6)));
+    camPos.current.lerp(want, Math.min(1, dt * (photo ? 12 : 7)));
     if (camPos.current.lengthSq() === 0) camPos.current.copy(want);
     camera.position.copy(camPos.current);
-    camera.lookAt(photo ? new THREE.Vector3(f.x - Math.sin(yaw) * 6, f.y + Math.sin(-rt.camera.pitch * 0.6) * 3, f.z - Math.cos(yaw) * 6) : f);
+    // Aim a little above the head so the character sits in the lower third and the horizon shows.
+    camera.lookAt(photo ? new THREE.Vector3(f.x - Math.sin(yaw) * 6, f.y + Math.sin(-rt.camera.pitch * 0.6) * 3, f.z - Math.cos(yaw) * 6)
+      : new THREE.Vector3(f.x - Math.sin(yaw) * 1.2, f.y + 0.35 + dist * 0.03, f.z - Math.cos(yaw) * 1.2));
     const cam = camera as THREE.PerspectiveCamera;
-    const fov = photo ? 38 : 45;
+    const fov = photo ? 38 : 50;
     if (Math.abs(cam.fov - fov) > 0.1) {cam.fov += (fov - cam.fov) * Math.min(1, dt * 6); cam.updateProjectionMatrix();}
 
     // Interaction target, a few times a second.
@@ -133,6 +151,6 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
   });
 
   return <group ref={group}>
-    <Avatar look={rt.player.look} motion={rt.player.motion} name={name} nameColor="#fff6d8" />
+    <Avatar look={rt.player.look} motion={rt.player.motion} />
   </group>;
 }

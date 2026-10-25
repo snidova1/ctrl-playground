@@ -3,8 +3,8 @@ import {Suspense, useEffect, useMemo, useRef} from 'react';
 import {useFrame} from '@react-three/fiber';
 import * as THREE from 'three';
 import {
-  BRIDGES, BUILDINGS, COMMON_GATE, FLOWER_BEDS, FORAGE_NODES, HOME_STOP, LAMPS, PIER, TREES,
-  fishableFrom, heightAt, WATER_Y,
+  BRIDGES, BUILDINGS, COMMON_GATE, FLOWER_BEDS, FORAGE_NODES, HOME_STOP, LAMPS, PIER, TREES, PLAZA, RIVER, RIVER_WIDTH, BEACH_Z, TOWN_BOUNDS,
+  fishableFrom, heightAt, WATER_Y, townWalkable, isPathAt,
 } from '@/game/core/map';
 import {NPCS, npcPosition} from '@/game/core/npcs';
 import {ITEMS} from '@/game/core/items';
@@ -14,13 +14,14 @@ import {useStore} from '../store';
 import {forage, startFishing, talk} from '../actions';
 import {Avatar, type AvatarMotion} from './avatar';
 import {TownTerrain, Water} from './terrain';
-import {Grass, Trees} from './foliage';
+import {Boulders, Bushes, FlowerField, Grass, Trees} from './foliage';
 import {Cottage} from './buildings';
 import {Kit} from './kit';
 import {Creatures} from './creatures';
 import {Player} from './player';
 import {Remote} from './remote';
 import {toon} from './materials';
+import {mulberry32} from '@/game/core/rng';
 
 const box = new THREE.BoxGeometry(1, 1, 1);
 const cyl = new THREE.CylinderGeometry(1, 1, 1, 10);
@@ -218,17 +219,59 @@ function CommonFence() {
   })}</>;
 }
 
+/** Deterministic garden dressing: bushes, flower drifts and boulders placed on dry, open ground. */
+function useDressing() {
+  return useMemo(() => {
+    const random = mulberry32(2026);
+    const open = (x: number, z: number, pad = 1.6) => townWalkable(x, z) && !isPathAt(x, z, pad) && Math.hypot(x, z) > PLAZA.r + 1 &&
+      !BUILDINGS.some(b => Math.abs(x - b.x) < b.w / 2 + 0.9 && Math.abs(z - b.z) < b.d / 2 + 0.9) && TREES.every(t => Math.hypot(t.x - x, t.z - z) > 1.6);
+    const bushes: {x: number; z: number}[] = [];
+    // Hedges hugging every cottage and the plaza rim, then scattered clumps.
+    for (const b of BUILDINGS) for (let i = 0; i < 7; i++) {
+      const side = i % 4, t = random() - 0.5;
+      const x = b.x + (side < 2 ? t * b.w : (side === 2 ? -1 : 1) * (b.w / 2 + 1.1));
+      const z = b.z + (side < 2 ? (side === 0 ? -1 : 1) * (b.d / 2 + 1.1) : t * b.d);
+      if (open(x, z, 1.3)) bushes.push({x, z});
+    }
+    for (let i = 0; i < 26; i++) {const a = (i / 26) * Math.PI * 2; const x = Math.cos(a) * (PLAZA.r + 1.6), z = Math.sin(a) * (PLAZA.r + 1.6); if (open(x, z, 1.4) && random() < 0.7) bushes.push({x, z});}
+    for (let i = 0; i < 260 && bushes.length < 150; i++) {
+      const x = TOWN_BOUNDS.minX + random() * (TOWN_BOUNDS.maxX - TOWN_BOUNDS.minX), z = TOWN_BOUNDS.minZ + random() * (BEACH_Z - 2 - TOWN_BOUNDS.minZ);
+      if (open(x, z)) bushes.push({x, z});
+    }
+    const patches: {x: number; z: number; r: number; color: string}[] = [];
+    const tones = ['#7fd0f5', '#8fb4ff', '#b9a0f5', '#fdfdfb', '#f9b8d2', '#ffe27a'];
+    for (let i = 0; i < 40; i++) {
+      const meadow = i < 18;
+      const x = meadow ? -45 + random() * 11 : TOWN_BOUNDS.minX + random() * (TOWN_BOUNDS.maxX - TOWN_BOUNDS.minX);
+      const z = meadow ? -22 + random() * 48 : TOWN_BOUNDS.minZ + random() * (BEACH_Z - 4 - TOWN_BOUNDS.minZ);
+      if (open(x, z, 1.2)) patches.push({x, z, r: 1.6 + random() * 2.6, color: meadow ? tones[i % 3] : tones[Math.floor(random() * tones.length)]});
+    }
+    const rocks: {x: number; z: number; s: number; r: number}[] = [];
+    for (let i = 0; i < 160 && rocks.length < 34; i++) {
+      const along = i % 3 === 0 ? RIVER[1 + Math.floor(random() * (RIVER.length - 2))] : null;
+      const x = along ? along.x + (random() < 0.5 ? -1 : 1) * (RIVER_WIDTH / 2 + 1.3) : TOWN_BOUNDS.minX + random() * (TOWN_BOUNDS.maxX - TOWN_BOUNDS.minX);
+      const z = along ? along.z + (random() - 0.5) * 6 : random() < 0.5 ? BEACH_Z + random() * 6 : TOWN_BOUNDS.minZ + random() * 14;
+      if (townWalkable(x, z) && !isPathAt(x, z, 2)) rocks.push({x, z, s: 0.7 + random() * 1.3, r: random() * 6});
+    }
+    return {bushes, patches, rocks};
+  }, []);
+}
+
 export function TownWorld({rt, variant, players, quality, playerName}: {rt: Runtime; variant: 'common-ground' | 'public' | 'preview'; players: RemotePlayer[]; quality: 'high' | 'low'; playerName?: string}) {
   const night = useRef(0);
   const lampNight = useStore(rt.ui, () => Math.round(rt.env.current.night * 4) / 4);
   useFrame(() => {night.current = rt.env.current.night;});
+  const dressing = useDressing();
   const light = useMemo(() => new THREE.Color(), []);
   light.copy(rt.env.current.sky.sun).multiplyScalar(0.35 + rt.env.current.sky.sunIntensity * 0.28).lerp(new THREE.Color('#ffffff'), 0.25);
   return <>
     <TownTerrain />
     <Water night={lampNight} />
     <Trees trees={TREES} />
-    <Grass count={quality === 'high' ? 22000 : 9000} light={light} />
+    <Grass count={quality === 'high' ? 26000 : 11000} light={light} />
+    <Bushes spots={dressing.bushes} />
+    <FlowerField patches={dressing.patches} count={quality === 'high' ? 2600 : 1200} />
+    <Boulders rocks={dressing.rocks} />
     {BUILDINGS.map(b => <Cottage key={b.id} b={b} night={lampNight} />)}
     {BRIDGES.map(b => <Bridge key={b.id} b={b} />)}
     <Pier />

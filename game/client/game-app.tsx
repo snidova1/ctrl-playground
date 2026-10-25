@@ -3,7 +3,9 @@ import {Suspense, useCallback, useEffect, useMemo, useRef, useState} from 'react
 import {Canvas} from '@react-three/fiber';
 import * as THREE from 'three';
 import {api, ApiError} from '@/lib/api-client';
-import {COMMON_GATE, HOME_STOP, HOUSE, ROOM_DOOR, SPAWN_POINT, TOWN_BOUNDS, HOME_BOUNDS, ROOM_BOUNDS, heightAt, townWalkable} from '@/game/core/map';
+import {COMMON_GATE, HOME_STOP, HOUSE, ROOM_DOOR, SPAWN_POINT, TOWN_BOUNDS, HOME_BOUNDS, ROOM_BOUNDS, heightAt, townWalkable, blockedByCollider, BUILDINGS, TREES} from '@/game/core/map';
+
+const CAMERA_COLLIDERS = [...BUILDINGS.map(b => ({x: b.x, z: b.z, w: b.w, d: b.d})), ...TREES.map(t => ({x: t.x, z: t.z, r: 0.35 * t.s}))];
 import {normalizeAppearance, randomAppearance, type Appearance} from '@/game/core/appearance';
 import {plotCount, type LifeState} from '@/game/core/life';
 import {GAME_DAY_MS, townHour} from '@/game/core/clock';
@@ -14,6 +16,7 @@ import {useStore} from './store';
 import {localLife, serverLife, resetPreview} from './backend';
 import {localHome, serverHome, type HomeView} from './home-backend';
 import {SkyAndLights, type Environment} from './three/sky';
+import {Effects} from './three/effects';
 import {skyAt} from './three/palette';
 import {TownWorld} from './three/town';
 import {HomeWorld, homeWalkable, type Decor} from './three/home';
@@ -147,6 +150,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
     height: initialScene === 'home' ? () => 0 : heightAt, bounds: TOWN_BOUNDS, env, onGoto: s => gotoRef.current(s),
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
   useKeyboard(rt);
+  useEffect(() => {if (initialScene !== 'home') rt.cameraBlocked = (x, z) => blockedByCollider(x, z, CAMERA_COLLIDERS, 0.25);}, [rt, initialScene]);
   // Read-only QA handle for automated browser checks (no privileged actions).
   useEffect(() => {(window as unknown as {__willow?: Runtime}).__willow = rt;}, [rt]);
   const ui = rt.ui;
@@ -184,8 +188,8 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
     }
     const spawn = spawnFor(next, scene);
     rt.player.pos.set(spawn.x, 0, spawn.z); rt.player.angle = spawn.angle;
-    if (next === 'town') {rt.walkable = townWalkable; rt.height = heightAt; rt.bounds = TOWN_BOUNDS; rt.camera.distance = 11;}
-    else {rt.walkable = homeWalkable(view?.layout ?? [], next === 'room'); rt.height = () => 0; rt.bounds = next === 'room' ? ROOM_BOUNDS : HOME_BOUNDS; rt.camera.distance = next === 'room' ? 7.5 : 10.5;}
+    if (next === 'town') {rt.cameraBlocked = (x, z) => blockedByCollider(x, z, CAMERA_COLLIDERS, 0.25); rt.walkable = townWalkable; rt.height = heightAt; rt.bounds = TOWN_BOUNDS; rt.camera.distance = 5.8;}
+    else {rt.cameraBlocked = next === 'room' ? () => false : (x, z) => Math.abs(x - HOUSE.x) < HOUSE.w / 2 + 0.3 && Math.abs(z - HOUSE.z) < HOUSE.d / 2 + 0.3; rt.walkable = homeWalkable(view?.layout ?? [], next === 'room'); rt.height = () => 0; rt.bounds = next === 'room' ? ROOM_BOUNDS : HOME_BOUNDS; rt.camera.distance = next === 'room' ? 7.5 : 10.5;}
     rt.player.pos.y = rt.height(spawn.x, spawn.z);
     rt.camera.focus.set(spawn.x, 1, spawn.z); rt.camera.yaw = 0;
     rt.targets.clear();
@@ -280,6 +284,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
         {(scene === 'home' || scene === 'room') && home && <HomeWorld rt={rt} layout={layout} garden={garden} ownGarden={isOwnHome} canEdit={home.canEdit} inside={scene === 'room'}
           decorating={decorating} decor={decor} setDecor={setDecor} onLayout={changeLayout} players={players} quality={quality} playerName={profile.name} night={night} />}
       </Suspense>
+      <Effects quality={quality} />
     </Canvas>
     <Hud rt={rt} name={profile.name} social={server} keys={server} variant={variant} />
     {decorating && home && <DecorTray life={life} layout={layout} inside={scene === 'room'} decor={decor} setDecor={setDecor} onLayout={changeLayout}

@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import {townHour, weatherAt} from '@/game/core/clock';
 import {skyAt, type SkyState} from './palette';
 import {shared} from './materials';
+import {Clouds} from './clouds';
 
 export interface Environment {sky: SkyState; hour: number; night: number}
 
@@ -34,7 +35,7 @@ export function SkyAndLights({envRef, focus, shadowSize = 1024, offset = 0}: {en
     vertexShader: skyVertex, fragmentShader: skyFragment, side: THREE.BackSide, depthWrite: false, fog: false,
     uniforms: {top: {value: new THREE.Color()}, horizon: {value: new THREE.Color()}, sunColor: {value: new THREE.Color()}, sunDir: {value: new THREE.Vector3(0, 1, 0)}, night: {value: 0}, time: shared.uTime},
   }), []);
-  const fog = useMemo(() => new THREE.Fog('#cfe9fb', 38, 125), []);
+  const fog = useMemo(() => new THREE.Fog('#c0e1ee', 26, 150), []);
   scene.fog = fog;
   const target = useMemo(() => new THREE.Object3D(), []);
   const tick = useRef(0);
@@ -70,6 +71,7 @@ export function SkyAndLights({envRef, focus, shadowSize = 1024, offset = 0}: {en
 
   return <>
     <mesh material={material} scale={400} renderOrder={-10} frustumCulled={false}><sphereGeometry args={[1, 32, 16]} /></mesh>
+    <Clouds envRef={envRef} />
     <hemisphereLight ref={hemi} args={['#ffffff', '#8fa77a', 1.2]} />
     <primitive object={target} />
     <directionalLight ref={sun} target={target} castShadow intensity={2.2}

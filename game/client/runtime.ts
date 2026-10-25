@@ -49,6 +49,8 @@ export interface Runtime {
   env: MutableRefObject<Environment>;
   targets: Map<string, Target>;
   walkable: (x: number, z: number) => boolean;
+  /** Solid things the camera must not pass through (walls, trunks). */
+  cameraBlocked: (x: number, z: number) => boolean;
   height: (x: number, z: number) => number;
   bounds: {minX: number; maxX: number; minZ: number; maxZ: number};
   act: (action: LifeAction) => Promise<LifeEvent[] | null>;
@@ -75,8 +77,8 @@ export function createRuntime(opts: {scene: Scene; backend: LifeBackend; look: A
     scene: opts.scene, backend: opts.backend, ui,
     player: {pos: new THREE.Vector3(opts.spawn.x, opts.height(opts.spawn.x, opts.spawn.z), opts.spawn.z), angle: opts.spawn.angle ?? Math.PI, speed: 0, motion, locked: false, look: opts.look},
     input: {x: 0, z: 0, run: false, keys: new Set()},
-    camera: {yaw: 0, pitch: 0.62, distance: 11, focus: new THREE.Vector3(opts.spawn.x, 1, opts.spawn.z)},
-    env: opts.env, targets: new Map(), walkable: opts.walkable, height: opts.height, bounds: opts.bounds,
+    camera: {yaw: 0, pitch: 0.3, distance: 5.8, focus: new THREE.Vector3(opts.spawn.x, 1, opts.spawn.z)},
+    env: opts.env, targets: new Map(), walkable: opts.walkable, cameraBlocked: () => false, height: opts.height, bounds: opts.bounds,
     toast(text, tone = 'info', icon, item) {
       const t = {id: ++toastId, text, tone, icon, item};
       ui.set(s => ({toasts: [...s.toasts.slice(-3), t]}));

@@ -33,15 +33,15 @@ export const BRIDGES = [
 export const PIER = {x: 12, z0: SEA_Z - 1.5, z1: 46, w: 3.2};
 
 export const BUILDINGS: Building[] = [
-  {id: 'store', name: 'General Store', x: -12, z: -14, w: 9, d: 6.5, facing: 'south', wall: '#fbe6c8', roof: '#e8735f', trim: '#ffffff', sign: 'General Store', npc: 'juno', kind: 'shop'},
-  {id: 'cafe', name: 'Seaside Café', x: 12.5, z: -14, w: 8.5, d: 6.5, facing: 'south', wall: '#f8f1e6', roof: '#6fb7c9', trim: '#f3c9a0', sign: 'Café Tomo', npc: 'tomo', kind: 'cafe'},
-  {id: 'florist', name: 'Petal Florist', x: -16, z: 9, w: 6.5, d: 6, facing: 'east', wall: '#fde3ea', roof: '#a4cf7a', trim: '#ffffff', sign: 'Petal Florist', npc: 'bea', kind: 'florist'},
-  {id: 'hall', name: 'Town Hall', x: 0, z: -24, w: 11, d: 7, facing: 'south', wall: '#f2ead9', roof: '#8e7cc3', trim: '#ffffff', sign: 'Town Hall', npc: 'odette', kind: 'hall'},
-  {id: 'marlo-house', name: "Marlo's Boathouse", x: 22, z: 23, w: 6.5, d: 5.5, facing: 'west', wall: '#dfeef5', roof: '#4f86b5', trim: '#ffffff', kind: 'home'},
-  {id: 'pip-house', name: "Pip's Cottage", x: -19, z: -3, w: 5.5, d: 5, facing: 'east', wall: '#fff3c4', roof: '#f0a45c', trim: '#ffffff', kind: 'home'},
-  {id: 'wren-cabin', name: "Wren's Cabin", x: 14, z: -33, w: 6, d: 5, facing: 'south', wall: '#e2cfb2', roof: '#6c9a5b', trim: '#f6ead3', kind: 'cabin'},
-  {id: 'cottage-a', name: 'Cottage', x: 22, z: -5, w: 5.5, d: 5, facing: 'west', wall: '#ffe9d6', roof: '#d96b7a', trim: '#ffffff', kind: 'home'},
-  {id: 'cottage-b', name: 'Cottage', x: 6, z: 18, w: 5.5, d: 5, facing: 'north', wall: '#eaf4df', roof: '#e9a64f', trim: '#ffffff', kind: 'home'},
+  {id: 'store', name: 'General Store', x: -12, z: -14, w: 9, d: 6.5, facing: 'south', wall: '#b9473d', roof: '#3e5d4e', trim: '#ffffff', sign: 'General Store', npc: 'juno', kind: 'shop'},
+  {id: 'cafe', name: 'Seaside Café', x: 12.5, z: -14, w: 8.5, d: 6.5, facing: 'south', wall: '#f4efe4', roof: '#4f7f9e', trim: '#ffffff', sign: 'Café Tomo', npc: 'tomo', kind: 'cafe'},
+  {id: 'florist', name: 'Petal Florist', x: -16, z: 9, w: 6.5, d: 6, facing: 'east', wall: '#f6c9d4', roof: '#5a8a5e', trim: '#ffffff', sign: 'Petal Florist', npc: 'bea', kind: 'florist'},
+  {id: 'hall', name: 'Town Hall', x: 0, z: -24, w: 11, d: 7, facing: 'south', wall: '#efe6d2', roof: '#c4613f', trim: '#ffffff', sign: 'Town Hall', npc: 'odette', kind: 'hall'},
+  {id: 'marlo-house', name: "Marlo's Boathouse", x: 22, z: 23, w: 6.5, d: 5.5, facing: 'west', wall: '#b9473d', roof: '#34574a', trim: '#ffffff', kind: 'home'},
+  {id: 'pip-house', name: "Pip's Cottage", x: -19, z: -3, w: 5.5, d: 5, facing: 'east', wall: '#f3d58a', roof: '#3e5d4e', trim: '#ffffff', kind: 'home'},
+  {id: 'wren-cabin', name: "Wren's Cabin", x: 14, z: -33, w: 6, d: 5, facing: 'south', wall: '#a0704a', roof: '#3e5d4e', trim: '#f6ead3', kind: 'cabin'},
+  {id: 'cottage-a', name: 'Cottage', x: 22, z: -5, w: 5.5, d: 5, facing: 'west', wall: '#b9473d', roof: '#3e5d4e', trim: '#ffffff', kind: 'home'},
+  {id: 'cottage-b', name: 'Cottage', x: 6, z: 18, w: 5.5, d: 5, facing: 'north', wall: '#cfe3ef', roof: '#c4613f', trim: '#ffffff', kind: 'home'},
 ];
 
 /** Walkable dirt/stone paths, rendered as ribbons. */

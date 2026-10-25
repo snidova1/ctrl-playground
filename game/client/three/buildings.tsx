@@ -33,6 +33,30 @@ function awningTexture(a: string, b: string) {
   return canvasTexture(256, 64, ctx => {for (let i = 0; i < 8; i++) {ctx.fillStyle = i % 2 ? a : b; ctx.fillRect(i * 32, 0, 32, 64);}});
 }
 
+let siding: THREE.Texture | null = null, shingles: THREE.Texture | null = null;
+/** Painted clapboard siding and roof shingles, tinted by the material colour. */
+function sidingTexture() {
+  siding ??= canvasTexture(256, 256, ctx => {
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 21) {const g = ctx.createLinearGradient(0, y, 0, y + 21); g.addColorStop(0, '#ffffff'); g.addColorStop(0.85, '#ece8e4'); g.addColorStop(1, '#b9b2ac'); ctx.fillStyle = g; ctx.fillRect(0, y, 256, 21);}
+  });
+  return siding;
+}
+function shingleTexture() {
+  if (!shingles) {
+    shingles = canvasTexture(128, 128, ctx => {
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 128, 128);
+      for (let row = 0; row < 8; row++) for (let i = -1; i < 5; i++) {
+        const x = i * 32 + (row % 2) * 16, y = row * 16;
+        ctx.fillStyle = row % 2 ? '#e9e9e9' : '#f6f6f6'; ctx.beginPath(); ctx.roundRect(x + 1, y, 30, 18, [0, 0, 8, 8]); ctx.fill();
+        ctx.strokeStyle = '#bdbdbd'; ctx.lineWidth = 1.5; ctx.stroke();
+      }
+    });
+    shingles.wrapS = shingles.wrapT = THREE.RepeatWrapping; shingles.repeat.set(0.6, 0.6);
+  }
+  return shingles;
+}
+
 const FACING: Record<Building['facing'], number> = {south: 0, north: Math.PI, east: Math.PI / 2, west: -Math.PI / 2};
 
 /** A cosy cottage built from soft toon blocks: walls, gable roof, door, windows, sign. */
@@ -48,7 +72,7 @@ export function Cottage({b, night}: {b: Building; night: number}) {
   const windowMat = useMemo(() => new THREE.MeshToonMaterial({color: '#bfe6ff', emissive: '#ffcf7a', emissiveIntensity: 0}), []);
   windowMat.emissiveIntensity = glow; windowMat.color.set(glow ? '#ffe7b0' : '#bfe6ff');
   const y = heightAt(b.x, b.z) - 0.05;
-  const wall = toon(b.wall), trim = toon(b.trim), roofMat = toon(b.roof), wood = toon('#a8774c'), stone = toon('#d8cfc2');
+  const wall = toon(b.wall, {map: sidingTexture()}), trim = toon(b.trim), roofMat = toon(b.roof, {map: shingleTexture()}), wood = toon('#a8774c'), stone = toon('#d8cfc2');
   const windows: [number, number][] = [];
   for (let i = 0; i < Math.max(1, Math.floor(w / 3)); i++) windows.push([-w / 2 + 1.1 + i * 2.1, 1.55]);
   return <group position={[b.x, y, b.z]} rotation={[0, FACING[b.facing], 0]}>

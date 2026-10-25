@@ -140,7 +140,7 @@ export function NameTag({name, color = '#ffffff', y = 1.75}: {name: string; colo
     ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(name, 128, 34);
   }), [name, color]);
-  return <sprite position={[0, y, 0]} scale={[1.2, 0.3, 1]} renderOrder={5}><spriteMaterial map={texture} transparent depthWrite={false} depthTest={false} /></sprite>;
+  return <sprite position={[0, y, 0]} scale={[0.95, 0.24, 1]} renderOrder={5}><spriteMaterial map={texture} transparent depthWrite={false} depthTest={false} /></sprite>;
 }
 
 const CLIP_FOR: Record<string, string> = {
