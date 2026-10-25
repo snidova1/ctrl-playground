@@ -1,6 +1,8 @@
 import {describe, expect, it} from 'vitest';
 import {BUILDINGS, FORAGE_NODES, PIER, SPAWNS, TREES, fishableFrom, heightAt, townWalkable, waterAt, WATER_Y, HOME_STOP, SPAWN_POINT} from '@/game/core/map';
 import {insideArea, layoutSchema, readStoredLayout, starterLayout} from '@/game/core/home';
+import {HOUSE, ROOM_BOUNDS} from '@/game/core/map';
+import {FLOOR_Y, WALL_T, cottageRect, cottageWalkable, homeHeight, insideCottage} from '@/game/core/cottage';
 import {appearanceSchema, normalizeAppearance, randomAppearance} from '@/game/core/appearance';
 import {fashionNeeded, TOPS} from '@/game/core/wardrobe';
 import {NPCS, npcPosition} from '@/game/core/npcs';
@@ -42,6 +44,27 @@ describe('home layouts', () => {
     const parsed = readStoredLayout(legacy);
     expect(parsed).toHaveLength(1);
     expect(readStoredLayout('not json')).toEqual([]);
+  });
+  it('moves furniture from the old, larger room inside the walk-in cottage', () => {
+    const old = JSON.stringify([{id: crypto.randomUUID(), assetId: 'bookcase', x: 4.3, z: -3.3, rotation: 0, room: true}]);
+    const [item] = readStoredLayout(old);
+    expect(item).toBeDefined();
+    expect(insideArea(item)).toBe(true);
+  });
+  it('the cottage is one space with the yard: walk through the door, not the walls', () => {
+    for (const size of [0, 1, 2]) {
+      const r = cottageRect(size);
+      for (let z = HOUSE.doorZ + 2; z > r.z; z -= 0.1) expect(cottageWalkable(0, z, size)).toBe(true);
+      expect(cottageWalkable(r.w / 2 - 0.1, r.z, size)).toBe(false); // side wall
+      expect(cottageWalkable(2, HOUSE.doorZ - 0.1, size)).toBe(false); // front wall beside the door
+      expect(insideCottage(0, r.z, size)).toBe(true);
+      expect(insideCottage(0, HOUSE.doorZ + 1, size)).toBe(false);
+      expect(homeHeight(0, r.z, size)).toBeCloseTo(FLOOR_Y);
+      expect(homeHeight(0, HOUSE.doorZ + 5, size)).toBe(0);
+      // Furniture area fits inside the walls for every size.
+      expect(r.w / 2 - WALL_T).toBeGreaterThanOrEqual(ROOM_BOUNDS.maxX);
+      expect(r.d / 2 - WALL_T).toBeGreaterThanOrEqual(ROOM_BOUNDS.maxZ);
+    }
   });
   it('rejects room-only furniture in the yard and blocking the house', () => {
     expect(layoutSchema.safeParse([{id: crypto.randomUUID(), assetId: 'bed-single', x: 8, z: 8, rotation: 0, room: false}]).success).toBe(false);

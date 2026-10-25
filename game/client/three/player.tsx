@@ -123,6 +123,7 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     const want = new THREE.Vector3(f.x + Math.sin(yaw) * Math.cos(pitch) * dist, f.y + Math.sin(pitch) * dist, f.z + Math.cos(yaw) * Math.cos(pitch) * dist);
     const ground = rt.height(want.x, want.z) + 0.45;
     if (want.y < ground) want.y = ground;
+    rt.cameraClamp?.(want);
     camPos.current.lerp(want, Math.min(1, dt * (photo ? 12 : 7)));
     if (camPos.current.lengthSq() === 0) camPos.current.copy(want);
     camera.position.copy(camPos.current);

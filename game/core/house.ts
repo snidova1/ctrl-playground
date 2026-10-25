@@ -11,11 +11,11 @@ export const WINDOWS = ['Square', 'Round', 'Arched'] as const;
 export const WALLPAPERS = ['Peach dots', 'Mint stripes', 'Lavender', 'Wood panel', 'Sky check', 'Rose garden'] as const;
 export const FLOORS = ['Honey oak', 'Walnut', 'Checker tile', 'Cream tile', 'Soft carpet'] as const;
 
-/** Cottage footprints. Grand matches the reserved HOUSE area in map.ts. */
+/** Cottage footprints. Every size fits the walk-in living room; Grand matches the reserved HOUSE area in map.ts. */
 export const HOUSE_SIZES = [
-  {name: 'Cozy cottage', w: 7.2, d: 5.4, price: 0},
-  {name: 'Family house', w: 8.1, d: 6, price: 6000},
-  {name: 'Grand home', w: 9, d: 6.5, price: 18000},
+  {name: 'Cozy cottage', w: 8.6, d: 6.6, price: 0},
+  {name: 'Family house', w: 9.8, d: 7.4, price: 6000},
+  {name: 'Grand home', w: 11, d: 8.2, price: 18000},
 ] as const;
 
 const index = (n: number) => z.number().int().min(0).max(n - 1);

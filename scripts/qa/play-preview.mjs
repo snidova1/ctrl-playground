@@ -140,15 +140,38 @@ try {
       });
       step('went home', home);
       await shot('home-yard');
-      await run(async () => {const rt = window.__willow; rt.goto('room'); await new Promise(r => setTimeout(r, 3000));});
-      await page.waitForTimeout(2000);
+      // Walk-in cottage: same scene, through the doorway, camera zooms in.
+      const door = await run(async () => {
+        const rt = window.__willow;
+        const path = [];
+        for (let z = 1; z >= -6; z -= 0.25) path.push(rt.walkable(0, z));
+        const wall = rt.walkable(2.5, -2.85);
+        rt.player.pos.set(0, rt.height(0, -0.4), -0.4); rt.player.angle = Math.PI; rt.camera.yaw = 0;
+        rt.input.z = -1;
+        const t0 = performance.now();
+        while (!rt.ui.get().indoors && performance.now() - t0 < 30000) await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 1200));
+        rt.input.z = 0;
+        return {pathOpen: path.every(Boolean), wallBlocks: !wall, indoors: rt.ui.get().indoors, scene: rt.ui.get().scene, z: rt.player.pos.z, y: rt.player.pos.y, cam: rt.camera.distance};
+      });
+      step('walked indoors', door);
+      await page.waitForTimeout(2500);
       await shot('home-room');
       await run(() => window.__willow.ui.set({decorating: true}));
       await page.waitForTimeout(800);
       await shot('home-decorate');
       await run(() => window.__willow.ui.set({decorating: false, panel: null}));
+      const out = await run(async () => {
+        const rt = window.__willow;
+        rt.player.angle = 0; rt.camera.yaw = Math.PI; rt.input.z = -1; // forward, with the camera turned to face the door
+        const t0 = performance.now();
+        while (rt.ui.get().indoors && performance.now() - t0 < 30000) await new Promise(r => setTimeout(r, 100));
+        rt.input.z = 0;
+        return {indoors: rt.ui.get().indoors, z: rt.player.pos.z, cam: rt.camera.distance};
+      });
+      step('walked back outside', out);
       // Renovation: restyle the cottage outside, preview live, save.
-      await run(async () => {const rt = window.__willow; rt.goto('home'); await new Promise(r => setTimeout(r, 2500)); rt.player.pos.set(0, 0, 4); rt.player.angle = Math.PI; rt.camera.yaw = 0; rt.camera.distance = 9; rt.openPanel('renovate');});
+      await run(async () => {const rt = window.__willow; await new Promise(r => setTimeout(r, 500)); rt.player.pos.set(0, 0, 4); rt.player.angle = Math.PI; rt.camera.yaw = 0; rt.camera.distance = 9; rt.openPanel('renovate');});
       await page.waitForTimeout(1500);
       await shot('renovate-before');
       for (const label of ['Brick', 'Barn', 'Arched', 'Save']) {

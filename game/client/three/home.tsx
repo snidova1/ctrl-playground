@@ -1,8 +1,9 @@
 'use client';
-import {Suspense, useEffect, useMemo, useState} from 'react';
-import type {ThreeEvent} from '@react-three/fiber';
+import {Suspense, useEffect, useMemo, useRef, useState} from 'react';
+import {useFrame, type ThreeEvent} from '@react-three/fiber';
 import * as THREE from 'three';
-import {HOME_BOUNDS, HOME_STATIONS, HOUSE, PLOT_SIZE, ROOM_BOUNDS, ROOM_DOOR, WATER_Y, plotPosition, homeWaterAt} from '@/game/core/map';
+import {HOME_BOUNDS, HOME_STATIONS, HOUSE, PLOT_SIZE, ROOM_BOUNDS, WATER_Y, plotPosition, homeWaterAt} from '@/game/core/map';
+import {FLOOR_Y, WALL_T, cottageRect, cottageWalkable, homeHeight, insideCottage, roomOrigin} from '@/game/core/cottage';
 import {CROP_BY_ID, FURNITURE_BY_ID} from '@/game/core/items';
 import {footprint, insideArea, type Layout, type Placed} from '@/game/core/home';
 import type {Plot} from '@/game/core/life';
@@ -11,7 +12,7 @@ import {DEFAULT_HOUSE, DOOR_COLORS, HOUSE_SIZES, ROOF_COLORS, TRIM_COLORS, WALL_
 import type {Runtime} from '../runtime';
 import {useStore} from '../store';
 import {startFishing, hobbyReady} from '../actions';
-import {Cottage} from './buildings';
+import {Cottage, type WalkIn} from './buildings';
 import {Kit} from './kit';
 import {Player} from './player';
 import {Bushes, FlowerField, Grass, Trees, type TreeSpec} from './foliage';
@@ -23,7 +24,7 @@ import type {RemotePlayer} from '@/game/core/api-types';
 const flat = () => 0;
 // Garden dressing beyond the fence: soft trees, hydrangeas and bell flowers like the town.
 const HOME_TREES: TreeSpec[] = [[-21, -15, 'pine'], [21, -16, 'round'], [-23, 3, 'blossom'], [23, 5, 'round'], [-20, 17, 'fruit'], [20, 18, 'birch'], [-9, -18, 'round'], [10, -19, 'pine'], [-26, -6, 'round'], [26, -4, 'blossom'], [-14, 21, 'round'], [14, 21, 'round']].map(([x, z, kind]) => ({x: x as number, z: z as number, s: 1.1, kind: kind as TreeSpec['kind']}));
-const HOME_BUSHES = [[-15.5, -12], [15.5, -12], [-15.5, 13.5], [15.5, 13.5], [-4.8, -3], [4.8, -3], [-18.5, 0], [18.5, 2], [-6, 16], [6, 16]].map(([x, z]) => ({x, z}));
+const HOME_BUSHES = [[-15.5, -12], [15.5, -12], [-15.5, 13.5], [15.5, 13.5], [-6.9, -2.2], [6.9, -2.2], [-18.5, 0], [18.5, 2], [-6, 16], [6, 16]].map(([x, z]) => ({x, z}));
 const HOME_FLOWERS = [{x: -19, z: 8, r: 2.5, color: '#7fd0f5'}, {x: 19, z: -7, r: 2.4, color: '#b9a0f5'}, {x: -10, z: -16, r: 2.2, color: '#f9b8d2'}, {x: 11, z: 17, r: 2.4, color: '#fdfdfb'}];
 const GRASS_BOUNDS = {minX: -30, maxX: 30, minZ: -26, maxZ: 28};
 function grassAllowed(x: number, z: number) {
@@ -70,8 +71,10 @@ function Ghost({assetId, rotation, at, valid}: {assetId: string; rotation: numbe
 }
 
 /** Click/tap-to-place furniture editing on a snapped grid. */
-function Decorator({rt, layout, room, decor, setDecor, onChange}: {rt: Runtime; layout: Layout; room: boolean; decor: Decor; setDecor: (d: Decor) => void; onChange: (layout: Layout) => void}) {
-  const [hover, setHover] = useState(() => new THREE.Vector3(room ? 0 : 6, 0, room ? 0 : 6));
+function Decorator({rt, layout, room, origin, decor, setDecor, onChange}: {rt: Runtime; layout: Layout; room: boolean; origin?: THREE.Vector3; decor: Decor; setDecor: (d: Decor) => void; onChange: (layout: Layout) => void}) {
+  const [hover, setHoverWorld] = useState(() => new THREE.Vector3(room ? 0 : 6, 0, room ? 0 : 6));
+  // Room furniture is stored centred on the cottage; pointer hits come back in world space.
+  const setHover = (p: THREE.Vector3) => setHoverWorld(origin ? p.clone().sub(origin) : p);
   const b = room ? ROOM_BOUNDS : HOME_BOUNDS;
   const snap = (v: number, size: number) => (size % 2 ? Math.floor(v) + 0.5 : Math.round(v));
   const candidate = (assetId: string, x: number, z: number, rotation: number, ignore?: string): Placed => ({id: ignore ?? crypto.randomUUID(), assetId, x, z, rotation, room});
@@ -176,11 +179,12 @@ function HomeGround({quality}: {quality: 'high' | 'low'}) {
   }, []);
   const pond = HOME_STATIONS.pond;
   return <>
+    {/* fences load their models on their own, so the ground never waits for them */}
+    <Suspense fallback={null}>{fences.map((f, i) => <Kit key={i} model="nature-kit/fence_simple" position={[f.x, 0, f.z]} rotation={f.r} scale={1.1} shadows={false} />)}</Suspense>
     <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[160, 160]} /><meshToonMaterial color="#93cf68" /></mesh>
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 6]} receiveShadow><planeGeometry args={[2.4, 16]} /><meshToonMaterial color="#e8cf9c" /></mesh>
     <mesh position={[pond.x, WATER_Y + 0.2, pond.z]} scale={[pond.rx, 1, pond.rz]}><cylinderGeometry args={[1, 1, 0.05, 32]} /><meshToonMaterial color="#6cc7e6" transparent opacity={0.9} /></mesh>
     <mesh position={[pond.x, 0.02, pond.z]} scale={[pond.rx + 0.4, 1, pond.rz + 0.4]}><cylinderGeometry args={[1, 1, 0.06, 32]} /><meshToonMaterial color="#d8c8a0" /></mesh>
-    {fences.map((f, i) => <Kit key={i} model="nature-kit/fence_simple" position={[f.x, 0, f.z]} rotation={f.r} scale={1.1} shadows={false} />)}
     <Trees trees={HOME_TREES} density={quality === 'high' ? 1 : 0.55} height={flat} />
     <Bushes spots={HOME_BUSHES} height={flat} />
     <FlowerField patches={HOME_FLOWERS} count={quality === 'high' ? 700 : 350} height={flat} />
@@ -210,101 +214,122 @@ function floorTexture(kind: number) {
   });
 }
 
-function Room({night, wallpaperKind = 0, floorKind = 0}: {night: number; wallpaperKind?: number; floorKind?: number}) {
-  const wallpaper = useMemo(() => wallpaperTexture(wallpaperKind), [wallpaperKind]);
-  wallpaper.wrapS = wallpaper.wrapT = THREE.RepeatWrapping; wallpaper.repeat.set(4, 1.5);
-  const floor = useMemo(() => floorTexture(floorKind), [floorKind]);
-  floor.wrapS = floor.wrapT = THREE.RepeatWrapping; floor.repeat.set(3, 3);
-  const w = ROOM_BOUNDS.maxX - ROOM_BOUNDS.minX, d = ROOM_BOUNDS.maxZ - ROOM_BOUNDS.minZ;
-  return <>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[w + 1, d + 1]} /><meshToonMaterial map={floor} /></mesh>
-    <mesh position={[0, 1.7, ROOM_BOUNDS.minZ - 0.5]}><boxGeometry args={[w + 1, 3.4, 0.2]} /><meshToonMaterial map={wallpaper} /></mesh>
-    {[-1, 1].map(s => <mesh key={s} position={[s * (w / 2 + 0.5), 1.7, 0]}><boxGeometry args={[0.2, 3.4, d + 1]} /><meshToonMaterial map={wallpaper} /></mesh>)}
-    <mesh position={[0, 0.1, ROOM_BOUNDS.minZ - 0.38]}><boxGeometry args={[w + 1, 0.2, 0.06]} /><meshToonMaterial color="#ffffff" /></mesh>
-    {[-2.5, 2.5].map(x => <group key={x} position={[x, 1.9, ROOM_BOUNDS.minZ - 0.38]}>
-      <mesh><boxGeometry args={[1.5, 1.3, 0.05]} /><meshToonMaterial color="#ffffff" /></mesh>
-      <mesh position={[0, 0, 0.03]}><boxGeometry args={[1.3, 1.1, 0.02]} /><meshBasicMaterial color={night > 0.5 ? '#33406e' : '#bfe6ff'} /></mesh>
-    </group>)}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[ROOM_DOOR.x, 0.02, ROOM_DOOR.z + 0.2]}><planeGeometry args={[1.4, 0.9]} /><meshToonMaterial color="#c9a36b" /></mesh>
-    <pointLight position={[0, 3, 0]} intensity={night > 0.3 ? 2.4 : 1.2} distance={12} color="#ffe2b8" />
-  </>;
-}
+const INDOOR_CAMERA = {distance: 3.6, pitch: 0.42};
+const OUTDOOR_CAMERA = {distance: 10.5, pitch: 0.3};
 
-export function HomeWorld({rt, layout, garden, ownGarden, canEdit, inside, decorating, decor, setDecor, onLayout, players, quality, playerName, night, house = DEFAULT_HOUSE}: {
-  rt: Runtime; layout: Layout; garden: Pick<Plot, 'crop' | 'waters' | 'readyAt'>[]; ownGarden: boolean; canEdit: boolean; inside: boolean;
+export function HomeWorld({rt, layout, garden, ownGarden, canEdit, decorating, decor, setDecor, onLayout, players, quality, playerName, night, house = DEFAULT_HOUSE}: {
+  rt: Runtime; layout: Layout; garden: Pick<Plot, 'crop' | 'waters' | 'readyAt'>[]; ownGarden: boolean; canEdit: boolean;
   decorating: boolean; decor: Decor; setDecor: (d: Decor) => void; onLayout: (l: Layout) => void; players: RemotePlayer[]; quality: 'high' | 'low'; playerName?: string; night: number; house?: House;
 }) {
-  const items = layout.filter(o => o.room === inside);
+  const size = house.size;
+  const origin = roomOrigin(size);
+  const indoors = useStore(rt.ui, s => s.indoors);
+  const roomItems = useMemo(() => layout.filter(o => o.room), [layout]);
+  const yardItems = useMemo(() => layout.filter(o => !o.room), [layout]);
+  const wallpaper = useMemo(() => {const t = wallpaperTexture(house.wallpaper); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3.5, 1.2); return t;}, [house.wallpaper]);
+  const floor = useMemo(() => {const t = floorTexture(house.floor); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2.6, 2); return t;}, [house.floor]);
+  const doorOpen = useRef(0);
+  const walkIn = useMemo<WalkIn>(() => ({wallpaper, floor, doorOpen}), [wallpaper, floor]);
+
+  // One continuous space: walking through the door flips "indoors" and the camera zooms in close.
+  useEffect(() => {
+    const r = cottageRect(size);
+    const inRect = (x: number, z: number) => Math.abs(x - r.x) < r.w / 2 + 0.3 && Math.abs(z - r.z) < r.d / 2 + 0.3;
+    // Indoors the lens stays inside the room (just under the wall tops) instead of slipping out through the doorway.
+    const m = WALL_T + 0.35, top = FLOOR_Y + 0.4 + 2.7 - 0.35;
+    rt.cameraBlocked = indoors ? () => false : (x, z) => inRect(x, z);
+    rt.cameraClamp = indoors ? v => {
+      v.x = THREE.MathUtils.clamp(v.x, r.x - r.w / 2 + m, r.x + r.w / 2 - m);
+      v.z = THREE.MathUtils.clamp(v.z, r.z - r.d / 2 + m, r.z + r.d / 2 - m);
+      v.y = Math.min(v.y, top);
+    } : null;
+  }, [rt, indoors, size]);
+  useEffect(() => () => {rt.ui.set({indoors: false}); rt.cameraClamp = null;}, [rt]);
+  useFrame(() => {
+    const p = rt.player.pos;
+    const inside = insideCottage(p.x, p.z, size);
+    doorOpen.current = Math.hypot(p.x - HOUSE.doorX, p.z - HOUSE.doorZ) < 2.4 ? 1 : 0;
+    if (inside !== rt.ui.get().indoors) {
+      const cam = inside ? INDOOR_CAMERA : OUTDOOR_CAMERA;
+      if (rt.ui.get().panel !== 'renovate') {rt.camera.distance = cam.distance; rt.camera.pitch = cam.pitch;}
+      rt.ui.set({indoors: inside});
+    }
+  });
+
   // Interaction stations.
   useEffect(() => {
     const ids: string[] = [];
     const add = (id: string, label: string, icon: string, x: number, z: number, run: () => void, radius = 2) => {ids.push(id); rt.targets.set(id, {id, label, icon, x, z, radius, priority: 0.2, run});};
-    if (inside) {
-      add('room-door', 'Go outside', '🚪', ROOM_DOOR.x, ROOM_DOOR.z, () => rt.goto('home'));
-      for (const o of items) {
-        const def = FURNITURE_BY_ID[o.assetId];
-        if (def?.stove) add(`stove-${o.id}`, 'Cook at the stove', '🍳', o.x, o.z, () => rt.openPanel('cook'), 1.8);
-        if (o.assetId === 'coat-rack' || o.assetId === 'bookcase') add(`wardrobe-${o.id}`, 'Change outfit', '👗', o.x, o.z, () => rt.openPanel('wardrobe'), 1.8);
-        if (def?.seat) add(`seat-${o.id}`, `Sit on ${def.name}`, '🪑', o.x, o.z, () => {rt.player.pos.set(o.x, 0, o.z); rt.player.angle = o.rotation * Math.PI / 2 + Math.PI; rt.setAnim('sit', 'none', 0, 'relaxed');}, 1.4);
-      }
-      add('room-mirror', 'Change outfit', '👗', 0, ROOM_BOUNDS.minZ + 0.6, () => rt.openPanel('wardrobe'), 1.6);
-    } else {
-      add('house-door', 'Go inside', '🏠', HOUSE.doorX, HOUSE.doorZ + 1.2, () => rt.goto('room'));
-      add('bus', 'Take the bus to town', '🚌', HOME_STATIONS.busStop.x, HOME_STATIONS.busStop.z, () => rt.goto('town'));
-      add('workbench', 'Craft furniture', '🔨', HOME_STATIONS.workbench.x, HOME_STATIONS.workbench.z, () => rt.openPanel('craft'));
-      add('mailbox', 'Check the mailbox', '📮', HOME_STATIONS.mailbox.x, HOME_STATIONS.mailbox.z, () => rt.openPanel('mail'));
-      const pond = HOME_STATIONS.pond;
-      for (let k = 0; k < 6; k++) {
-        const a = (k / 6) * Math.PI * 2;
-        const x = pond.x + Math.cos(a) * (pond.rx + 1), z = pond.z + Math.sin(a) * (pond.rz + 1);
-        add(`pond-${k}`, 'Fish in your pond', '🎣', x, z, () => void startFishing(rt, 'home', 'pond', {x: pond.x + Math.cos(a) * pond.rx * 0.45, z: pond.z + Math.sin(a) * pond.rz * 0.45}), 1.4);
-      }
-      for (const o of items) {
-        const def = FURNITURE_BY_ID[o.assetId];
-        if (def?.seat) add(`seat-${o.id}`, `Sit on ${def.name}`, '🪑', o.x, o.z, () => {rt.player.pos.set(o.x, 0, o.z); rt.player.angle = o.rotation * Math.PI / 2 + Math.PI; rt.setAnim('sit', 'none', 0, 'relaxed');}, 1.4);
-      }
+    const sit = (x: number, z: number, rotation: number, y: number) => () => {rt.player.pos.set(x, y, z); rt.player.angle = rotation * Math.PI / 2 + Math.PI; rt.setAnim('sit', 'none', 0, 'relaxed');};
+    for (const o of roomItems) {
+      const def = FURNITURE_BY_ID[o.assetId];
+      const x = origin.x + o.x, z = origin.z + o.z;
+      if (def?.stove) add(`stove-${o.id}`, 'Cook at the stove', '🍳', x, z, () => rt.openPanel('cook'), 1.8);
+      if (o.assetId === 'coat-rack' || o.assetId === 'bookcase') add(`wardrobe-${o.id}`, 'Change outfit', '👗', x, z, () => rt.openPanel('wardrobe'), 1.8);
+      if (def?.seat) add(`seat-${o.id}`, `Sit on ${def.name}`, '🪑', x, z, sit(x, z, o.rotation, FLOOR_Y), 1.4);
+    }
+    add('room-mirror', 'Change outfit', '👗', origin.x, origin.z + ROOM_BOUNDS.minZ + 0.6, () => rt.openPanel('wardrobe'), 1.6);
+    add('bus', 'Take the bus to town', '🚌', HOME_STATIONS.busStop.x, HOME_STATIONS.busStop.z, () => rt.goto('town'));
+    add('workbench', 'Craft furniture', '🔨', HOME_STATIONS.workbench.x, HOME_STATIONS.workbench.z, () => rt.openPanel('craft'));
+    add('mailbox', 'Check the mailbox', '📮', HOME_STATIONS.mailbox.x, HOME_STATIONS.mailbox.z, () => rt.openPanel('mail'));
+    const pond = HOME_STATIONS.pond;
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2;
+      const x = pond.x + Math.cos(a) * (pond.rx + 1), z = pond.z + Math.sin(a) * (pond.rz + 1);
+      add(`pond-${k}`, 'Fish in your pond', '🎣', x, z, () => void startFishing(rt, 'home', 'pond', {x: pond.x + Math.cos(a) * pond.rx * 0.45, z: pond.z + Math.sin(a) * pond.rz * 0.45}), 1.4);
+    }
+    for (const o of yardItems) {
+      const def = FURNITURE_BY_ID[o.assetId];
+      if (def?.seat) add(`seat-${o.id}`, `Sit on ${def.name}`, '🪑', o.x, o.z, sit(o.x, o.z, o.rotation, 0), 1.4);
     }
     return () => ids.forEach(id => rt.targets.delete(id));
-  }, [rt, inside, items]);
+  }, [rt, roomItems, yardItems, origin.x, origin.z]);
+
+  const piece = (o: Placed) => <FurniturePiece key={o.id} item={o} selected={decor.selected === o.id} onSelect={decorating && canEdit ? id => setDecor({...decor, selected: id, placing: null, rotation: layout.find(x => x.id === id)?.rotation ?? 0}) : undefined} />;
   return <>
-    {inside ? <Room night={night} wallpaperKind={house.wallpaper} floorKind={house.floor} /> : <Suspense fallback={null}><HomeGround quality={quality} /></Suspense>}
-    {!inside && <>
-      <Cottage b={houseBuilding(house)} night={night} style={{siding: house.siding, roofStyle: house.roofStyle, windows: house.windows, door: DOOR_COLORS[house.door], porch: house.porch, chimney: house.chimney, flowerBoxes: house.flowerBoxes}} />
-      <Plots rt={rt} garden={garden} own={ownGarden} />
-      <Mailbox />
-      <group position={[HOME_STATIONS.workbench.x, 0, HOME_STATIONS.workbench.z]}>
-        <Suspense fallback={null}><Kit model="furniture-kit/table" position={[0, 0, 0]} scale={1.6} /><Kit model="food-kit/cutting-board" position={[0.2, 1.22, 0]} scale={1.4} /></Suspense>
-      </group>
-      <group position={[HOME_STATIONS.busStop.x, 0, HOME_STATIONS.busStop.z]}>
-        <mesh geometry={box} material={toon('#f2c14e')} position={[1.3, 1.3, 0]} scale={[0.12, 2.6, 0.12]} castShadow />
-        <mesh position={[1.3, 2.7, 0]} rotation={[Math.PI / 2, 0, 0]} material={toon('#6fb7c9')}><cylinderGeometry args={[0.45, 0.45, 0.08, 18]} /></mesh>
-      </group>
-    </>}
+    <Suspense fallback={null}><HomeGround quality={quality} /></Suspense>
+    <Cottage b={houseBuilding(house)} night={night} walkIn={walkIn} style={{siding: house.siding, roofStyle: house.roofStyle, windows: house.windows, door: DOOR_COLORS[house.door], porch: house.porch, chimney: house.chimney, flowerBoxes: house.flowerBoxes}} />
+    <pointLight position={[origin.x, FLOOR_Y + 2.3, origin.z]} intensity={indoors ? 2.2 : night > 0.3 ? 1.2 : 0} distance={9} color="#ffe2b8" />
+    <Plots rt={rt} garden={garden} own={ownGarden} />
+    <Mailbox />
+    <group position={[HOME_STATIONS.workbench.x, 0, HOME_STATIONS.workbench.z]}>
+      <Suspense fallback={null}><Kit model="furniture-kit/table" position={[0, 0, 0]} scale={1.6} /><Kit model="food-kit/cutting-board" position={[0.2, 1.22, 0]} scale={1.4} /></Suspense>
+    </group>
+    <group position={[HOME_STATIONS.busStop.x, 0, HOME_STATIONS.busStop.z]}>
+      <mesh geometry={box} material={toon('#f2c14e')} position={[1.3, 1.3, 0]} scale={[0.12, 2.6, 0.12]} castShadow />
+      <mesh position={[1.3, 2.7, 0]} rotation={[Math.PI / 2, 0, 0]} material={toon('#6fb7c9')}><cylinderGeometry args={[0.45, 0.45, 0.08, 18]} /></mesh>
+    </group>
     <Suspense fallback={null}>
-      {items.map(o => <FurniturePiece key={o.id} item={o} selected={decor.selected === o.id} onSelect={decorating && canEdit ? id => setDecor({...decor, selected: id, placing: null, rotation: layout.find(x => x.id === id)?.rotation ?? 0}) : undefined} />)}
-      {decorating && canEdit && <Decorator rt={rt} layout={layout} room={inside} decor={decor} setDecor={setDecor} onChange={onLayout} />}
+      <group position={[origin.x, FLOOR_Y, origin.z]}>
+        {roomItems.map(piece)}
+        {decorating && canEdit && indoors && <Decorator rt={rt} layout={layout} room origin={new THREE.Vector3(origin.x, FLOOR_Y, origin.z)} decor={decor} setDecor={setDecor} onChange={onLayout} />}
+      </group>
+      {yardItems.map(piece)}
+      {decorating && canEdit && !indoors && <Decorator rt={rt} layout={layout} room={false} decor={decor} setDecor={setDecor} onChange={onLayout} />}
     </Suspense>
-    {players.filter(p => !!p.inside === inside).map(p => <Remote key={p.id} p={p} height={flat} />)}
-    {!inside && <Bobber rt={rt} waterY={WATER_Y + 0.2} />}
+    {players.map(p => <Remote key={p.id} p={p} height={(x, z) => homeHeight(x, z, size, house.porch)} />)}
+    <Bobber rt={rt} waterY={WATER_Y + 0.2} />
     <Player rt={rt} name={playerName} />
   </>;
 }
 
-export function homeWalkable(layout: Layout, inside: boolean) {
-  const solid = layout.filter(o => o.room === inside && !['rug-round', 'rug-rect', 'stone-path', 'flowers-yellow', 'flowers-red'].includes(o.assetId));
+/** Collision for the Habitat: yard, cottage walls with their doorway, and every placed piece. */
+export function homeWalkable(layout: Layout, size = 0) {
+  const origin = roomOrigin(size);
+  const solid = layout.filter(o => !['rug-round', 'rug-rect', 'stone-path', 'flowers-yellow', 'flowers-red'].includes(o.assetId))
+    .map(o => ({o, x: o.room ? origin.x + o.x : o.x, z: o.room ? origin.z + o.z : o.z}));
   return (x: number, z: number) => {
-    const b = inside ? ROOM_BOUNDS : HOME_BOUNDS;
+    const b = HOME_BOUNDS;
     if (x < b.minX + 0.3 || x > b.maxX - 0.3 || z < b.minZ + 0.3 || z > b.maxZ - 0.1) return false;
-    if (!inside) {
-      if (Math.abs(x - HOUSE.x) < HOUSE.w / 2 + 0.3 && Math.abs(z - HOUSE.z) < HOUSE.d / 2 + 0.3) return false;
-      if (homeWaterAt(x, z)) return false;
-      if (Math.hypot(x - HOME_STATIONS.mailbox.x, z - HOME_STATIONS.mailbox.z) < 0.5) return false;
-      if (Math.abs(x - HOME_STATIONS.workbench.x) < 1.6 && Math.abs(z - HOME_STATIONS.workbench.z) < 0.9) return false;
-    }
-    for (const o of solid) {
-      const [w, d] = footprint(o);
-      if (Math.abs(x - o.x) < w / 2 + 0.2 && Math.abs(z - o.z) < d / 2 + 0.2) return false;
+    if (!cottageWalkable(x, z, size)) return false;
+    if (homeWaterAt(x, z)) return false;
+    if (Math.hypot(x - HOME_STATIONS.mailbox.x, z - HOME_STATIONS.mailbox.z) < 0.5) return false;
+    if (Math.abs(x - HOME_STATIONS.workbench.x) < 1.6 && Math.abs(z - HOME_STATIONS.workbench.z) < 0.9) return false;
+    for (const s of solid) {
+      const [w, d] = footprint(s.o);
+      if (Math.abs(x - s.x) < w / 2 + 0.2 && Math.abs(z - s.z) < d / 2 + 0.2) return false;
     }
     return true;
   };
 }
+

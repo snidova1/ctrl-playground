@@ -3,7 +3,7 @@ import {Suspense, useCallback, useEffect, useMemo, useRef, useState} from 'react
 import {Canvas} from '@react-three/fiber';
 import * as THREE from 'three';
 import {api, ApiError} from '@/lib/api-client';
-import {COMMON_GATE, HOME_STOP, HOUSE, ROOM_DOOR, SPAWN_POINT, TOWN_BOUNDS, HOME_BOUNDS, ROOM_BOUNDS, heightAt, townWalkable, blockedByCollider, BUILDINGS, TREES} from '@/game/core/map';
+import {COMMON_GATE, HOME_STOP, SPAWN_POINT, TOWN_BOUNDS, HOME_BOUNDS, heightAt, townWalkable, blockedByCollider, BUILDINGS, TREES} from '@/game/core/map';
 
 const CAMERA_COLLIDERS = [...BUILDINGS.map(b => ({x: b.x, z: b.z, w: b.w, d: b.d})), ...TREES.map(t => ({x: t.x, z: t.z, r: 0.35 * t.s}))];
 import {normalizeAppearance, randomAppearance, type Appearance} from '@/game/core/appearance';
@@ -27,7 +27,8 @@ import {FriendsPanel, KeysPanel} from './ui/social';
 import {AvatarEditor} from './ui/creator';
 import {DecorTray} from './ui/decor';
 import {RenovateTray} from './ui/renovate';
-import type {House} from '@/game/core/house';
+import {DEFAULT_HOUSE, type House} from '@/game/core/house';
+import {homeHeight} from '@/game/core/cottage';
 import './ui/game.css';
 
 export type Variant = 'common-ground' | 'public' | 'preview';
@@ -151,8 +152,7 @@ function LoadingVeil({rt}: {rt: Runtime}) {
 }
 
 function spawnFor(scene: Scene, from: Scene | null) {
-  if (scene === 'home') return from === 'room' ? {x: HOUSE.doorX, z: HOUSE.doorZ + 1.6, angle: 0} : {x: 0, z: 11.5, angle: Math.PI};
-  if (scene === 'room') return {x: ROOM_DOOR.x, z: ROOM_DOOR.z - 0.6, angle: Math.PI};
+  if (scene === 'home' || scene === 'room') return {x: 0, z: 11.5, angle: Math.PI};
   if (scene === 'common-ground') return {x: 0, z: 12, angle: Math.PI};
   return from === 'home' ? {x: HOME_STOP.x, z: HOME_STOP.z + 1.2, angle: Math.PI} : from === 'common-ground' ? {x: COMMON_GATE.x, z: COMMON_GATE.z + 1.4, angle: Math.PI} : {...SPAWN_POINT, angle: Math.PI};
 }
@@ -185,6 +185,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
   const panelArg = useStore(ui, s => s.panelArg);
   const decorating = useStore(ui, s => s.decorating);
   const life = useStore(ui, s => s.life);
+  const indoors = useStore(ui, s => s.indoors);
   useEffect(() => {rt.player.look = profile.appearance;}, [rt, profile]);
 
   // Life state.
@@ -202,21 +203,24 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
   }, [homeBackend]);
 
   // Scene switching with a soft fade, repositioning the player and swapping collision.
-  const goto = useCallback(async (next: Scene, worldId?: string) => {
+  const goto = useCallback(async (target: Scene, worldId?: string) => {
+    // The living room is inside the yard scene now; old 'room' requests just go home.
+    const next: Scene = target === 'room' ? 'home' : target;
+    if (next === 'home' && scene === 'home' && !worldId && home) return;
     if (next === 'common-ground' && variant !== 'common-ground') {window.location.href = '/'; return;}
     if (next === 'town' && variant === 'common-ground') {window.dispatchEvent(new Event('willow:join')); return;}
     setFade(true);
     await new Promise(r => setTimeout(r, 280));
     let view = home;
-    if (next === 'home' || next === 'room') {
-      if (!view || worldId || (next === 'home' && scene === 'town')) {
+    if (next === 'home') {
+      if (!view || worldId || scene === 'town') {
         try {view = await loadHome(worldId ?? (visit && !view ? visit : undefined));} catch (e) {rt.toast(e instanceof Error ? e.message : 'Home unavailable.', 'bad'); setFade(false); return;}
       }
     }
     const spawn = spawnFor(next, scene);
     rt.player.pos.set(spawn.x, 0, spawn.z); rt.player.angle = spawn.angle;
     if (next === 'town') {rt.cameraBlocked = (x, z) => blockedByCollider(x, z, CAMERA_COLLIDERS, 0.25); rt.walkable = townWalkable; rt.height = heightAt; rt.bounds = TOWN_BOUNDS; rt.camera.distance = 5.8;}
-    else {rt.cameraBlocked = next === 'room' ? () => false : (x, z) => Math.abs(x - HOUSE.x) < HOUSE.w / 2 + 0.3 && Math.abs(z - HOUSE.z) < HOUSE.d / 2 + 0.3; rt.walkable = homeWalkable(view?.layout ?? [], next === 'room'); rt.height = () => 0; rt.bounds = next === 'room' ? ROOM_BOUNDS : HOME_BOUNDS; rt.camera.distance = next === 'room' ? 7.5 : 10.5;}
+    else {const h = view?.house ?? DEFAULT_HOUSE; rt.walkable = homeWalkable(view?.layout ?? [], h.size); rt.height = (x, z) => homeHeight(x, z, h.size, h.porch); rt.bounds = HOME_BOUNDS; rt.camera.distance = 10.5; rt.camera.pitch = 0.3;}
     rt.player.pos.y = rt.height(spawn.x, spawn.z);
     rt.camera.focus.set(spawn.x, 1, spawn.z); rt.camera.yaw = 0;
     rt.targets.clear();
@@ -229,7 +233,8 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
   gotoRef.current = s => void goto(s);
 
   useEffect(() => {if (initialScene === 'home') void goto('home', visit ?? undefined);}, []); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {if (scene === 'home' || scene === 'room') rt.walkable = homeWalkable(layout, scene === 'room');}, [layout, scene, rt]);
+  const liveHouse = housePreview ?? home?.house ?? DEFAULT_HOUSE;
+  useEffect(() => {if (scene === 'home') {rt.walkable = homeWalkable(layout, liveHouse.size); rt.height = (x, z) => homeHeight(x, z, liveHouse.size, liveHouse.porch);}}, [layout, scene, rt, liveHouse.size, liveHouse.porch]);
 
   // Presence (real players only).
   useEffect(() => {
@@ -258,7 +263,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
           if (!session) await join();
           if (session) {
             session.sequence++;
-            const r = await api<{players: RemotePlayer[]}>('habitat/presence', {method: 'POST', body: {worldId: home.worldId, sessionId: session.id, sequence: session.sequence, x: rt.player.pos.x, z: rt.player.pos.z, angle: rt.player.angle, anim: ['idle', 'walk', 'run', 'sit', 'fish', 'water', 'wave', 'cheer', 'eat'].includes(anim()) ? anim() : 'idle', inside: scene === 'room'}});
+            const r = await api<{players: RemotePlayer[]}>('habitat/presence', {method: 'POST', body: {worldId: home.worldId, sessionId: session.id, sequence: session.sequence, x: rt.player.pos.x, z: rt.player.pos.z, angle: rt.player.angle, anim: ['idle', 'walk', 'run', 'sit', 'fish', 'water', 'wave', 'cheer', 'eat'].includes(anim()) ? anim() : 'idle', inside: false}});
             if (alive) setPlayers(r.players);
           }
         } catch {session = null;}
@@ -310,16 +315,16 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
       <SkyAndLights envRef={env} focus={rt.camera.focus} shadowSize={quality === 'high' ? 2048 : 1024} offset={skyOffset} />
       <Suspense fallback={null}>
         {(scene === 'town' || scene === 'common-ground') && <TownWorld rt={rt} variant={variant} players={players} quality={quality} playerName={profile.name} />}
-        {(scene === 'home' || scene === 'room') && home && <HomeWorld rt={rt} layout={layout} garden={garden} ownGarden={isOwnHome} canEdit={home.canEdit} inside={scene === 'room'}
+        {(scene === 'home' || scene === 'room') && home && <HomeWorld rt={rt} layout={layout} garden={garden} ownGarden={isOwnHome} canEdit={home.canEdit}
           decorating={decorating} decor={decor} setDecor={setDecor} onLayout={changeLayout} players={players} quality={quality} playerName={profile.name} night={night} house={housePreview ?? home.house} />}
       </Suspense>
       <Effects quality={quality} />
     </Canvas>
     <Hud rt={rt} name={profile.name} social={server} keys={server} variant={variant} />
-    {decorating && home && <DecorTray life={life} layout={layout} inside={scene === 'room'} decor={decor} setDecor={setDecor} onLayout={changeLayout}
+    {decorating && home && <DecorTray life={life} layout={layout} inside={indoors} decor={decor} setDecor={setDecor} onLayout={changeLayout}
       onSave={() => void saveLayout()} saving={saving} dirty={dirty} onClose={() => {if (dirty) void saveLayout(); ui.set({decorating: false, panel: null}); setDecor({selected: null, placing: null, rotation: 0});}} />}
     {home && !isOwnHome && (scene === 'home' || scene === 'room') && <div className="wc-zone" style={{top: 110, opacity: 1}}>Visiting {home.ownerName}&apos;s home</div>}
-    {panel === 'renovate' && home && (home.isOwner ? <RenovateTray house={housePreview ?? home.house} onPreview={setHousePreview} houseLevel={life?.houseLevel ?? 0} coins={life?.coins ?? 0} inside={scene === 'room'} saving={saving}
+    {panel === 'renovate' && home && (home.isOwner ? <RenovateTray house={housePreview ?? home.house} onPreview={setHousePreview} houseLevel={life?.houseLevel ?? 0} coins={life?.coins ?? 0} inside={indoors} saving={saving}
       onUpgrade={async size => {const ev = await rt.act({type: 'upgrade-house', size}); if (ev) {setHousePreview({...(housePreview ?? home.house), size}); rt.toast('Your home grew bigger!', 'rare', '🏡'); rt.emote('star', 'cheer', 1500);}}}
       onSave={async () => {if (!housePreview) {close(); return;} setSaving(true); try {const view = await homeBackend.saveHouse(home, housePreview); setHome(view); setHousePreview(null); rt.toast('Renovation saved!', 'good', '🏠');} catch (e) {rt.toast(e instanceof Error ? e.message : 'Could not save.', 'bad');} finally {setSaving(false);}}}
       onClose={() => {setHousePreview(null); close();}} />

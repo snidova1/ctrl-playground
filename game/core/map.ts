@@ -306,9 +306,10 @@ export const FORAGE_BY_ID = Object.fromEntries(FORAGE_NODES.map(n => [n.id, n]))
 
 // --- Habitat (personal home) -------------------------------------------------
 export const HOME_BOUNDS = {minX: -17, maxX: 17, minZ: -13, maxZ: 15};
-export const HOUSE = {x: 0, z: -6, w: 9, d: 6.5, doorX: 0, doorZ: -2.75};
-export const ROOM_BOUNDS = {minX: -5, maxX: 5, minZ: -4, maxZ: 4};
-export const ROOM_DOOR = {x: 0, z: 3.6};
+/** Reserved cottage area (the largest size). The front door always sits on doorZ. */
+export const HOUSE = {x: 0, z: -6.85, w: 11, d: 8.2, doorX: 0, doorZ: -2.75};
+/** Furniture area inside the cottage, in room-local coordinates (centre of the cottage = 0,0). */
+export const ROOM_BOUNDS = {minX: -4, maxX: 4, minZ: -3, maxZ: 3};
 export const PLOT_SIZE = 1.7;
 export function plotPosition(index: number): Vec2 {
   const col = index % 4, row = Math.floor(index / 4);

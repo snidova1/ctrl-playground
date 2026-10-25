@@ -49,6 +49,15 @@ export function insideArea(item: Pick<Placed, 'assetId' | 'rotation' | 'x' | 'z'
   return true;
 }
 
+/** Room furniture from the older, larger room scene is drawn in proportionally and clamped to the walk-in room. */
+export function fitRoom(item: Placed): Placed {
+  if (!item.room || insideArea(item)) return item;
+  const [w, d] = footprint(item);
+  const b = ROOM_BOUNDS;
+  const clamp = (v: number, lo: number, hi: number) => Math.round(Math.min(hi, Math.max(lo, v)) * 100) / 100;
+  return {...item, x: clamp(item.x * 0.8, b.minX + w / 2, b.maxX - w / 2), z: clamp(item.z * 0.75, b.minZ + d / 2, b.maxZ - d / 2)};
+}
+
 /** Tolerant read of stored layouts: anything from older builds is dropped, never thrown. */
 export function readStoredLayout(json: string | null | undefined): Layout {
   let raw: unknown;
@@ -58,9 +67,11 @@ export function readStoredLayout(json: string | null | undefined): Layout {
   const seen = new Set<string>();
   for (const value of raw) {
     const parsed = placedSchema.safeParse(value);
-    if (!parsed.success || seen.has(parsed.data.id) || !FURNITURE_BY_ID[parsed.data.assetId] || !insideArea(parsed.data)) continue;
-    seen.add(parsed.data.id);
-    out.push(parsed.data);
+    if (!parsed.success || seen.has(parsed.data.id) || !FURNITURE_BY_ID[parsed.data.assetId]) continue;
+    const item = fitRoom(parsed.data);
+    if (!insideArea(item)) continue;
+    seen.add(item.id);
+    out.push(item);
     if (out.length >= MAX_PLACED) break;
   }
   return out;
@@ -74,15 +85,16 @@ export function countPlaced(layout: Layout) {
 
 /** Deterministic starter decor that matches the starter inventory. */
 export function starterLayout(uuid: () => string): Layout {
+  const room = (assetId: string, x: number, z: number, rotation = 0): Placed => fitRoom({id: uuid(), assetId, x, z, rotation, room: true});
   return [
-    {id: uuid(), assetId: 'bed-single', x: -3.5, z: -2.5, rotation: 0, room: true},
-    {id: uuid(), assetId: 'rug-round', x: 0, z: 0.5, rotation: 0, room: true},
-    {id: uuid(), assetId: 'table-round', x: 2.5, z: -1, rotation: 0, room: true},
-    {id: uuid(), assetId: 'chair', x: 2.5, z: 0.2, rotation: 2, room: true},
-    {id: uuid(), assetId: 'chair', x: 3.7, z: -1, rotation: 3, room: true},
-    {id: uuid(), assetId: 'lamp-table', x: -1.6, z: -3.3, rotation: 0, room: true},
-    {id: uuid(), assetId: 'bookcase', x: 4.3, z: -3.3, rotation: 0, room: true},
-    {id: uuid(), assetId: 'potted-plant', x: -4.3, z: 3, rotation: 0, room: true},
+    room('bed-single', -3, -1.9),
+    room('rug-round', 0, 0.2),
+    room('table-round', 2, -0.8),
+    room('chair', 2, 0.3, 2),
+    room('chair', 3.1, -0.8, 3),
+    room('lamp-table', -1.4, -2.5),
+    room('bookcase', 3.2, -2.6),
+    room('potted-plant', -3.5, 2.5),
     {id: uuid(), assetId: 'flowers-yellow', x: -2.6, z: -1.6, rotation: 0, room: false},
     {id: uuid(), assetId: 'flowers-yellow', x: -4.4, z: -1.6, rotation: 0, room: false},
     {id: uuid(), assetId: 'log-seat', x: 6, z: 6, rotation: 1, room: false},

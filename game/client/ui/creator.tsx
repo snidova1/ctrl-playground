@@ -22,7 +22,8 @@ function Turntable({look}: {look: Appearance}) {
 }
 
 export function AvatarPreview({look}: {look: Appearance}) {
-  return <Canvas shadows camera={{position: [0, 1.25, 3.1], fov: 34}} dpr={[1, 2]} onCreated={({gl}) => {gl.toneMapping = THREE.ACESFilmicToneMapping;}}>
+  // offsetSize: measure without the panel's pop-in transform, so the preview fills its box.
+  return <Canvas resize={{offsetSize: true}} shadows camera={{position: [0, 1.25, 3.1], fov: 34}} dpr={[1, 2]} onCreated={({gl}) => {gl.toneMapping = THREE.ACESFilmicToneMapping;}}>
     <hemisphereLight args={['#eef7ff', '#b6d79a', 1.7]} />
     <directionalLight position={[2, 4, 3]} intensity={2.3} castShadow />
     <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow><circleGeometry args={[1.4, 32]} /><meshToonMaterial color="#cbe8b0" /></mesh>

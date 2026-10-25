@@ -15,6 +15,7 @@ import {ITEMS} from '@/game/core/items';
 import {HOBBIES} from '@/game/core/npcs';
 import type {CreatureSpawn} from '@/game/core/spawns';
 
+/** 'room' is kept only so old links resolve; the living room is part of the 'home' scene now. */
 export type Scene = 'common-ground' | 'town' | 'home' | 'room';
 export type Panel = null | 'bag' | 'shop' | 'cook' | 'craft' | 'collection' | 'quests' | 'hobbies' | 'friends' | 'keys' | 'settings' | 'map' | 'wardrobe' | 'mail' | 'home' | 'emotes' | 'renovate';
 
@@ -37,6 +38,8 @@ export interface UiState {
   scene: Scene; zone: string; tool: Tool; profile: PublicProfile | null; players: RemotePlayer[];
   decorating: boolean; loaded: boolean; error: string | null; clockOffset: number;
   fishTarget: {x: number; z: number} | null; flash: number; giftTo: string | null; mailCount: number;
+  /** Standing inside the walk-in cottage (same scene as the yard). */
+  indoors: boolean;
 }
 
 export interface Runtime {
@@ -51,6 +54,8 @@ export interface Runtime {
   walkable: (x: number, z: number) => boolean;
   /** Solid things the camera must not pass through (walls, trunks). */
   cameraBlocked: (x: number, z: number) => boolean;
+  /** Optional box the camera must stay inside (the living room while indoors). */
+  cameraClamp?: ((v: THREE.Vector3) => void) | null;
   height: (x: number, z: number) => number;
   bounds: {minX: number; maxX: number; minZ: number; maxZ: number};
   act: (action: LifeAction) => Promise<LifeEvent[] | null>;
@@ -70,7 +75,7 @@ export function createRuntime(opts: {scene: Scene; backend: LifeBackend; look: A
   const ui = createStore<UiState>({
     life: null, quests: [], profileId: '', panel: null, panelArg: null, toasts: [], dialog: null, prompt: null, busy: false,
     fishing: null, photo: false, catchCard: null, levelUp: null, scene: opts.scene, zone: '', tool: 'none', profile: null, players: [],
-    decorating: false, loaded: false, error: null, clockOffset: 0, fishTarget: null, flash: 0, giftTo: null, mailCount: 0,
+    decorating: false, loaded: false, error: null, clockOffset: 0, fishTarget: null, flash: 0, giftTo: null, mailCount: 0, indoors: false,
   });
   let animTimer: ReturnType<typeof setTimeout> | null = null;
   const rt: Runtime = {

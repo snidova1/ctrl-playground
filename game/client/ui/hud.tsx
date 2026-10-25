@@ -66,7 +66,7 @@ function Zone({rt}: {rt: Runtime}) {
   useEffect(() => {
     const id = setInterval(() => {
       const scene = rt.ui.get().scene;
-      const z = scene === 'home' ? 'Your Home' : scene === 'room' ? 'Living Room' : scene === 'common-ground' ? 'Common Ground' : zoneName(rt.player.pos.x, rt.player.pos.z);
+      const z = scene === 'home' || scene === 'room' ? (rt.ui.get().indoors ? 'Living Room' : 'Your Home') : scene === 'common-ground' ? 'Common Ground' : zoneName(rt.player.pos.x, rt.player.pos.z);
       setZone(prev => {if (prev !== z) {setShow(true); setTimeout(() => setShow(false), 2600);} return z;});
     }, 600);
     return () => clearInterval(id);

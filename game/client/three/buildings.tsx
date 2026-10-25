@@ -1,5 +1,6 @@
 'use client';
-import {useMemo} from 'react';
+import {useMemo, useRef, type MutableRefObject} from 'react';
+import {useFrame} from '@react-three/fiber';
 import * as THREE from 'three';
 import type {Building} from '@/game/core/map';
 import {heightAt} from '@/game/core/map';
@@ -116,8 +117,12 @@ function Window({shape, mat, trim, box: bx}: {shape: number; mat: THREE.Material
   </group>;
 }
 
-/** A cosy cottage built from soft toon blocks. Fully restyleable for Habitat renovations. */
-export function Cottage({b, night, style: input}: {b: Building; night: number; style?: Partial<CottageStyle>}) {
+/** A walk-in cottage: wallpaper and floor for the inside, and a 0..1 door target eased every frame (no React re-render). */
+export interface WalkIn {wallpaper: THREE.Texture; floor: THREE.Texture; doorOpen: MutableRefObject<number>}
+const DOOR_W = 1.3, WALL_T = 0.2;
+
+/** A cosy cottage built from soft toon blocks. Fully restyleable; with `walkIn` it is hollow and you can walk inside. */
+export function Cottage({b, night, style: input, walkIn}: {b: Building; night: number; style?: Partial<CottageStyle>; walkIn?: WalkIn}) {
   const style = {...DEFAULT_STYLE, ...input};
   const wallH = b.kind === 'hall' ? 3.4 : 2.7;
   const roofH = Math.min(b.w, b.d) * (style.roofStyle === 1 ? 0.7 : style.roofStyle === 2 ? 0.55 : 0.42);
@@ -132,24 +137,80 @@ export function Cottage({b, night, style: input}: {b: Building; night: number; s
   const y = (b.kind === 'home' && b.id === 'my-house' ? 0 : heightAt(b.x, b.z)) - 0.05;
   const wall = toon(b.wall, {map: wallTexture(style.siding)}), trim = toon(b.trim), roofMat = toon(b.roof, {map: shingleTexture()});
   const doorMat = toon(style.door), stone = toon('#d8cfc2'), wood = toon('#b58556');
+
+  // Walk-in: wallpaper and floor for the inside.
+  const gradient = (wall as THREE.MeshToonMaterial).gradientMap ?? null;
+  const paper = useMemo(() => (walkIn ? new THREE.MeshToonMaterial({map: walkIn.wallpaper, gradientMap: gradient}) : null), [walkIn?.wallpaper, gradient]); // eslint-disable-line react-hooks/exhaustive-deps
+  const floorMat = useMemo(() => (walkIn ? new THREE.MeshToonMaterial({map: walkIn.floor, gradientMap: gradient}) : null), [walkIn?.floor, gradient]); // eslint-disable-line react-hooks/exhaustive-deps
+  const doorRef = useRef<THREE.Group>(null), door = useRef(0);
+  useFrame((_, dt) => {
+    if (!walkIn || !doorRef.current) return;
+    door.current += (walkIn.doorOpen.current - door.current) * Math.min(1, dt * 7);
+    doorRef.current.rotation.y = -door.current * 1.45;
+  });
+
+  const open = !!walkIn;
+  // A walk-in roof lets the sun through, so the living room stays bright and cosy.
+  const roofShadow = !open;
+  // Seen from inside, the gable ends must not be see-through.
+  const gableInner = useMemo(() => {const m = wall.clone(); m.side = THREE.DoubleSide; return m;}, [wall]);
   const windows: number[] = [];
   for (let i = 0; i < Math.max(1, Math.floor(w / 3)); i++) windows.push(-w / 2 + 1.1 + i * 2.1);
+  const frontWindows = windows.flatMap((x, i) => x > -0.9 && x < 0.9 ? [] : [
+    <group key={i} position={[x, 0.4 + 1.55, d / 2 + 0.03]}>
+      <Window shape={style.windows} mat={windowMat} trim={trim} box={box} />
+      {style.flowerBoxes && <>
+        <mesh geometry={box} material={toon(b.roof)} position={[0, -0.62, 0.12]} scale={[1.0, 0.22, 0.28]} castShadow />
+        {[-0.3, 0, 0.3].map(fx => <mesh key={fx} geometry={cyl} material={toon(['#f7a1b5', '#ffd84a', '#ffffff'][Math.abs(Math.round(fx * 10)) % 3])} position={[fx, -0.45, 0.14]} scale={[0.1, 0.12, 0.1]} />)}
+      </>}
+    </group>,
+  ]);
+  const t = WALL_T, side = (w - DOOR_W) / 2, lintelH = wallH - 2.15;
   return <group position={[b.x, y, b.z]} rotation={[0, FACING[b.facing], 0]}>
     <mesh geometry={box} material={stone} position={[0, 0.2, 0]} scale={[w + 0.3, 0.4, d + 0.3]} castShadow receiveShadow />
-    <mesh geometry={box} material={wall} position={[0, 0.4 + wallH / 2, 0]} scale={[w, wallH, d]} castShadow receiveShadow />
-    {[-1, 1].map(s => <mesh key={s} geometry={box} material={trim} position={[s * w / 2, 0.4 + wallH / 2, d / 2]} scale={[0.22, wallH, 0.22]} castShadow />)}
-    <mesh geometry={box} material={trim} position={[0, 0.4 + wallH, 0]} scale={[w + 0.15, 0.16, d + 0.15]} />
-    <mesh geometry={roof} material={roofMat} position={[0, 0.4 + wallH, 0]} castShadow />
-    {[-1, 1].map(s => <mesh key={s} geometry={gable} material={wall} position={[0, 0.4 + wallH, s * (d / 2 + 0.001)]} rotation={[0, s < 0 ? Math.PI : 0, 0]} />)}
-    {style.chimney && <mesh geometry={box} material={toon('#c98a6a')} position={[w * 0.25, 0.4 + wallH + roofH * 0.65, -d * 0.15]} scale={[0.5, roofH * 0.95, 0.5]} castShadow />}
-    {/* door */}
-    <group position={[0, 0.4, d / 2 + 0.02]}>
-      <mesh geometry={box} material={doorMat} position={[0, 0.9, 0]} scale={[1.1, 1.8, 0.1]} />
-      <mesh geometry={half} material={doorMat} position={[0, 1.8, 0]} rotation={[Math.PI / 2, 0, Math.PI / 2]} scale={[0.55, 0.1, 0.55]} />
-      <mesh geometry={box} material={trim} position={[0, 0.9, 0.04]} scale={[0.08, 1.6, 0.04]} />
-      <mesh geometry={cyl} material={toon('#f2c14e')} position={[0.34, 0.9, 0.08]} rotation={[Math.PI / 2, 0, 0]} scale={[0.06, 0.05, 0.06]} />
-      <mesh geometry={box} material={stone} position={[0, -0.18, 0.5]} scale={[1.6, 0.18, 0.9]} receiveShadow />
-    </group>
+    {open ? <>
+      {/* hollow shell: wallpapered inside */}
+      <mesh material={floorMat!} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.412, 0]} receiveShadow><planeGeometry args={[w - 2 * t, d - 2 * t]} /></mesh>
+      <mesh geometry={box} material={wall} position={[0, 0.4 + wallH / 2, -d / 2 + t / 2]} scale={[w, wallH, t]} castShadow receiveShadow />
+      {[-1, 1].map(s => <mesh key={s} geometry={box} material={wall} position={[s * (w / 2 - t / 2), 0.4 + wallH / 2, 0]} scale={[t, wallH, d - 2 * t]} castShadow receiveShadow />)}
+      <mesh geometry={box} material={paper!} position={[0, 0.4 + wallH / 2, -d / 2 + t + 0.011]} scale={[w - 2 * t, wallH, 0.02]} receiveShadow />
+      {[-1, 1].map(s => <mesh key={s} geometry={box} material={paper!} position={[s * (w / 2 - t - 0.011), 0.4 + wallH / 2, 0]} scale={[0.02, wallH, d - 2 * t]} receiveShadow />)}
+      <mesh geometry={box} material={toon('#ffffff')} position={[0, 0.49, -d / 2 + t + 0.03]} scale={[w - 2 * t, 0.18, 0.04]} />
+      {[-1, 1].map(s => <group key={s} position={[s * (w / 2 - t - 0.03), 0.4 + 1.55, 0]} rotation={[0, -s * Math.PI / 2, 0]}><Window shape={style.windows} mat={windowMat} trim={toon('#ffffff')} box={box} /></group>)}
+      {[-1, 1].map(s => <mesh key={`fp${s}`} geometry={box} material={paper!} position={[s * (DOOR_W / 2 + (side - t) / 2), 0.4 + wallH / 2, d / 2 - t - 0.011]} scale={[side - t, wallH, 0.02]} receiveShadow />)}
+      <mesh geometry={box} material={paper!} position={[0, 0.4 + 2.15 + lintelH / 2, d / 2 - t - 0.011]} scale={[DOOR_W, lintelH, 0.02]} />
+      {/* front wall with a doorway */}
+      <group>
+        {[-1, 1].map(s => <mesh key={s} geometry={box} material={wall} position={[s * (DOOR_W / 2 + side / 2), 0.4 + wallH / 2, d / 2 - t / 2]} scale={[side, wallH, t]} castShadow receiveShadow />)}
+        <mesh geometry={box} material={wall} position={[0, 0.4 + 2.15 + lintelH / 2, d / 2 - t / 2]} scale={[DOOR_W, lintelH, t]} castShadow />
+        {[-1, 1].map(s => <mesh key={s} geometry={box} material={trim} position={[s * w / 2, 0.4 + wallH / 2, d / 2]} scale={[0.22, wallH, 0.22]} castShadow />)}
+      </group>
+      {frontWindows}
+      {/* door leaf on a hinge, swings open as you come near */}
+      <group ref={doorRef} position={[-DOOR_W / 2 + 0.06, 0.4, d / 2 + 0.02]}>
+        <mesh geometry={box} material={doorMat} position={[0.59, 1.03, 0]} scale={[1.18, 2.06, 0.1]} castShadow />
+        <mesh geometry={box} material={trim} position={[0.59, 1.03, 0.055]} scale={[0.08, 1.8, 0.03]} />
+        <mesh geometry={cyl} material={toon('#f2c14e')} position={[1.02, 1.0, 0.08]} rotation={[Math.PI / 2, 0, 0]} scale={[0.06, 0.05, 0.06]} />
+      </group>
+      {/* wall cap as a ring, so nothing covers the room from above */}
+      {[-1, 1].map(s => <mesh key={`z${s}`} geometry={box} material={trim} position={[0, 0.4 + wallH, s * (d / 2)]} scale={[w + 0.15, 0.16, 0.3]} />)}
+      {[-1, 1].map(s => <mesh key={`x${s}`} geometry={box} material={trim} position={[s * (w / 2), 0.4 + wallH, 0]} scale={[0.3, 0.16, d + 0.15]} />)}
+    </> : <>
+      <mesh geometry={box} material={wall} position={[0, 0.4 + wallH / 2, 0]} scale={[w, wallH, d]} castShadow receiveShadow />
+      {[-1, 1].map(s => <mesh key={s} geometry={box} material={trim} position={[s * w / 2, 0.4 + wallH / 2, d / 2]} scale={[0.22, wallH, 0.22]} castShadow />)}
+      <mesh geometry={box} material={trim} position={[0, 0.4 + wallH, 0]} scale={[w + 0.15, 0.16, d + 0.15]} />
+      <group position={[0, 0.4, d / 2 + 0.02]}>
+        <mesh geometry={box} material={doorMat} position={[0, 0.9, 0]} scale={[1.1, 1.8, 0.1]} />
+        <mesh geometry={half} material={doorMat} position={[0, 1.8, 0]} rotation={[Math.PI / 2, 0, Math.PI / 2]} scale={[0.55, 0.1, 0.55]} />
+        <mesh geometry={box} material={trim} position={[0, 0.9, 0.04]} scale={[0.08, 1.6, 0.04]} />
+        <mesh geometry={cyl} material={toon('#f2c14e')} position={[0.34, 0.9, 0.08]} rotation={[Math.PI / 2, 0, 0]} scale={[0.06, 0.05, 0.06]} />
+      </group>
+      {frontWindows}
+    </>}
+    <mesh geometry={box} material={stone} position={[0, 0.22, d / 2 + 0.52]} scale={[1.6, 0.18, 0.9]} receiveShadow />
+    <mesh geometry={roof} material={roofMat} position={[0, 0.4 + wallH, 0]} castShadow={roofShadow} />
+    {[-1, 1].map(s => <mesh key={s} geometry={gable} material={open ? gableInner : wall} position={[0, 0.4 + wallH, s * (d / 2 + 0.001)]} rotation={[0, s < 0 ? Math.PI : 0, 0]} />)}
+    {style.chimney && <mesh geometry={box} material={toon('#c98a6a')} position={[w * 0.25, 0.4 + wallH + roofH * 0.65, -d * 0.15]} scale={[0.5, roofH * 0.95, 0.5]} castShadow={roofShadow} />}
     {style.porch && <group position={[0, 0.4, d / 2 + 1.05]}>
       <mesh geometry={box} material={wood} position={[0, -0.05, 0]} scale={[3.4, 0.14, 1.9]} receiveShadow castShadow />
       {[-1.55, 1.55].map(x => <mesh key={x} geometry={box} material={trim} position={[x, 1.15, 0.8]} scale={[0.14, 2.3, 0.14]} castShadow />)}
@@ -158,15 +219,6 @@ export function Cottage({b, night, style: input}: {b: Building; night: number; s
       <mesh geometry={box} material={trim} position={[-1.05, 0.65, 0.9]} scale={[1, 0.07, 0.07]} />
       <mesh geometry={box} material={trim} position={[1.05, 0.65, 0.9]} scale={[1, 0.07, 0.07]} />
     </group>}
-    {windows.flatMap((x, i) => x > -0.9 && x < 0.9 ? [] : [
-      <group key={i} position={[x, 0.4 + 1.55, d / 2 + 0.03]}>
-        <Window shape={style.windows} mat={windowMat} trim={trim} box={box} />
-        {style.flowerBoxes && <>
-          <mesh geometry={box} material={toon(b.roof)} position={[0, -0.62, 0.12]} scale={[1.0, 0.22, 0.28]} castShadow />
-          {[-0.3, 0, 0.3].map(fx => <mesh key={fx} geometry={cyl} material={toon(['#f7a1b5', '#ffd84a', '#ffffff'][Math.abs(Math.round(fx * 10)) % 3])} position={[fx, -0.45, 0.14]} scale={[0.1, 0.12, 0.1]} />)}
-        </>}
-      </group>,
-    ])}
     {[-1, 1].map(s => <group key={s} position={[s * (w / 2 + 0.03), 0.4 + 1.55, 0]} rotation={[0, s * Math.PI / 2, 0]}>
       <Window shape={style.windows} mat={windowMat} trim={trim} box={box} />
     </group>)}
@@ -180,3 +232,4 @@ export function Cottage({b, night, style: input}: {b: Building; night: number; s
     </mesh>}
   </group>;
 }
+
