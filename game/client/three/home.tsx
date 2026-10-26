@@ -2,7 +2,7 @@
 import {Suspense, useEffect, useMemo, useRef, useState} from 'react';
 import {useFrame, type ThreeEvent} from '@react-three/fiber';
 import * as THREE from 'three';
-import {HOME_BOUNDS, HOME_STATIONS, HOUSE, PLOT_SIZE, ROOM_BOUNDS, WATER_Y, plotPosition, homeWaterAt} from '@/game/core/map';
+import {HOME_BOUNDS, HOME_STATIONS, HOUSE, PLOT_SIZE, ROOM_BOUNDS, WATER_Y, canopyCeiling, plotPosition, homeWaterAt} from '@/game/core/map';
 import {FLOOR_Y, WALL_T, cottageRect, cottageWalkable, homeHeight, insideCottage, roomOrigin} from '@/game/core/cottage';
 import {CROP_BY_ID, FURNITURE_BY_ID} from '@/game/core/items';
 import {footprint, insideArea, type Layout, type Placed} from '@/game/core/home';
@@ -214,7 +214,32 @@ function floorTexture(kind: number) {
   });
 }
 
-const INDOOR_CAMERA = {distance: 3.6, pitch: 0.42};
+/** How high the hips sit above the feet in the Seated clip (chibi scale); the seat lift makes up the rest. */
+const SEATED_HIP = 0.22;
+/**
+ * Sit on a placed piece: face the way it faces (rotation 0 = +z), sit on the front edge of beds and sofas,
+ * and remember a free spot in front to stand up to (the seat itself is solid).
+ */
+function sitOn(rt: Runtime, o: Placed, x: number, z: number) {
+  const def = FURNITURE_BY_ID[o.assetId];
+  if (!def?.seat) return;
+  const facing = o.rotation * Math.PI / 2, fx = Math.sin(facing), fz = Math.cos(facing);
+  const [w, d] = footprint(o);
+  const depth = o.rotation % 2 ? w : d, width = o.rotation % 2 ? d : w;
+  const inset = depth > 1.2 ? depth / 2 - 0.4 : 0; // beds: sit on the edge, not in the middle
+  const sx = x + fx * inset, sz = z + fz * inset;
+  const out = depth / 2 - inset + 0.5;
+  const candidates = [[fx * out, fz * out], [fz * (width / 2 + 0.5), -fx * (width / 2 + 0.5)], [-fz * (width / 2 + 0.5), fx * (width / 2 + 0.5)], [-fx * (depth / 2 + inset + 0.5), -fz * (depth / 2 + inset + 0.5)]];
+  const free = candidates.map(([dx, dz]) => ({x: sx + dx, z: sz + dz})).find(c => rt.walkable(c.x, c.z)) ?? {x: rt.player.pos.x, z: rt.player.pos.z};
+  rt.player.seat = {lift: Math.max(0, def.seat - SEATED_HIP), standX: free.x, standZ: free.z};
+  rt.player.pos.set(sx, rt.height(sx, sz), sz);
+  rt.player.angle = facing;
+  rt.camera.yaw = facing + 0.35; // look at the face, a little from the side
+  rt.camera.snap = true;
+  rt.setAnim('sit', 'none', 0, 'relaxed');
+}
+
+const INDOOR_CAMERA ={distance: 3.6, pitch: 0.42};
 const OUTDOOR_CAMERA = {distance: 10.5, pitch: 0.3};
 
 export function HomeWorld({rt, layout, garden, ownGarden, canEdit, decorating, decor, setDecor, onLayout, players, quality, playerName, night, house = DEFAULT_HOUSE}: {
@@ -242,7 +267,11 @@ export function HomeWorld({rt, layout, garden, ownGarden, canEdit, decorating, d
       v.x = THREE.MathUtils.clamp(v.x, r.x - r.w / 2 + m, r.x + r.w / 2 - m);
       v.z = THREE.MathUtils.clamp(v.z, r.z - r.d / 2 + m, r.z + r.d / 2 - m);
       v.y = Math.min(v.y, top);
-    } : null;
+    } : v => {
+      // In the yard, slip under the garden trees' leaves rather than into them.
+      const ceiling = canopyCeiling(v.x, v.z, HOME_TREES, flat);
+      if (ceiling !== null && v.y > ceiling - 0.35) v.y = Math.max(0.6, ceiling - 0.35);
+    };
   }, [rt, indoors, size]);
   useEffect(() => () => {rt.ui.set({indoors: false}); rt.cameraClamp = null;}, [rt]);
   useFrame(() => {
@@ -260,13 +289,12 @@ export function HomeWorld({rt, layout, garden, ownGarden, canEdit, decorating, d
   useEffect(() => {
     const ids: string[] = [];
     const add = (id: string, label: string, icon: string, x: number, z: number, run: () => void, radius = 2) => {ids.push(id); rt.targets.set(id, {id, label, icon, x, z, radius, priority: 0.2, run});};
-    const sit = (x: number, z: number, rotation: number, y: number) => () => {rt.player.pos.set(x, y, z); rt.player.angle = rotation * Math.PI / 2 + Math.PI; rt.setAnim('sit', 'none', 0, 'relaxed');};
     for (const o of roomItems) {
       const def = FURNITURE_BY_ID[o.assetId];
       const x = origin.x + o.x, z = origin.z + o.z;
       if (def?.stove) add(`stove-${o.id}`, 'Cook at the stove', '🍳', x, z, () => rt.openPanel('cook'), 1.8);
       if (o.assetId === 'coat-rack' || o.assetId === 'bookcase') add(`wardrobe-${o.id}`, 'Change outfit', '👗', x, z, () => rt.openPanel('wardrobe'), 1.8);
-      if (def?.seat) add(`seat-${o.id}`, `Sit on ${def.name}`, '🪑', x, z, sit(x, z, o.rotation, FLOOR_Y), 1.4);
+      if (def?.seat) add(`seat-${o.id}`, `Sit on ${def.name}`, '🪑', x, z, () => sitOn(rt, o, x, z), 1.6);
     }
     add('room-mirror', 'Change outfit', '👗', origin.x, origin.z + ROOM_BOUNDS.minZ + 0.6, () => rt.openPanel('wardrobe'), 1.6);
     add('bus', 'Take the bus to town', '🚌', HOME_STATIONS.busStop.x, HOME_STATIONS.busStop.z, () => rt.goto('town'));
@@ -280,7 +308,7 @@ export function HomeWorld({rt, layout, garden, ownGarden, canEdit, decorating, d
     }
     for (const o of yardItems) {
       const def = FURNITURE_BY_ID[o.assetId];
-      if (def?.seat) add(`seat-${o.id}`, `Sit on ${def.name}`, '🪑', o.x, o.z, sit(o.x, o.z, o.rotation, 0), 1.4);
+      if (def?.seat) add(`seat-${o.id}`, `Sit on ${def.name}`, '🪑', o.x, o.z, () => sitOn(rt, o, o.x, o.z), 1.6);
     }
     return () => ids.forEach(id => rt.targets.delete(id));
   }, [rt, roomItems, yardItems, origin.x, origin.z]);

@@ -147,7 +147,8 @@ export interface FurnitureDef extends ItemDef {
   /** Coin price in the furniture catalog; null means craft-only. */
   buy: number | null;
   craft?: {id: string; count: number}[];
-  seat?: boolean;
+  /** Seat height in metres (truthy = you can sit on it). */
+  seat?: number;
   light?: boolean;
   stove?: boolean;
   scale?: number;
@@ -159,17 +160,17 @@ const furn = (id: string, name: string, model: string, zone: FurnitureZone, foot
 });
 
 export const FURNITURE: FurnitureDef[] = [
-  furn('chair', 'Wooden Chair', 'furniture-kit/chair', 'room', [1, 1], 180, {seat: true, craft: [{id: 'wood', count: 4}]}),
-  furn('chair-cushion', 'Cushion Chair', 'furniture-kit/chairCushion', 'room', [1, 1], 320, {seat: true}),
-  furn('chair-rounded', 'Round Chair', 'furniture-kit/chairRounded', 'room', [1, 1], 360, {seat: true}),
+  furn('chair', 'Wooden Chair', 'furniture-kit/chair', 'room', [1, 1], 180, {seat: 0.5, craft: [{id: 'wood', count: 4}]}),
+  furn('chair-cushion', 'Cushion Chair', 'furniture-kit/chairCushion', 'room', [1, 1], 320, {seat: 0.5}),
+  furn('chair-rounded', 'Round Chair', 'furniture-kit/chairRounded', 'room', [1, 1], 360, {seat: 0.48}),
   furn('table', 'Dining Table', 'furniture-kit/table', 'room', [2, 1], 420, {craft: [{id: 'wood', count: 8}]}),
   furn('table-round', 'Round Table', 'furniture-kit/tableRound', 'room', [1, 1], 380),
   furn('table-coffee', 'Coffee Table', 'furniture-kit/tableCoffee', 'room', [2, 1], 340),
   furn('side-table', 'Side Table', 'furniture-kit/sideTableDrawers', 'room', [1, 1], 260, {craft: [{id: 'wood', count: 5}, {id: 'stone', count: 1}]}),
-  furn('bed-single', 'Cozy Bed', 'furniture-kit/bedSingle', 'room', [1, 2], 600, {seat: true}),
-  furn('bed-double', 'Big Comfy Bed', 'furniture-kit/bedDouble', 'room', [2, 2], 1400, {seat: true}),
-  furn('sofa', 'Lounge Sofa', 'furniture-kit/loungeSofa', 'room', [2, 1], 900, {seat: true}),
-  furn('lounge-chair', 'Lounge Chair', 'furniture-kit/loungeChair', 'room', [1, 1], 520, {seat: true}),
+  furn('bed-single', 'Cozy Bed', 'furniture-kit/bedSingle', 'room', [1, 2], 600, {seat: 0.5}),
+  furn('bed-double', 'Big Comfy Bed', 'furniture-kit/bedDouble', 'room', [2, 2], 1400, {seat: 0.5}),
+  furn('sofa', 'Lounge Sofa', 'furniture-kit/loungeSofa', 'room', [2, 1], 900, {seat: 0.44}),
+  furn('lounge-chair', 'Lounge Chair', 'furniture-kit/loungeChair', 'room', [1, 1], 520, {seat: 0.42}),
   furn('bookcase', 'Bookcase', 'furniture-kit/bookcaseOpen', 'room', [1, 1], 480, {craft: [{id: 'wood', count: 10}]}),
   furn('bookcase-low', 'Low Bookshelf', 'furniture-kit/bookcaseOpenLow', 'room', [2, 1], 420),
   furn('lamp-floor', 'Floor Lamp', 'furniture-kit/lampRoundFloor', 'both', [1, 1], 300, {light: true}),
@@ -193,7 +194,7 @@ export const FURNITURE: FurnitureDef[] = [
   furn('flowers-yellow', 'Yellow Flowers', 'nature-kit/flower_yellowA', 'yard', [1, 1], 40, {craft: [{id: 'wildflower', count: 1}]}),
   furn('flowers-red', 'Red Flowers', 'nature-kit/flower_redA', 'yard', [1, 1], 40, {craft: [{id: 'wildflower', count: 1}]}),
   furn('mushroom-decor', 'Giant Mushroom', 'nature-kit/mushroom_redTall', 'yard', [1, 1], 180, {craft: [{id: 'mushroom', count: 4}]}),
-  furn('log-seat', 'Log Seat', 'nature-kit/log', 'yard', [2, 1], 80, {seat: true, craft: [{id: 'wood', count: 4}]}),
+  furn('log-seat', 'Log Seat', 'nature-kit/log', 'yard', [2, 1], 80, {seat: 0.4, craft: [{id: 'wood', count: 4}]}),
   furn('campfire', 'Campfire', 'nature-kit/campfire_stones', 'yard', [1, 1], 260, {light: true, craft: [{id: 'wood', count: 6}, {id: 'stone', count: 4}]}),
   furn('stone-path', 'Stone Path', 'nature-kit/path_stone', 'yard', [1, 1], 20, {craft: [{id: 'stone', count: 2}]}),
   furn('lantern', 'Garden Lantern', 'fantasy-town/lantern', 'yard', [1, 1], 340, {light: true, craft: [{id: 'stone', count: 3}, {id: 'wood', count: 2}]}),

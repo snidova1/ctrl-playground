@@ -57,7 +57,8 @@ try {
       const fish = await run(async () => {
         const rt = window.__willow;
         rt.player.pos.set(12, 0.55, 44); rt.player.angle = 0;
-        await new Promise(r => setTimeout(r, 700));
+        const t0 = performance.now();
+        while (!rt.targets.get('water') && performance.now() - t0 < 10000) await new Promise(r => setTimeout(r, 100));
         const water = rt.targets.get('water');
         if (!water) return {error: 'no water target', prompt: rt.ui.get().prompt?.label};
         water.run();
@@ -68,31 +69,21 @@ try {
       });
       step('cast and bite', fish);
       await shot('fishing-bite');
-      // Win the reel through the real UI: press and hold the action button.
-      const reelButton = page.locator('.wc-action').last();
-      const box = await reelButton.boundingBox();
-      if (box) {
-        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-        await page.mouse.down();
-        for (let i = 0; i < 28; i++) {
-          await page.waitForTimeout(120);
-          const t = await run(() => document.querySelector('.wc-tension b')?.style.left ?? null);
-          if (!t) break;
-          const v = parseFloat(t);
-          if (v > 62) {await page.mouse.up(); await page.waitForTimeout(90); await page.mouse.down();}
-        }
-        await page.mouse.up();
-        await shot('fishing-reel');
-      }
+      // Tap REEL! through the real button (starts the reel mini-game), then land it while the fish is still
+      // on the line. Headless software rendering runs at 1-2 fps, far too slow to play the tension bar itself.
+      await page.locator('.wc-action').last().dispatchEvent('pointerdown');
+      await page.waitForTimeout(400);
+      const reelPhase = await run(() => window.__willow.ui.get().fishing?.phase ?? null);
+      await shot('fishing-reel');
       const reel = await run(async () => {
         const rt = window.__willow;
         rt.ui.set({fishing: null});
         const events = await rt.act({type: 'reel', success: true});
-        return {events, inv: Object.keys(rt.ui.get().life.inventory).length};
+        return {events: events?.map(e => e.type), caught: events?.find(e => e.type === 'catch')?.item ?? null, card: rt.ui.get().catchCard?.item ?? null, inv: Object.keys(rt.ui.get().life.inventory).length};
       });
-      step('reeled in', reel);
-      await page.waitForTimeout(800);
-      await shot('catch-card');
+      step('reeled in', {reelPhase, ...reel});
+      await page.waitForTimeout(2500);
+      await shot('catch-card-live');
       await run(() => window.__willow.ui.set({catchCard: null}));
 
       // Forage the nearest node.

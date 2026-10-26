@@ -26,9 +26,9 @@ import {BagPanel, CollectionPanel, CookPanel, CraftPanel, EmotesPanel, HobbiesPa
 import {FriendsPanel, KeysPanel} from './ui/social';
 import {AvatarEditor} from './ui/creator';
 import {DecorTray} from './ui/decor';
-import {RenovateTray} from './ui/renovate';
+import {RenovateTray, type RenovateTab} from './ui/renovate';
 import {DEFAULT_HOUSE, type House} from '@/game/core/house';
-import {homeHeight} from '@/game/core/cottage';
+import {FLOOR_Y, homeHeight, roomOrigin} from '@/game/core/cottage';
 import './ui/game.css';
 
 export type Variant = 'common-ground' | 'public' | 'preview';
@@ -177,7 +177,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
     height: initialScene === 'home' ? () => 0 : heightAt, bounds: TOWN_BOUNDS, env, onGoto: s => gotoRef.current(s),
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
   useKeyboard(rt);
-  useEffect(() => {if (initialScene !== 'home') rt.cameraBlocked = (x, z) => blockedByCollider(x, z, CAMERA_COLLIDERS, 0.25);}, [rt, initialScene]);
+  useEffect(() => {if (initialScene !== 'home') {rt.cameraBlocked = (x, z) => blockedByCollider(x, z, CAMERA_COLLIDERS, 0.25);}}, [rt, initialScene]);
   // Read-only QA handle for automated browser checks (no privileged actions).
   useEffect(() => {(window as unknown as {__willow?: Runtime}).__willow = rt;}, [rt]);
   const ui = rt.ui;
@@ -222,7 +222,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
     if (next === 'town') {rt.cameraBlocked = (x, z) => blockedByCollider(x, z, CAMERA_COLLIDERS, 0.25); rt.walkable = townWalkable; rt.height = heightAt; rt.bounds = TOWN_BOUNDS; rt.camera.distance = 5.8;}
     else {const h = view?.house ?? DEFAULT_HOUSE; rt.walkable = homeWalkable(view?.layout ?? [], h.size); rt.height = (x, z) => homeHeight(x, z, h.size, h.porch); rt.bounds = HOME_BOUNDS; rt.camera.distance = 10.5; rt.camera.pitch = 0.3;}
     rt.player.pos.y = rt.height(spawn.x, spawn.z);
-    rt.camera.focus.set(spawn.x, 1, spawn.z); rt.camera.yaw = 0;
+    rt.camera.focus.set(spawn.x, 1, spawn.z); rt.camera.yaw = 0; rt.camera.snap = true; rt.player.seat = null;
     rt.targets.clear();
     rt.scene = next;
     ui.set({scene: next, decorating: false, prompt: null, panel: null});
@@ -288,8 +288,19 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
   };
   const changeLayout = (next: Layout) => {setLayout(next); setDirty(true);};
 
-  // Pull the camera back so the whole cottage is in view while renovating.
-  useEffect(() => {if (panel === 'renovate' && scene === 'home') {rt.camera.distance = 14; rt.camera.pitch = 0.34; rt.camera.yaw = 0; rt.player.pos.set(0, 0, 6); rt.player.angle = Math.PI;}}, [panel, scene, rt]);
+  // Renovating: the Interior tab zooms into the living room, the other tabs frame the whole cottage.
+  const frameRenovate = useCallback((tab: RenovateTab) => {
+    rt.player.seat = null;
+    if (tab === 'inside') {
+      const o = roomOrigin(liveHouse.size);
+      rt.player.pos.set(o.x, FLOOR_Y, o.z + 0.2); rt.player.angle = Math.PI;
+      rt.camera.yaw = 0; rt.camera.distance = 4.2; rt.camera.pitch = 0.5;
+    } else {
+      rt.player.pos.set(0, 0, 6); rt.player.angle = Math.PI;
+      rt.camera.yaw = 0; rt.camera.distance = 14; rt.camera.pitch = 0.34;
+    }
+    rt.camera.focus.set(rt.player.pos.x, rt.player.pos.y + 1, rt.player.pos.z); rt.camera.snap = true;
+  }, [rt, liveHouse.size]);
   // Visual-only QA override: ?hour=13 shows the sky at that town hour. Gameplay time is untouched.
   const skyOffset = useMemo(() => {
     const h = Number(new URLSearchParams(window.location.search).get('hour'));
@@ -324,7 +335,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
     {decorating && home && <DecorTray life={life} layout={layout} inside={indoors} decor={decor} setDecor={setDecor} onLayout={changeLayout}
       onSave={() => void saveLayout()} saving={saving} dirty={dirty} onClose={() => {if (dirty) void saveLayout(); ui.set({decorating: false, panel: null}); setDecor({selected: null, placing: null, rotation: 0});}} />}
     {home && !isOwnHome && (scene === 'home' || scene === 'room') && <div className="wc-zone" style={{top: 110, opacity: 1}}>Visiting {home.ownerName}&apos;s home</div>}
-    {panel === 'renovate' && home && (home.isOwner ? <RenovateTray house={housePreview ?? home.house} onPreview={setHousePreview} houseLevel={life?.houseLevel ?? 0} coins={life?.coins ?? 0} inside={indoors} saving={saving}
+    {panel === 'renovate' && home && (home.isOwner ? <RenovateTray house={housePreview ?? home.house} onPreview={setHousePreview} houseLevel={life?.houseLevel ?? 0} coins={life?.coins ?? 0} inside={indoors} saving={saving} onTab={frameRenovate}
       onUpgrade={async size => {const ev = await rt.act({type: 'upgrade-house', size}); if (ev) {setHousePreview({...(housePreview ?? home.house), size}); rt.toast('Your home grew bigger!', 'rare', '🏡'); rt.emote('star', 'cheer', 1500);}}}
       onSave={async () => {if (!housePreview) {close(); return;} setSaving(true); try {const view = await homeBackend.saveHouse(home, housePreview); setHome(view); setHousePreview(null); rt.toast('Renovation saved!', 'good', '🏠');} catch (e) {rt.toast(e instanceof Error ? e.message : 'Could not save.', 'bad');} finally {setSaving(false);}}}
       onClose={() => {setHousePreview(null); close();}} />

@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {BRIDGES, bridgeDeckAt} from '@/game/core/map';
+import {BRIDGES, bridgeDeckAt, canopyCeiling} from '@/game/core/map';
 import {BUILDINGS, FORAGE_NODES, PIER, SPAWNS, TREES, fishableFrom, heightAt, townWalkable, waterAt, WATER_Y, HOME_STOP, SPAWN_POINT} from '@/game/core/map';
 import {insideArea, layoutSchema, readStoredLayout, starterLayout} from '@/game/core/home';
 import {HOUSE, ROOM_BOUNDS} from '@/game/core/map';
@@ -44,6 +44,16 @@ describe('bridges', () => {
       expect(heightAt(mid.x, mid.z)).toBeGreaterThan(heightAt(end.x, end.z));
       for (let u = -b.length / 2 + 0.2; u < b.length / 2 - 0.2; u += 0.4) expect(townWalkable(at(u).x, at(u).z)).toBe(true);
     }
+  });
+});
+
+describe('camera and trees', () => {
+  it('there is a leaf ceiling right under a tree and none in the open plaza', () => {
+    const t = TREES[0];
+    const ceiling = canopyCeiling(t.x + 0.5, t.z + 0.5);
+    expect(ceiling).not.toBeNull();
+    expect(ceiling!).toBeGreaterThan(heightAt(t.x, t.z) + 1);
+    expect(canopyCeiling(0, 0)).toBeNull();
   });
 });
 

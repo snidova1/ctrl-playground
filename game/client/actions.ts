@@ -22,6 +22,12 @@ export function hobbyReady(rt: Runtime, hobby: 'fishing' | 'bugs' | 'birds' | 'g
 export async function talk(rt: Runtime, npcId: string) {
   const npc = NPC_BY_ID[npcId];
   if (!npc) return;
+  // Face the neighbour and swing the camera over your shoulder so both of you are in the shot.
+  const t = rt.targets.get(`npc-${npcId}`);
+  if (t) {
+    rt.player.angle = Math.atan2(t.x - rt.player.pos.x, t.z - rt.player.pos.z);
+    rt.camera.yaw = rt.player.angle + Math.PI + 0.65;
+  }
   rt.setAnim('talk', 'none', 1600, 'happy');
   await rt.act({type: 'talk', npc: npcId});
 }

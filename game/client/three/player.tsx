@@ -65,6 +65,12 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     const mag = Math.min(1, Math.hypot(ix, iz));
     const blocked = p.locked || !!ui.panel || !!ui.dialog || !!ui.fishing || ui.decorating;
     const motion = p.motion.current;
+    // Standing up: step out in front of the seat, then walk on as normal.
+    if (p.seat && ((!blocked && mag > 0.08) || motion.anim !== 'sit')) {
+      p.pos.set(p.seat.standX, rt.height(p.seat.standX, p.seat.standZ), p.seat.standZ);
+      p.seat = null;
+      if (motion.anim === 'sit') {motion.anim = 'idle'; motion.mood = null;}
+    }
     if (!blocked && mag > 0.08) {
       const yaw = rt.camera.yaw;
       const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
@@ -92,7 +98,7 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
       if (['walk', 'run', 'sneak'].includes(motion.anim)) motion.anim = motion.tool === 'net' ? 'crouch' : 'idle';
     }
     if (ui.photo) p.angle = rt.camera.yaw + Math.PI;
-    p.pos.y += (rt.height(p.pos.x, p.pos.z) - p.pos.y) * Math.min(1, dt * 18);
+    p.pos.y += (rt.height(p.pos.x, p.pos.z) + (p.seat?.lift ?? 0) - p.pos.y) * Math.min(1, dt * 18);
     if (group.current) {
       group.current.position.copy(p.pos);
       group.current.rotation.y = p.angle;
@@ -108,7 +114,9 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
       diff = Math.atan2(Math.sin(diff), Math.cos(diff));
       if (Math.abs(diff) < 2.3) rt.camera.yaw += diff * Math.min(1, dt * 1.1);
     }
-    f.lerp(new THREE.Vector3(p.pos.x, p.pos.y + (photo ? 1.25 : 1.05), p.pos.z), Math.min(1, dt * (photo ? 14 : 8)));
+    const snap = !!rt.camera.snap;
+    rt.camera.snap = false;
+    f.lerp(new THREE.Vector3(p.pos.x, p.pos.y + (photo ? 1.25 : 1.05), p.pos.z), snap ? 1 : Math.min(1, dt * (photo ? 14 : 8)));
     let dist = photo ? 2.4 : rt.camera.distance;
     if (!photo) {
       // Pull in when a wall or trunk sits between the character and the lens.
@@ -125,7 +133,7 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     if (want.y < ground) want.y = ground;
     rt.cameraClamp?.(want);
     camPos.current.lerp(want, Math.min(1, dt * (photo ? 12 : 7)));
-    if (camPos.current.lengthSq() === 0) camPos.current.copy(want);
+    if (snap || camPos.current.lengthSq() === 0) camPos.current.copy(want);
     camera.position.copy(camPos.current);
     // Aim a little above the head so the character sits in the lower third and the horizon shows.
     camera.lookAt(photo ? new THREE.Vector3(f.x - Math.sin(yaw) * 6, f.y + Math.sin(-rt.camera.pitch * 0.6) * 3, f.z - Math.cos(yaw) * 6)

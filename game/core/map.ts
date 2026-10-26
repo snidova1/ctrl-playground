@@ -221,6 +221,22 @@ function scatterTrees(): {x: number; z: number; s: number; kind: 'round' | 'pine
 }
 export const TREES = scatterTrees();
 
+/**
+ * Lowest leaf height over a point (matches the canopy shapes in foliage.tsx), or null in the open.
+ * The camera stays under it, so it never ends up inside a tree's leaves.
+ */
+export function canopyCeiling(x: number, z: number, trees: {x: number; z: number; s: number; kind: string}[] = TREES, height: (x: number, z: number) => number = heightAt): number | null {
+  let ceiling: number | null = null;
+  for (const t of trees) {
+    const reach = (t.kind === 'pine' ? 2.3 : 2.4) * t.s;
+    const dx = x - t.x, dz = z - t.z;
+    if (dx * dx + dz * dz > reach * reach) continue;
+    const bottom = height(t.x, t.z) + (t.kind === 'pine' ? 1.25 : 1.75) * t.s;
+    ceiling = ceiling === null ? bottom : Math.min(ceiling, bottom);
+  }
+  return ceiling;
+}
+
 export const STATIC_COLLIDERS: Collider[] = [
   ...BUILDINGS.map(b => ({x: b.x, z: b.z, w: b.w + 0.4, d: b.d + 0.4})),
   ...TREES.map(t => ({x: t.x, z: t.z, r: 0.55 * t.s})),

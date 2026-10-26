@@ -1,5 +1,5 @@
 'use client';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {
   DOOR_COLORS, FLOORS, HOUSE_SIZES, ROOF_COLORS, ROOF_STYLES, SIDINGS, TRIM_COLORS, WALLPAPERS, WALL_COLORS, WINDOWS, type House,
 } from '@/game/core/house';
@@ -16,10 +16,15 @@ function Toggle({label, on, onChange}: {label: string; on: boolean; onChange: (v
 }
 
 /** Bottom-sheet renovation editor: changes preview live on the cottage, Save commits them. */
-export function RenovateTray({house, onPreview, houseLevel, coins, onUpgrade, onSave, onClose, saving, inside}: {
+export type RenovateTab = 'outside' | 'inside' | 'size';
+export function RenovateTray({house, onPreview, houseLevel, coins, onUpgrade, onSave, onClose, saving, inside, onTab}: {
   house: House; onPreview: (h: House) => void; houseLevel: number; coins: number; onUpgrade: (size: number) => void; onSave: () => void; onClose: () => void; saving: boolean; inside: boolean;
+  /** Frames the camera for the tab: inside the living room for Interior, the whole cottage otherwise. */
+  onTab?: (tab: RenovateTab) => void;
 }) {
-  const [tab, setTab] = useState<'outside' | 'inside' | 'size'>(inside ? 'inside' : 'outside');
+  const [tab, setTabState] = useState<RenovateTab>(inside ? 'inside' : 'outside');
+  const setTab = (t: RenovateTab) => {setTabState(t); onTab?.(t);};
+  useEffect(() => {onTab?.(tab);}, []); // eslint-disable-line react-hooks/exhaustive-deps
   const set = (patch: Partial<House>) => onPreview({...house, ...patch});
   return <div onPointerDown={e => e.stopPropagation()} style={{position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '44vh', overflowY: 'auto', padding: '12px 14px max(14px, env(safe-area-inset-bottom))', background: 'rgba(255,250,240,.97)', borderRadius: '26px 26px 0 0', boxShadow: '0 -6px 30px rgba(80,60,40,.18)', zIndex: 9}}>
     <div style={{display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap'}}>
@@ -45,7 +50,6 @@ export function RenovateTray({house, onPreview, houseLevel, coins, onUpgrade, on
     {tab === 'inside' && <>
       <div className="wc-label">Wallpaper</div><Chips items={WALLPAPERS} value={house.wallpaper} onChange={wallpaper => set({wallpaper})} />
       <div className="wc-label">Floor</div><Chips items={FLOORS} value={house.floor} onChange={floor => set({floor})} />
-      <p style={{fontSize: 12, color: '#9b8167', fontWeight: 700}}>Step inside to see the interior change live.</p>
     </>}
     {tab === 'size' && HOUSE_SIZES.map((s, i) => <div key={s.name} className="wc-row">
       <span style={{fontSize: 26}}>{['🏠', '🏡', '🏰'][i]}</span>

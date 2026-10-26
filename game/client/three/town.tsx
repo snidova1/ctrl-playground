@@ -4,7 +4,7 @@ import {useFrame} from '@react-three/fiber';
 import * as THREE from 'three';
 import {
   BRIDGES, BUILDINGS, COMMON_GATE, FLOWER_BEDS, FORAGE_NODES, HOME_STOP, LAMPS, PIER, TREES, PLAZA, RIVER, RIVER_WIDTH, BEACH_Z, TOWN_BOUNDS,
-  fishableFrom, heightAt, WATER_Y, townWalkable, isPathAt,
+  canopyCeiling, fishableFrom, heightAt, WATER_Y, townWalkable, isPathAt,
 } from '@/game/core/map';
 import {NPCS, npcPosition} from '@/game/core/npcs';
 import {ITEMS} from '@/game/core/items';
@@ -21,7 +21,7 @@ import {Creatures} from './creatures';
 import {Player} from './player';
 import {Remote} from './remote';
 import {Bobber} from './bobber';
-import {toon} from './materials';
+import {canvasTexture, toon} from './materials';
 import {mulberry32} from '@/game/core/rng';
 
 const box = new THREE.BoxGeometry(1, 1, 1);
@@ -47,12 +47,22 @@ function Pier() {
   </group>;
 }
 
+/** Soft radial glow (bright core fading to nothing), so lamps bloom instead of showing a flat disc. */
+let glowTexture: THREE.Texture | null = null;
+function lampGlow() {
+  glowTexture ??= canvasTexture(128, 128, ctx => {
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, 'rgba(255,240,200,1)'); g.addColorStop(0.18, 'rgba(255,220,150,0.75)'); g.addColorStop(0.5, 'rgba(255,200,120,0.18)'); g.addColorStop(1, 'rgba(255,200,120,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+  });
+  return glowTexture;
+}
 function Lamps({night}: {night: number}) {
-  const glow = useMemo(() => new THREE.MeshBasicMaterial({color: '#ffd889', transparent: true, opacity: 0, depthWrite: false}), []);
-  glow.opacity = night * 0.55;
+  const glow = useMemo(() => new THREE.SpriteMaterial({map: lampGlow(), color: '#ffffff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending}), []);
+  glow.opacity = Math.min(1, night * 1.1);
   return <>{LAMPS.map((l, i) => <group key={i} position={[l.x, heightAt(l.x, l.z), l.z]}>
     <Kit model="fantasy-town/lantern" position={[0, 0, 0]} scale={1.1} />
-    <mesh material={glow} position={[0, 1.55, 0]}><sphereGeometry args={[0.55, 12, 10]} /></mesh>
+    {night > 0.05 && <sprite material={glow} position={[0, 1.55, 0]} scale={[1.3, 1.3, 1]} />}
   </group>)}</>;
 }
 
@@ -159,7 +169,8 @@ function WaterEdge({rt, where}: {rt: Runtime; where: 'town' | 'home'}) {
     tick.current = 0.2;
     const p = rt.player;
     const spot = where === 'town' ? fishableFrom(p.pos.x, p.pos.z, p.angle) : null;
-    if (spot) rt.targets.set('water', {id: 'water', label: spot.water === 'sea' ? 'Fish in the sea' : spot.water === 'river' ? 'Fish in the river' : 'Fish in the pond', icon: '🎣', x: p.pos.x, z: p.pos.z, radius: 1, priority: -0.4, run: () => void startFishing(rt, where, spot.water, spot.target)});
+    // The fishing prompt sits just in front of you, so facing the water wins over a neighbour standing beside you.
+    if (spot) rt.targets.set('water', {id: 'water', label: spot.water === 'sea' ? 'Fish in the sea' : spot.water === 'river' ? 'Fish in the river' : 'Fish in the pond', icon: '🎣', x: p.pos.x + Math.sin(p.angle) * 0.8, z: p.pos.z + Math.cos(p.angle) * 0.8, radius: 1.6, priority: 0.1, run: () => void startFishing(rt, where, spot.water, spot.target)});
     else rt.targets.delete('water');
   });
   return null;
@@ -244,6 +255,20 @@ export function TownWorld({rt, variant, players, quality, playerName}: {rt: Runt
   const lampNight = useStore(rt.ui, () => Math.round(rt.env.current.night * 4) / 4);
   useFrame(() => {night.current = rt.env.current.night;});
   const dressing = useDressing();
+  // The lens never ends up inside leaves: it ducks under tree canopies and rises over bushes.
+  useEffect(() => {
+    const bushes = dressing.bushes;
+    rt.cameraClamp = v => {
+      const ground = heightAt(v.x, v.z);
+      for (const b of bushes) {
+        const dx = v.x - b.x, dz = v.z - b.z;
+        if (dx * dx + dz * dz < 1.3 * 1.3 && v.y < ground + 1.75) {v.y = ground + 1.75; break;}
+      }
+      const ceiling = canopyCeiling(v.x, v.z);
+      if (ceiling !== null && v.y > ceiling - 0.35) v.y = Math.max(ground + 0.6, ceiling - 0.35);
+    };
+    return () => {rt.cameraClamp = null;};
+  }, [rt, dressing]);
   const light = useMemo(() => new THREE.Color(), []);
   light.copy(rt.env.current.sky.sun).multiplyScalar(0.35 + rt.env.current.sky.sunIntensity * 0.28).lerp(new THREE.Color('#ffffff'), 0.25);
   return <>
