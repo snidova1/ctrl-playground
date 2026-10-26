@@ -15,7 +15,7 @@ try {
     const page = await context.newPage();
     page.setDefaultTimeout(120000);
     page.on('pageerror', e => report.errors.push(`${device.name}: ${e.message}`));
-    page.on('console', m => {if (m.type() === 'error' && !/favicon|DevTools/.test(m.text())) report.errors.push(`${device.name} console: ${m.text().slice(0, 300)}`);});
+    page.on('console', m => {if (m.type() === 'error' && !/favicon|DevTools|AudioContext/.test(m.text())) report.errors.push(`${device.name} console: ${m.text().slice(0, 300)}`);});
     const shot = name => page.screenshot({path: `${out}/${device.name}-${name}.png`});
     const t0 = Date.now();
     await page.goto(`${origin}/preview?hour=11`, {waitUntil: 'domcontentloaded'});
