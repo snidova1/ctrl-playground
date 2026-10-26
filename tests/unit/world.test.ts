@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {BRIDGES, bridgeDeckAt} from '@/game/core/map';
 import {BUILDINGS, FORAGE_NODES, PIER, SPAWNS, TREES, fishableFrom, heightAt, townWalkable, waterAt, WATER_Y, HOME_STOP, SPAWN_POINT} from '@/game/core/map';
 import {insideArea, layoutSchema, readStoredLayout, starterLayout} from '@/game/core/home';
 import {HOUSE, ROOM_BOUNDS} from '@/game/core/map';
@@ -29,6 +30,19 @@ describe('town map', () => {
     for (const npc of NPCS) {
       const p = npcPosition(npc, 123_456);
       expect(Number.isFinite(p.x) && Number.isFinite(p.z)).toBe(true);
+    }
+  });
+});
+
+describe('bridges', () => {
+  it('feet follow the arched deck: higher in the middle, walkable end to end', () => {
+    for (const b of BRIDGES) {
+      // Walk along the bridge axis (the mesh is rotated by -rot).
+      const at = (u: number) => ({x: b.x + Math.cos(b.rot) * u, z: b.z + Math.sin(b.rot) * u});
+      const mid = at(0), end = at(b.length / 2 - 0.5);
+      expect(bridgeDeckAt(mid.x, mid.z)).toBeCloseTo(0.63, 2);
+      expect(heightAt(mid.x, mid.z)).toBeGreaterThan(heightAt(end.x, end.z));
+      for (let u = -b.length / 2 + 0.2; u < b.length / 2 - 0.2; u += 0.4) expect(townWalkable(at(u).x, at(u).z)).toBe(true);
     }
   });
 });

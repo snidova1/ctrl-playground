@@ -250,6 +250,8 @@ export function Hud({rt, name, social, keys, variant}: {rt: Runtime; name: strin
     </div>
     <Zone rt={rt} />
     {!guest && !photo && !fishing && <div className="wc-menu" onPointerDown={stop}>
+      {scene === 'town' && <button className="wc-icon-btn wc-travel" onClick={() => rt.goto('home')}>🏡<span>Habitat</span></button>}
+      {(scene === 'home' || scene === 'room') && <button className="wc-icon-btn wc-travel" onClick={() => rt.goto('town')}>🚌<span>Town</span></button>}
       <button className="wc-icon-btn" onClick={() => rt.openPanel('bag')}>🎒<span>Bag</span></button>
       <button className="wc-icon-btn" onClick={() => rt.openPanel('quests')}>📜<span>Requests</span>{quests > 0 && <b className="wc-badge">{quests}</b>}</button>
       <button className="wc-icon-btn" onClick={() => rt.openPanel('collection')}>📖<span>Album</span></button>

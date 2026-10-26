@@ -93,12 +93,21 @@ export function distToPolyline(p: Vec2, line: Vec2[]) {
   return best;
 }
 
-function onBridge(x: number, z: number) {
-  return BRIDGES.some(b => {
+/** Top of the arched bridge deck under a point, or null when not on a bridge (matches the Bridge mesh in town.tsx). */
+export function bridgeDeckAt(x: number, z: number): number | null {
+  for (const b of BRIDGES) {
+    // The mesh is rotated by -rot around y, so undo that to get bridge-local coordinates.
     const c = Math.cos(b.rot), s = Math.sin(b.rot);
-    const lx = (x - b.x) * c - (z - b.z) * s, lz = (x - b.x) * s + (z - b.z) * c;
-    return Math.abs(lx) < b.length / 2 && Math.abs(lz) < b.width / 2;
-  });
+    const lx = (x - b.x) * c + (z - b.z) * s, lz = -(x - b.x) * s + (z - b.z) * c;
+    if (Math.abs(lx) < b.length / 2 && Math.abs(lz) < b.width / 2 - 0.15) {
+      const t = Math.min(1, Math.max(0, (lx + b.length / 2 - 0.35) / (b.length - 0.7)));
+      return 0.2 + 0.18 + Math.sin(t * Math.PI) * 0.25;
+    }
+  }
+  return null;
+}
+function onBridge(x: number, z: number) {
+  return bridgeDeckAt(x, z) !== null;
 }
 function onPier(x: number, z: number) {
   return Math.abs(x - PIER.x) < PIER.w / 2 && z > PIER.z0 && z < PIER.z1;
@@ -148,7 +157,8 @@ function buildGrid() {
 }
 /** Gentle rolling hills away from town, banks sloping into water. */
 export function heightAt(x: number, z: number): number {
-  if (onBridge(x, z)) return 0.35;
+  const deck = bridgeDeckAt(x, z);
+  if (deck !== null) return deck;
   if (onPier(x, z)) return 0.55;
   grid ??= buildGrid();
   const fx = (x - GX0) / GRID, fz = (z - GZ0) / GRID;
