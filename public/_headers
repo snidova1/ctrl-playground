@@ -1,0 +1,11 @@
+# Content-hashed build output (this file replaces the one vinext would generate, so keep this rule).
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Game assets: kept by the browser after the start-screen download, refreshed in the background.
+/characters/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/kit/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/audio/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

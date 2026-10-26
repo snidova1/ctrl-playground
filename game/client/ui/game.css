@@ -28,6 +28,11 @@
 .wc-icon-btn { width: 58px; min-height: 60px; padding: 6px 2px 5px; border-radius: 18px; background: rgba(255,250,240,.95); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 22px; line-height: 1; box-shadow: 0 4px 0 rgba(214,190,150,.6), 0 8px 18px rgba(80,60,40,.12); position: relative; transition: transform .12s; }
 .wc-icon-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(214,190,150,.6); }
 .wc-icon-btn span { display: block; max-width: 56px; font-size: 10px; line-height: 1.1; font-weight: 900; color: #8f7459; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Start screen: download everything before play. */
+.wc-preload { padding: 24px; }
+.wc-preload-bar { width: min(320px, 78vw); height: 14px; border-radius: 8px; background: #efe2cc; overflow: hidden; box-shadow: inset 0 2px 3px rgba(120,90,50,.15); }
+.wc-preload-bar i { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg, #8fd6c0, #ffd36b); transition: width .3s ease-out; }
+.wc-preload-tip { max-width: 320px; font-size: 13px; font-weight: 700; color: #9b8167; min-height: 36px; animation: wc-fade .5s; }
 /* Placeholder while an item icon is being drawn from its model. */
 .wc-icon-wait { display: inline-block; border-radius: 30%; background: linear-gradient(110deg, #f1e6d3 30%, #fbf4e8 50%, #f1e6d3 70%); background-size: 200% 100%; animation: wc-shimmer 1.2s linear infinite; }
 @keyframes wc-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }

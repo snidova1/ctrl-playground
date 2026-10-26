@@ -27,6 +27,7 @@ import {FriendsPanel, KeysPanel} from './ui/social';
 import {AvatarEditor} from './ui/creator';
 import {DecorTray} from './ui/decor';
 import {RenovateTray, type RenovateTab} from './ui/renovate';
+import {Preloader, assetsAlreadyReady} from './ui/preloader';
 import {DEFAULT_HOUSE, type House} from '@/game/core/house';
 import {FLOOR_Y, homeHeight, roomOrigin} from '@/game/core/cottage';
 import './ui/game.css';
@@ -46,11 +47,15 @@ export function GameApp({variant, startScene = 'town', visit = null, overlay}: P
   const [needsCreator, setNeedsCreator] = useState(false);
   const [error, setError] = useState('');
   const [quality, setQualityState] = useState<'high' | 'low'>('high');
+  // Everything downloads on the start screen first; returning players whose browser kept the files skip it.
+  const [assetsReady, setAssetsReady] = useState<boolean | null>(null);
   useEffect(() => {
     const saved = safeGet(QUALITY_KEY);
     setQualityState(saved === 'low' || saved === 'high' ? saved : matchMedia('(pointer: coarse)').matches ? 'low' : 'high');
-    preloadAvatars();
+    setAssetsReady(assetsAlreadyReady());
   }, []);
+  useEffect(() => {if (assetsReady) preloadAvatars();}, [assetsReady]);
+  const onAssets = useCallback(() => setAssetsReady(true), []);
   const setQuality = (q: 'high' | 'low') => {setQualityState(q); safeSet(QUALITY_KEY, q);};
 
   // Identity: guests get a random fixed look; preview keeps a local look; public uses the signed-wallet profile.
@@ -77,6 +82,8 @@ export function GameApp({variant, startScene = 'town', visit = null, overlay}: P
   }, [variant]);
 
   if (error) return <div className="wc-root"><div className="wc-loading"><div className="leaf">🍂</div>{error}</div></div>;
+  if (assetsReady === null) return <div className="wc-root"><div className="wc-loading"><div className="leaf">🍃</div></div></div>;
+  if (!assetsReady) return <Preloader onReady={onAssets} />;
   if (needsCreator) return <Creator variant={variant} onDone={p => {setProfile(p); setNeedsCreator(false);}} />;
   if (!profile) return <div className="wc-root"><div className="wc-loading"><div className="leaf">🍃</div>Getting ready…</div></div>;
   return <Game variant={variant} profile={profile} setProfile={setProfile} startScene={startScene} visit={visit} quality={quality} setQuality={setQuality} overlay={overlay} />;
