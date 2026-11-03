@@ -1,0 +1,68 @@
+name: World Builder validation
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/world-builder.yml'
+      - 'features/plaza/editor/**'
+      - 'features/worlds/worlds-index.tsx'
+      - 'features/worlds/editor-entry.css'
+      - 'app/worlds/editor/**'
+      - 'features/habitat/app.tsx'
+      - 'features/habitat/stage.tsx'
+      - 'tests/browser/world-editor.spec.ts'
+      - 'playwright.editor.config.ts'
+      - 'tests/unit/world-editor*.test.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: world-builder-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare local configuration
+        run: |
+          cp .env.example .env.local
+          pnpm db:local
+      - name: Unit/API tests
+        run: pnpm test
+      - name: Owned modules ESLint
+        run: pnpm exec eslint features/plaza/editor/habitat-tools.tsx features/worlds/worlds-index.tsx app/worlds/editor/page.tsx tests/browser/world-editor.spec.ts playwright.editor.config.ts
+      - name: Project TypeScript with ES2020 BigInt target
+        run: pnpm exec tsc --noEmit --target ES2020
+      - name: Next production build
+        run: pnpm build:next
+      - name: Install Chromium for actual 3D browser smoke tests
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Playwright World Builder desktop and mobile
+        run: pnpm exec playwright test --config playwright.editor.config.ts
+      - name: Preserve browser failure traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-builder-browser-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 3
+      - name: Global ESLint baseline
+        if: success() || failure()
+        run: pnpm lint
+      - name: Global TypeScript baseline
+        if: success() || failure()
+        run: pnpm typecheck

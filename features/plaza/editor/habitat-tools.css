@@ -1,0 +1,41 @@
+/* Add-on for the existing Astra Habitat canvas, not a separate application shell. */
+.hb-advanced-bar{position:absolute;top:66px;left:50%;transform:translateX(-50%);z-index:15;width:min(830px,calc(100vw - 330px));background:#f6f5ebef;color:#303b34;border:1px solid #c5c9b7;border-radius:12px;box-shadow:0 10px 35px #303b3420;padding:8px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.hb-advanced-bar>strong{font:700 10px ui-monospace,monospace;letter-spacing:.03em;white-space:nowrap}.hb-advanced-bar>strong span{color:#da6e43}
+.hb-advanced-tools,.hb-advanced-commit{display:flex;gap:4px;align-items:center}
+.hb-app .hb-advanced-tools button,.hb-app .hb-advanced-commit button{display:flex;align-items:center;justify-content:center;gap:5px;border-radius:7px;padding:8px;font-size:11px;white-space:nowrap}
+.hb-advanced-tools button[aria-pressed=true]{background:#cce2d5;border-color:#6a9980}
+.hb-advanced-bar .hb-primary{background:#354a3e!important;color:#fff!important}
+.hb-advanced-library,.hb-advanced-inspector{top:125px;max-height:calc(100dvh - 155px);background:#f6f5ebf4;z-index:14}
+.hb-advanced-library{width:275px}
+.hb-advanced-inspector{width:260px}
+.hb-advanced-heading small,.hb-advanced-inspector>small{font:10px ui-monospace,monospace;letter-spacing:.09em;color:#798879}
+.hb-advanced-heading h2{font-size:19px;margin:9px 0}.hb-advanced-heading p{font-size:11px;line-height:1.4;color:#607065}
+.hb-advanced-search{display:flex!important;flex-direction:row!important;align-items:center;gap:5px}
+.hb-advanced-categories{display:flex;flex-wrap:wrap;gap:4px}
+.hb-app .hb-advanced-categories button{font-size:10px;padding:6px 8px}
+.hb-advanced-categories button[aria-pressed=true]{background:#354a3e!important;color:white!important;border-color:#354a3e!important}
+.hb-advanced-assets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;min-height:0;overflow-y:auto;max-height:45dvh}
+.hb-advanced-assets button{text-align:left;padding:5px!important;min-width:0}
+.hb-advanced-assets button:hover{border-color:#567d66}
+.hb-advanced-assets img{display:block;width:100%;height:82px;object-fit:contain;background:#e9ede5}
+.hb-advanced-assets span{font-size:11px;display:block;line-height:1.25;overflow-wrap:anywhere}
+.hb-advanced-paging{display:flex;align-items:center;justify-content:space-between;gap:6px;font:11px ui-monospace,monospace}
+.hb-app .hb-advanced-paging button{padding:7px;font-size:11px}
+.hb-advanced-inspector h2{font-size:20px}
+.hb-advanced-properties{display:flex;flex-direction:column;gap:12px}
+.hb-advanced-preview{display:flex;align-items:center;gap:8px;border:1px solid #d7dacc;padding:6px;background:#fffdf7}
+.hb-advanced-preview img,.hb-advanced-placeholder{height:55px;width:55px;object-fit:contain;flex-shrink:0;background:#e8ede7}
+.hb-advanced-placeholder{display:grid;place-items:center;font:11px ui-monospace,monospace}
+.hb-advanced-preview>div:not(.hb-advanced-placeholder){display:flex;flex-direction:column;gap:5px;min-width:0}
+.hb-advanced-preview strong{font-size:12px;overflow-wrap:anywhere}
+.hb-advanced-preview small{font-size:9px;overflow-wrap:anywhere}
+.hb-advanced-transform{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.hb-advanced-transform label{font:10px ui-monospace,monospace}
+.hb-app .hb-advanced-transform input{min-width:0;padding:8px 5px;font-size:11px}
+.hb-advanced-object-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.hb-advanced-object-actions button{display:flex;align-items:center;justify-content:center;gap:5px}
+.hb-advanced-empty{padding:15px;background:#e8ede3;border-radius:8px;font-size:12px;line-height:1.5}
+.hb-advanced-footer{margin-top:auto;padding:12px;border-top:1px solid #c5c9b7;font-size:11px;line-height:1.5;color:#647466}
+.hb-advanced-tabs{display:none}
+@media(max-width:1150px){.hb-advanced-bar{left:295px;right:280px;transform:none;width:auto;flex-wrap:wrap}.hb-advanced-bar>strong{display:none}.hb-advanced-library{width:255px}.hb-advanced-inspector{width:245px}.hb-advanced-tools button span{display:none}}
+@media(max-width:760px){.hb-advanced-bar{left:7px;right:7px;top:51px;width:auto;flex-wrap:nowrap;padding:5px;gap:4px}.hb-app .hb-advanced-tools button,.hb-app .hb-advanced-commit button{padding:7px 6px;font-size:10px}.hb-advanced-commit button:not(.hb-primary){display:none}.hb-advanced-tools button span{display:none}.hb-advanced-tabs{position:absolute;left:7px;right:7px;bottom:10px;z-index:16;display:grid;grid-template-columns:1fr 1fr;gap:6px}.hb-app .hb-advanced-tabs button{padding:9px}.hb-advanced-tabs button[aria-pressed=true]{background:#354a3e;color:#fff}.hb-advanced-library,.hb-advanced-inspector{top:108px;left:7px;right:7px;width:auto;bottom:52px;max-height:none;display:none}.hb-advanced-library.is-mobile-active,.hb-advanced-inspector.is-mobile-active{display:flex}.hb-advanced-library.is-mobile-active{max-height:calc(100dvh - 170px)}.hb-advanced-assets{grid-template-columns:repeat(3,minmax(0,1fr));max-height:none;flex:1}.hb-advanced-inspector.is-mobile-active{max-height:calc(100dvh - 170px)}.hb-advanced-preview img{height:45px;width:45px}}
