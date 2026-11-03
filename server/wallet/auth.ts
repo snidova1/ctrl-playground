@@ -12,8 +12,10 @@ export async function demoSession(request:Request){if(!settings().demoAuth)throw
 export async function nonce(request:Request,address:string){if(!isAddress(address))throw new AppError("INVALID_WALLET");const id=crypto.randomUUID().replaceAll("-","");const origin=settings().origin||new URL(request.url).origin;const message=`${new URL(origin).host} wants you to sign in to CTRL.\n\nWallet: ${address.toLowerCase()}\nURI: ${origin}\nChain ID: ${settings().chainId}\nNonce: ${id}\nIssued At: ${new Date().toISOString()}\n\nThis signature authenticates an operator session. It grants no transaction authority.`;await exec("INSERT INTO nonces(id,message,expires_at) VALUES(?,?,?)",id,message,Date.now()+300000);return {nonce:id,message};}
 export async function authenticate(request:Request,address:string,nonceId:string,signature:`0x${string}`){
  if(!isAddress(address))throw new AppError("INVALID_WALLET");const row=await one<{message:string;expires_at:number;used:number}>("SELECT * FROM nonces WHERE id=?",nonceId);
- if(!row||row.used||row.expires_at<Date.now()||!row.message.includes(`Wallet: ${address.toLowerCase()}\n`))throw new AppError("AUTH_CHALLENGE_EXPIRED",401);
- if(!await verifyMessage({address:address as `0x${string}`,message:row.message,signature}))throw new AppError("WALLET_SIGNATURE_INVALID",401);
+ if(!row||row.used||row.expires_at<=Date.now()||!row.message.includes(`Wallet: ${address.toLowerCase()}\n`))throw new AppError("AUTH_CHALLENGE_EXPIRED",401);
+ // Malformed signatures can throw during recovery instead of returning false.
+ const valid=await verifyMessage({address:address as `0x${string}`,message:row.message,signature}).catch(()=>false);
+ if(!valid)throw new AppError("WALLET_SIGNATURE_INVALID",401);
  const consumed=await exec("UPDATE nonces SET used=1 WHERE id=? AND used=0 AND expires_at>?",nonceId,Date.now());if(!consumed.meta.changes)throw new AppError("AUTH_CHALLENGE_EXPIRED",401);
  const userId=`wallet-${address.toLowerCase()}`;await exec("INSERT OR IGNORE INTO users(id,wallet,demo,created_at) VALUES(?,?,0,?)",userId,address.toLowerCase(),new Date().toISOString());
  return createSession(userId,new URL(request.url).protocol==="https:");

@@ -1,0 +1,47 @@
+name: CTRL Visible Habitat Acceptance
+
+on:
+  push:
+    branches:
+      - 'qa/visual-first-impression-gate'
+    paths:
+      - 'tests/browser/habitat-visual.spec.ts'
+      - 'playwright.visual.config.ts'
+      - '.github/workflows/ctrl-visible-habitat.yml'
+  pull_request:
+    paths:
+      - 'tests/browser/habitat-visual.spec.ts'
+      - 'playwright.visual.config.ts'
+      - '.github/workflows/ctrl-visible-habitat.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  visible-first-session:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Install pinned dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install headless Chromium with SwiftShader
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Real wallet + actual rendered 3D preview and starter home, desktop and mobile
+        run: pnpm exec playwright test --config playwright.visual.config.ts
+      - name: Preserve visual screenshots and failing traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrl-visible-habitat-screenshots
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: warn

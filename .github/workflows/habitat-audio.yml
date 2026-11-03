@@ -1,0 +1,36 @@
+name: CTRL Habitat Original Audio
+on:
+  pull_request:
+    paths:
+      - 'features/habitat/music-player.tsx'
+      - 'public/audio/ctrl-garden-afternoon.wav'
+      - 'tests/unit/habitat-music.test.ts'
+      - 'features/habitat/app.tsx'
+      - 'features/habitat/habitat.css'
+      - '.github/workflows/habitat-audio.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validate actual original audio file and not-silent waveform
+        run: pnpm exec vitest run tests/unit/habitat-music.test.ts
+      - name: Lint
+        run: pnpm exec eslint features/habitat/music-player.tsx features/habitat/app.tsx
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit --target ES2020
+      - name: Build
+        run: pnpm build:next

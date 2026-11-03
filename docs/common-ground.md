@@ -41,7 +41,7 @@ The endpoint requires server-only `ORBIO_API_KEY` and `ORBIO_MODEL`. It posts to
 
 ## Rendering and accessibility
 
-All downloadable assets are CC0, served locally with provenance in `public/plaza/licenses`. The Maker avatar uses nine material primitives, 1024-pixel-or-smaller textures and six retargeted animation clips (see `docs/maker-avatar.md`), paving is instanced, and shadows/pixel ratio have device quality settings. Reduced ambient motion can follow system preferences or be set in Settings. Keyboard movement, named semantic buttons, editable object forms and bag entries supplement pointer interaction. Gameplay requires WebGL; failure displays a clear retry message. It is not represented as a fully equivalent screen-reader-only world.
+All downloadable assets are served locally with provenance in `public/plaza/licenses`. The active player characters are the approved Victoria and Fumiriya VRoid exports; paving is instanced, and shadows/pixel ratio have device quality settings. Reduced ambient motion can follow system preferences or be set in Settings. Keyboard movement, named semantic buttons, editable object forms and bag entries supplement pointer interaction. Gameplay requires WebGL; failure displays a clear retry message. It is not represented as a fully equivalent screen-reader-only world.
 
 ## Verify
 

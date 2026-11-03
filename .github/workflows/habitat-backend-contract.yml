@@ -1,0 +1,47 @@
+name: Habitat backend integration contract
+on:
+  pull_request:
+    branches: [work/integration]
+    paths:
+      - 'server/habitat/**'
+      - 'tests/unit/habitat-*.test.ts'
+      - 'docs/habitat-contract-integration.md'
+      - '.github/workflows/habitat-backend-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: habitat-backend-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Install pinned dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Create test database
+        run: |
+          cp .env.example .env.local
+          pnpm db:local
+      - name: Scoped backend lint
+        run: pnpm exec eslint server/habitat/*.ts tests/unit/habitat-*.test.ts
+      - name: Complete Habitat contract and security regressions
+        run: pnpm exec vitest run tests/unit/habitat-contract.test.ts tests/unit/habitat-wallet-boundary.test.ts tests/unit/habitat-body-budget.test.ts tests/unit/habitat-asset-resolver.test.ts
+      - name: Existing unit API suite
+        run: pnpm test
+      - name: Typecheck with World Builder ES2020 baseline
+        run: pnpm exec tsc --noEmit --target ES2020
+      - name: Production Next build with temporary ES2020 baseline
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; const path='tsconfig.json'; const config=JSON.parse(fs.readFileSync(path,'utf8')); if (!['ES2017','ES2020'].includes(config.compilerOptions.target)) throw new Error('Unexpected TypeScript target'); config.compilerOptions.target='ES2020'; fs.writeFileSync(path,JSON.stringify(config,null,2)+'\\n');"
+          pnpm build:next

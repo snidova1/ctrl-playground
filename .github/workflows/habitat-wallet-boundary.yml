@@ -1,0 +1,48 @@
+name: Habitat wallet security boundary
+on:
+  pull_request:
+    branches:
+      - work/integration
+    paths:
+      - 'server/habitat/service.ts'
+      - 'features/habitat/app.tsx'
+      - 'tests/unit/habitat-wallet-boundary.test.ts'
+      - '.github/workflows/habitat-wallet-boundary.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: habitat-wallet-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Initialize test database
+        run: |
+          cp .env.example .env.local
+          pnpm db:local
+      - name: Scoped backend lint
+        run: pnpm exec eslint server/habitat/service.ts tests/unit/habitat-wallet-boundary.test.ts
+      - name: SEC-01 exploit regression
+        run: pnpm exec vitest run tests/unit/habitat-wallet-boundary.test.ts
+      - name: Existing unit and API suite
+        run: pnpm test
+      - name: TypeScript ES2020 integration target
+        run: pnpm exec tsc --noEmit --target ES2020
+      - name: Production build with pending ES2020 integration target
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; const path='tsconfig.json'; const config=JSON.parse(fs.readFileSync(path,'utf8')); if (!['ES2017','ES2020'].includes(config.compilerOptions.target)) throw new Error('Unexpected TypeScript target'); config.compilerOptions.target='ES2020'; fs.writeFileSync(path,JSON.stringify(config,null,2)+'\\n');"
+          pnpm build:next

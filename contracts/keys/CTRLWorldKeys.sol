@@ -7,6 +7,8 @@ interface ICTRLToken {
 }
 /// @notice Unaudited implementation candidate. No public-chain deployment yet.
 /// Owner key is non-redeemable. Membership units are bought/sold against CTRL reserves.
+/// Supply/balanceOf include the owner's locked key; memberBalanceOf excludes it.
+/// Administration follows worlds[id].owner only, never member-key ownership.
 contract CTRLWorldKeys {
     ICTRLToken public immutable ctrl;
     address public immutable developmentTreasury;
@@ -26,49 +28,81 @@ contract CTRLWorldKeys {
         require(unit > 0 && unit <= 1e30, 'INVALID_UNIT');
         ctrl = ICTRLToken(token); developmentTreasury = treasury; curveUnit = unit;
     }
+    /// @notice One permanent world/key per wallet. Offchain UUIDs are not key IDs.
+    function worldIdFor(address owner) public pure returns(bytes32) {
+        return keccak256(abi.encodePacked('CTRL_WORLD_V1', owner));
+    }
     function createWorld(bytes32 id) external nonReentrant {
-        require(id != bytes32(0) && worlds[id].owner == address(0), 'WORLD_EXISTS');
+        require(id == worldIdFor(msg.sender), 'OWNER_WORLD_ID_MISMATCH');
         require(ownerWorld[msg.sender] == bytes32(0), 'OWNER_ALREADY_CREATED');
+        require(id != bytes32(0) && worlds[id].owner == address(0), 'WORLD_EXISTS');
         ownerWorld[msg.sender] = id;
         worlds[id] = World(msg.sender, 1, 0);
         balanceOf[id][msg.sender] = 1;
         emit WorldCreated(id, msg.sender);
     }
     function sumSquares(uint256 n) private pure returns(uint256) { return n*(n+1)*(2*n+1)/6; }
+    function isWorldOwner(bytes32 id, address account) external view returns(bool) {
+        return account != address(0) && worlds[id].owner == account;
+    }
+    function memberBalanceOf(bytes32 id, address account) external view returns(uint256) {
+        uint256 held = balanceOf[id][account];
+        return account != address(0) && worlds[id].owner == account ? held - 1 : held;
+    }
     function curve(uint256 start, uint256 amount) public view returns(uint256) {
-        require(start >= 1 && amount > 0 && amount <= 100 && start + amount <= MAX_SUPPLY, 'INVALID_AMOUNT');
+        require(start >= 1 && amount > 0 && amount <= 100 && start <= MAX_SUPPLY - amount, 'INVALID_AMOUNT');
         return (sumSquares(start+amount-1)-sumSquares(start-1))*curveUnit;
     }
+    // Exactly 300/10000 of principal, rounded down to CTRL's smallest unit per trade.
+    // No fee enters the curve reserve; sells pay principal minus this same fee.
+    function tradeFee(uint256 principal) private pure returns(uint256) { return principal*FEE_BPS/10000; }
     function quoteBuy(bytes32 id, uint256 amount) public view returns(uint256 principal,uint256 fee,uint256 total) {
         require(worlds[id].owner != address(0), 'UNKNOWN_WORLD');
-        principal=curve(worlds[id].supply,amount); fee=principal*FEE_BPS/10000; total=principal+fee;
+        principal=curve(worlds[id].supply,amount); fee=tradeFee(principal); total=principal+fee;
     }
     function quoteSell(bytes32 id, uint256 amount) public view returns(uint256 principal,uint256 fee,uint256 payout) {
+        require(worlds[id].owner != address(0), 'UNKNOWN_WORLD');
         uint256 supply=worlds[id].supply;
         require(amount>0 && amount<supply, 'OWNER_KEY_RESERVED');
-        principal=curve(supply-amount,amount);fee=principal*FEE_BPS/10000;payout=principal-fee;
+        principal=curve(supply-amount,amount);fee=tradeFee(principal);payout=principal-fee;
     }
     function buy(bytes32 id,uint256 amount,uint256 maxTotal,uint256 deadline) external nonReentrant {
         require(block.timestamp<=deadline,'EXPIRED');
         (uint256 principal,uint256 fee,uint256 total)=quoteBuy(id,amount);
         require(total<=maxTotal,'SLIPPAGE');
-        uint256 beforeBalance=ctrl.balanceOf(address(this));
-        worlds[id].supply+=amount;worlds[id].reserve+=principal;balanceOf[id][msg.sender]+=amount;
-        require(ctrl.transferFrom(msg.sender,address(this),total),'TRANSFER_FAILED');
-        require(ctrl.balanceOf(address(this))==beforeBalance+total,'UNSUPPORTED_TOKEN');
-        if(fee>0)require(ctrl.transfer(developmentTreasury,fee),'FEE_FAILED');
+        {
+            uint256 beforeBalance=ctrl.balanceOf(address(this));
+            uint256 beforeBuyerBalance=ctrl.balanceOf(msg.sender);
+            worlds[id].supply+=amount;worlds[id].reserve+=principal;balanceOf[id][msg.sender]+=amount;
+            require(ctrl.transferFrom(msg.sender,address(this),total),'TRANSFER_FAILED');
+            require(ctrl.balanceOf(address(this))==beforeBalance+total,'UNSUPPORTED_TOKEN');
+            require(beforeBuyerBalance>=total && ctrl.balanceOf(msg.sender)==beforeBuyerBalance-total,'UNSUPPORTED_TOKEN');
+        }
+        if(fee>0)transferExact(developmentTreasury,fee,true);
         emit Trade(id,msg.sender,true,amount,principal,fee,worlds[id].supply);
     }
     function sell(bytes32 id,uint256 amount,uint256 minPayout,uint256 deadline) external nonReentrant {
         require(block.timestamp<=deadline,'EXPIRED');
-        uint256 held=balanceOf[id][msg.sender];
-        require(amount>0 && held>=amount,'INSUFFICIENT_KEYS');
-        require(msg.sender!=worlds[id].owner || held-amount>=1,'OWNER_KEY_RESERVED');
+        {
+            uint256 held=balanceOf[id][msg.sender];
+            require(amount>0 && held>=amount,'INSUFFICIENT_KEYS');
+            require(msg.sender!=worlds[id].owner || held-amount>=1,'OWNER_KEY_RESERVED');
+        }
         (uint256 principal,uint256 fee,uint256 payout)=quoteSell(id,amount);
         require(payout>=minPayout,'SLIPPAGE');require(worlds[id].reserve>=principal,'RESERVE');
-        balanceOf[id][msg.sender]=held-amount;worlds[id].supply-=amount;worlds[id].reserve-=principal;
-        require(ctrl.transfer(msg.sender,payout),'TRANSFER_FAILED');
-        if(fee>0)require(ctrl.transfer(developmentTreasury,fee),'FEE_FAILED');
+        balanceOf[id][msg.sender]-=amount;worlds[id].supply-=amount;worlds[id].reserve-=principal;
+        transferExact(msg.sender,payout,false);
+        if(fee>0)transferExact(developmentTreasury,fee,true);
         emit Trade(id,msg.sender,false,amount,principal,fee,worlds[id].supply);
+    }
+    // Reject false-success, taxed, or extra-debit outgoing transfers as well as false returns.
+    function transferExact(address to, uint256 amount, bool treasuryFee) private {
+        uint256 beforeBalance=ctrl.balanceOf(address(this));
+        uint256 beforeRecipientBalance=ctrl.balanceOf(to);
+        bool success=ctrl.transfer(to,amount);
+        if(treasuryFee)require(success,'FEE_FAILED');
+        else require(success,'TRANSFER_FAILED');
+        require(beforeBalance>=amount && ctrl.balanceOf(address(this))==beforeBalance-amount,'UNSUPPORTED_TOKEN');
+        require(ctrl.balanceOf(to)==beforeRecipientBalance+amount,'UNSUPPORTED_TOKEN');
     }
 }
