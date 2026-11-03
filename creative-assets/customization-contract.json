@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-10-10",
+  "avatarFamilies": [
+    {
+      "id": "vroid-vrm",
+      "role": "primary-approved",
+      "rig": "VRM humanoid",
+      "baseIds": [
+        "vroid-victoria-preview",
+        "vroid-fumiriya"
+      ],
+      "outfitMode": "authored-vrm-variants",
+      "canUseQuaterniusPartsDirectly": false
+    },
+    {
+      "id": "quaternius-universal",
+      "role": "secondary-candidate",
+      "rig": "Quaternius Universal Humanoid 2026",
+      "baseIds": [],
+      "outfitMode": "modular-parts",
+      "canUseQuaterniusPartsDirectly": true
+    },
+    {
+      "id": "kaykit",
+      "role": "npc-world-pack",
+      "rig": "KayKit",
+      "baseIds": [],
+      "outfitMode": "full-character-or-same-family-parts",
+      "canUseQuaterniusPartsDirectly": false
+    }
+  ],
+  "slots": [
+    {
+      "id": "base",
+      "maxEquipped": 1,
+      "requiresRigMatch": true
+    },
+    {
+      "id": "hair",
+      "maxEquipped": 1,
+      "requiresRigMatch": true
+    },
+    {
+      "id": "headwear",
+      "maxEquipped": 1,
+      "requiresRigMatch": false,
+      "attachmentBones": [
+        "head"
+      ]
+    },
+    {
+      "id": "top",
+      "maxEquipped": 1,
+      "requiresRigMatch": true
+    },
+    {
+      "id": "outer",
+      "maxEquipped": 1,
+      "requiresRigMatch": true
+    },
+    {
+      "id": "bottom",
+      "maxEquipped": 1,
+      "requiresRigMatch": true
+    },
+    {
+      "id": "shoes",
+      "maxEquipped": 1,
+      "requiresRigMatch": true
+    },
+    {
+      "id": "eyewear",
+      "maxEquipped": 1,
+      "requiresRigMatch": false,
+      "attachmentBones": [
+        "head"
+      ]
+    },
+    {
+      "id": "neck",
+      "maxEquipped": 1,
+      "requiresRigMatch": false,
+      "attachmentBones": [
+        "chest"
+      ]
+    },
+    {
+      "id": "back",
+      "maxEquipped": 1,
+      "requiresRigMatch": false,
+      "attachmentBones": [
+        "chest",
+        "hips"
+      ]
+    },
+    {
+      "id": "hand",
+      "maxEquipped": 2,
+      "requiresRigMatch": false,
+      "attachmentBones": [
+        "leftHand",
+        "rightHand"
+      ]
+    }
+  ],
+  "appearanceProfile": {
+    "version": 1,
+    "scope": "wallet-owned",
+    "fields": [
+      "baseModelId",
+      "rigFamily",
+      "hairId",
+      "headwearId",
+      "topId",
+      "outerId",
+      "bottomId",
+      "shoesId",
+      "eyewearId",
+      "neckId",
+      "backId",
+      "handIds",
+      "paletteId",
+      "morphPreset",
+      "emoteWheel"
+    ],
+    "maxAccessoryBones": 5,
+    "allowedDyeChannels": [
+      "fabric",
+      "trim",
+      "metal",
+      "accent"
+    ],
+    "morphPresetWarning": "User body sliders must use preauthored VRM-safe blendshapes and fitted clothing, not arbitrary bone scales.",
+    "uploads": "creator-submitted VRM with server-side size/type/meta rights validation; storage private until moderation"
+  },
+  "emoteWheel": [
+    "wave",
+    "cheer",
+    "bow",
+    "sit",
+    "dance",
+    "point",
+    "clap",
+    "pose-1",
+    "pose-2"
+  ],
+  "animationImport": {
+    "rootMotion": "disabled for synchronized locomotion; keep optional separate action-clips",
+    "retarget": "source humanoid bone mapping -> VRMHumanoid -> additive AnimationClip",
+    "qualityGates": [
+      "no skeleton T-pose after change",
+      "no head/torso jitter",
+      "no feet below ground or visible foot sliding",
+      "no garment penetration during walk/run/jump/sit/dance",
+      "mobile draw calls and bone cap",
+      "NPC replication bandwidth"
+    ],
+    "requiresActualRiggedAssets": true
+  },
+  "publication": {
+    "defaultStatus": "unavailable-until-reviewed",
+    "conditions": [
+      "sha256 and file provenance",
+      "license validation",
+      "rig match plus fitted mesh",
+      "mobile profile",
+      "thumbnail and preview",
+      "anti-upload abuse/content moderation",
+      "server-side entitlement"
+    ],
+    "neverAllowUnknownExternalUrls": true
+  }
+}
