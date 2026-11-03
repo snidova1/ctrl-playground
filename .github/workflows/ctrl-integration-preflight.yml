@@ -1,0 +1,48 @@
+name: CTRL Integration Preflight
+
+on:
+  push:
+    branches:
+      - 'qa/integration-preflight'
+    paths:
+      - 'scripts/qa/integration-preflight.mjs'
+      - 'tests/qa/integration-preflight.test.mjs'
+      - 'docs/qa/integration-preflight-handoff.md'
+      - '.github/workflows/ctrl-integration-preflight.yml'
+  pull_request:
+    paths:
+      - 'scripts/qa/integration-preflight.mjs'
+      - 'tests/qa/integration-preflight.test.mjs'
+      - 'docs/qa/integration-preflight-handoff.md'
+      - '.github/workflows/ctrl-integration-preflight.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+jobs:
+  audit:
+    name: Read-only integration report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Regression tests for integration preflight
+        run: node --test tests/qa/integration-preflight.test.mjs
+      - name: Snapshot all open PRs and latest branch workflows
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/qa/integration-preflight.mjs --repo snidova1/ctrl-playground \
+            --out preflight-results/CTRL-INTEGRATION-PREFLIGHT.md \
+            --json-out preflight-results/CTRL-INTEGRATION-PREFLIGHT.json
+      - name: Upload read-only audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctrl-integration-preflight
+          path: preflight-results/
+          retention-days: 14
