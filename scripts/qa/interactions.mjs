@@ -159,6 +159,40 @@ for (const label of ['Brick', 'Stucco', 'Log cabin', 'Steep', 'Barn']) {
 await shot('renovate-after');
 await ev(() => window.__willow.ui.set({panel: null}));
 
+// ---------------- Economy, social, decorating by hand ----------------
+log('economy', await ev(async () => {
+  const rt = window.__willow; const r = {};
+  const life = () => rt.ui.get().life;
+  r.buyChair = !!(await rt.act({type: 'buy', item: 'chair', quantity: 1})); r.chairs = life().inventory.chair ?? 0;
+  const fish = Object.keys(life().inventory).find(id => /sardine|carp|bream|flounder|minnow|trout|koi|perch|goby|crab|tuna|puffer|mackerel|salmon/.test(id));
+  r.fish = fish ?? null; if (fish) {const c = life().coins; r.sell = !!(await rt.act({type: 'sell', item: fish, quantity: 1})); r.coinsUp = life().coins > c;}
+  const mush = Object.keys(life().inventory).find(id => /mushroom/.test(id) && life().inventory[id] > 0);
+  if (mush) r.gift = !!(await rt.act({type: 'gift', npc: 'bea', item: mush}));
+  await rt.act({type: 'forage', nodeId: 'x'}).catch(() => {});
+  r.craftErr = await rt.act({type: 'craft', furniture: 'box'}).then(() => 'ok', e => String(e)); // may need wood
+  rt.emote('wave', 'wave', 1200); r.emote = rt.player.motion.current.emote === 'wave';
+  return {ok: r.buyChair && r.chairs > 0 && (r.sell !== false) && r.emote, ...r};
+}));
+log('decorate place by click', await ev(async () => {
+  const rt = window.__willow; rt.ui.set({panel: null});
+  rt.player.pos.set(0, rt.height(0, -0.4), -0.4); rt.player.angle = Math.PI; rt.camera.yaw = 0; rt.input.z = -1;
+  const t0 = performance.now(); while (!rt.ui.get().indoors && performance.now() - t0 < 20000) await new Promise(r => setTimeout(r, 100));
+  rt.input.z = 0; await new Promise(r => setTimeout(r, 900));
+  rt.ui.set({decorating: true, panel: 'home'}); await new Promise(r => setTimeout(r, 1200));
+  const before = window.__director.getLayout().length; window.__before = before;
+  const slot = [...document.querySelectorAll('.wc-slot')].find(b => !b.classList.contains('locked'));
+  slot?.click(); await new Promise(r => setTimeout(r, 500));
+  return {ok: !!slot, before, slot: !!slot};
+}));
+{
+  // Tap the floor in front of the camera to drop the chair.
+  const box = await page.locator('canvas').first().boundingBox();
+  for (const [fx, fy] of [[0.5, 0.62], [0.45, 0.7], [0.55, 0.55]]) await page.mouse.click(box.x + box.width * fx, box.y + box.height * fy);
+  await wait(800);
+  log('decorate placed', await ev(async () => {const d = window.__director; const after = d.getLayout().length; const rt = window.__willow; rt.ui.set({decorating: false, panel: null}); return {ok: after > window.__before, before: window.__before, after};}));
+  await shot('decorate-placed');
+}
+
 await writeFile(`${out}/results.json`, JSON.stringify({results, errors}, null, 1));
 const bad = results.filter(r => r.ok === false);
 console.log(`\n${results.length} checks, ${bad.length} failed, ${errors.length} page errors`);

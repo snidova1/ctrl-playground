@@ -78,7 +78,7 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
   const emote = (e: string) => {motion.current.emote = e; motion.current.emoteAt = performance.now();};
 
   useEffect(() => {
-    rt.targets.set(id, {id, label: `Hang out with ${name}`, icon: '🤝', x: pos.current.x, z: pos.current.z, radius: 2.2, priority: 0.45, run: () => {
+    rt.targets.set(id, {id, label: `Hang out with ${name}`, icon: '🤝', x: pos.current.x, z: pos.current.z, radius: 1.4, priority: 0.1, run: () => {
       const b = brain.current;
       if (performance.now() < b.hangUntil) {b.hangUntil = 0; say('See you around! 👋'); emote('wave'); rt.toast(`${name} went back to their day.`, 'info', '👋'); return;}
       b.hangUntil = performance.now() + 120000; b.phase = 'walk';
