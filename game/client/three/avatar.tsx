@@ -170,25 +170,37 @@ function useAnimator(instance: AvatarInstance | null) {
 }
 
 const FINGERS = ['Thumb', 'Index', 'Middle', 'Ring', 'Little'] as const;
-const _q = new THREE.Quaternion(), _e = new THREE.Euler();
+const _q = new THREE.Quaternion(), _e = new THREE.Euler(), _v = new THREE.Vector3();
 /** The stock idle reads tense (raised shoulders, fists). Ease it into a soft, friendly stance. */
-function relaxIdle(vrm: VRM, t: number, amount: number) {
+function relaxIdle(vrm: VRM, t: number, amount: number, restHips: THREE.Vector3 | null) {
   if (amount <= 0.001) return;
   const blend = (name: Parameters<VRM['humanoid']['getNormalizedBoneNode']>[0], x: number, y: number, z: number) => {
     const b = vrm.humanoid.getNormalizedBoneNode(name);
     if (b) b.quaternion.slerp(_q.setFromEuler(_e.set(x, y, z)), amount);
   };
-  const breathe = Math.sin(t * 1.6) * 0.025, sway = Math.sin(t * 0.55) * 0.03;
-  blend('rightShoulder', 0, 0, -0.05); blend('leftShoulder', 0, 0, 0.05);
-  blend('rightUpperArm', 0, 0.1, -1.25 - breathe); blend('leftUpperArm', 0, -0.1, 1.25 + breathe);
-  blend('rightLowerArm', 0, 0.28, 0); blend('leftLowerArm', 0, -0.28, 0);
-  blend('rightHand', 0, 0, -0.1); blend('leftHand', 0, 0, 0.1);
-  blend('spine', breathe * 0.6, 0, sway * 0.5); blend('chest', breathe * 0.4, 0, 0);
-  blend('neck', 0, 0, 0); blend('head', -0.04, Math.sin(t * 0.4) * 0.08, sway * 0.6);
+  // Slow weight shift between the feet (contrapposto), gentle breathing, a curious head.
+  const breathe = Math.sin(t * 1.6) * 0.02, shift = Math.sin(t * 0.35) * 0.5 + 0.5, look = Math.sin(t * 0.4);
+  const hips = vrm.humanoid.getNormalizedBoneNode('hips');
+  if (hips) {
+    hips.quaternion.slerp(_q.setFromEuler(_e.set(0, 0, (shift - 0.5) * 0.05)), amount);
+    if (restHips) hips.position.lerp(_v.set(restHips.x + (shift - 0.5) * 0.02, restHips.y - 0.008, restHips.z), amount);
+  }
+  // Legs straight under the hips; the unweighted leg relaxes with a soft knee.
+  const soft = (k: number) => [-0.1 * k, 0.2 * k] as const;
+  const [rt, rk] = soft(1 - shift), [lt, lk] = soft(shift);
+  blend('rightUpperLeg', rt, 0.04, 0.02); blend('rightLowerLeg', rk, 0, 0); blend('rightFoot', -rk * 0.4, 0.06, 0);
+  blend('leftUpperLeg', lt, -0.04, -0.02); blend('leftLowerLeg', lk, 0, 0); blend('leftFoot', -lk * 0.4, -0.06, 0);
+  blend('spine', -0.02 + breathe * 0.5, 0, (0.5 - shift) * 0.04); blend('chest', breathe * 0.4, 0, 0); blend('upperChest', 0, 0, 0);
+  blend('rightShoulder', 0, 0, -0.06); blend('leftShoulder', 0, 0, 0.06);
+  // Arms hang close to the body, elbows soft, palms toward the thighs.
+  blend('rightUpperArm', 0.06, 0.12, -1.33 - breathe); blend('leftUpperArm', 0.06, -0.12, 1.33 + breathe);
+  blend('rightLowerArm', 0, 0.34, 0); blend('leftLowerArm', 0, -0.34, 0);
+  blend('rightHand', 0, 0.1, -0.15); blend('leftHand', 0, -0.1, 0.15);
+  blend('neck', 0.02, look * 0.05, 0); blend('head', -0.03, look * 0.12, 0.06 + (shift - 0.5) * 0.05);
   for (const side of ['left', 'right'] as const) for (const f of FINGERS) for (const seg of ['Proximal', 'Intermediate', 'Distal'] as const) {
     if (f === 'Thumb' && seg === 'Proximal') continue;
     const name = `${side}${f}${f === 'Thumb' && seg === 'Intermediate' ? 'Metacarpal' : seg}` as Parameters<VRM['humanoid']['getNormalizedBoneNode']>[0];
-    blend(name, 0, 0, (side === 'left' ? 1 : -1) * (f === 'Thumb' ? 0.1 : 0.18));
+    blend(name, 0, 0, (side === 'left' ? 1 : -1) * (f === 'Thumb' ? 0.1 : 0.22));
   }
 }
 
@@ -228,6 +240,8 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
     return () => {alive = false; created?.dispose(); setInstance(null);};
   }, [lookKey]);
   const animator = useAnimator(instance);
+  // Hips height of the bind pose, before any clip moves it: the relaxed stance stands up straight.
+  const restHips = useMemo(() => instance?.vrm.humanoid.getNormalizedBoneNode('hips')?.position.clone() ?? null, [instance]);
   const blink = useRef({next: 2 + Math.random() * 3, t: 0, value: 0});
   const clock = useRef(0);
   const relax = useRef(0);
@@ -262,8 +276,8 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
     poseOverrides(instance.vrm, m.anim, clock.current);
     // Fade the relaxed stance in only while the idle clip is the one playing.
     const calm = animator.currentName === 'Idle' && (m.anim === 'idle' || !CLIP_FOR[m.anim] || CLIP_FOR[m.anim] === 'Idle') && m.anim !== 'fish' && m.anim !== 'camera';
-    relax.current += ((calm ? 0.9 : 0) - relax.current) * Math.min(1, dt * 5);
-    relaxIdle(instance.vrm, clock.current, relax.current);
+    relax.current += ((calm ? 1 : 0) - relax.current) * Math.min(1, dt * 5);
+    relaxIdle(instance.vrm, clock.current, relax.current, restHips);
     // Blink + mood.
     const em = instance.vrm.expressionManager;
     if (em) {
