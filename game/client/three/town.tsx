@@ -76,7 +76,7 @@ function TownProps() {
       {[[-0.4, -0.3], [0.35, -0.2], [0, 0.35], [-0.6, 0.4], [0.6, 0.45]].map(([dx, dz], k) => <Kit key={k} model={`nature-kit/flower_${['red', 'yellow', 'purple'][(i + k) % 3]}${'ABC'[k % 3]}`} position={[dx, 0, dz]} scale={1.6} shadows={false} />)}
     </group>)}
     {FLOWER_BEDS.slice(7).map((f, i) => <Kit key={i} model={`nature-kit/flower_${['purple', 'yellow', 'red'][i % 3]}${'ABC'[i % 3]}`} position={[f.x, heightAt(f.x, f.z), f.z]} scale={1.8} shadows={false} />)}
-    {[[-9.5, 3, 1.57], [9.5, 3, -1.57], [-9.5, -3, 1.57], [9.5, -3, -1.57]].map(([x, z, r], i) => <Kit key={i} model="furniture-kit/benchCushion" position={[x, 0.02, z]} rotation={r} scale={1.6} />)}
+    {PLAZA_BENCHES.map(([x, z, r], i) => <Kit key={i} model="furniture-kit/benchCushion" position={[x, 0.02, z]} rotation={r} scale={1.6} />)}
     {[[-30, 30], [-24, 26], [26, 27], [36, 29], [-4, 31]].map(([x, z], i) => <Kit key={i} model={`nature-kit/rock_large${'ABCDE'[i]}`} position={[x, heightAt(x, z), z]} scale={1.2} />)}
     {[[20, 31], [30, 32.5]].map(([x, z], i) => <Kit key={i} model="nature-kit/canoe" position={[x, heightAt(x, z) + 0.05, z]} rotation={0.6 + i} scale={1.6} />)}
     {[[16, 31.5], [-2, 30]].map(([x, z], i) => <Kit key={i} model="nature-kit/tree_palmBend" position={[x, heightAt(x, z), z]} rotation={i * 2} scale={2.2} />)}
@@ -170,11 +170,13 @@ function WaterEdge({rt, where}: {rt: Runtime; where: 'town' | 'home'}) {
     const p = rt.player;
     const spot = where === 'town' ? fishableFrom(p.pos.x, p.pos.z, p.angle) : null;
     // The fishing prompt sits just in front of you, so facing the water wins over a neighbour standing beside you.
-    if (spot) rt.targets.set('water', {id: 'water', label: spot.water === 'sea' ? 'Fish in the sea' : spot.water === 'river' ? 'Fish in the river' : 'Fish in the pond', icon: '🎣', x: p.pos.x + Math.sin(p.angle) * 0.8, z: p.pos.z + Math.cos(p.angle) * 0.8, radius: 1.6, priority: 0.1, run: () => void startFishing(rt, where, spot.water, spot.target)});
+    if (spot) rt.targets.set('water', {id: 'water', label: spot.water === 'sea' ? 'Fish in the sea' : spot.water === 'river' ? 'Fish in the river' : 'Fish in the pond', icon: '🎣', x: p.pos.x + Math.sin(p.angle) * 0.8, z: p.pos.z + Math.cos(p.angle) * 0.8, radius: 1.6, priority: -0.5, run: () => void startFishing(rt, where, spot.water, spot.target)});
     else rt.targets.delete('water');
   });
   return null;
 }
+
+const PLAZA_BENCHES: [number, number, number][] = [[-9.5, 3, 1.57], [9.5, 3, -1.57], [-9.5, -3, 1.57], [9.5, -3, -1.57]];
 
 function Stations({rt, variant}: {rt: Runtime; variant: 'common-ground' | 'public' | 'preview'}) {
   useEffect(() => {
@@ -185,6 +187,17 @@ function Stations({rt, variant}: {rt: Runtime; variant: 'common-ground' | 'publi
     };
     const add = (id: string, label: string, icon: string, x: number, z: number, run: () => void) => rt.targets.set(id, {id, label, icon, x, z, radius: 2.4, priority: 0.1, run});
     const store = BUILDINGS.find(b => b.id === 'store')!, cafe = BUILDINGS.find(b => b.id === 'cafe')!, florist = BUILDINGS.find(b => b.id === 'florist')!, hall = BUILDINGS.find(b => b.id === 'hall')!;
+    // Plaza benches: sit down facing the fountain, stand up in front of the bench.
+    PLAZA_BENCHES.forEach(([x, z, r], i) => {
+      const fx = Math.sin(r), fz = Math.cos(r);
+      rt.targets.set(`bench-${i}`, {id: `bench-${i}`, label: 'Sit on the bench', icon: '🪑', x, z, radius: 0.9, hx: Math.abs(fz) * 0.8 + Math.abs(fx) * 0.35, hz: Math.abs(fx) * 0.8 + Math.abs(fz) * 0.35, priority: 0.3, run: () => {
+        rt.player.seat = {lift: Math.max(0, 0.42 - 0.22), standX: x + fx * 0.9, standZ: z + fz * 0.9};
+        rt.player.pos.set(x + fx * 0.05, rt.height(x, z), z + fz * 0.05);
+        rt.player.angle = r;
+        rt.camera.yaw = r + 0.35; rt.camera.snap = true;
+        rt.setAnim('sit', 'none', 0, 'relaxed');
+      }});
+    });
     if (variant !== 'common-ground') {
       const s = door(store), c = door(cafe), f = door(florist), h = door(hall);
       add('station-store', 'Shop at the General Store', '🛍️', s.x, s.z, () => rt.openPanel('shop', 'goods'));
@@ -196,7 +209,7 @@ function Stations({rt, variant}: {rt: Runtime; variant: 'common-ground' | 'publi
     } else {
       add('station-gate', 'Enter Willow Common', '✨', COMMON_GATE.x, COMMON_GATE.z, () => rt.goto('town'));
     }
-    return () => {for (const id of ['station-store', 'station-cafe', 'station-florist', 'station-hall', 'station-home', 'station-gate']) rt.targets.delete(id);};
+    return () => {PLAZA_BENCHES.forEach((_, i) => rt.targets.delete(`bench-${i}`)); for (const id of ['station-store', 'station-cafe', 'station-florist', 'station-hall', 'station-home', 'station-gate']) rt.targets.delete(id);};
   }, [rt, variant]);
   return null;
 }

@@ -64,6 +64,10 @@ export const HATS: HatDef[] = [
   {id: 'cap', name: 'Sporty Cap', price: 400},
   {id: 'chef', name: 'Chef Hat', price: 650},
   {id: 'frog', name: 'Froggy Hat', price: 1200},
+  {id: 'witch', name: 'Little Witch Hat', price: 1400},
+  {id: 'crown', name: 'Tiny Crown', price: 2200},
+  {id: 'mushroom', name: 'Mushroom Cap', price: 980},
+  {id: 'sunhat', name: 'Wide Sun Hat', price: 720},
 ];
 
 export interface AccessoryDef {id: string; name: string; price: number; starter?: boolean}
@@ -78,6 +82,10 @@ export const ACCESSORIES: AccessoryDef[] = [
   {id: 'headphones', name: 'Headphones', price: 900},
   {id: 'fairy-wings', name: 'Fairy Wings', price: 2400},
   {id: 'blush-stickers', name: 'Heart Cheek Stickers', price: 180},
+  {id: 'halo', name: 'Angel Halo', price: 1800},
+  {id: 'bow-tie', name: 'Bow Tie', price: 340},
+  {id: 'pearls', name: 'Pearl Necklace', price: 1300},
+  {id: 'heart-glasses', name: 'Heart Glasses', price: 600},
 ];
 
 export const outfitItemId = (o: {id: string}) => `fashion-${o.id}`;

@@ -21,3 +21,16 @@ Do not replace the embedded licenses with CC0. The signature female model is lic
 - `male-b.vrm` = Sakurada Fumiriya (CC0, mobile export)
 
 The game renders these with an enlarged head (chibi proportions) and runtime recolouring/fabric patterns; the files themselves are unmodified.
+
+## Added bodies (VRoid Project sample characters)
+
+Downloaded from the VRoid sample mirror at https://github.com/madjin/vrm-samples (`vroid/beta/`). Embedded metadata: license CC0, allowed user Everyone, commercial use Allow. The same characters are published by VRoid Project on OpenGameArt as "VRoid Studio CC0 models" (https://opengameart.org/content/vroid-studio-cc0-models), where AvatarSample D–G carry the VRoid Hub conditions "everyone, corporate commercial use allowed, modification allowed, redistribution allowed, credit unnecessary".
+
+- `shibu.vrm` = Sendagaya Shibu
+- `shino.vrm` = Sendagaya Shino
+- `ruby.vrm` = Victoria Rubin
+- `vita.vrm` = Vita
+- `vivi.vrm` = Vivi
+- `noir.vrm` = Darkness Shibu
+
+Each file is the original with embedded images downscaled to at most 512 px (meshes, skins, expressions, spring bones and metadata untouched). Hairstyles in the creator reuse these hair meshes on other bodies at runtime; the files themselves are not merged.

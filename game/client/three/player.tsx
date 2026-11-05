@@ -148,7 +148,9 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
       pick.current = 0.15;
       let best: Target | null = null, bestScore = Infinity;
       for (const t of rt.targets.values()) {
-        const d = Math.hypot(t.x - p.pos.x, t.z - p.pos.z);
+        if (t.when && !t.when()) continue;
+        const dx = Math.max(0, Math.abs(t.x - p.pos.x) - (t.hx ?? 0)), dz = Math.max(0, Math.abs(t.z - p.pos.z) - (t.hz ?? 0));
+        const d = Math.hypot(dx, dz);
         if (d > t.radius) continue;
         // Prefer things in front of the player.
         const facing = Math.cos(Math.atan2(t.x - p.pos.x, t.z - p.pos.z) - p.angle);

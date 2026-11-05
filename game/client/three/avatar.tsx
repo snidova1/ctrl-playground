@@ -66,6 +66,10 @@ function Hat({hat, color}: {hat: number; color: string}) {
   if (hat === 9) return <group position={[0, 0.2, -0.01]} rotation={[-0.12, 0, 0]}><mesh geometry={G.dome} material={m} scale={[0.165, 0.11, 0.165]} castShadow /><mesh geometry={G.disc} material={m} position={[0, 0.005, 0.15]} scale={[0.11, 0.012, 0.1]} castShadow /></group>;
   if (hat === 10) return <group position={[0, 0.27, -0.02]}><mesh geometry={G.disc} material={white} scale={[0.14, 0.09, 0.14]} castShadow /><mesh geometry={G.ball} material={white} position={[0, 0.1, 0]} scale={[0.17, 0.09, 0.17]} castShadow /></group>;
   if (hat === 11) return <group position={[0, 0.18, -0.01]}><mesh geometry={G.dome} material={toon('#8ccf6a')} scale={[0.175, 0.15, 0.175]} castShadow />{[-0.07, 0.07].map(x => <group key={x} position={[x, 0.14, 0.07]}><mesh geometry={G.ball} material={white} scale={0.045} /><mesh geometry={G.ball} material={toon('#2b2b30')} position={[0, 0.005, 0.035]} scale={0.02} /></group>)}</group>;
+  if (hat === 12) return <group position={[0, 0.27, -0.02]} rotation={[-0.1, 0, 0.12]}><mesh geometry={G.disc} material={m} scale={[0.26, 0.012, 0.26]} castShadow /><mesh geometry={G.cone} material={m} position={[0, 0.17, 0]} scale={[1, 1.5, 1]} castShadow /><mesh geometry={G.disc} material={toon('#ffd84a')} position={[0, 0.03, 0]} scale={[0.135, 0.03, 0.135]} /><mesh geometry={G.star} material={toon('#ffd84a')} position={[0.06, 0.1, 0.11]} scale={0.03} /></group>;
+  if (hat === 13) return <group position={[0, 0.3, -0.01]}>{Array.from({length: 5}, (_, i) => {const a = (i / 5) * Math.PI * 2; return <group key={i}><mesh geometry={G.ear} material={toon('#f2c94c')} position={[Math.sin(a) * 0.07, 0.04, Math.cos(a) * 0.07]} scale={[0.6, 0.8, 0.6]} castShadow /><mesh geometry={G.ball} material={toon(['#e8556e', '#5fb0f0', '#7ed68a'][i % 3])} position={[Math.sin(a) * 0.072, 0.0, Math.cos(a) * 0.072]} scale={0.012} /></group>;})}<mesh geometry={G.disc} material={toon('#f2c94c')} scale={[0.075, 0.035, 0.075]} castShadow /></group>;
+  if (hat === 14) return <group position={[0, 0.2, -0.015]}><mesh geometry={G.dome} material={toon('#e5533f')} scale={[0.22, 0.17, 0.22]} castShadow />{[[0, 0.16, 0.05], [0.1, 0.11, 0.1], [-0.11, 0.1, 0.09], [0.13, 0.08, -0.08], [-0.08, 0.13, -0.08], [0.02, 0.1, -0.15]].map((p, i) => <mesh key={i} geometry={G.ball} material={white} position={p as [number, number, number]} scale={[0.032, 0.014, 0.032]} />)}</group>;
+  if (hat === 15) return <group position={[0, 0.25, -0.01]} rotation={[0.06, 0, 0]}><mesh geometry={G.disc} material={toon('#fff3d6')} scale={[0.34, 0.01, 0.34]} castShadow /><mesh geometry={G.dome} material={toon('#fff3d6')} position={[0, 0.005, 0]} scale={[0.15, 0.1, 0.15]} castShadow /><mesh geometry={G.disc} material={m} position={[0, 0.02, 0]} scale={[0.152, 0.03, 0.152]} /><group position={[0.13, 0.03, 0.05]}>{Array.from({length: 5}, (_, k) => {const a = (k / 5) * Math.PI * 2; return <mesh key={k} geometry={G.ball} material={toon('#ffffff')} position={[Math.cos(a) * 0.02, 0.01, Math.sin(a) * 0.02]} scale={0.014} />;})}<mesh geometry={G.ball} material={toon('#ffd84a')} position={[0, 0.012, 0]} scale={0.011} /></group></group>;
   return null;
 }
 
@@ -87,8 +91,12 @@ function Accessory({id, where, color}: {id: number; where: 'head' | 'neck' | 'ch
       {[-0.158, 0.158].map(x => <mesh key={x} geometry={G.disc} material={m} position={[x, 0.11, 0]} rotation={[0, 0, Math.PI / 2]} scale={[0.05, 0.03, 0.05]} castShadow />)}
     </group>;
     if (id === 9) return <>{[-0.08, 0.08].map(x => <mesh key={x} geometry={G.ball} material={toon('#ff7a9a')} position={[x, 0.07, 0.138]} scale={[0.016, 0.013, 0.006]} />)}</>;
+    if (id === 10) return <mesh geometry={G.ring} material={toon('#ffe680', {emissive: '#ffd84a', emissiveIntensity: 0.6})} position={[0, 0.44, -0.02]} rotation={[Math.PI / 2 - 0.15, 0, 0]} scale={[0.75, 0.75, 1.4]} />;
+    if (id === 13) return <group position={[0, 0.118, 0.15]}>{[-0.056, 0.056].map(x => <group key={x} position={[x, 0, 0]}>{[-1, 1].map(s => <mesh key={s} geometry={G.ball} material={toon('#ff5f8a', {transparent: true, opacity: 0.85})} position={[s * 0.012, 0.006, 0]} rotation={[0, 0, s * 0.7]} scale={[0.022, 0.03, 0.006]} />)}<mesh geometry={G.ear} material={toon('#ff5f8a', {transparent: true, opacity: 0.85})} position={[0, -0.014, 0]} rotation={[Math.PI, 0, 0]} scale={[0.55, 0.3, 0.12]} /></group>)}<mesh geometry={G.box} material={toon('#d6305a')} scale={[0.03, 0.006, 0.006]} /></group>;
     return null;
   }
+  if (where === 'neck' && id === 11) return <group position={[0, -0.02, 0.07]}>{[-1, 1].map(s => <mesh key={s} geometry={G.ear} material={m} position={[s * 0.028, 0, 0]} rotation={[0, 0, s * -Math.PI / 2]} scale={[0.6, 0.55, 0.3]} castShadow />)}<mesh geometry={G.ball} material={m} scale={0.013} /></group>;
+  if (where === 'neck' && id === 12) return <group position={[0, -0.03, 0.005]}>{Array.from({length: 16}, (_, k) => {const a = (k / 16) * Math.PI * 2; return <mesh key={k} geometry={G.ball} material={toon('#fbf6ee')} position={[Math.sin(a) * 0.075, -Math.max(0, Math.cos(a)) * 0.04, Math.cos(a) * 0.07]} scale={0.011} />;})}</group>;
   if (where === 'neck' && id === 3) return <group position={[0, 0.01, 0]}>
     <mesh geometry={G.ring} material={m} rotation={[Math.PI / 2, 0, 0]} scale={[0.5, 0.5, 2.2]} castShadow />
     <mesh geometry={G.box} material={m} position={[0.04, -0.07, 0.07]} rotation={[0.2, 0, 0.15]} scale={[0.04, 0.12, 0.015]} castShadow />
@@ -161,6 +169,29 @@ function useAnimator(instance: AvatarInstance | null) {
   }, [instance]);
 }
 
+const FINGERS = ['Thumb', 'Index', 'Middle', 'Ring', 'Little'] as const;
+const _q = new THREE.Quaternion(), _e = new THREE.Euler();
+/** The stock idle reads tense (raised shoulders, fists). Ease it into a soft, friendly stance. */
+function relaxIdle(vrm: VRM, t: number, amount: number) {
+  if (amount <= 0.001) return;
+  const blend = (name: Parameters<VRM['humanoid']['getNormalizedBoneNode']>[0], x: number, y: number, z: number) => {
+    const b = vrm.humanoid.getNormalizedBoneNode(name);
+    if (b) b.quaternion.slerp(_q.setFromEuler(_e.set(x, y, z)), amount);
+  };
+  const breathe = Math.sin(t * 1.6) * 0.025, sway = Math.sin(t * 0.55) * 0.03;
+  blend('rightShoulder', 0, 0, -0.05); blend('leftShoulder', 0, 0, 0.05);
+  blend('rightUpperArm', 0, 0.1, -1.25 - breathe); blend('leftUpperArm', 0, -0.1, 1.25 + breathe);
+  blend('rightLowerArm', 0, 0.28, 0); blend('leftLowerArm', 0, -0.28, 0);
+  blend('rightHand', 0, 0, -0.1); blend('leftHand', 0, 0, 0.1);
+  blend('spine', breathe * 0.6, 0, sway * 0.5); blend('chest', breathe * 0.4, 0, 0);
+  blend('neck', 0, 0, 0); blend('head', -0.04, Math.sin(t * 0.4) * 0.08, sway * 0.6);
+  for (const side of ['left', 'right'] as const) for (const f of FINGERS) for (const seg of ['Proximal', 'Intermediate', 'Distal'] as const) {
+    if (f === 'Thumb' && seg === 'Proximal') continue;
+    const name = `${side}${f}${f === 'Thumb' && seg === 'Intermediate' ? 'Metacarpal' : seg}` as Parameters<VRM['humanoid']['getNormalizedBoneNode']>[0];
+    blend(name, 0, 0, (side === 'left' ? 1 : -1) * (f === 'Thumb' ? 0.1 : 0.18));
+  }
+}
+
 function poseOverrides(vrm: VRM, anim: string, t: number) {
   const bone = (name: Parameters<VRM['humanoid']['getNormalizedBoneNode']>[0]) => vrm.humanoid.getNormalizedBoneNode(name);
   const set = (name: Parameters<VRM['humanoid']['getNormalizedBoneNode']>[0], x: number, y: number, z: number) => {
@@ -199,6 +230,7 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
   const animator = useAnimator(instance);
   const blink = useRef({next: 2 + Math.random() * 3, t: 0, value: 0});
   const clock = useRef(0);
+  const relax = useRef(0);
 
   useFrame((_, rawDt) => {
     const m = motion.current;
@@ -228,6 +260,10 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
     animator.lastAction = m.actionAt;
     animator.mixer.update(dt);
     poseOverrides(instance.vrm, m.anim, clock.current);
+    // Fade the relaxed stance in only while the idle clip is the one playing.
+    const calm = animator.currentName === 'Idle' && (m.anim === 'idle' || !CLIP_FOR[m.anim] || CLIP_FOR[m.anim] === 'Idle') && m.anim !== 'fish' && m.anim !== 'camera';
+    relax.current += ((calm ? 0.9 : 0) - relax.current) * Math.min(1, dt * 5);
+    relaxIdle(instance.vrm, clock.current, relax.current);
     // Blink + mood.
     const em = instance.vrm.expressionManager;
     if (em) {
@@ -266,7 +302,7 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
         {look.hat > 0 && <Hat hat={look.hat} color={colors.hat} />}
         {look.accessory > 0 && <Accessory id={look.accessory} where="head" color={colors.hat} />}
       </group>, head)}
-      {neck && look.accessory === 3 && createPortal(<Accessory id={3} where="neck" color={colors.hat} />, neck)}
+      {neck && (look.accessory === 3 || look.accessory === 11 || look.accessory === 12) && createPortal(<Accessory id={look.accessory} where="neck" color={colors.hat} />, neck)}
       {chest && (look.accessory === 4 || look.accessory === 8) && createPortal(<Accessory id={look.accessory} where="chest" color={colors.hat} />, chest)}
     </group> : <mesh position={[0, 0.7, 0]}><capsuleGeometry args={[0.25, 0.6, 4, 12]} /><meshBasicMaterial color="#ffffff" transparent opacity={0.35} /></mesh>}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>

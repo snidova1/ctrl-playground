@@ -41,3 +41,19 @@ export const sfx = {
   levelUp: () => [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, i * 0.09, 0.35, 'triangle', 0.07)),
   step: () => tone(140 + Math.random() * 30, 0, 0.05, 'sine', 0.015),
 };
+
+/** A little music-box tune for the home radio. */
+let radio: ReturnType<typeof setInterval> | null = null;
+const TUNE = [659, 784, 880, 784, 659, 587, 523, 587, 659, 659, 587, 523, 440, 523, 587, 0];
+export function toggleRadio() {
+  if (radio) {stopRadio(); return false;}
+  let i = 0;
+  radio = setInterval(() => {
+    const f = TUNE[i % TUNE.length];
+    if (f) tone(f, 0, 0.5, 'triangle', 0.035);
+    if (i % 4 === 0) tone([131, 165, 110, 147][(i / 4) % 4 | 0], 0, 1.4, 'sine', 0.04);
+    i++;
+  }, 320);
+  return true;
+}
+export function stopRadio() {if (radio) clearInterval(radio); radio = null;}

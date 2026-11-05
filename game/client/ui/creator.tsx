@@ -2,7 +2,7 @@
 import {useRef, useState} from 'react';
 import {Canvas, useFrame} from '@react-three/fiber';
 import * as THREE from 'three';
-import {BODIES, CLOTH_COLORS, EYE_COLORS, HAIR_COLORS, SKIN_TONES, randomAppearance, type Appearance} from '@/game/core/appearance';
+import {BODIES, BODY_GENDER, CLOTH_COLORS, HAIR_STYLES, EYE_COLORS, HAIR_COLORS, SKIN_TONES, randomAppearance, type Appearance} from '@/game/core/appearance';
 import {ACCESSORIES, BOTTOMS, HATS, TOPS, accessoryItemId, hatItemId, outfitItemId} from '@/game/core/wardrobe';
 import {Avatar, type AvatarMotion} from '../three/avatar';
 import {sfx} from '../audio';
@@ -55,11 +55,15 @@ export function AvatarEditor({initial, inventory, name, onName, onSave, saveLabe
         {(['body', 'hair', 'clothes', 'extras'] as const).map(t => <button key={t} className={`wc-tab ${tab === t ? 'on' : ''}`} onClick={() => setTab(t)}>{{body: '🧍 Body', hair: '💇 Hair & Eyes', clothes: '👕 Clothes', extras: '🎀 Extras'}[t]}</button>)}
       </div>
       {tab === 'body' && <>
+        <div className="wc-label">Gender</div>
+        <div className="wc-chips">{(['girl', 'boy'] as const).map(g => <button key={g} className={`wc-chip ${BODY_GENDER[look.body] === g ? 'on' : ''}`} onClick={() => {if (BODY_GENDER[look.body] !== g) {sfx.tap(); set({body: BODY_GENDER.indexOf(g)});}}}>{g === 'girl' ? '👧 Girl' : '👦 Boy'}</button>)}</div>
         <div className="wc-label">Style</div>
-        <div className="wc-chips">{BODIES.map((b, i) => <button key={b} className={`wc-chip ${look.body === i ? 'on' : ''}`} onClick={() => set({body: i})}>{b}</button>)}</div>
+        <div className="wc-chips">{BODIES.map((b, i) => BODY_GENDER[i] === BODY_GENDER[look.body] && <button key={b} className={`wc-chip ${look.body === i ? 'on' : ''}`} onClick={() => set({body: i})}>{b}</button>)}</div>
         <div className="wc-label">Skin</div><Swatches colors={SKIN_TONES} value={look.skin} onChange={skin => set({skin})} />
       </>}
       {tab === 'hair' && <>
+        {look.body !== 0 && <><div className="wc-label">Hairstyle</div>
+        <div className="wc-chips">{HAIR_STYLES.map((h, i) => h.donor !== look.body && <button key={h.name} className={`wc-chip ${(look.hair ?? 0) === i ? 'on' : ''}`} onClick={() => {sfx.tap(); set({hair: i});}}>{h.name}</button>)}</div></>}
         <div className="wc-label">Hair colour</div><Swatches colors={HAIR_COLORS} value={look.hairColor} onChange={hairColor => set({hairColor})} />
         <div className="wc-label">Eye colour</div><Swatches colors={EYE_COLORS} value={look.eyeColor} onChange={eyeColor => set({eyeColor})} />
       </>}

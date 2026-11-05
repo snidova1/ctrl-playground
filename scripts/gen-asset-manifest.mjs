@@ -27,6 +27,7 @@ export async function collectAssets() {
   for (const m of text.matchAll(/model: '((?:crop|crops)_[A-Za-z0-9_]+)'/g)) models.add(`nature-kit/${m[1]}`);
   const urls = [];
   for (const m of [...models].sort()) if (await exists(path.join(root, 'public/kit', `${m}.glb`))) urls.push(`/kit/${m}.glb`);
+  for (const f of (await readdir(path.join(root, 'public/kit/creatures')).catch(() => [])).sort()) if (f.endsWith('.glb')) urls.push(`/kit/creatures/${f}`);
   for (const m of text.matchAll(/'(\/characters\/[A-Za-z0-9_.-]+\.(?:vrm|glb))'/g)) urls.push(m[1]);
   for (const f of (await readdir(path.join(root, 'public/kit/icons'))).sort()) urls.push(`/kit/icons/${f}`);
   const files = [];

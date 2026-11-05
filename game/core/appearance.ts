@@ -6,8 +6,14 @@ import {ACCESSORIES, BOTTOMS, HATS, TOPS} from './wardrobe';
  * Avatar look for the anime VRM bodies. Index 0 of each tint palette is the
  * model's authored "natural" colour; the rest recolour the material.
  */
-export const BODIES = ['Sunny', 'Willow', 'Pepper', 'Maple'] as const;
-export const BODY_GENDER = ['girl', 'girl', 'boy', 'boy'] as const;
+export const BODIES = ['Sunny', 'Willow', 'Pepper', 'Maple', 'Shibu', 'Shino', 'Ruby', 'Vita', 'Vivi', 'Noir'] as const;
+export const BODY_GENDER = ['girl', 'girl', 'boy', 'boy', 'girl', 'girl', 'girl', 'girl', 'girl', 'girl'] as const;
+/** Hairstyles borrowed from another VRoid body (0 = the body's own hair). Body 0 is VRM 1.0 and keeps its own. */
+export const HAIR_STYLES: {name: string; donor: number}[] = [
+  {name: 'Own hair', donor: -1}, {name: 'Soft Bob', donor: 1}, {name: 'Messy Crop', donor: 2}, {name: 'Swept Fringe', donor: 3},
+  {name: 'Long Straight', donor: 4}, {name: 'Side Ponytail', donor: 5}, {name: 'Ruby Bob', donor: 6}, {name: 'Pixie Spikes', donor: 7},
+  {name: 'Fluffy Curls', donor: 8}, {name: 'Twin Tails', donor: 9},
+];
 export const SKIN_TONES = ['', '#ffe9dc', '#f6d2bb', '#e5b593', '#c98d68', '#9b6646'];
 export const HAIR_COLORS = ['', '#3a2a24', '#7a4b34', '#c98a4f', '#f0d08e', '#f5e9da', '#f29cb7', '#9fc0f0', '#b9a3e8', '#7fc4a4', '#e0604a', '#5e5872'];
 export const EYE_COLORS = ['', '#4a3426', '#4f86e0', '#3fa77a', '#c77a32', '#9c5bd1', '#e0506e', '#e3b23c'];
@@ -19,6 +25,7 @@ export const appearanceSchema = z.object({
   body: index(BODIES.length),
   skin: index(SKIN_TONES.length),
   hairColor: index(HAIR_COLORS.length),
+  hair: index(HAIR_STYLES.length).optional(),
   eyeColor: index(EYE_COLORS.length),
   top: index(TOPS.length),
   bottom: index(BOTTOMS.length),

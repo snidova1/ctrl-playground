@@ -357,6 +357,66 @@ export const ASSET_MANIFEST: {url: string; bytes: number}[] = [
   "bytes": 12820
  },
  {
+  "url": "/kit/creatures/blue-tit.glb",
+  "bytes": 650580
+ },
+ {
+  "url": "/kit/creatures/cicada.glb",
+  "bytes": 898148
+ },
+ {
+  "url": "/kit/creatures/grasshopper.glb",
+  "bytes": 782032
+ },
+ {
+  "url": "/kit/creatures/hermit-crab.glb",
+  "bytes": 661076
+ },
+ {
+  "url": "/kit/creatures/heron.glb",
+  "bytes": 781084
+ },
+ {
+  "url": "/kit/creatures/kingfisher.glb",
+  "bytes": 817392
+ },
+ {
+  "url": "/kit/creatures/ladybug.glb",
+  "bytes": 711520
+ },
+ {
+  "url": "/kit/creatures/owl.glb",
+  "bytes": 770880
+ },
+ {
+  "url": "/kit/creatures/pigeon.glb",
+  "bytes": 811688
+ },
+ {
+  "url": "/kit/creatures/robin.glb",
+  "bytes": 706092
+ },
+ {
+  "url": "/kit/creatures/seagull.glb",
+  "bytes": 622952
+ },
+ {
+  "url": "/kit/creatures/sparrow.glb",
+  "bytes": 760852
+ },
+ {
+  "url": "/kit/creatures/stag-beetle.glb",
+  "bytes": 630068
+ },
+ {
+  "url": "/kit/creatures/swan.glb",
+  "bytes": 474040
+ },
+ {
+  "url": "/kit/creatures/woodpecker.glb",
+  "bytes": 707544
+ },
+ {
   "url": "/characters/female.vrm",
   "bytes": 6864248
  },
@@ -371,6 +431,30 @@ export const ASSET_MANIFEST: {url: string; bytes: number}[] = [
  {
   "url": "/characters/male-b.vrm",
   "bytes": 10913676
+ },
+ {
+  "url": "/characters/shibu.vrm",
+  "bytes": 6972924
+ },
+ {
+  "url": "/characters/shino.vrm",
+  "bytes": 6595164
+ },
+ {
+  "url": "/characters/ruby.vrm",
+  "bytes": 6224692
+ },
+ {
+  "url": "/characters/vita.vrm",
+  "bytes": 6000092
+ },
+ {
+  "url": "/characters/vivi.vrm",
+  "bytes": 6474728
+ },
+ {
+  "url": "/characters/noir.vrm",
+  "bytes": 7078340
  },
  {
   "url": "/characters/humanoid-motions.glb",

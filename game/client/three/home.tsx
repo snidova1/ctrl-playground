@@ -19,6 +19,7 @@ import {Bushes, FlowerField, Grass, Trees, type TreeSpec} from './foliage';
 import {canvasTexture, toon} from './materials';
 import {Remote} from './remote';
 import {Bobber} from './bobber';
+import {sfx, stopRadio, toggleRadio} from '../audio';
 import type {RemotePlayer} from '@/game/core/api-types';
 
 const flat = () => 0;
@@ -45,7 +46,7 @@ function houseBuilding(house: House): Building {
 
 export interface Decor {selected: string | null; placing: string | null; rotation: number}
 
-function FurniturePiece({item, onSelect, selected}: {item: Placed; onSelect?: (id: string) => void; selected: boolean}) {
+function FurniturePiece({item, onSelect, selected, lit = true}: {item: Placed; onSelect?: (id: string) => void; selected: boolean; lit?: boolean}) {
   const def = FURNITURE_BY_ID[item.assetId];
   if (!def) return null;
   const scale = def.model.startsWith('furniture-kit/') ? 1.9 : def.model.startsWith('fantasy-town/') ? 1.1 : 1.6;
@@ -55,7 +56,7 @@ function FurniturePiece({item, onSelect, selected}: {item: Placed; onSelect?: (i
       <Kit model={def.model} position={[0, 0, 0]} scale={(def.scale ?? 1) * scale} />
     </group>
     {selected && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}><planeGeometry args={[w, d]} /><meshBasicMaterial color="#7fd0ff" transparent opacity={0.35} depthWrite={false} /></mesh>}
-    {def.light && <pointLight position={[0, 1.4, 0]} intensity={0.6} distance={5} color="#ffd59a" />}
+    {def.light && lit && <pointLight position={[0, 1.4, 0]} intensity={0.6} distance={5} color="#ffd59a" />}
   </group>;
 }
 
@@ -140,7 +141,7 @@ function Plots({rt, garden, own}: {rt: Runtime; garden: Pick<Plot, 'crop' | 'wat
       const thirsty = plot.crop && plot.waters < 2 && (plot.readyAt === null || now >= plot.readyAt);
       const remaining = plot.readyAt ? Math.max(0, plot.readyAt - now) : 0;
       const label = !plot.crop ? 'Plant seeds' : ready ? `Harvest ${CROP_BY_ID[plot.crop].name}` : thirsty ? 'Water the plot' : `Growing… ${Math.ceil(remaining / 60000)} min`;
-      rt.targets.set(id, {id, label, icon: !plot.crop ? '🌱' : ready ? '🧺' : thirsty ? '💧' : '⏳', x: p.x, z: p.z, radius: 1.3, priority: 0.4, run: async () => {
+      rt.targets.set(id, {id, label, icon: !plot.crop ? '🌱' : ready ? '🧺' : thirsty ? '💧' : '⏳', x: p.x, z: p.z, radius: 0.75, hx: PLOT_SIZE / 2, hz: PLOT_SIZE / 2, priority: 0.4, run: async () => {
         if (!hobbyReady(rt, 'gardening')) return;
         if (!plot.crop) {rt.openPanel('bag', `plant:${i}`); return;}
         if (ready) {rt.setAnim('pick', 'none', 1000, 'happy'); await rt.act({type: 'harvest', plot: i}); return;}
@@ -239,6 +240,8 @@ function sitOn(rt: Runtime, o: Placed, x: number, z: number) {
   rt.setAnim('sit', 'none', 0, 'relaxed');
 }
 
+const READS = ['A chapter of The Lighthouse Keeper. Lovely.', 'You flip through a field guide to pond fish.', 'A recipe book! Mushroom soup sounds good.', 'Poems about the sea. You feel calm.'];
+const SHOWS = ['The cooking show makes you hungry.', 'A nature special about kingfishers!', 'The weather report says sunshine all week.', 'A rerun of a silly cartoon. Ha!'];
 const INDOOR_CAMERA ={distance: 3.6, pitch: 0.42};
 const OUTDOOR_CAMERA = {distance: 10.5, pitch: 0.3};
 
@@ -285,18 +288,39 @@ export function HomeWorld({rt, layout, garden, ownGarden, canEdit, decorating, d
     }
   });
 
-  // Interaction stations.
+  // Interaction stations. Indoor things only answer from inside the cottage, yard things only from outside,
+  // and range is measured from each piece's footprint so big beds and sofas are easy to reach.
+  const [dark, setDark] = useState<Set<string>>(() => new Set());
+  useEffect(() => () => stopRadio(), []);
   useEffect(() => {
     const ids: string[] = [];
-    const add = (id: string, label: string, icon: string, x: number, z: number, run: () => void, radius = 2) => {ids.push(id); rt.targets.set(id, {id, label, icon, x, z, radius, priority: 0.2, run});};
-    for (const o of roomItems) {
+    const inside = () => insideCottage(rt.player.pos.x, rt.player.pos.z, size), outside = () => !inside();
+    const add = (id: string, label: string, icon: string, x: number, z: number, run: () => void, radius = 2, opts: {when?: () => boolean; hx?: number; hz?: number; priority?: number} = {}) => {
+      ids.push(id); rt.targets.set(id, {id, label, icon, x, z, radius, priority: opts.priority ?? 0.2, hx: opts.hx, hz: opts.hz, when: opts.when ?? outside, run});
+    };
+    const piece = (o: Placed, x: number, z: number, room: boolean) => {
       const def = FURNITURE_BY_ID[o.assetId];
-      const x = origin.x + o.x, z = origin.z + o.z;
-      if (def?.stove) add(`stove-${o.id}`, 'Cook at the stove', '🍳', x, z, () => rt.openPanel('cook'), 1.8);
-      if (o.assetId === 'coat-rack' || o.assetId === 'bookcase') add(`wardrobe-${o.id}`, 'Change outfit', '👗', x, z, () => rt.openPanel('wardrobe'), 1.8);
-      if (def?.seat) add(`seat-${o.id}`, `Sit on ${def.name}`, '🪑', x, z, () => sitOn(rt, o, x, z), 1.6);
-    }
-    add('room-mirror', 'Change outfit', '👗', origin.x, origin.z + ROOM_BOUNDS.minZ + 0.6, () => rt.openPanel('wardrobe'), 1.6);
+      if (!def) return;
+      const [w, d] = footprint(o);
+      const near = {when: room ? inside : outside, hx: w / 2, hz: d / 2};
+      const name = def.name;
+      const pick = (list: string[]) => list[Math.floor(Math.random() * list.length)];
+      if (def.stove) add(`stove-${o.id}`, 'Cook at the stove', '🍳', x, z, () => rt.openPanel('cook'), 0.9, near);
+      if (o.assetId === 'coat-rack') add(`wardrobe-${o.id}`, 'Change outfit', '👗', x, z, () => rt.openPanel('wardrobe'), 0.9, near);
+      if (o.assetId === 'bookcase' || o.assetId === 'bookcase-low') add(`read-${o.id}`, 'Read a book', '📖', x, z, () => {rt.setAnim('idle', 'none', 3200, 'relaxed'); rt.emote('star', undefined, 2600); rt.toast(pick(READS), 'info', '📖');}, 0.9, near);
+      if (o.assetId === 'bed-single' || o.assetId === 'bed-double') add(`nap-${o.id}`, `Nap on the ${name}`, '💤', x, z, () => {sitOn(rt, o, x, z); rt.setAnim('sit', 'none', 0, 'sleepy'); rt.emote('zzz', undefined, 3000);}, 0.9, {...near, priority: 0.15});
+      else if (def.seat) add(`seat-${o.id}`, `Sit on the ${name}`, '🪑', x, z, () => sitOn(rt, o, x, z), 0.9, {...near, priority: 0.3});
+      if (def.light) add(`lamp-${o.id}`, dark.has(o.id) ? `Turn on the ${name}` : `Turn off the ${name}`, '💡', x, z, () => {sfx.tap(); setDark(prev => {const next = new Set(prev); if (next.has(o.id)) next.delete(o.id); else next.add(o.id); return next;});}, 0.8, {...near, priority: 0.1});
+      if (o.assetId === 'radio') add(`radio-${o.id}`, 'Play the radio', '📻', x, z, () => {const on = toggleRadio(); rt.toast(on ? 'A cozy tune fills the room.' : 'Radio off.', 'info', '📻'); if (on) rt.emote('music', undefined, 2400);}, 0.9, near);
+      if (o.assetId === 'tv') add(`tv-${o.id}`, 'Watch TV', '📺', x, z, () => {rt.setAnim('idle', 'none', 2600, 'happy'); rt.emote('laugh', undefined, 2400); rt.toast(pick(SHOWS), 'info', '📺');}, 0.9, near);
+      if (o.assetId === 'fridge') add(`fridge-${o.id}`, 'Open the fridge', '🧊', x, z, () => rt.openPanel('bag'), 0.9, near);
+      if (o.assetId === 'teddy') add(`teddy-${o.id}`, 'Hug the teddy', '🧸', x, z, () => {rt.setAnim('cheer', 'none', 1400, 'happy'); rt.emote('love', undefined, 2200);}, 0.9, near);
+      if (o.assetId === 'desk') add(`desk-${o.id}`, 'Write a letter', '✉️', x, z, () => rt.openPanel('mail'), 0.9, near);
+      if (o.assetId === 'campfire') add(`fire-${o.id}`, 'Warm up by the fire', '🔥', x, z, () => {rt.setAnim('idle', 'none', 2600, 'relaxed'); rt.emote('heart', undefined, 2400);}, 0.9, near);
+    };
+    for (const o of roomItems) piece(o, origin.x + o.x, origin.z + o.z, true);
+    for (const o of yardItems) piece(o, o.x, o.z, false);
+    add('room-mirror', 'Change outfit', '👗', origin.x, origin.z + ROOM_BOUNDS.minZ + 0.6, () => rt.openPanel('wardrobe'), 1.3, {when: inside});
     add('bus', 'Take the bus to town', '🚌', HOME_STATIONS.busStop.x, HOME_STATIONS.busStop.z, () => rt.goto('town'));
     add('workbench', 'Craft furniture', '🔨', HOME_STATIONS.workbench.x, HOME_STATIONS.workbench.z, () => rt.openPanel('craft'));
     add('mailbox', 'Check the mailbox', '📮', HOME_STATIONS.mailbox.x, HOME_STATIONS.mailbox.z, () => rt.openPanel('mail'));
@@ -304,16 +328,12 @@ export function HomeWorld({rt, layout, garden, ownGarden, canEdit, decorating, d
     for (let k = 0; k < 6; k++) {
       const a = (k / 6) * Math.PI * 2;
       const x = pond.x + Math.cos(a) * (pond.rx + 1), z = pond.z + Math.sin(a) * (pond.rz + 1);
-      add(`pond-${k}`, 'Fish in your pond', '🎣', x, z, () => void startFishing(rt, 'home', 'pond', {x: pond.x + Math.cos(a) * pond.rx * 0.45, z: pond.z + Math.sin(a) * pond.rz * 0.45}), 1.4);
-    }
-    for (const o of yardItems) {
-      const def = FURNITURE_BY_ID[o.assetId];
-      if (def?.seat) add(`seat-${o.id}`, `Sit on ${def.name}`, '🪑', o.x, o.z, () => sitOn(rt, o, o.x, o.z), 1.6);
+      add(`pond-${k}`, 'Fish in your pond', '🎣', x, z, () => void startFishing(rt, 'home', 'pond', {x: pond.x + Math.cos(a) * pond.rx * 0.45, z: pond.z + Math.sin(a) * pond.rz * 0.45}), 1.4, {priority: 0});
     }
     return () => ids.forEach(id => rt.targets.delete(id));
-  }, [rt, roomItems, yardItems, origin.x, origin.z]);
+  }, [rt, roomItems, yardItems, origin.x, origin.z, size, dark]);
 
-  const piece = (o: Placed) => <FurniturePiece key={o.id} item={o} selected={decor.selected === o.id} onSelect={decorating && canEdit ? id => setDecor({...decor, selected: id, placing: null, rotation: layout.find(x => x.id === id)?.rotation ?? 0}) : undefined} />;
+  const piece = (o: Placed) => <FurniturePiece key={o.id} item={o} lit={!dark.has(o.id)} selected={decor.selected === o.id} onSelect={decorating && canEdit ? id => setDecor({...decor, selected: id, placing: null, rotation: layout.find(x => x.id === id)?.rotation ?? 0}) : undefined} />;
   return <>
     <Suspense fallback={null}><HomeGround quality={quality} /></Suspense>
     <Cottage b={houseBuilding(house)} night={night} walkIn={walkIn} style={{siding: house.siding, roofStyle: house.roofStyle, windows: house.windows, door: DOOR_COLORS[house.door], porch: house.porch, chimney: house.chimney, flowerBoxes: house.flowerBoxes}} />

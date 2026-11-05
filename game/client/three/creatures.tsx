@@ -1,5 +1,6 @@
 'use client';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {Suspense, useEffect, useMemo, useRef, useState} from 'react';
+import {useGLTF} from '@react-three/drei';
 import {useFrame, useThree} from '@react-three/fiber';
 import * as THREE from 'three';
 import {creaturesForWindow, type CreatureSpawn} from '@/game/core/spawns';
@@ -9,11 +10,33 @@ import {POND, RIVER, SEA_Z, WATER_Y, heightAt, waterAt} from '@/game/core/map';
 import {mulberry32} from '@/game/core/rng';
 import type {Runtime} from '../runtime';
 import {catchBug, creatureName, snapBird} from '../actions';
-import {toon} from './materials';
+import {toon, toonify} from './materials';
 
 const wing = new THREE.CircleGeometry(0.11, 10);
 const ball = new THREE.SphereGeometry(1, 10, 8);
 const cone = new THREE.ConeGeometry(1, 1, 6);
+
+/** Meshy-made toon creatures, normalised so the longest side is `size` metres and the feet sit at y=0. */
+const CREATURE_MODELS = new Set(['sparrow', 'pigeon', 'robin', 'blue-tit', 'woodpecker', 'owl', 'seagull', 'heron', 'kingfisher', 'swan', 'ladybug', 'grasshopper', 'cicada', 'stag-beetle', 'hermit-crab']);
+const CREATURE_SIZE: Record<string, number> = {sparrow: 0.24, pigeon: 0.3, robin: 0.24, 'blue-tit': 0.22, woodpecker: 0.28, owl: 0.4, seagull: 0.42, heron: 0.95, kingfisher: 0.26, swan: 0.7,
+  ladybug: 0.13, grasshopper: 0.17, cicada: 0.15, 'stag-beetle': 0.18, 'hermit-crab': 0.2};
+export const creatureModelUrl = (id: string) => `/kit/creatures/${id}.glb`;
+function CreatureModel({id}: {id: string}) {
+  const {scene} = useGLTF(creatureModelUrl(id));
+  const object = useMemo(() => {
+    const clone = toonify(scene.clone(true));
+    const box = new THREE.Box3().setFromObject(clone), size = box.getSize(new THREE.Vector3());
+    const k = 1.5 * (CREATURE_SIZE[id] ?? 0.25) / Math.max(size.x, size.y, size.z, 1e-3);
+    const center = box.getCenter(new THREE.Vector3());
+    const holder = new THREE.Group();
+    clone.position.set(-center.x * k, -box.min.y * k, -center.z * k);
+    clone.scale.setScalar(k);
+    holder.add(clone);
+    return holder;
+  }, [scene, id]);
+  return <primitive object={object} />;
+}
+const hasModel = (id: string) => CREATURE_MODELS.has(id);
 
 function Bug({spawn, rt, gone, onGone}: {spawn: CreatureSpawn; rt: Runtime; gone: boolean; onGone: (id: string) => void}) {
   const def = BUGS.find(b => b.id === spawn.species)!;
@@ -59,7 +82,8 @@ function Bug({spawn, rt, gone, onGone}: {spawn: CreatureSpawn; rt: Runtime; gone
       <mesh ref={r} geometry={wing} material={toon(def.color, {side: THREE.DoubleSide})} position={[0.06, 0, 0]} rotation={[Math.PI / 2, 0, 0]} scale={def.glyph === 'butterfly' ? 1 : [0.5, 1.4, 1]} />
       <mesh geometry={ball} material={toon('#3a2f2a')} scale={[0.02, 0.02, 0.09]} />
       {glow && <pointLight color="#eaff8a" intensity={0.6} distance={3} />}
-    </> : <mesh geometry={ball} material={body} scale={[0.06, 0.045, 0.08]} castShadow />}
+    </> : hasModel(def.id) ? <Suspense fallback={<mesh geometry={ball} material={body} scale={[0.06, 0.045, 0.08]} />}><CreatureModel id={def.id} /></Suspense>
+      : <mesh geometry={ball} material={body} scale={[0.06, 0.045, 0.08]} castShadow />}
   </group>;
 }
 
@@ -79,12 +103,17 @@ function Bird({spawn, rt, gone, onGone, register}: {spawn: CreatureSpawn; rt: Ru
     const f = fly.current;
     const water = def.id === 'swan' && waterAt(home.x, home.z);
     g.position.set(home.x + f * 8, (water ? WATER_Y : home.y) + f * 9 + (def.habitat === 'trees' || def.habitat === 'forest' ? 0 : 0), home.z - f * 6);
-    if (head.current) {head.current.rotation.x = f > 0 ? 0 : Math.max(0, Math.sin(t * 3)) * 0.5; head.current.rotation.y = Math.sin(t * 0.8) * 0.6;}
+    if (head.current) {
+      const peck = f > 0 ? 0 : Math.max(0, Math.sin(t * 3)) * (hasModel(def.id) ? 0.25 : 0.5);
+      head.current.rotation.x = peck; head.current.rotation.y = Math.sin(t * 0.8) * 0.6;
+      if (hasModel(def.id)) head.current.position.y = f > 0 ? 0 : Math.max(0, Math.sin(t * 5.3 + 1)) ** 8 * 0.05; // little hops
+    }
     g.visible = !gone && f < 0.99;
     if (f >= 0.99 && !gone) onGone(spawn.id);
   });
   useEffect(() => {register(spawn.id, gone ? null : group.current); return () => register(spawn.id, null);}, [spawn, gone, register]);
   const m = toon(def.color), beak = toon('#f2a33a');
+  if (hasModel(def.id)) return <group ref={group}><group ref={head}><Suspense fallback={null}><CreatureModel id={def.id} /></Suspense></group></group>;
   return <group ref={group} scale={big}>
     <mesh geometry={ball} material={m} position={[0, 0.12, 0]} scale={[0.09, 0.08, 0.13]} castShadow />
     <mesh geometry={ball} material={m} position={[0, 0.17, -0.08]} rotation={[0.5, 0, 0]} scale={[0.04, 0.02, 0.08]} />

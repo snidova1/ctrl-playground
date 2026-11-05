@@ -21,6 +21,10 @@ export type Panel = null | 'bag' | 'shop' | 'cook' | 'craft' | 'collection' | 'q
 
 export interface Target {
   id: string; label: string; icon: string; x: number; z: number; radius: number; priority?: number;
+  /** Half extents of the object's footprint: range is measured from its edge, not its centre. */
+  hx?: number; hz?: number;
+  /** Only offered while this holds (e.g. indoor furniture only from inside the cottage). */
+  when?: () => boolean;
   /** Optional requirement shown when the action is not possible yet. */
   hint?: string;
   run: () => void;

@@ -1,15 +1,15 @@
 'use client';
 import * as THREE from 'three';
 import {GLTFLoader, type GLTF} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import {VRMLoaderPlugin, VRMUtils, MToonMaterial, type VRM, type VRMHumanBoneName} from '@pixiv/three-vrm';
-import {lookColors, type Appearance} from '@/game/core/appearance';
+import {VRMLoaderPlugin, VRMUtils, MToonMaterial, VRMSpringBoneJoint, type VRM, type VRMHumanBoneName} from '@pixiv/three-vrm';
+import {HAIR_STYLES, lookColors, type Appearance} from '@/game/core/appearance';
 import {BOTTOMS, TOPS} from '@/game/core/wardrobe';
 import {paintFabric} from './fabric';
 
 const fabrics = new Map<string, THREE.Texture>();
 
 /** Anime VRM bodies, shown with chibi proportions (big head, small body). */
-export const BODY_FILES = ['/characters/female.vrm', '/characters/female-b.vrm', '/characters/male.vrm', '/characters/male-b.vrm'];
+export const BODY_FILES = ['/characters/female.vrm', '/characters/female-b.vrm', '/characters/male.vrm', '/characters/male-b.vrm', '/characters/shibu.vrm', '/characters/shino.vrm', '/characters/ruby.vrm', '/characters/vita.vrm', '/characters/vivi.vrm', '/characters/noir.vrm'];
 const MOTION_FILES = ['/characters/humanoid-motions.glb', '/characters/humanoid-extra-motions.glb'];
 export const AVATAR_HEIGHT = 1.42;
 export const HEAD_SCALE = 1.72;
@@ -171,8 +171,9 @@ function template(body: number): Promise<Template> {
   }
   return hit;
 }
-export function preloadAvatars() {
-  for (let i = 0; i < BODY_FILES.length; i++) void template(i).catch(() => undefined);
+/** Warm the bodies the town's NPCs wear; other bodies (and hairstyle donors) parse on first use to keep memory low. */
+export function preloadAvatars(bodies: number[] = [0, 1, 2, 3]) {
+  for (const i of bodies) if (BODY_FILES[i]) void template(i).catch(() => undefined);
 }
 
 /** How many avatars are still loading (drives the loading screen). */
@@ -180,6 +181,66 @@ export const avatarLoads = {pending: 0, done: 0, listeners: new Set<() => void>(
 function notifyLoads() {avatarLoads.listeners.forEach(l => l());}
 
 export interface AvatarInstance {vrm: VRM; clips: THREE.AnimationClip[]; scale: number; floor: number; dispose: () => void}
+
+// --- hair transplant ------------------------------------------------------------
+const isHair = (m: THREE.Mesh) => (Array.isArray(m.material) ? m.material : [m.material]).some(x => /HAIR/i.test(x.name));
+function humanoidNames(vrm: VRM) {
+  const map = new Map<THREE.Object3D, VRMHumanBoneName>();
+  for (const [name, bone] of Object.entries(vrm.humanoid.humanBones)) if (bone?.node) map.set(bone.node, name as VRMHumanBoneName);
+  return map;
+}
+/**
+ * Moves the donor's hair meshes and hair bones onto the recipient's head. Bones keep their local
+ * transforms under the matching humanoid bone, and the donor's bind inverses carry the vertices
+ * across, so the hair follows the new head rigidly while its own spring bones keep swinging.
+ */
+function transplantHair(vrm: VRM, donor: VRM, tint: (m: MToonMaterial) => void) {
+  const donorHuman = humanoidNames(donor);
+  const target = (name: VRMHumanBoneName) => vrm.humanoid.getRawBoneNode(name) ?? vrm.humanoid.getRawBoneNode('head');
+  const hairMeshes: THREE.SkinnedMesh[] = [];
+  donor.scene.traverse(o => {const m = o as THREE.SkinnedMesh; if (m.isSkinnedMesh && isHair(m)) hairMeshes.push(m);});
+  if (!hairMeshes.length) return false;
+  donor.scene.updateMatrixWorld(true);
+  // Non-humanoid bones that actually carry hair weights, lifted to their top ancestor below a humanoid bone.
+  const moved = new Map<THREE.Object3D, THREE.Object3D>();
+  const humanAncestor = (b: THREE.Object3D) => {let n: THREE.Object3D | null = b; while (n && !donorHuman.has(n)) n = n.parent; return n;};
+  for (const mesh of hairMeshes) {
+    const idx = mesh.geometry.getAttribute('skinIndex'), w = mesh.geometry.getAttribute('skinWeight');
+    const used = new Set<number>();
+    for (let i = 0; i < idx.count; i++) for (let k = 0; k < 4; k++) if (w.getComponent(i, k) > 0) used.add(idx.getComponent(i, k));
+    for (const i of used) {
+      const bone = mesh.skeleton.bones[i];
+      if (!bone || donorHuman.has(bone)) continue;
+      let top: THREE.Object3D = bone;
+      while (top.parent && !donorHuman.has(top.parent)) top = top.parent;
+      if (top.parent) moved.set(top, top.parent);
+    }
+  }
+  const movedSet = new Set<THREE.Object3D>();
+  for (const top of moved.keys()) top.traverse(o => movedSet.add(o));
+  for (const [top, parent] of moved) target(donorHuman.get(parent)!)?.add(top);
+  // Hide the recipient's own hair and its spring joints.
+  vrm.scene.traverse(o => {const m = o as THREE.Mesh; if (m.isMesh && isHair(m)) m.visible = false;});
+  for (const mesh of hairMeshes) {
+    const bones = mesh.skeleton.bones.map(b => {
+      if (movedSet.has(b)) return b;
+      const h = donorHuman.get(b) ?? donorHuman.get(humanAncestor(b) as THREE.Object3D);
+      return (h && target(h)) || target('head')!;
+    });
+    const skeleton = new THREE.Skeleton(bones as THREE.Bone[], mesh.skeleton.boneInverses.map(m => m.clone()));
+    const bindMatrix = mesh.bindMatrix.clone();
+    mesh.removeFromParent();
+    vrm.scene.add(mesh);
+    mesh.bind(skeleton, bindMatrix);
+    for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) if (m instanceof MToonMaterial) tint(m);
+  }
+  const springs = vrm.springBoneManager, donorSprings = donor.springBoneManager;
+  if (springs) {
+    for (const joint of [...springs.joints]) if (/hair/i.test(joint.bone.name)) springs.deleteJoint(joint);
+    if (donorSprings) for (const joint of donorSprings.joints) if (movedSet.has(joint.bone)) springs.addJoint(new VRMSpringBoneJoint(joint.bone, joint.child, joint.settings, springs.colliderGroups));
+  }
+  return true;
+}
 
 /** Fresh VRM (own skeleton, springs, expressions) sharing the template's GPU textures. */
 export async function createAvatar(look: Appearance): Promise<AvatarInstance> {
@@ -228,6 +289,23 @@ async function buildAvatar(look: Appearance): Promise<AvatarInstance> {
       }
     }
     material.needsUpdate = true;
+  }
+  const style = HAIR_STYLES[look.hair ?? 0];
+  if (style && style.donor > 0 && style.donor !== look.body && look.body !== 0) {
+    const dt = await template(style.donor);
+    const donor = await parseVrm(await fetchBytes(BODY_FILES[style.donor]), true);
+    transplantHair(vrm, donor, material => {
+      const shared = dt.textures.get(material.name);
+      const record = material as unknown as Record<string, THREE.Texture | null>;
+      if (shared) for (const slot of TEXTURE_SLOTS) record[slot] = shared[slot];
+      const gray = dt.gray.get(material.name);
+      if (colors.hair && gray) {
+        material.map = gray; material.shadeMultiplyTexture = gray;
+        material.color.set(colors.hair);
+        material.shadeColorFactor.set(colors.hair).multiplyScalar(0.82).lerp(new THREE.Color('#b48fb4'), 0.18);
+      }
+      material.needsUpdate = true;
+    });
   }
   vrm.scene.traverse(o => {
     const mesh = o as THREE.Mesh;
