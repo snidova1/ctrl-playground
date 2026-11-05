@@ -127,31 +127,45 @@ function Bird({spawn, rt, gone, onGone, register}: {spawn: CreatureSpawn; rt: Ru
 }
 
 /** Fish shadows gliding near the shore: decorative hints of where to cast. */
+/** Flat fish silhouette (body + tail) lying on the water plane, nose toward +z. */
+const fishShadow = (() => {
+  const sh = new THREE.Shape();
+  sh.moveTo(0, 0.5);
+  sh.bezierCurveTo(0.2, 0.42, 0.22, 0.05, 0.1, -0.22);
+  sh.lineTo(0.2, -0.5); sh.lineTo(0, -0.38); sh.lineTo(-0.2, -0.5); sh.lineTo(-0.1, -0.22);
+  sh.bezierCurveTo(-0.22, 0.05, -0.2, 0.42, 0, 0.5);
+  const g = new THREE.ShapeGeometry(sh, 6);
+  g.rotateX(-Math.PI / 2); // shape y -> world -z; flip so the nose points +z
+  g.rotateY(Math.PI);
+  return g;
+})();
+
 function FishShadows() {
   const ref = useRef<THREE.InstancedMesh>(null);
   const fish = useMemo(() => {
     const random = mulberry32(81);
     const list: {x: number; z: number; r: number; s: number; v: number}[] = [];
-    for (let i = 0; i < 8; i++) {const a = random() * Math.PI * 2; list.push({x: POND.x + Math.cos(a) * POND.rx * 0.5, z: POND.z + Math.sin(a) * POND.rz * 0.5, r: 1.5 + random() * 2, s: 0.6 + random() * 0.8, v: 0.2 + random() * 0.3});}
-    for (let i = 1; i < RIVER.length - 1; i++) list.push({x: RIVER[i].x, z: RIVER[i].z, r: 1.2, s: 0.7 + random() * 0.5, v: 0.35});
-    for (let i = 0; i < 10; i++) list.push({x: -6 + random() * 48, z: SEA_Z + 3 + random() * 6, r: 2 + random() * 3, s: 0.8 + random() * 1.4, v: 0.15 + random() * 0.2});
+    for (let i = 0; i < 8; i++) {const a = random() * Math.PI * 2; list.push({x: POND.x + Math.cos(a) * POND.rx * 0.5, z: POND.z + Math.sin(a) * POND.rz * 0.5, r: 1.5 + random() * 2, s: 0.35 + random() * 0.3, v: 0.2 + random() * 0.3});}
+    for (let i = 1; i < RIVER.length - 1; i++) list.push({x: RIVER[i].x, z: RIVER[i].z, r: 1.2, s: 0.35 + random() * 0.25, v: 0.35});
+    for (let i = 0; i < 10; i++) list.push({x: -6 + random() * 48, z: SEA_Z + 3 + random() * 6, r: 2 + random() * 3, s: 0.45 + random() * 0.5, v: 0.15 + random() * 0.2});
     return list;
   }, []);
-  const m = useMemo(() => new THREE.Matrix4(), []);
+  const m = useMemo(() => new THREE.Matrix4(), []), q = useMemo(() => new THREE.Quaternion(), []), sc = useMemo(() => new THREE.Vector3(), []), pos = useMemo(() => new THREE.Vector3(), []), up = useMemo(() => new THREE.Vector3(0, 1, 0), []);
   useFrame(({clock}) => {
     const mesh = ref.current;
     if (!mesh) return;
     const t = clock.elapsedTime;
     fish.forEach((f, i) => {
       const a = t * f.v + i;
-      const x = f.x + Math.cos(a) * f.r, z = f.z + Math.sin(a) * f.r;
-      m.makeRotationY(-a); m.scale(new THREE.Vector3(f.s * 0.25, 1, f.s * 0.55)); m.setPosition(x, WATER_Y - 0.12, z);
+      // Swim along the circle (tangent heading) with a little tail wiggle.
+      q.setFromAxisAngle(up, -a + Math.sin(t * 6 + i) * 0.12);
+      m.compose(pos.set(f.x + Math.cos(a) * f.r, WATER_Y + 0.015, f.z + Math.sin(a) * f.r), q, sc.set(f.s, 1, f.s));
       mesh.setMatrixAt(i, m);
     });
     mesh.instanceMatrix.needsUpdate = true;
   });
-  return <instancedMesh ref={ref} args={[ball, undefined, fish.length]} renderOrder={1}>
-    <meshBasicMaterial color="#1d3f58" transparent opacity={0.35} depthWrite={false} />
+  return <instancedMesh ref={ref} args={[fishShadow, undefined, fish.length]} renderOrder={1}>
+    <meshBasicMaterial color="#1d3f58" transparent opacity={0.24} depthWrite={false} side={THREE.DoubleSide} />
   </instancedMesh>;
 }
 
