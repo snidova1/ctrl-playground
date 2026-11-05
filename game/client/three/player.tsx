@@ -11,7 +11,8 @@ const WALK = 3.1, RUN = 5.8, SNEAK = 1.35;
 /** Local player: camera-relative movement, collisions, follow camera, interaction picking. */
 export function Player({rt, name}: {rt: Runtime; name?: string}) {
   const group = useRef<THREE.Group>(null);
-  const {camera, gl} = useThree();
+  const {camera, gl, scene} = useThree();
+  useEffect(() => {if (new URLSearchParams(location.search).has('director')) (window as unknown as {__three?: unknown}).__three = {scene, camera, THREE};}, [scene, camera]);
   const pick = useRef(0);
   const stepT = useRef(0);
   const camPos = useRef(new THREE.Vector3());

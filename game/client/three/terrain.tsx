@@ -127,7 +127,8 @@ void main(){
   col = mix(col, uSky, 0.06);
   float ripple = n2(vWorld.xz * 1.7 + vec2(uTime * 0.8, uTime * 0.5)) * n2(vWorld.xz * 2.3 - vec2(uTime * 0.6, -uTime * 0.4));
   col += vec3(0.85, 0.95, 1.0) * smoothstep(0.55, 0.9, ripple) * 0.35 * (1.0 - uNight * 0.6);
-  float foamLine = smoothstep(0.09, 0.0, depth + sin(uTime * 2.0 + vWorld.x * 2.0 + vWorld.z) * 0.012);
+  // smoothstep needs edge0 < edge1 (reversed edges are undefined and turn the sea black on AMD GPUs).
+  float foamLine = 1.0 - smoothstep(0.0, 0.09, depth + sin(uTime * 2.0 + vWorld.x * 2.0 + vWorld.z) * 0.012);
   col = mix(col, vec3(1.0), foamLine * 0.85);
   col *= 1.0 - uNight * 0.45;
   float alpha = mix(0.82, 0.96, smoothstep(0.0, 0.5, depth));
