@@ -193,9 +193,9 @@ function relaxIdle(vrm: VRM, t: number, amount: number, restHips: THREE.Vector3 
   blend('spine', -0.02 + breathe * 0.5, 0, (0.5 - shift) * 0.04); blend('chest', breathe * 0.4, 0, 0); blend('upperChest', 0, 0, 0);
   blend('rightShoulder', 0, 0, -0.06); blend('leftShoulder', 0, 0, 0.06);
   // Arms hang close to the body, elbows soft, palms toward the thighs.
-  blend('rightUpperArm', 0.06, 0.12, -1.33 - breathe); blend('leftUpperArm', 0.06, -0.12, 1.33 + breathe);
-  blend('rightLowerArm', 0, 0.34, 0); blend('leftLowerArm', 0, -0.34, 0);
-  blend('rightHand', 0, 0.1, -0.15); blend('leftHand', 0, -0.1, 0.15);
+  blend('rightUpperArm', 0, -0.06, -1.2 - breathe); blend('leftUpperArm', 0, 0.06, 1.2 + breathe);
+  blend('rightLowerArm', 0, 0.16, 0); blend('leftLowerArm', 0, -0.16, 0);
+  blend('rightHand', 0, 0, -0.08); blend('leftHand', 0, 0, 0.08);
   blend('neck', 0.02, look * 0.05, 0); blend('head', -0.03, look * 0.12, 0.06 + (shift - 0.5) * 0.05);
   for (const side of ['left', 'right'] as const) for (const f of FINGERS) for (const seg of ['Proximal', 'Intermediate', 'Distal'] as const) {
     if (f === 'Thumb' && seg === 'Proximal') continue;
