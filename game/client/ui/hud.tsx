@@ -217,13 +217,32 @@ function PhotoMode({rt}: {rt: Runtime}) {
     return () => clearInterval(id);
   }, [photo, rt]);
   const showFlash = performance.now() - flash < 400;
+  const view = useStore(rt.ui, s => s.photoView);
+  const last = useStore(rt.ui, s => s.lastPhoto);
+  useEffect(() => {if (!last) return; const id = setTimeout(() => rt.ui.set({lastPhoto: null}), 6000); return () => clearTimeout(id);}, [last, rt]);
   if (!photo) return null;
+  const setView = (v: 'first' | 'selfie') => {
+    rt.ui.set({photoView: v});
+    // Turning the lens around: the face points at the camera in a selfie.
+    rt.setAnim(v === 'selfie' ? 'idle' : 'camera', v === 'selfie' ? 'none' : 'camera', 0, v === 'selfie' ? 'happy' : null);
+    rt.camera.pitch = v === 'selfie' ? 0.1 : 0.05;
+  };
   return <>
     <div className="wc-viewfinder" />
-    <div className="wc-focus">📷 {focus}</div>
+    <div className="wc-focus">{view === 'selfie' ? '🤳 Selfie · wave or emote, then snap!' : `📷 ${focus}`}</div>
     {showFlash && <div className="wc-flash" key={flash} />}
+    {last && <div className="wc-polaroid" onPointerDown={e => e.stopPropagation()}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={last} alt="Your photo" />
+      <a className="wc-btn primary" href={last} download={`willow-photo-${Date.now()}.jpg`}>⬇️ Save</a>
+    </div>}
+    <div className="wc-photo-modes" onPointerDown={e => e.stopPropagation()}>
+      <button className={`wc-chip ${view === 'first' ? 'on' : ''}`} onClick={() => setView('first')}>👁 First person</button>
+      <button className={`wc-chip ${view === 'selfie' ? 'on' : ''}`} onClick={() => setView('selfie')}>🤳 Selfie</button>
+    </div>
     <div className="wc-actions" onPointerDown={e => e.stopPropagation()}>
-      <button className="wc-round" onClick={() => {rt.ui.set({photo: false}); rt.setAnim('idle', 'none');}}>✖</button>
+      <button className="wc-round" onClick={() => {rt.ui.set({photo: false, lastPhoto: null}); rt.camera.fov = 50; rt.setAnim('idle', 'none');}}>✖</button>
+      {view === 'selfie' && <button className="wc-round" onClick={() => rt.openPanel('emotes')}>😊</button>}
       <button className="wc-action" onClick={() => rt.snap?.()}>📸</button>
     </div>
   </>;
@@ -267,7 +286,7 @@ export function Hud({rt, name, social, keys, variant}: {rt: Runtime; name: strin
     <Toasts rt={rt} />
     {!fishing && !photo && !dialog && !decorating && <div className="wc-actions" onPointerDown={stop}>
       <div className="wc-small-actions">
-        {!guest && <button className="wc-round" title="Camera" onClick={() => {rt.ui.set({photo: true}); rt.setAnim('camera', 'camera'); rt.camera.pitch = 0.2;}}>📷</button>}
+        {!guest && <button className="wc-round" title="Camera" onClick={() => {rt.ui.set({photo: true, photoView: 'first'}); rt.setAnim('camera', 'camera'); rt.camera.pitch = 0.05; rt.camera.fov = 50; rt.camera.snap = true;}}>📷</button>}
         <button className="wc-round" title="Emotes" onClick={() => rt.openPanel('emotes')}>😊</button>
         {touch && <button className="wc-round" onPointerDown={() => {rt.input.run = !rt.input.run;}}>🏃</button>}
       </div>

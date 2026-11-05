@@ -140,7 +140,7 @@
 .wc-viewfinder::before, .wc-viewfinder::after { content: ""; position: absolute; left: 50%; top: 50%; background: rgba(255,255,255,.85); }
 .wc-viewfinder::before { width: 40px; height: 2px; margin-left: -20px; }
 .wc-viewfinder::after { width: 2px; height: 40px; margin-top: -20px; }
-.wc-focus { position: absolute; top: 12%; left: 50%; transform: translateX(-50%); padding: 6px 14px; border-radius: 999px; background: rgba(255,250,240,.92); font-weight: 900; font-size: 13px; }
+.wc-focus { position: absolute; top: 12%; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 6px 14px; border-radius: 999px; background: rgba(255,250,240,.92); font-weight: 900; font-size: 13px; }
 .wc-flash { position: absolute; inset: 0; background: white; pointer-events: none; animation: wc-flash .35s forwards; }
 @keyframes wc-flash { from { opacity: .9; } to { opacity: 0; } }
 
@@ -197,3 +197,9 @@
   .wc-zone { top: 64px; font-size: 12px; }
   .wc-toasts { top: 96px; }
 }
+
+.wc-photo-modes { position: absolute; top: calc(12% + 62px); z-index: 2; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+.wc-photo-modes .wc-chip { box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+.wc-polaroid { position: absolute; z-index: 3; left: 16px; bottom: 110px; width: min(42vw, 220px); padding: 8px 8px 10px; background: #fffaf0; border-radius: 10px; box-shadow: 0 8px 24px rgba(40,30,20,.25); transform: rotate(-3deg); display: grid; gap: 8px; animation: wc-pop .25s ease-out; }
+.wc-polaroid img { width: 100%; border-radius: 4px; display: block; }
+.wc-polaroid .wc-btn { text-align: center; text-decoration: none; font-size: 13px; padding: 6px 10px; }

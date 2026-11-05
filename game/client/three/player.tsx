@@ -33,7 +33,8 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
       if (pinch.size === 2) {
         const [a, b] = [...pinch.values()];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
-        rt.camera.distance = THREE.MathUtils.clamp(rt.camera.distance * (pinchDist / Math.max(1, d)), 3, 12);
+        if (rt.ui.get().photo) rt.camera.fov = THREE.MathUtils.clamp((rt.camera.fov ?? 50) * (pinchDist / Math.max(1, d)), 22, 62);
+        else rt.camera.distance = THREE.MathUtils.clamp(rt.camera.distance * (pinchDist / Math.max(1, d)), 3, 12);
         pinchDist = d; return;
       }
       if (!dragging || dragging.id !== e.pointerId) return;
@@ -41,10 +42,16 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
       dragging.x = e.clientX; dragging.y = e.clientY;
       rt.camera.yaw -= dx * 0.006; lastDrag.current = performance.now();
       const photo = rt.ui.get().photo;
-      rt.camera.pitch = THREE.MathUtils.clamp(rt.camera.pitch + dy * 0.004, photo ? -0.35 : 0.05, photo ? 0.7 : 1.05);
+      const view = rt.ui.get().photoView;
+      // Photo mode looks around freely, but never straight up or down.
+      rt.camera.pitch = THREE.MathUtils.clamp(rt.camera.pitch + dy * 0.004, photo ? (view === 'selfie' ? -0.25 : -0.75) : 0.05, photo ? (view === 'selfie' ? 0.5 : 0.65) : 1.05);
     };
     const up = (e: PointerEvent) => {pinch.delete(e.pointerId); if (dragging?.id === e.pointerId) dragging = null;};
-    const wheel = (e: WheelEvent) => {e.preventDefault(); rt.camera.distance = THREE.MathUtils.clamp(rt.camera.distance + e.deltaY * 0.006, 3, 12);};
+    const wheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (rt.ui.get().photo) rt.camera.fov = THREE.MathUtils.clamp((rt.camera.fov ?? 50) + e.deltaY * 0.02, 22, 62); // zoom lens
+      else rt.camera.distance = THREE.MathUtils.clamp(rt.camera.distance + e.deltaY * 0.006, 3, 12);
+    };
     el.addEventListener('pointerdown', down); window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     el.addEventListener('wheel', wheel, {passive: false});
     return () => {
@@ -116,9 +123,26 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     }
     const snap = !!rt.camera.snap;
     rt.camera.snap = false;
+    const view = ui.photoView;
+    if (group.current) group.current.visible = !(photo && view === 'first');
     f.lerp(new THREE.Vector3(p.pos.x, p.pos.y + (photo ? 1.25 : 1.05), p.pos.z), snap ? 1 : Math.min(1, dt * (photo ? 14 : 8)));
-    let dist = photo ? 2.4 : rt.camera.distance;
-    if (!photo) {
+    const cam = camera as THREE.PerspectiveCamera;
+    const zoom = (fov: number) => {if (Math.abs(cam.fov - fov) > 0.1) {cam.fov += (fov - cam.fov) * Math.min(1, dt * 8); cam.updateProjectionMatrix();}};
+    if (photo) {
+      // First person: the lens sits at the eyes. Selfie: arm's length in front, looking back at the face.
+      const yaw = rt.camera.yaw, pitch = rt.camera.pitch;
+      const dir = new THREE.Vector3(-Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
+      const eye = new THREE.Vector3(p.pos.x, p.pos.y + 1.22, p.pos.z);
+      const want = view === 'first' ? eye.clone().addScaledVector(dir, 0.18) : eye.clone().addScaledVector(new THREE.Vector3(dir.x, -dir.y * 0.6 + 0.12, dir.z).normalize(), 1.45);
+      const ground = rt.height(want.x, want.z) + 0.3;
+      if (want.y < ground) want.y = ground;
+      camPos.current.lerp(want, snap ? 1 : Math.min(1, dt * 16));
+      camera.position.copy(camPos.current);
+      camera.lookAt(view === 'first' ? camPos.current.clone().addScaledVector(dir, 10) : eye.clone().add(new THREE.Vector3(0, -0.05, 0)));
+      zoom(view === 'first' ? (rt.camera.fov ?? 50) : Math.min(62, (rt.camera.fov ?? 50) + 6));
+    } else {
+    let dist = rt.camera.distance;
+    {
       // Pull in when a wall or trunk sits between the character and the lens.
       for (let i = 1; i <= 14; i++) {
         const d = (i / 14) * dist;
@@ -126,21 +150,19 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
         if (rt.cameraBlocked(cx, cz)) {dist = Math.max(1.4, d - 0.5); break;}
       }
     }
-    const pitch = photo ? rt.camera.pitch * 0.4 : rt.camera.pitch;
+    const pitch = rt.camera.pitch;
     const yaw = rt.camera.yaw;
     const want = new THREE.Vector3(f.x + Math.sin(yaw) * Math.cos(pitch) * dist, f.y + Math.sin(pitch) * dist, f.z + Math.cos(yaw) * Math.cos(pitch) * dist);
     const ground = rt.height(want.x, want.z) + 0.45;
     if (want.y < ground) want.y = ground;
     rt.cameraClamp?.(want);
-    camPos.current.lerp(want, Math.min(1, dt * (photo ? 12 : 7)));
+    camPos.current.lerp(want, Math.min(1, dt * 7));
     if (snap || camPos.current.lengthSq() === 0) camPos.current.copy(want);
     camera.position.copy(camPos.current);
     // Aim a little above the head so the character sits in the lower third and the horizon shows.
-    camera.lookAt(photo ? new THREE.Vector3(f.x - Math.sin(yaw) * 6, f.y + Math.sin(-rt.camera.pitch * 0.6) * 3, f.z - Math.cos(yaw) * 6)
-      : new THREE.Vector3(f.x - Math.sin(yaw) * 1.2, f.y + 0.35 + dist * 0.03, f.z - Math.cos(yaw) * 1.2));
-    const cam = camera as THREE.PerspectiveCamera;
-    const fov = photo ? 38 : 50;
-    if (Math.abs(cam.fov - fov) > 0.1) {cam.fov += (fov - cam.fov) * Math.min(1, dt * 6); cam.updateProjectionMatrix();}
+    camera.lookAt(new THREE.Vector3(f.x - Math.sin(yaw) * 1.2, f.y + 0.35 + dist * 0.03, f.z - Math.cos(yaw) * 1.2));
+    zoom(50);
+    }
 
     // Interaction target, a few times a second.
     pick.current -= dt;

@@ -38,7 +38,7 @@ export interface UiState {
   panel: Panel; panelArg: string | null;
   toasts: Toast[]; dialog: Dialog | null; prompt: Target | null; busy: boolean;
   fishing: null | {phase: 'cast' | 'wait' | 'bite' | 'reel'; biteAt: number; startedAt: number};
-  photo: boolean; catchCard: Catch | null; levelUp: {level: number; hobby?: string} | null;
+  photo: boolean; photoView: 'first' | 'selfie'; lastPhoto: string | null; catchCard: Catch | null; levelUp: {level: number; hobby?: string} | null;
   scene: Scene; zone: string; tool: Tool; profile: PublicProfile | null; players: RemotePlayer[];
   decorating: boolean; loaded: boolean; error: string | null; clockOffset: number;
   fishTarget: {x: number; z: number} | null; flash: number; giftTo: string | null; mailCount: number;
@@ -55,7 +55,7 @@ export interface Runtime {
     seat?: {lift: number; standX: number; standZ: number} | null};
   input: {x: number; z: number; run: boolean; keys: Set<string>};
   /** `snap` jumps the camera straight to its new spot on the next frame (after a teleport), instead of gliding through walls. */
-  camera: {yaw: number; pitch: number; distance: number; focus: THREE.Vector3; snap?: boolean};
+  camera: {yaw: number; pitch: number; distance: number; focus: THREE.Vector3; snap?: boolean; fov?: number};
   env: MutableRefObject<Environment>;
   targets: Map<string, Target>;
   walkable: (x: number, z: number) => boolean;
@@ -81,7 +81,7 @@ export function createRuntime(opts: {scene: Scene; backend: LifeBackend; look: A
   const motion = {current: {anim: 'idle', speed: 0, tool: 'none' as Tool, actionAt: 0, mood: null}} as MutableRefObject<AvatarMotion>;
   const ui = createStore<UiState>({
     life: null, quests: [], profileId: '', panel: null, panelArg: null, toasts: [], dialog: null, prompt: null, busy: false,
-    fishing: null, photo: false, catchCard: null, levelUp: null, scene: opts.scene, zone: '', tool: 'none', profile: null, players: [],
+    fishing: null, photo: false, photoView: 'first', lastPhoto: null, catchCard: null, levelUp: null, scene: opts.scene, zone: '', tool: 'none', profile: null, players: [],
     decorating: false, loaded: false, error: null, clockOffset: 0, fishTarget: null, flash: 0, giftTo: null, mailCount: 0, indoors: false,
   });
   let animTimer: ReturnType<typeof setTimeout> | null = null;

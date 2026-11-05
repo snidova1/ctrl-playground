@@ -160,7 +160,7 @@ export function Creatures({rt}: {rt: Runtime}) {
   const [win, setWin] = useState(() => spawnWindow(Date.now()));
   const [gone, setGone] = useState<Set<string>>(new Set());
   const birds = useRef(new Map<string, THREE.Object3D>());
-  const {camera} = useThree();
+  const {camera, gl, scene} = useThree();
   useEffect(() => {const id = setInterval(() => setWin(spawnWindow(Date.now() + rt.ui.get().clockOffset)), 5000); return () => clearInterval(id);}, [rt]);
   const spawns = useMemo(() => creaturesForWindow(win), [win]);
   const caught = rt.ui.get().life?.caught;
@@ -187,8 +187,13 @@ export function Creatures({rt}: {rt: Runtime}) {
     rt.photoTarget = best;
   });
   rt.snap = () => {
+    // Render once more and grab the frame while the drawing buffer is still valid.
+    try {
+      gl.render(scene, camera);
+      rt.ui.set({lastPhoto: gl.domElement.toDataURL('image/jpeg', 0.9)});
+    } catch {/* some browsers block canvas reads; the photo still counts */}
     const target = rt.photoTarget;
-    if (!target) {rt.toast('No bird in the frame.', 'info', '📷'); rt.ui.set({flash: performance.now()}); return;}
+    if (!target) {rt.ui.set({flash: performance.now()}); return;}
     void snapBird(rt, target.spawn, target.framing, onGone);
   };
   return <>
