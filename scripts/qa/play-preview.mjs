@@ -6,7 +6,7 @@ import {chromium} from '@playwright/test';
 const origin = process.argv[2] ?? 'http://localhost:3000';
 const out = process.argv[3] ?? 'test-results/play';
 await mkdir(out, {recursive: true});
-const browser = await chromium.launch({headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
+const browser = await chromium.launch(process.env.QA_GPU ? {channel: 'chrome', headless: false, args: ['--window-position=-2600,0', '--ignore-gpu-blocklist', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--autoplay-policy=no-user-gesture-required']} : {headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
 const report = {steps: [], errors: []};
 const step = (name, data) => {report.steps.push({name, ...data}); console.log('✓', name, JSON.stringify(data ?? {}).slice(0, 200));};
 try {

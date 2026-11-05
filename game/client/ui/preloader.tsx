@@ -69,7 +69,7 @@ export function Preloader({onReady}: {onReady: () => void}) {
   }, [onReady]);
   return <div className="wc-root"><div className="wc-loading wc-preload">
     <div className="leaf">🌷</div>
-    <div style={{fontSize: 22}}>Willow Common</div>
+    <div style={{fontSize: 22}}>Keyhaven</div>
     <div style={{fontSize: 14, color: '#8a7560'}}>Getting the town ready for you…</div>
     <div className="wc-preload-bar"><i style={{width: `${pct}%`}} /></div>
     <div style={{fontSize: 18}}>{pct}%</div>

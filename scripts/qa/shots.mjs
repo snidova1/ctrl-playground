@@ -5,7 +5,7 @@ import {chromium} from '@playwright/test';
 const origin = process.argv[2] ?? 'http://localhost:3000';
 const out = process.argv[3] ?? 'test-results/shots';
 await mkdir(out, {recursive: true});
-const browser = await chromium.launch({headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
+const browser = await chromium.launch(process.env.QA_GPU ? {channel: 'chrome', headless: false, args: ['--window-position=-2600,0', '--ignore-gpu-blocklist', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--autoplay-policy=no-user-gesture-required']} : {headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
 const page = await (await browser.newContext({viewport: {width: 1280, height: 720}})).newPage();
 page.setDefaultTimeout(240000);
 const errors = [];

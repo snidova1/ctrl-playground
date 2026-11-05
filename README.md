@@ -1,4 +1,4 @@
-# CTRL — Willow Common
+# Keyhaven — a cozy life sim in Willow Common
 
 **A Heartopia-style cozy life game with friend.tech-style World Keys.** Make an anime chibi resident, live in a pastel seaside town, pick up hobbies, decorate your own home, visit friends — and own your Habitat on-chain through Keys that anyone can trade in CTRL.
 

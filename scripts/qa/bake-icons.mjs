@@ -6,7 +6,7 @@ const origin = process.argv[2] ?? 'http://localhost:3000';
 const src = await readFile('game/core/items.ts', 'utf8');
 const models = [...new Set([...src.matchAll(/furn\('[^']+', '[^']+', '([^']+)'/g)].map(m => m[1]))];
 await mkdir('public/kit/icons', {recursive: true});
-const browser = await chromium.launch({headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
+const browser = await chromium.launch(process.env.QA_GPU ? {channel: 'chrome', headless: false, args: ['--window-position=-2600,0', '--ignore-gpu-blocklist', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--autoplay-policy=no-user-gesture-required']} : {headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
 const page = await (await browser.newContext({viewport: {width: 400, height: 300}})).newPage();
 page.setDefaultTimeout(600000);
 await page.goto(`${origin}/preview`);

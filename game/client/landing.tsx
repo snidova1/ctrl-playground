@@ -22,12 +22,12 @@ export function Landing() {
   }, []);
   const enter = () => {window.location.href = '/public-world';};
   if (!open) return <div className="wc-mini" onPointerDown={e => e.stopPropagation()}>
-    <button className="wc-btn primary" onClick={() => setOpen(true)}>✨ Join Willow Common</button>
+    <button className="wc-btn primary" onClick={() => setOpen(true)}>✨ Play Keyhaven</button>
   </div>;
   return <div className="wc-landing" onPointerDown={e => e.stopPropagation()}>
     <div style={{fontSize: 46}}>🌷🏡🎣</div>
-    <h1>Willow Common</h1>
-    <p className="sub">A cozy life town on CTRL. Fish, garden, cook, catch bugs, snap birds, decorate your home — and own your world with Keys.</p>
+    <h1>Keyhaven</h1>
+    <p className="sub">A cozy life sim in the seaside town of Willow Common. Fish, garden, cook, catch bugs, snap birds, decorate your home — and own your world with Keys.</p>
     {session?.signedIn ? <button className="wc-btn primary" style={{width: '100%', fontSize: 17}} onClick={enter}>Enter town →</button>
       : connect ? <WalletConnection purpose="public-world" onVerified={enter} />
       : <button className="wc-btn primary" style={{width: '100%', fontSize: 17}} onClick={() => setConnect(true)}>🔐 Sign in with wallet</button>}

@@ -3,7 +3,7 @@ import dynamic from 'next/dynamic';
 import {Suspense} from 'react';
 import {useSearchParams} from 'next/navigation';
 
-const GameApp = dynamic(() => import('./game-app').then(m => m.GameApp), {ssr: false, loading: () => <div className="wc-root"><div className="wc-loading"><div className="leaf">🍃</div>Loading Willow Common…</div></div>});
+const GameApp = dynamic(() => import('./game-app').then(m => m.GameApp), {ssr: false, loading: () => <div className="wc-root"><div className="wc-loading"><div className="leaf">🍃</div>Loading Keyhaven…</div></div>});
 const Landing = dynamic(() => import('./landing').then(m => m.Landing), {ssr: false});
 
 export function CommonGroundPage() {
