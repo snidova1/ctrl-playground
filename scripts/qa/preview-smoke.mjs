@@ -24,7 +24,7 @@ try {
     // Common Ground: open-air landing with a guest avatar and the wallet card.
     let res = await page.goto(`${origin}/`, {waitUntil: 'domcontentloaded'});
     assert.equal(res.status(), 200);
-    await page.getByText('Willow Common', {exact: true}).first().waitFor();
+    await page.getByText('Keyhaven', {exact: true}).first().waitFor();
     await page.waitForFunction(() => document.documentElement.dataset.sceneReady === 'true');
     await page.waitForTimeout(4000);
     await page.screenshot({path: `test-results/willow-${label}-common-ground.png`});
@@ -68,7 +68,7 @@ try {
     await context.close();
   }
   await writeFile('test-results/preview-smoke.json', JSON.stringify({url: origin, browser: browser.version(), devices: results}, null, 2));
-  console.log('Willow Common landing + offline gameplay smoke passed on desktop and phone.');
+  console.log('Keyhaven landing + offline gameplay smoke passed on desktop and phone.');
 } catch (error) {
   for (const context of browser.contexts()) for (const page of context.pages()) await page.screenshot({path: 'test-results/willow-failure.png'}).catch(() => {});
   throw error;
