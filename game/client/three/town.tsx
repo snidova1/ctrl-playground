@@ -20,6 +20,7 @@ import {Kit} from './kit';
 import {Creatures} from './creatures';
 import {Player} from './player';
 import {Remote} from './remote';
+import {PLAZA_BENCHES, Residents} from './residents';
 import {Bobber} from './bobber';
 import {canvasTexture, toon} from './materials';
 import {mulberry32} from '@/game/core/rng';
@@ -176,7 +177,6 @@ function WaterEdge({rt, where}: {rt: Runtime; where: 'town' | 'home'}) {
   return null;
 }
 
-const PLAZA_BENCHES: [number, number, number][] = [[-9.5, 3, 1.57], [9.5, 3, -1.57], [-9.5, -3, 1.57], [9.5, -3, -1.57]];
 
 function Stations({rt, variant}: {rt: Runtime; variant: 'common-ground' | 'public' | 'preview'}) {
   useEffect(() => {
@@ -306,6 +306,7 @@ export function TownWorld({rt, variant, players, quality, playerName}: {rt: Runt
     <Stations rt={rt} variant={variant} />
     <Bobber rt={rt} waterY={WATER_Y} />
     {players.map(p => <Remote key={p.id} p={p} height={heightAt} />)}
+    {variant !== 'common-ground' && <Residents rt={rt} count={quality === 'high' ? 4 : 2} playerName={playerName} />}
     <Player rt={rt} name={playerName} />
   </>;
 }

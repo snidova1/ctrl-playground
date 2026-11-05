@@ -133,12 +133,12 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
       const yaw = rt.camera.yaw, pitch = rt.camera.pitch;
       const dir = new THREE.Vector3(-Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
       const eye = new THREE.Vector3(p.pos.x, p.pos.y + 1.22, p.pos.z);
-      const want = view === 'first' ? eye.clone().addScaledVector(dir, 0.18) : eye.clone().addScaledVector(new THREE.Vector3(dir.x, -dir.y * 0.6 + 0.12, dir.z).normalize(), 1.45);
+      const want = view === 'first' ? eye.clone().addScaledVector(dir, 0.18) : eye.clone().addScaledVector(new THREE.Vector3(dir.x, -dir.y * 0.6 + 0.12, dir.z).normalize(), 2.1);
       const ground = rt.height(want.x, want.z) + 0.3;
       if (want.y < ground) want.y = ground;
       camPos.current.lerp(want, snap ? 1 : Math.min(1, dt * 16));
       camera.position.copy(camPos.current);
-      camera.lookAt(view === 'first' ? camPos.current.clone().addScaledVector(dir, 10) : eye.clone().add(new THREE.Vector3(0, -0.05, 0)));
+      camera.lookAt(view === 'first' ? camPos.current.clone().addScaledVector(dir, 10) : eye.clone().add(new THREE.Vector3(0, -0.2, 0)));
       zoom(view === 'first' ? (rt.camera.fov ?? 50) : Math.min(62, (rt.camera.fov ?? 50) + 6));
     } else {
     let dist = rt.camera.distance;
