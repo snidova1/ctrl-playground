@@ -52,7 +52,7 @@ export interface Runtime {
   ui: ReturnType<typeof createStore<UiState>>;
   player: {pos: THREE.Vector3; angle: number; speed: number; motion: MutableRefObject<AvatarMotion>; locked: boolean; look: Appearance;
     /** While sitting: lift onto the seat, and where to step out to when the player moves again. */
-    seat?: {lift: number; standX: number; standZ: number} | null};
+    seat?: {lift: number; standX: number; standZ: number; lie?: boolean} | null};
   input: {x: number; z: number; run: boolean; keys: Set<string>};
   /** `snap` jumps the camera straight to its new spot on the next frame (after a teleport), instead of gliding through walls. */
   camera: {yaw: number; pitch: number; distance: number; focus: THREE.Vector3; snap?: boolean; fov?: number};

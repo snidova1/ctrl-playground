@@ -73,7 +73,7 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     const blocked = p.locked || !!ui.panel || !!ui.dialog || !!ui.fishing || ui.decorating;
     const motion = p.motion.current;
     // Standing up: step out in front of the seat, then walk on as normal.
-    if (p.seat && ((!blocked && mag > 0.08) || motion.anim !== 'sit')) {
+    if (p.seat && ((!blocked && mag > 0.08) || (motion.anim !== 'sit' && motion.anim !== 'lie'))) {
       p.pos.set(p.seat.standX, rt.height(p.seat.standX, p.seat.standZ), p.seat.standZ);
       p.seat = null;
       if (motion.anim === 'sit') {motion.anim = 'idle'; motion.mood = null;}
@@ -108,7 +108,10 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     p.pos.y += (rt.height(p.pos.x, p.pos.z) + (p.seat?.lift ?? 0) - p.pos.y) * Math.min(1, dt * 18);
     if (group.current) {
       group.current.position.copy(p.pos);
+      // Lying in bed: tip back onto the mattress (pitch applied before the heading).
+      group.current.rotation.order = 'YXZ';
       group.current.rotation.y = p.angle;
+      group.current.rotation.x += ((p.seat?.lie ? -Math.PI / 2 : 0) - group.current.rotation.x) * Math.min(1, dt * 10);
     }
 
     // Camera.
@@ -125,7 +128,7 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     rt.camera.snap = false;
     const view = ui.photoView;
     if (group.current) group.current.visible = !(photo && view === 'first');
-    f.lerp(new THREE.Vector3(p.pos.x, p.pos.y + (photo ? 1.25 : 1.05), p.pos.z), snap ? 1 : Math.min(1, dt * (photo ? 14 : 8)));
+    f.lerp(new THREE.Vector3(p.pos.x, p.pos.y + (photo ? 1.25 : p.seat?.lie ? 0.3 : 1.05), p.pos.z), snap ? 1 : Math.min(1, dt * (photo ? 14 : 8)));
     const cam = camera as THREE.PerspectiveCamera;
     const zoom = (fov: number) => {if (Math.abs(cam.fov - fov) > 0.1) {cam.fov += (fov - cam.fov) * Math.min(1, dt * 8); cam.updateProjectionMatrix();}};
     if (photo) {
@@ -174,9 +177,10 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
         const dx = Math.max(0, Math.abs(t.x - p.pos.x) - (t.hx ?? 0)), dz = Math.max(0, Math.abs(t.z - p.pos.z) - (t.hz ?? 0));
         const d = Math.hypot(dx, dz);
         if (d > t.radius) continue;
-        // Prefer things in front of the player.
+        // Prefer what the player is looking at; among neighbours, the one whose centre is closest.
+        const centre = Math.hypot(t.x - p.pos.x, t.z - p.pos.z);
         const facing = Math.cos(Math.atan2(t.x - p.pos.x, t.z - p.pos.z) - p.angle);
-        const score = d - facing * 0.6 - (t.priority ?? 0);
+        const score = d + centre * 0.3 - facing * 1.0 - (t.priority ?? 0);
         if (score < bestScore) {bestScore = score; best = t;}
       }
       if (best?.id !== ui.prompt?.id || best?.label !== ui.prompt?.label) rt.ui.set({prompt: best});

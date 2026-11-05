@@ -153,7 +153,7 @@ export function NameTag({name, color = '#ffffff', y = 1.75}: {name: string; colo
 }
 
 const CLIP_FOR: Record<string, string> = {
-  idle: 'Idle', walk: 'Walk', run: 'Run', sneak: 'CrouchWalk', crouch: 'CrouchIdle', sit: 'Seated', cheer: 'Victory',
+  idle: 'Idle', walk: 'Walk', run: 'Run', sneak: 'CrouchWalk', crouch: 'CrouchIdle', sit: 'Seated', lie: 'Idle', cheer: 'Victory',
   wave: 'Talk', net: 'Interact', water: 'Interact', eat: 'Interact', pick: 'PickUp', fish: 'Idle', camera: 'Idle', talk: 'Talk',
 };
 const ONCE = new Set(['Interact', 'PickUp', 'Victory']);

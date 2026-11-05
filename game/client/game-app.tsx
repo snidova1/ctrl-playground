@@ -194,6 +194,16 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
   const life = useStore(ui, s => s.life);
   const indoors = useStore(ui, s => s.indoors);
   useEffect(() => {rt.player.look = profile.appearance;}, [rt, profile]);
+  // Trailer director (only with ?director=1 on the offline preview): set looks, furniture and the house for scripted shots.
+  useEffect(() => {
+    if (variant !== 'preview' || !new URLSearchParams(location.search).has('director')) return;
+    (window as unknown as {__director?: unknown}).__director = {
+      setLook: (appearance: PublicProfile['appearance']) => setProfile({...profile, appearance}),
+      setLayout: (next: Layout) => setLayout(next),
+      getLayout: () => layout,
+      setHouse: (h: House | null) => setHousePreview(h),
+    };
+  }, [variant, profile, setProfile, layout]);
 
   // Life state.
   useEffect(() => {

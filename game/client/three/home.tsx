@@ -13,7 +13,7 @@ import type {Runtime} from '../runtime';
 import {useStore} from '../store';
 import {startFishing, hobbyReady} from '../actions';
 import {Cottage, type WalkIn} from './buildings';
-import {Kit} from './kit';
+import {CenteredKit, Kit} from './kit';
 import {Player} from './player';
 import {Bushes, FlowerField, Grass, Trees, type TreeSpec} from './foliage';
 import {canvasTexture, toon} from './materials';
@@ -52,9 +52,7 @@ function FurniturePiece({item, onSelect, selected, lit = true}: {item: Placed; o
   const scale = def.model.startsWith('furniture-kit/') ? 1.9 : def.model.startsWith('fantasy-town/') ? 1.1 : 1.6;
   const [w, d] = footprint(item);
   return <group position={[item.x, 0, item.z]} onClick={onSelect ? (e: ThreeEvent<MouseEvent>) => {e.stopPropagation(); onSelect(item.id);} : undefined}>
-    <group rotation={[0, item.rotation * Math.PI / 2, 0]}>
-      <Kit model={def.model} position={[0, 0, 0]} scale={(def.scale ?? 1) * scale} />
-    </group>
+    <CenteredKit model={def.model} rotation={item.rotation * Math.PI / 2} scale={(def.scale ?? 1) * scale} />
     {selected && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}><planeGeometry args={[w, d]} /><meshBasicMaterial color="#7fd0ff" transparent opacity={0.35} depthWrite={false} /></mesh>}
     {def.light && lit && <pointLight position={[0, 1.4, 0]} intensity={0.6} distance={5} color="#ffd59a" />}
   </group>;
@@ -66,7 +64,7 @@ function Ghost({assetId, rotation, at, valid}: {assetId: string; rotation: numbe
   if (!def) return null;
   const scale = def.model.startsWith('furniture-kit/') ? 1.9 : def.model.startsWith('fantasy-town/') ? 1.1 : 1.6;
   return <group position={[at.x, 0, at.z]}>
-    <group rotation={[0, rotation * Math.PI / 2, 0]}><Kit model={def.model} position={[0, 0, 0]} scale={(def.scale ?? 1) * scale} shadows={false} /></group>
+    <CenteredKit model={def.model} rotation={rotation * Math.PI / 2} scale={(def.scale ?? 1) * scale} shadows={false} />
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}><planeGeometry args={[w, d]} /><meshBasicMaterial color={valid ? '#8fe08a' : '#ff8a8a'} transparent opacity={0.45} depthWrite={false} /></mesh>
   </group>;
 }
@@ -240,6 +238,23 @@ function sitOn(rt: Runtime, o: Placed, x: number, z: number) {
   rt.setAnim('sit', 'none', 0, 'relaxed');
 }
 
+/** Lie down on a bed: feet toward the foot end, head on the pillow, face up. */
+function napOn(rt: Runtime, o: Placed, x: number, z: number) {
+  const def = FURNITURE_BY_ID[o.assetId];
+  if (!def?.seat) return;
+  sitOn(rt, o, x, z); // finds a free spot to get up again
+  const facing = o.rotation * Math.PI / 2, fx = Math.sin(facing), fz = Math.cos(facing);
+  const [w, d] = footprint(o);
+  const depth = o.rotation % 2 ? w : d;
+  const fx2 = x + fx * Math.min(0.75, depth / 2 - 0.2), fz2 = z + fz * Math.min(0.75, depth / 2 - 0.2);
+  rt.player.seat = {...rt.player.seat!, lift: def.seat + 0.04, lie: true};
+  rt.player.pos.set(fx2, rt.height(fx2, fz2), fz2);
+  rt.player.angle = facing;
+  rt.camera.yaw = facing + 0.9; rt.camera.pitch = 0.8; rt.camera.snap = true;
+  rt.setAnim('lie', 'none', 0, 'sleepy');
+  rt.emote('zzz', undefined, 3200);
+}
+
 const READS = ['A chapter of The Lighthouse Keeper. Lovely.', 'You flip through a field guide to pond fish.', 'A recipe book! Mushroom soup sounds good.', 'Poems about the sea. You feel calm.'];
 const SHOWS = ['The cooking show makes you hungry.', 'A nature special about kingfishers!', 'The weather report says sunshine all week.', 'A rerun of a silly cartoon. Ha!'];
 const INDOOR_CAMERA ={distance: 3.6, pitch: 0.42};
@@ -308,7 +323,7 @@ export function HomeWorld({rt, layout, garden, ownGarden, canEdit, decorating, d
       if (def.stove) add(`stove-${o.id}`, 'Cook at the stove', '🍳', x, z, () => rt.openPanel('cook'), 0.9, near);
       if (o.assetId === 'coat-rack') add(`wardrobe-${o.id}`, 'Change outfit', '👗', x, z, () => rt.openPanel('wardrobe'), 0.9, near);
       if (o.assetId === 'bookcase' || o.assetId === 'bookcase-low') add(`read-${o.id}`, 'Read a book', '📖', x, z, () => {rt.setAnim('idle', 'none', 3200, 'relaxed'); rt.emote('star', undefined, 2600); rt.toast(pick(READS), 'info', '📖');}, 0.9, near);
-      if (o.assetId === 'bed-single' || o.assetId === 'bed-double') add(`nap-${o.id}`, `Nap on the ${name}`, '💤', x, z, () => {sitOn(rt, o, x, z); rt.setAnim('sit', 'none', 0, 'sleepy'); rt.emote('zzz', undefined, 3000);}, 0.9, {...near, priority: 0.15});
+      if (o.assetId === 'bed-single' || o.assetId === 'bed-double') add(`nap-${o.id}`, `Nap on the ${name}`, '💤', x, z, () => napOn(rt, o, x, z), 0.9, {...near, priority: 0.15});
       else if (def.seat) add(`seat-${o.id}`, `Sit on the ${name}`, '🪑', x, z, () => sitOn(rt, o, x, z), 0.9, {...near, priority: 0.3});
       if (def.light) add(`lamp-${o.id}`, dark.has(o.id) ? `Turn on the ${name}` : `Turn off the ${name}`, '💡', x, z, () => {sfx.tap(); setDark(prev => {const next = new Set(prev); if (next.has(o.id)) next.delete(o.id); else next.add(o.id); return next;});}, 0.8, {...near, priority: 0.1});
       if (o.assetId === 'radio') add(`radio-${o.id}`, 'Play the radio', '📻', x, z, () => {const on = toggleRadio(); rt.toast(on ? 'A cozy tune fills the room.' : 'Radio off.', 'info', '📻'); if (on) rt.emote('music', undefined, 2400);}, 0.9, near);
