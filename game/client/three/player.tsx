@@ -7,7 +7,8 @@ import {Avatar} from './avatar';
 import {sfx} from '../audio';
 import {updateSeat} from '../seating';
 
-const WALK = 3.1, RUN = 5.8, SNEAK = 1.35;
+// Chibi-scale speeds: a 1.42 m resident strolls, jogs and tiptoes.
+const WALK = 2.3, RUN = 5.0, SNEAK = 1.2;
 
 /** Local player: camera-relative movement, collisions, follow camera, interaction picking. */
 export function Player({rt, name}: {rt: Runtime; name?: string}) {

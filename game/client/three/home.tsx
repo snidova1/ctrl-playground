@@ -242,7 +242,8 @@ function sitOn(rt: Runtime, o: Placed, x: number, z: number) {
   // Hips a thigh's length behind the front edge, so the knees clear it and the shins hang in front.
   const hips = (def.seatFront ?? depth * 0.35) - THIGH;
   const ax = x + fx * (HIP_BACK + hips), az = z + fz * (HIP_BACK + hips);
-  requestSeat(rt, {x: ax, z: az, angle: facing, lift: Math.max(0, def.seat - SEATED_HIP), standX: free.x, standZ: free.z});
+  const [w, d] = footprint(o); const width = o.rotation % 2 ? d : w;
+  requestSeat(rt, {x: ax, z: az, angle: facing, lift: Math.max(0, def.seat - SEATED_HIP), standX: free.x, standZ: free.z, room: def.seatYaw ? depth / 2 : width / 2 - 0.35});
 }
 
 /** Nap: sit on the foot of the bed, then lie back along it with the head on the pillow. */

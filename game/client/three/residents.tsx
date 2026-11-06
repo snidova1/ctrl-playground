@@ -119,9 +119,10 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
       // Stay at the player's side; join in with whatever they are doing.
       const side = index % 2 ? 1 : -1;
       const pa = p.angle;
-      const seated = p.seat?.phase === 'seated' || p.seat?.phase === 'down', fishing = !!ui.fishing, selfie = ui.photo && ui.photoView === 'selfie';
-      const offX = Math.cos(pa) * side * (seated ? 0.85 : 1.1) - Math.sin(pa) * (seated || selfie ? 0 : 0.7);
-      const offZ = -Math.sin(pa) * side * (seated ? 0.85 : 1.1) - Math.cos(pa) * (seated || selfie ? 0 : 0.7);
+      // Only sit beside you when the seat has room for two (sofa, log); otherwise stand and chat.
+      const seated = (p.seat?.phase === 'seated' || p.seat?.phase === 'down') && (p.seat?.room ?? 0) >= 0.5, fishing = !!ui.fishing, selfie = ui.photo && ui.photoView === 'selfie';
+      const offX = Math.cos(pa) * side * (seated ? 0.62 : 1.1) - Math.sin(pa) * (seated || selfie ? 0 : 0.7);
+      const offZ = -Math.sin(pa) * side * (seated ? 0.62 : 1.1) - Math.cos(pa) * (seated || selfie ? 0 : 0.7);
       goal = {x: P.x + offX, z: P.z + offZ};
       let d = Math.hypot(goal.x - pos.current.x, goal.z - pos.current.z);
       // Lost on the far side of a river or wall: catch up out of sight.

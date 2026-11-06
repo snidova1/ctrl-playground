@@ -24,12 +24,14 @@ export interface Seat {
   currentLift: number;
   from?: {x: number; z: number; angle: number};
   mood?: 'relaxed' | 'sleepy';
+  /** Free cushion beside you (m) — a friend only sits down next to you if there's room. */
+  room?: number;
 }
 
-export function requestSeat(rt: Runtime, o: {x: number; z: number; angle: number; lift: number; standX: number; standZ: number; lie?: Seat['lie']; mood?: Seat['mood']}) {
+export function requestSeat(rt: Runtime, o: {x: number; z: number; angle: number; lift: number; standX: number; standZ: number; lie?: Seat['lie']; mood?: Seat['mood']; room?: number}) {
   const p = rt.player;
   p.locked = true;
-  p.seat = {phase: 'approach', t: 0, x: o.x, z: o.z, angle: o.angle, lift: o.lift, standX: o.standX, standZ: o.standZ, lie: o.lie ?? null, recline: 0, currentLift: 0, mood: o.mood ?? 'relaxed'};
+  p.seat = {phase: 'approach', t: 0, x: o.x, z: o.z, angle: o.angle, lift: o.lift, standX: o.standX, standZ: o.standZ, lie: o.lie ?? null, recline: 0, currentLift: 0, mood: o.mood ?? 'relaxed', room: o.room ?? 0};
   rt.camera.yaw = o.angle + 0.5;
 }
 
