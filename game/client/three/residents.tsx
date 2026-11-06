@@ -46,7 +46,7 @@ const CHATTER = {
 const pick = <T,>(r: () => number, list: T[]) => list[Math.floor(r() * list.length)];
 
 interface Brain {
-  act: Activity; phase: 'walk' | 'do'; until: number; stuck: number; hangUntil: number; greetedAt: number;
+  act: Activity; phase: 'walk' | 'do'; until: number; dur: number; stuck: number; hangUntil: number; greetedAt: number;
   say: {text: string; until: number} | null; lastPlayerEmote: number; copyAt: number; copyEmote: string | null;
 }
 
@@ -71,7 +71,7 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
   const pos = useRef(new THREE.Vector3(start.x + 1, heightAt(start.x + 1, start.z), start.z + 1));
   const angle = useRef(0);
   const cur = useRef(0);
-  const brain = useRef<Brain>({act: start, phase: 'walk', until: 0, stuck: 0, hangUntil: 0, greetedAt: -1e9, say: null, lastPlayerEmote: 0, copyAt: 0, copyEmote: null});
+  const brain = useRef<Brain>({act: start, phase: 'walk', until: 0, dur: 0, stuck: 0, hangUntil: 0, greetedAt: -1e9, say: null, lastPlayerEmote: 0, copyAt: 0, copyEmote: null});
   const [bubble, setBubble] = useState<string | null>(null);
   const id = `resident-${index}`;
 
@@ -130,7 +130,7 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
       if (d < 0.35) {
         goal = null;
         angle.current = seated || fishing || selfie ? pa : Math.atan2(P.x - pos.current.x, P.z - pos.current.z) * 0.3 + pa * 0.7;
-        m.anim = seated ? 'sit' : fishing ? 'fish' : selfie ? (Math.floor(now / 2500) % 2 ? 'cheer' : 'wave') : m.anim === 'wave' && now - m.actionAt < 1500 ? 'wave' : 'idle';
+        m.anim = seated ? (p.seat?.phase === 'down' ? 'sitdown' : 'sit') : fishing ? 'fish' : selfie ? (Math.floor(now / 2500) % 2 ? 'cheer' : 'wave') : m.anim === 'wave' && now - m.actionAt < 1500 ? 'wave' : 'idle';
         m.tool = fishing ? 'rod' : 'none';
         if (seated && pos.current.y < heightAt(pos.current.x, pos.current.z) + 0.1) pos.current.y += 0.2;
         if (!b.say && rand() < dt * 0.05) say(pick(rand, CHATTER.follow));
@@ -138,10 +138,12 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
     } else if (b.phase === 'walk') {
       goal = {x: b.act.x, z: b.act.z};
     } else if (now > b.until) {
-      // Next activity: anywhere in town, weighted toward hobbies.
-      b.act = SPOTS[Math.floor(rand() * SPOTS.length)]; b.phase = 'walk'; m.anim = 'idle'; m.tool = 'none';
+      // Seated? Stand up first, then pick the next activity anywhere in town.
+      if (b.act.kind === 'sit' && now - b.until < 850) {m.anim = 'standup'; if (now - b.until < 40) m.actionAt = now;}
+      else {b.act = SPOTS[Math.floor(rand() * SPOTS.length)]; b.phase = 'walk'; m.anim = 'idle'; m.tool = 'none';}
     } else {
-      m.anim = b.act.anim; m.tool = b.act.tool;
+      const sitting = b.act.kind === 'sit' && now - (b.until - b.dur) < 1150;
+      m.anim = sitting ? 'sitdown' : b.act.anim; m.tool = b.act.tool;
       if (b.act.kind === 'net') {
         // Creep around, swing the net now and then.
         if (Math.floor(now / 2600) !== Math.floor((now - dt * 1000) / 2600)) {m.anim = 'net'; m.actionAt = now; if (rand() < 0.4) emote(rand() < 0.5 ? 'wow' : '!');}
@@ -154,7 +156,7 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
     if (goal) {
       const dx = goal.x - pos.current.x, dz = goal.z - pos.current.z, d = Math.hypot(dx, dz);
       if (d < 0.25 && !hanging) {
-        b.phase = 'do'; b.until = now + b.act.secs * 1000 * (0.7 + rand() * 0.6);
+        b.dur = b.act.secs * 1000 * (0.7 + rand() * 0.6); b.phase = 'do'; b.until = now + b.dur;
         if (b.act.angle !== undefined) angle.current = b.act.angle;
         m.anim = b.act.anim; m.tool = b.act.tool; m.actionAt = now;
       } else {
@@ -174,7 +176,8 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
         m.anim = cur.current > 4 ? 'run' : 'walk'; m.speed = cur.current; m.tool = 'none';
       }
     }
-    const ground = heightAt(pos.current.x, pos.current.z) + (b.phase === 'do' && b.act.lift && !hanging ? b.act.lift : hanging && p.seat && !goal ? p.seat.currentLift : 0);
+    const sitT = b.phase === 'do' && b.act.lift && !hanging ? Math.min(1, (now - (b.until - b.dur)) / 1150) * (now > b.until ? Math.max(0, 1 - (now - b.until) / 850) : 1) : 0;
+    const ground = heightAt(pos.current.x, pos.current.z) + (sitT ? (b.act.lift ?? 0) * sitT : hanging && p.seat && !goal ? p.seat.currentLift : 0);
     pos.current.y += (ground - pos.current.y) * Math.min(1, dt * 12);
     g.position.copy(pos.current);
     let diff = angle.current - g.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
