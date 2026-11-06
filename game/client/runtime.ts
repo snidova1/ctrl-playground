@@ -59,6 +59,8 @@ export interface Runtime {
   camera: {yaw: number; pitch: number; distance: number; focus: THREE.Vector3; snap?: boolean; fov?: number};
   env: MutableRefObject<Environment>;
   targets: Map<string, Target>;
+  /** Trailer director: a free camera (position, look-at, fov) that overrides the follow camera. */
+  cinematic?: {pos: THREE.Vector3; look: THREE.Vector3; fov: number; roll?: number} | null;
   /** Doorways that gently centre the player as they walk through (x, z of the opening, half width). */
   doorways?: {x: number; z: number; half: number}[];
   walkable: (x: number, z: number) => boolean;

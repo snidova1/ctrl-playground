@@ -146,6 +146,12 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     rt.camera.snap = false;
     const view = ui.photoView;
     if (group.current) group.current.visible = !(photo && view === 'first');
+    if (rt.cinematic) {
+      const c = rt.cinematic, cam = camera as THREE.PerspectiveCamera;
+      camera.position.copy(c.pos); camera.up.set(Math.sin(c.roll ?? 0), Math.cos(c.roll ?? 0), 0); camera.lookAt(c.look); camera.up.set(0, 1, 0);
+      if (Math.abs(cam.fov - c.fov) > 0.01) {cam.fov = c.fov; cam.updateProjectionMatrix();}
+      camPos.current.copy(c.pos);
+    } else {
     f.lerp(new THREE.Vector3(p.pos.x, p.pos.y + (photo ? 1.25 : 1.05 - 0.75 * (p.seat?.recline ?? 0)), p.pos.z), snap ? 1 : Math.min(1, dt * (photo ? 14 : 8)));
     const cam = camera as THREE.PerspectiveCamera;
     const zoom = (fov: number) => {if (Math.abs(cam.fov - fov) > 0.1) {cam.fov += (fov - cam.fov) * Math.min(1, dt * 8); cam.updateProjectionMatrix();}};
@@ -183,6 +189,7 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     // Aim a little above the head so the character sits in the lower third and the horizon shows.
     camera.lookAt(new THREE.Vector3(f.x - Math.sin(yaw) * 1.2, f.y + 0.35 + dist * 0.03, f.z - Math.cos(yaw) * 1.2));
     zoom(50);
+    }
     }
 
     // Interaction target, a few times a second.
