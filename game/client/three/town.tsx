@@ -185,7 +185,7 @@ function Stations({rt, variant}: {rt: Runtime; variant: 'common-ground' | 'publi
       const d = b.facing === 'east' || b.facing === 'west' ? b.w : b.d;
       return {x: b.x + off[0] * (d / 2 + 1.4), z: b.z + off[1] * (d / 2 + 1.4)};
     };
-    const add = (id: string, label: string, icon: string, x: number, z: number, run: () => void) => rt.targets.set(id, {id, label, icon, x, z, radius: 2.4, priority: 0.5, run}); // level with shopkeepers: facing decides
+    const add = (id: string, label: string, icon: string, x: number, z: number, run: () => void) => rt.targets.set(id, {id, label, icon, x, z, radius: 2.4, priority: 0.45, run}); // a shopkeeper beside the door wins; their dialog has the Shop/Cook button
     const store = BUILDINGS.find(b => b.id === 'store')!, cafe = BUILDINGS.find(b => b.id === 'cafe')!, florist = BUILDINGS.find(b => b.id === 'florist')!, hall = BUILDINGS.find(b => b.id === 'hall')!;
     // Plaza benches: sit down facing the fountain, stand up in front of the bench.
     PLAZA_BENCHES.forEach(([x, z, r], i) => {

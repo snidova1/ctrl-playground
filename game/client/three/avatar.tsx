@@ -3,7 +3,7 @@ import {useEffect, useMemo, useRef, useState, type MutableRefObject} from 'react
 import {createPortal, useFrame} from '@react-three/fiber';
 import * as THREE from 'three';
 import type {VRM} from '@pixiv/three-vrm';
-import {lookColors, type Appearance} from '@/game/core/appearance';
+import {BODY_GENDER, lookColors, type Appearance} from '@/game/core/appearance';
 import {canvasTexture, toon} from './materials';
 import {createAvatar, HEAD_SCALE, type AvatarInstance} from './vrm';
 import {Fish3D} from './fish-model';
@@ -172,7 +172,7 @@ function useAnimator(instance: AvatarInstance | null) {
 const FINGERS = ['Thumb', 'Index', 'Middle', 'Ring', 'Little'] as const;
 const _q = new THREE.Quaternion(), _e = new THREE.Euler(), _v = new THREE.Vector3();
 /** The stock idle reads tense (raised shoulders, fists). Ease it into a soft, friendly stance. */
-function relaxIdle(vrm: VRM, t: number, amount: number, restHips: THREE.Vector3 | null) {
+function relaxIdle(vrm: VRM, t: number, amount: number, restHips: THREE.Vector3 | null, boy = false) {
   if (amount <= 0.001) return;
   const blend = (name: Parameters<VRM['humanoid']['getNormalizedBoneNode']>[0], x: number, y: number, z: number) => {
     const b = vrm.humanoid.getNormalizedBoneNode(name);
@@ -182,21 +182,25 @@ function relaxIdle(vrm: VRM, t: number, amount: number, restHips: THREE.Vector3 
   const breathe = Math.sin(t * 1.6) * 0.02, shift = Math.sin(t * 0.35) * 0.5 + 0.5, look = Math.sin(t * 0.4);
   const hips = vrm.humanoid.getNormalizedBoneNode('hips');
   if (hips) {
-    hips.quaternion.slerp(_q.setFromEuler(_e.set(0, 0, (shift - 0.5) * 0.05)), amount);
+    hips.quaternion.slerp(_q.setFromEuler(_e.set(0, boy ? 0.06 : 0, (shift - 0.5) * (boy ? 0.08 : 0.05))), amount);
     if (restHips) hips.position.lerp(_v.set(restHips.x + (shift - 0.5) * 0.02, restHips.y - 0.008, restHips.z), amount);
   }
   // Legs straight under the hips; the unweighted leg relaxes with a soft knee.
   const soft = (k: number) => [-0.1 * k, 0.2 * k] as const;
   const [rt, rk] = soft(1 - shift), [lt, lk] = soft(shift);
-  blend('rightUpperLeg', rt, 0.04, 0.02); blend('rightLowerLeg', rk, 0, 0); blend('rightFoot', -rk * 0.4, 0.06, 0);
-  blend('leftUpperLeg', lt, -0.04, -0.02); blend('leftLowerLeg', lk, 0, 0); blend('leftFoot', -lk * 0.4, -0.06, 0);
-  blend('spine', -0.02 + breathe * 0.5, 0, (0.5 - shift) * 0.04); blend('chest', breathe * 0.4, 0, 0); blend('upperChest', 0, 0, 0);
+  // Girls stand neat with feet close; boys plant their feet about hip-width with toes out.
+  const spread = boy ? 0.07 : 0.02, toe = boy ? 0.16 : 0.06;
+  blend('rightUpperLeg', rt, 0.04, spread); blend('rightLowerLeg', rk, 0, 0); blend('rightFoot', -rk * 0.4, toe, -spread * 0.6);
+  blend('leftUpperLeg', lt, -0.04, -spread); blend('leftLowerLeg', lk, 0, 0); blend('leftFoot', -lk * 0.4, -toe, spread * 0.6);
+  blend('spine', (boy ? 0.03 : -0.02) + breathe * 0.5, 0, (0.5 - shift) * (boy ? 0.025 : 0.04)); blend('chest', (boy ? 0.03 : 0) + breathe * 0.4, boy ? -0.08 : 0, 0); blend('upperChest', 0, 0, 0);
   blend('rightShoulder', 0, 0, -0.06); blend('leftShoulder', 0, 0, 0.06);
   // Arms hang close to the body, elbows soft, palms toward the thighs.
-  blend('rightUpperArm', 0, -0.06, -1.2 - breathe); blend('leftUpperArm', 0, 0.06, 1.2 + breathe);
-  blend('rightLowerArm', 0, 0.16, 0); blend('leftLowerArm', 0, -0.16, 0);
-  blend('rightHand', 0, 0, -0.08); blend('leftHand', 0, 0, 0.08);
-  blend('neck', 0.02, look * 0.05, 0); blend('head', -0.03, look * 0.12, 0.06 + (shift - 0.5) * 0.05);
+  // Boys: arms hang a touch wider with looser elbows and a slight shoulder roll.
+  const armDown = boy ? 1.12 : 1.2, elbow = boy ? 0.26 : 0.16;
+  blend('rightUpperArm', 0, boy ? 0.02 : -0.06, -armDown - breathe); blend('leftUpperArm', 0, boy ? -0.02 : 0.06, armDown + breathe);
+  blend('rightLowerArm', 0, elbow + (boy ? 0.12 : 0), 0); blend('leftLowerArm', 0, -elbow, 0);
+  blend('rightHand', boy ? 0.1 : 0, 0, boy ? -0.18 : -0.08); blend('leftHand', boy ? 0.1 : 0, 0, boy ? 0.18 : 0.08);
+  blend('neck', 0.02, look * 0.05, 0); blend('head', -0.03, look * 0.12, (boy ? 0.015 : 0.06) + (shift - 0.5) * 0.05);
   for (const side of ['left', 'right'] as const) for (const f of FINGERS) for (const seg of ['Proximal', 'Intermediate', 'Distal'] as const) {
     if (f === 'Thumb' && seg === 'Proximal') continue;
     const name = `${side}${f}${f === 'Thumb' && seg === 'Intermediate' ? 'Metacarpal' : seg}` as Parameters<VRM['humanoid']['getNormalizedBoneNode']>[0];
@@ -245,6 +249,8 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
   const blink = useRef({next: 2 + Math.random() * 3, t: 0, value: 0});
   const clock = useRef(0);
   const relax = useRef(0);
+  const lift = useRef(0);
+  const face = useRef({mood: null as AvatarMotion['mood'] | null, since: 0, seed: Math.random() * 6});
 
   useFrame((_, rawDt) => {
     const m = motion.current;
@@ -277,24 +283,45 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
     // Fade the relaxed stance in only while the idle clip is the one playing.
     const calm = animator.currentName === 'Idle' && (m.anim === 'idle' || !CLIP_FOR[m.anim] || CLIP_FOR[m.anim] === 'Idle') && m.anim !== 'fish' && m.anim !== 'camera';
     relax.current += ((calm ? 1 : 0) - relax.current) * Math.min(1, dt * 5);
-    relaxIdle(instance.vrm, clock.current, relax.current, restHips);
-    // Blink + mood.
+    relaxIdle(instance.vrm, clock.current, relax.current, restHips, BODY_GENDER[look.body] === 'boy');
+    // The stock wave/cheer/talk clips bow the head; lift the face toward whoever you're greeting.
+    const greet = m.anim === 'wave' || m.anim === 'cheer' || m.anim === 'talk';
+    lift.current += ((greet ? 1 : 0) - lift.current) * Math.min(1, dt * 6);
+    if (lift.current > 0.01) for (const [bone, x] of [['neck', 0.12], ['head', 0.18]] as const) {
+      const b = instance.vrm.humanoid.getNormalizedBoneNode(bone);
+      if (b) b.quaternion.slerp(_q.setFromEuler(_e.set(x, 0, 0)), lift.current * 0.7);
+    }
+    // Face: soft layered expressions that ease in and out, never a frozen mask.
     const em = instance.vrm.expressionManager;
     if (em) {
-      const b = blink.current;
+      const b = blink.current, now = performance.now();
+      const mood = m.mood ?? (m.anim === 'cheer' ? 'happy' : m.anim === 'sit' || m.anim === 'lie' ? 'relaxed' : m.anim === 'sneak' ? 'focus' : m.anim === 'talk' || m.anim === 'wave' ? 'happy' : null);
+      if (mood !== face.current.mood) {face.current.mood = mood; face.current.since = now;}
+      const age = (now - face.current.since) / 1000;
+      // A quick peak when a feeling starts, settling to something gentle.
+      const peak = Math.exp(-age * 2.2);
+      const t = clock.current;
+      const idleSmile = 0.12 + Math.max(0, Math.sin(t * 0.23 + face.current.seed)) * 0.18;
+      const target = {happy: 0, relaxed: 0, surprised: 0, sad: 0, angry: 0};
+      if (mood === 'happy') {target.happy = 0.55 + 0.3 * peak; target.relaxed = 0.08;}
+      else if (mood === 'relaxed') {target.relaxed = 0.45; target.happy = 0.12;}
+      else if (mood === 'sleepy') {target.relaxed = 0.55;}
+      else if (mood === 'surprised') {target.surprised = 0.35 + 0.35 * peak; target.happy = 0.1 * (1 - peak);}
+      else if (mood === 'sad') {target.sad = 0.55;}
+      else if (mood === 'focus') {target.angry = 0.15; target.relaxed = 0.1;}
+      else target.relaxed = idleSmile;
+      const ease = (name: string, goal: number, rate = 6) => {const v = em.getValue(name) ?? 0; em.setValue(name, v + (goal - v) * Math.min(1, dt * rate));};
+      for (const [k, v] of Object.entries(target)) ease(k, v);
+      // Mouth: varied vowels while talking or cheering, a small "o" when surprised.
+      const talking = m.anim === 'talk' || m.anim === 'wave' || (m.anim === 'cheer' && age < 1.2);
+      const syl = Math.floor(t * 7.5), open = talking ? Math.abs(Math.sin(t * 15)) * (0.25 + 0.2 * ((syl * 7919) % 3) / 2) : 0;
+      const vowel = ['aa', 'ih', 'ou', 'ee', 'oh'][syl % 5];
+      for (const v of ['aa', 'ih', 'ou', 'ee', 'oh']) ease(v, talking && v === vowel ? open : v === 'oh' && mood === 'surprised' ? 0.3 * peak : 0, 14);
+      // Blink stays alive; happy eyes already squint, so the blink is lighter there.
       b.next -= dt;
-      if (b.next < 0) {b.t += dt; b.value = Math.sin(Math.min(1, b.t / 0.16) * Math.PI); if (b.t > 0.16) {b.t = 0; b.next = 2 + Math.random() * 3.5; b.value = 0;}}
-      // Faces always follow what the character is doing: no blank stares during gameplay.
-      const mood = m.mood ?? (m.anim === 'cheer' ? 'happy' : m.anim === 'sit' ? 'relaxed' : m.anim === 'sneak' ? 'focus' : m.anim === 'talk' || m.anim === 'wave' ? 'happy' : null);
-      const ease = (name: string, target: number) => {const v = em.getValue(name) ?? 0; em.setValue(name, v + (target - v) * Math.min(1, dt * 10));};
-      ease('happy', mood === 'happy' ? 1 : mood === 'relaxed' ? 0.4 : 0);
-      ease('relaxed', mood === 'relaxed' || mood === 'sleepy' ? 0.7 : 0);
-      ease('surprised', mood === 'surprised' ? 0.9 : 0);
-      ease('sad', mood === 'sad' ? 0.8 : 0);
-      ease('angry', mood === 'focus' ? 0.25 : 0);
-      const talking = m.anim === 'talk' || m.anim === 'wave';
-      em.setValue('aa', talking ? Math.abs(Math.sin(clock.current * 11)) * 0.55 : mood === 'surprised' ? 0.5 : 0);
-      em.setValue('blink', mood === 'happy' ? 0 : mood === 'sleepy' ? 0.6 + b.value * 0.4 : b.value);
+      if (b.next < 0) {b.t += dt; b.value = Math.sin(Math.min(1, b.t / 0.15) * Math.PI); if (b.t > 0.15) {b.t = 0; b.next = 1.8 + Math.random() * 3.5; b.value = 0;}}
+      const squint = em.getValue('happy') ?? 0;
+      em.setValue('blink', mood === 'sleepy' || m.anim === 'lie' ? 0.75 + b.value * 0.25 : b.value * (1 - squint));
     }
     instance.vrm.update(dt);
   });
