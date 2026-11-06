@@ -1,4 +1,5 @@
 'use client';
+import type {Seat} from './seating';
 import * as THREE from 'three';
 import type {MutableRefObject} from 'react';
 import {createStore} from './store';
@@ -52,12 +53,14 @@ export interface Runtime {
   ui: ReturnType<typeof createStore<UiState>>;
   player: {pos: THREE.Vector3; angle: number; speed: number; motion: MutableRefObject<AvatarMotion>; locked: boolean; look: Appearance;
     /** While sitting: lift onto the seat, and where to step out to when the player moves again. */
-    seat?: {lift: number; standX: number; standZ: number; lie?: boolean} | null};
+    seat?: Seat | null};
   input: {x: number; z: number; run: boolean; keys: Set<string>};
   /** `snap` jumps the camera straight to its new spot on the next frame (after a teleport), instead of gliding through walls. */
   camera: {yaw: number; pitch: number; distance: number; focus: THREE.Vector3; snap?: boolean; fov?: number};
   env: MutableRefObject<Environment>;
   targets: Map<string, Target>;
+  /** Doorways that gently centre the player as they walk through (x, z of the opening, half width). */
+  doorways?: {x: number; z: number; half: number}[];
   walkable: (x: number, z: number) => boolean;
   /** Solid things the camera must not pass through (walls, trunks). */
   cameraBlocked: (x: number, z: number) => boolean;

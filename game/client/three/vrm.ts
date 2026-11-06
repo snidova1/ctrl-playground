@@ -86,7 +86,7 @@ function retarget(source: GLTF, vrm: VRM): THREE.AnimationClip[] {
         tracks.push(new THREE.QuaternionKeyframeTrack(`${target.name}.quaternion`, track.times.slice(), values));
       } else if (property === 'position' && human === 'hips') {
         const values = new Float32Array(track.values.length), v = new THREE.Vector3();
-        const seated = /Sit|Seated/.test(clip.name);
+        const seated = /Sit|Seated|Stand/.test(clip.name);
         for (let i = 0; i < values.length; i += 3) {
           v.fromArray(track.values, i);
           if (bone.parent) v.applyMatrix4(bone.parent.matrixWorld);

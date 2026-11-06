@@ -153,10 +153,10 @@ export function NameTag({name, color = '#ffffff', y = 1.75}: {name: string; colo
 }
 
 const CLIP_FOR: Record<string, string> = {
-  idle: 'Idle', walk: 'Walk', run: 'Run', sneak: 'CrouchWalk', crouch: 'CrouchIdle', sit: 'Seated', lie: 'Idle', cheer: 'Victory',
+  idle: 'Idle', walk: 'Walk', run: 'Run', sneak: 'CrouchWalk', crouch: 'CrouchIdle', sit: 'Seated', sitdown: 'SitDown', standup: 'StandUp', lie: 'Idle', cheer: 'Victory',
   wave: 'Talk', net: 'Interact', water: 'Interact', eat: 'Interact', pick: 'PickUp', fish: 'Idle', camera: 'Idle', talk: 'Talk',
 };
-const ONCE = new Set(['Interact', 'PickUp', 'Victory']);
+const ONCE = new Set(['Interact', 'PickUp', 'Victory', 'SitDown', 'StandUp']);
 
 function useAnimator(instance: AvatarInstance | null) {
   return useMemo(() => {
@@ -273,8 +273,9 @@ export function Avatar({look, motion, name, nameColor}: {look: Appearance; motio
       next.reset().setLoop(ONCE.has(clipName) ? THREE.LoopOnce : THREE.LoopRepeat, ONCE.has(clipName) ? 1 : Infinity);
       next.clampWhenFinished = ONCE.has(clipName);
       next.setEffectiveTimeScale(m.anim === 'walk' ? Math.max(0.8, Math.min(1.3, m.speed / 2.6)) : 1);
-      next.fadeIn(0.18).play();
-      animator.current?.fadeOut(0.18);
+      const fade = clipName === 'SitDown' || clipName === 'StandUp' ? 0.22 : ONCE.has(clipName) ? 0.2 : 0.3;
+      next.fadeIn(fade).play();
+      animator.current?.fadeOut(fade);
       animator.current = next; animator.currentName = clipName;
     }
     animator.lastAction = m.actionAt;

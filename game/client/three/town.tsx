@@ -21,6 +21,7 @@ import {Creatures} from './creatures';
 import {Player} from './player';
 import {Remote} from './remote';
 import {PLAZA_BENCHES, Residents} from './residents';
+import {HIP_BACK, requestSeat} from '../seating';
 import {Bobber} from './bobber';
 import {canvasTexture, toon} from './materials';
 import {mulberry32} from '@/game/core/rng';
@@ -190,13 +191,7 @@ function Stations({rt, variant}: {rt: Runtime; variant: 'common-ground' | 'publi
     // Plaza benches: sit down facing the fountain, stand up in front of the bench.
     PLAZA_BENCHES.forEach(([x, z, r], i) => {
       const fx = Math.sin(r), fz = Math.cos(r);
-      rt.targets.set(`bench-${i}`, {id: `bench-${i}`, label: 'Sit on the bench', icon: '🪑', x, z, radius: 0.9, hx: Math.abs(fz) * 0.8 + Math.abs(fx) * 0.35, hz: Math.abs(fx) * 0.8 + Math.abs(fz) * 0.35, priority: 0.3, run: () => {
-        rt.player.seat = {lift: Math.max(0, 0.42 - 0.22), standX: x + fx * 0.9, standZ: z + fz * 0.9};
-        rt.player.pos.set(x + fx * 0.05, rt.height(x, z), z + fz * 0.05);
-        rt.player.angle = r;
-        rt.camera.yaw = r + 0.35; rt.camera.snap = true;
-        rt.setAnim('sit', 'none', 0, 'relaxed');
-      }});
+      rt.targets.set(`bench-${i}`, {id: `bench-${i}`, label: 'Sit on the bench', icon: '🪑', x, z, radius: 0.9, hx: Math.abs(fz) * 0.8 + Math.abs(fx) * 0.35, hz: Math.abs(fx) * 0.8 + Math.abs(fz) * 0.35, priority: 0.3, run: () => requestSeat(rt, {x: x + fx * (HIP_BACK - 0.06), z: z + fz * (HIP_BACK - 0.06), angle: r, lift: 0.1, standX: x + fx * 0.95, standZ: z + fz * 0.95})}); // bench: seat 0.30 m, front edge 0.16 m
     });
     if (variant !== 'common-ground') {
       const s = door(store), c = door(cafe), f = door(florist), h = door(hall);

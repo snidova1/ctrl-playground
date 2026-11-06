@@ -20,6 +20,7 @@ import {canvasTexture, toon} from './materials';
 import {Remote} from './remote';
 import {Bobber} from './bobber';
 import {sfx, stopRadio, toggleRadio} from '../audio';
+import {HIP_BACK, requestSeat} from '../seating';
 import type {RemotePlayer} from '@/game/core/api-types';
 
 const flat = () => 0;
@@ -215,44 +216,45 @@ function floorTexture(kind: number) {
 
 /** How high the hips sit above the feet in the Seated clip (chibi scale); the seat lift makes up the rest. */
 const SEATED_HIP = 0.22;
+const THIGH = 0.24;
 /**
  * Sit on a placed piece: face the way it faces (rotation 0 = +z), sit on the front edge of beds and sofas,
  * and remember a free spot in front to stand up to (the seat itself is solid).
  */
+function seatGeometry(rt: Runtime, o: Placed, x: number, z: number) {
+  const facing = o.rotation * Math.PI / 2 + (FURNITURE_BY_ID[o.assetId]?.seatYaw ?? 0), fx = Math.sin(facing), fz = Math.cos(facing);
+  const [w, d] = footprint(o);
+  const depth = o.rotation % 2 ? w : d, width = o.rotation % 2 ? d : w;
+  const out = depth / 2 + 0.5;
+  const candidates = [[fx * out, fz * out], [fz * (width / 2 + 0.5), -fx * (width / 2 + 0.5)], [-fz * (width / 2 + 0.5), fx * (width / 2 + 0.5)], [-fx * out, -fz * out]];
+  const free = candidates.map(([dx, dz]) => ({x: x + dx, z: z + dz})).find(c => rt.walkable(c.x, c.z)) ?? {x: rt.player.pos.x, z: rt.player.pos.z};
+  return {facing, fx, fz, depth, free};
+}
+
+/**
+ * Sit down on a chair, sofa or log: walk up, turn round and sit, hips landing on the cushion
+ * (the cushion sits a little in front of the backrest, so the feet stand just ahead of it).
+ */
 function sitOn(rt: Runtime, o: Placed, x: number, z: number) {
   const def = FURNITURE_BY_ID[o.assetId];
   if (!def?.seat) return;
-  const facing = o.rotation * Math.PI / 2, fx = Math.sin(facing), fz = Math.cos(facing);
-  const [w, d] = footprint(o);
-  const depth = o.rotation % 2 ? w : d, width = o.rotation % 2 ? d : w;
-  const inset = depth > 1.2 ? depth / 2 - 0.4 : 0; // beds: sit on the edge, not in the middle
-  const sx = x + fx * inset, sz = z + fz * inset;
-  const out = depth / 2 - inset + 0.5;
-  const candidates = [[fx * out, fz * out], [fz * (width / 2 + 0.5), -fx * (width / 2 + 0.5)], [-fz * (width / 2 + 0.5), fx * (width / 2 + 0.5)], [-fx * (depth / 2 + inset + 0.5), -fz * (depth / 2 + inset + 0.5)]];
-  const free = candidates.map(([dx, dz]) => ({x: sx + dx, z: sz + dz})).find(c => rt.walkable(c.x, c.z)) ?? {x: rt.player.pos.x, z: rt.player.pos.z};
-  rt.player.seat = {lift: Math.max(0, def.seat - SEATED_HIP), standX: free.x, standZ: free.z};
-  rt.player.pos.set(sx, rt.height(sx, sz), sz);
-  rt.player.angle = facing;
-  rt.camera.yaw = facing + 0.35; // look at the face, a little from the side
-  rt.camera.snap = true;
-  rt.setAnim('sit', 'none', 0, 'relaxed');
+  const {facing, fx, fz, depth, free} = seatGeometry(rt, o, x, z);
+  // Hips a thigh's length behind the front edge, so the knees clear it and the shins hang in front.
+  const hips = (def.seatFront ?? depth * 0.35) - THIGH;
+  const ax = x + fx * (HIP_BACK + hips), az = z + fz * (HIP_BACK + hips);
+  requestSeat(rt, {x: ax, z: az, angle: facing, lift: Math.max(0, def.seat - SEATED_HIP), standX: free.x, standZ: free.z});
 }
 
-/** Lie down on a bed: feet toward the foot end, head on the pillow, face up. */
+/** Nap: sit on the foot of the bed, then lie back along it with the head on the pillow. */
 function napOn(rt: Runtime, o: Placed, x: number, z: number) {
   const def = FURNITURE_BY_ID[o.assetId];
   if (!def?.seat) return;
-  sitOn(rt, o, x, z); // finds a free spot to get up again
-  const facing = o.rotation * Math.PI / 2, fx = Math.sin(facing), fz = Math.cos(facing);
-  const [w, d] = footprint(o);
-  const depth = o.rotation % 2 ? w : d;
-  const fx2 = x + fx * Math.min(0.75, depth / 2 - 0.2), fz2 = z + fz * Math.min(0.75, depth / 2 - 0.2);
-  rt.player.seat = {...rt.player.seat!, lift: def.seat + 0.04, lie: true};
-  rt.player.pos.set(fx2, rt.height(fx2, fz2), fz2);
-  rt.player.angle = facing;
-  rt.camera.yaw = facing + 0.9; rt.camera.pitch = 0.8; rt.camera.snap = true;
-  rt.setAnim('lie', 'none', 0, 'sleepy');
-  rt.emote('zzz', undefined, 3200);
+  const {facing, fx, fz, depth, free} = seatGeometry(rt, o, x, z);
+  const edge = depth / 2 - 0.12 + HIP_BACK;
+  const feet = Math.min(0.75, depth / 2 - 0.2);
+  requestSeat(rt, {x: x + fx * edge, z: z + fz * edge, angle: facing, lift: Math.max(0, def.seat - SEATED_HIP), standX: free.x, standZ: free.z, mood: 'sleepy',
+    lie: {x: x + fx * feet, z: z + fz * feet, lift: def.seat + 0.04}});
+  rt.camera.pitch = 0.6;
 }
 
 const READS = ['A chapter of The Lighthouse Keeper. Lovely.', 'You flip through a field guide to pond fish.', 'A recipe book! Mushroom soup sounds good.', 'Poems about the sea. You feel calm.'];
@@ -291,6 +293,7 @@ export function HomeWorld({rt, layout, garden, ownGarden, canEdit, decorating, d
       if (ceiling !== null && v.y > ceiling - 0.35) v.y = Math.max(0.6, ceiling - 0.35);
     };
   }, [rt, indoors, size]);
+  useEffect(() => {rt.doorways = [{x: HOUSE.doorX, z: HOUSE.doorZ, half: 0.55}]; return () => {rt.doorways = undefined;};}, [rt]);
   useEffect(() => () => {rt.ui.set({indoors: false}); rt.cameraClamp = null;}, [rt]);
   useFrame(() => {
     const p = rt.player.pos;

@@ -18,7 +18,7 @@ export const PLAZA_BENCHES: [number, number, number][] = [[-9.5, 3, 1.57], [9.5,
 
 type Activity = {kind: 'wander' | 'sit' | 'fish' | 'net' | 'photo'; x: number; z: number; angle?: number; anim: string; tool: Tool; secs: number; lift?: number};
 const SPOTS: Activity[] = [
-  ...PLAZA_BENCHES.map(([x, z, r]) => ({kind: 'sit' as const, x: x + Math.sin(r) * 0.05, z: z + Math.cos(r) * 0.05, angle: r, anim: 'sit', tool: 'none' as Tool, secs: 16, lift: 0.2})),
+  ...PLAZA_BENCHES.map(([x, z, r]) => ({kind: 'sit' as const, x: x + Math.sin(r) * 0.14, z: z + Math.cos(r) * 0.14, angle: r, anim: 'sit', tool: 'none' as Tool, secs: 16, lift: 0.1})),
   {kind: 'fish', x: PIER.x - 0.6, z: PIER.z1 - 1.5, angle: 0, anim: 'fish', tool: 'rod', secs: 22},
   {kind: 'fish', x: PIER.x + 0.7, z: PIER.z1 - 3.5, angle: 0.3, anim: 'fish', tool: 'rod', secs: 22},
   {kind: 'fish', x: 2, z: SEA_Z - 2.2, angle: 0, anim: 'fish', tool: 'rod', secs: 20},
@@ -70,6 +70,7 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
   const start = SPOTS[(index * 5) % SPOTS.length];
   const pos = useRef(new THREE.Vector3(start.x + 1, heightAt(start.x + 1, start.z), start.z + 1));
   const angle = useRef(0);
+  const cur = useRef(0);
   const brain = useRef<Brain>({act: start, phase: 'walk', until: 0, stuck: 0, hangUntil: 0, greetedAt: -1e9, say: null, lastPlayerEmote: 0, copyAt: 0, copyEmote: null});
   const [bubble, setBubble] = useState<string | null>(null);
   const id = `resident-${index}`;
@@ -118,7 +119,7 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
       // Stay at the player's side; join in with whatever they are doing.
       const side = index % 2 ? 1 : -1;
       const pa = p.angle;
-      const seated = !!p.seat, fishing = !!ui.fishing, selfie = ui.photo && ui.photoView === 'selfie';
+      const seated = p.seat?.phase === 'seated' || p.seat?.phase === 'down', fishing = !!ui.fishing, selfie = ui.photo && ui.photoView === 'selfie';
       const offX = Math.cos(pa) * side * (seated ? 0.85 : 1.1) - Math.sin(pa) * (seated || selfie ? 0 : 0.7);
       const offZ = -Math.sin(pa) * side * (seated ? 0.85 : 1.1) - Math.cos(pa) * (seated || selfie ? 0 : 0.7);
       goal = {x: P.x + offX, z: P.z + offZ};
@@ -149,6 +150,7 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
       if (!b.say && rand() < dt * 0.03) say(pick(rand, CHATTER[b.act.kind]));
     }
 
+    if (!goal) cur.current *= Math.exp(-dt * 8);
     if (goal) {
       const dx = goal.x - pos.current.x, dz = goal.z - pos.current.z, d = Math.hypot(dx, dz);
       if (d < 0.25 && !hanging) {
@@ -156,7 +158,8 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
         if (b.act.angle !== undefined) angle.current = b.act.angle;
         m.anim = b.act.anim; m.tool = b.act.tool; m.actionAt = now;
       } else {
-        const step = Math.min(d, speed * dt);
+        cur.current += (speed - cur.current) * (1 - Math.exp(-dt * 5));
+        const step = Math.min(d, Math.max(0.6, cur.current) * dt);
         let nx = pos.current.x + (dx / d) * step, nz = pos.current.z + (dz / d) * step;
         if (!rt.walkable(nx, nz)) {
           // Slide around obstacles; give up on a goal we cannot reach.
@@ -168,10 +171,10 @@ function Resident({rt, look, name, seed, index, playerName}: {rt: Runtime; look:
         } else b.stuck = 0;
         pos.current.x = nx; pos.current.z = nz;
         angle.current = Math.atan2(dx, dz);
-        m.anim = run ? 'run' : 'walk'; m.speed = speed; m.tool = 'none';
+        m.anim = cur.current > 4 ? 'run' : 'walk'; m.speed = cur.current; m.tool = 'none';
       }
     }
-    const ground = heightAt(pos.current.x, pos.current.z) + ((b.phase === 'do' && b.act.lift && !hanging) || (hanging && p.seat && !goal) ? 0.2 : 0);
+    const ground = heightAt(pos.current.x, pos.current.z) + (b.phase === 'do' && b.act.lift && !hanging ? b.act.lift : hanging && p.seat && !goal ? p.seat.currentLift : 0);
     pos.current.y += (ground - pos.current.y) * Math.min(1, dt * 12);
     g.position.copy(pos.current);
     let diff = angle.current - g.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff));

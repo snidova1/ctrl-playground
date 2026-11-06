@@ -27,7 +27,9 @@ async function use(match, opts = {}) {
   const r = await ev(async ([match, opts]) => {
     const rt = window.__willow;
     rt.ui.set({panel: null, dialog: null, photo: false, catchCard: null});
-    if (rt.player.seat) {rt.input.z = -1; await new Promise(r => setTimeout(r, 300)); rt.input.z = 0;}
+    // Get up first (sitting and standing are animated now).
+    for (let i = 0; i < 60 && rt.player.seat; i++) {rt.input.z = -1; await new Promise(r => setTimeout(r, 100));}
+    rt.input.z = 0; rt.player.seat = null; rt.player.locked = false; rt.setAnim('idle', 'none');
     const t = [...rt.targets.values()].find(t => t.id === match || t.label === match || (match.startsWith('/') && new RegExp(match.slice(1).replace(/\/$/, '')).test(t.label)));
     if (!t) return {ok: false, why: 'no target'};
     // Stand where a player could: a walkable spot next to the object, on the same side of the cottage wall.
@@ -66,8 +68,8 @@ async function use(match, opts = {}) {
 // ---------------- Town ----------------
 for (const npc of ['odette', 'juno', 'tomo', 'bea', 'marlo', 'pip', 'wren']) await use(`npc-${npc}`, {after: 1200});
 for (const st of ['station-store', 'station-cafe', 'station-florist', 'station-hall']) await use(st, {after: 900});
-for (let i = 0; i < 4; i++) await use(`bench-${i}`, {after: 1500});
-await ev(() => {const rt = window.__willow; rt.input.z = -1;}); await wait(500); await ev(() => {window.__willow.input.z = 0;});
+for (let i = 0; i < 4; i++) await use(`bench-${i}`, {after: 2600});
+await ev(() => {const rt = window.__willow; rt.input.z = -1;}); await wait(1600); await ev(() => {window.__willow.input.z = 0;});
 log('stood up from bench', await ev(() => ({ok: !window.__willow.player.seat})));
 await use('/^Pick up', {after: 1500});
 await use('/^Catch (Ladybug|Grasshopper|Hermit Crab|Stag Beetle|Cicada)/', {after: 2500, dx: 1.2, dz: 1.2});
@@ -132,7 +134,7 @@ for (const id of ['workbench', 'mailbox', 'pond-0', 'bus']) if (id !== 'bus') aw
 await use('/^(Plant seeds|Water the plot|Harvest)/', {after: 1200});
 await use('/Warm up by the fire/', {after: 1500});
 await use('/Turn (off|on) the Garden Lantern/', {after: 800});
-await use('/Sit on the Log Seat/', {after: 1500});
+await use('/Sit on the Log Seat/', {after: 2600});
 // Indoor targets must not answer from outside.
 log('indoor gated outside', await ev(async () => {
   const rt = window.__willow; rt.player.pos.set(0, 0, 0.5); await new Promise(r => setTimeout(r, 600));
@@ -141,11 +143,12 @@ log('indoor gated outside', await ev(async () => {
 }));
 // Walk in through the door.
 log('walk inside', await ev(async () => {
-  const rt = window.__willow; rt.player.seat = null; rt.setAnim('idle', 'none'); rt.player.pos.set(0, rt.height(0, -0.4), -0.4); rt.player.angle = Math.PI; rt.camera.yaw = 0; rt.input.z = -1;
+  const rt = window.__willow; rt.player.seat = null; rt.player.locked = false; rt.setAnim('idle', 'none'); rt.player.pos.set(0, rt.height(0, -0.4), -0.4); rt.player.angle = Math.PI; rt.camera.yaw = 0; rt.input.z = -1;
   const t0 = performance.now(); while (!rt.ui.get().indoors && performance.now() - t0 < 20000) await new Promise(r => setTimeout(r, 100));
   await new Promise(r => setTimeout(r, 900)); rt.input.z = 0; return {ok: rt.ui.get().indoors};
 }));
-for (const m of ['/Nap on the Cozy Bed', '/Sit on the Lounge Sofa', '/Sit on the Lounge Chair', '/Sit on the Wooden Chair', '/Play the radio', '/Watch TV', '/Turn (off|on) the Floor Lamp', '/Open the fridge', '/Cook at the stove', '/Hug the teddy', '/Write a letter', '/Read a book', '/^Change outfit']) {
+for (const m of ['/Nap on the Cozy Bed', '/Sit on the Lounge Sofa', '/Sit on the Lounge Chair', '/Sit on the Wooden Chair']) await use(m, {after: 3000});
+for (const m of ['/Play the radio', '/Watch TV', '/Turn (off|on) the Floor Lamp', '/Open the fridge', '/Cook at the stove', '/Hug the teddy', '/Write a letter', '/Read a book', '/^Change outfit']) {
   await use(m, {after: 1600});
 }
 await ev(() => {const rt = window.__willow; rt.ui.set({panel: null});});

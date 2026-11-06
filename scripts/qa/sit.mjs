@@ -26,6 +26,7 @@ for (const [i, s] of seats.entries()) {
     return {pos: rt.player.pos.toArray(), angle: rt.player.angle, anim: rt.player.motion.current.anim};
   }, s.id);
   await page.waitForTimeout(5000);
+  const seated = await run(() => ({phase: window.__willow.player.seat?.phase ?? null, anim: window.__willow.player.motion.current.anim}));
   await page.screenshot({path: `${out}/seat-${i}.png`});
   const after = await run(async () => {
     const rt = window.__willow;
@@ -33,7 +34,7 @@ for (const [i, s] of seats.entries()) {
     rt.input.z = 1; await new Promise(r => setTimeout(r, 4000)); rt.input.z = 0;
     return {moved: rt.player.pos.distanceTo(start), anim: rt.player.motion.current.anim, y: rt.player.pos.y};
   });
-  console.log(s.label, JSON.stringify(before), '-> stand up', JSON.stringify(after));
+  console.log(s.label, JSON.stringify(seated), '-> stand up', JSON.stringify(after));
 }
 // Renovate: Interior tab zooms into the living room, Exterior frames the cottage again.
 await run(() => window.__willow.openPanel('renovate'));

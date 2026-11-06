@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type {Runtime, Target} from '../runtime';
 import {Avatar} from './avatar';
 import {sfx} from '../audio';
+import {updateSeat} from '../seating';
 
 const WALK = 3.1, RUN = 5.8, SNEAK = 1.35;
 
@@ -17,6 +18,7 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
   const stepT = useRef(0);
   const camPos = useRef(new THREE.Vector3());
   const lastDrag = useRef(0);
+  const vel = useRef({x: 0, z: 0});
 
   // Drag to orbit, wheel to zoom. Joystick/UI elements stop propagation themselves.
   useEffect(() => {
@@ -73,13 +75,9 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     const mag = Math.min(1, Math.hypot(ix, iz));
     const blocked = p.locked || !!ui.panel || !!ui.dialog || !!ui.fishing || ui.decorating;
     const motion = p.motion.current;
-    // Standing up: step out in front of the seat, then walk on as normal.
-    if (p.seat && ((!blocked && mag > 0.08) || (motion.anim !== 'sit' && motion.anim !== 'lie'))) {
-      p.pos.set(p.seat.standX, rt.height(p.seat.standX, p.seat.standZ), p.seat.standZ);
-      p.seat = null;
-      if (motion.anim === 'sit') {motion.anim = 'idle'; motion.mood = null;}
-    }
-    if (!blocked && mag > 0.08) {
+    // Seats run their own sequence (walk up, turn, sit, lie back, stand up).
+    const seated = updateSeat(rt, dt, mag > 0.08 && !ui.panel && !ui.dialog && !ui.fishing && !ui.decorating);
+    if (seated) {/* movement belongs to the seat */} else if (!blocked && mag > 0.08) {
       const yaw = rt.camera.yaw;
       const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
       const dx = rx * ix - fx * iz, dz = rz * ix - fz * iz;
@@ -87,32 +85,51 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
       const sneaking = !running && (mag < 0.5 || k.has('ControlLeft') || k.has('KeyC') || motion.tool === 'net');
       const speed = ui.photo ? 1.6 : running ? RUN : sneaking ? SNEAK : WALK;
       const len = Math.hypot(dx, dz) || 1;
-      const vx = (dx / len) * speed * mag, vz = (dz / len) * speed * mag;
+      // Ease into the target velocity: quick but not instant starts, turns and stops.
+      const accel = 1 - Math.exp(-dt * 9);
+      vel.current.x += ((dx / len) * speed * mag - vel.current.x) * accel;
+      vel.current.z += ((dz / len) * speed * mag - vel.current.z) * accel;
+      const vx = vel.current.x, vz = vel.current.z;
+      // Doorways: when heading through one, ease toward its centre line so the frame never snags you.
+      for (const d of rt.doorways ?? []) {
+        const dz = d.z - p.pos.z, ox = p.pos.x - d.x;
+        if (Math.abs(dz) < 1.4 && Math.abs(ox) < d.half + 0.8 && Math.abs(vz) > Math.abs(vx) * 0.6 && Math.sign(vz) === Math.sign(dz || vz)) p.pos.x -= ox * Math.min(1, dt * 6);
+      }
       const nx = p.pos.x + vx * dt, nz = p.pos.z + vz * dt;
-      if (rt.walkable(nx, p.pos.z)) p.pos.x = nx;
-      if (rt.walkable(p.pos.x, nz)) p.pos.z = nz;
+      // Slide along walls; drop the blocked component so leftover momentum can't wedge you in a doorway.
+      if (rt.walkable(nx, p.pos.z)) p.pos.x = nx; else vel.current.x = 0;
+      if (rt.walkable(p.pos.x, nz)) p.pos.z = nz; else vel.current.z = 0;
       const target = Math.atan2(vx, vz);
       let diff = target - p.angle;
       diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-      if (!ui.photo) p.angle += diff * Math.min(1, dt * 12);
-      p.speed = speed * mag;
+      if (!ui.photo) p.angle += diff * Math.min(1, dt * 9);
+      p.speed = Math.hypot(vx, vz);
       const anim = running ? 'run' : sneaking ? 'sneak' : 'walk';
       if (['idle', 'walk', 'run', 'sneak', 'sit', 'crouch'].includes(motion.anim)) {motion.anim = anim; motion.mood = null;}
       motion.speed = p.speed;
       stepT.current -= dt * (running ? 1.6 : 1);
       if (stepT.current < 0) {stepT.current = 0.36; sfx.step();}
-    } else {
-      p.speed = 0;
-      if (['walk', 'run', 'sneak'].includes(motion.anim)) motion.anim = motion.tool === 'net' ? 'crouch' : 'idle';
-    }
+    } else if (!seated) {
+      // Glide to a stop over a few frames instead of freezing mid-stride.
+      const brake = 1 - Math.exp(-dt * 12);
+      vel.current.x -= vel.current.x * brake; vel.current.z -= vel.current.z * brake;
+      const sp = Math.hypot(vel.current.x, vel.current.z);
+      if (sp > 0.05 && !blocked) {
+        const nx = p.pos.x + vel.current.x * dt, nz = p.pos.z + vel.current.z * dt;
+        if (rt.walkable(nx, p.pos.z)) p.pos.x = nx; else vel.current.x = 0;
+        if (rt.walkable(p.pos.x, nz)) p.pos.z = nz; else vel.current.z = 0;
+      } else {vel.current.x = 0; vel.current.z = 0;}
+      p.speed = sp;
+      if (sp < 0.6 && ['walk', 'run', 'sneak'].includes(motion.anim)) motion.anim = motion.tool === 'net' ? 'crouch' : 'idle';
+    } else {vel.current.x = 0; vel.current.z = 0;}
     if (ui.photo) p.angle = rt.camera.yaw + Math.PI;
-    p.pos.y += (rt.height(p.pos.x, p.pos.z) + (p.seat?.lift ?? 0) - p.pos.y) * Math.min(1, dt * 18);
+    p.pos.y += (rt.height(p.pos.x, p.pos.z) + (p.seat?.currentLift ?? 0) - p.pos.y) * Math.min(1, dt * 18);
     if (group.current) {
       group.current.position.copy(p.pos);
       // Lying in bed: tip back onto the mattress (pitch applied before the heading).
       group.current.rotation.order = 'YXZ';
       group.current.rotation.y = p.angle;
-      group.current.rotation.x += ((p.seat?.lie ? -Math.PI / 2 : 0) - group.current.rotation.x) * Math.min(1, dt * 10);
+      group.current.rotation.x = -Math.PI / 2 * (p.seat?.recline ?? 0);
     }
 
     // Camera.
@@ -129,7 +146,7 @@ export function Player({rt, name}: {rt: Runtime; name?: string}) {
     rt.camera.snap = false;
     const view = ui.photoView;
     if (group.current) group.current.visible = !(photo && view === 'first');
-    f.lerp(new THREE.Vector3(p.pos.x, p.pos.y + (photo ? 1.25 : p.seat?.lie ? 0.3 : 1.05), p.pos.z), snap ? 1 : Math.min(1, dt * (photo ? 14 : 8)));
+    f.lerp(new THREE.Vector3(p.pos.x, p.pos.y + (photo ? 1.25 : 1.05 - 0.75 * (p.seat?.recline ?? 0)), p.pos.z), snap ? 1 : Math.min(1, dt * (photo ? 14 : 8)));
     const cam = camera as THREE.PerspectiveCamera;
     const zoom = (fov: number) => {if (Math.abs(cam.fov - fov) > 0.1) {cam.fov += (fov - cam.fov) * Math.min(1, dt * 8); cam.updateProjectionMatrix();}};
     if (photo) {

@@ -239,7 +239,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
     if (next === 'town') {rt.cameraBlocked = (x, z) => blockedByCollider(x, z, CAMERA_COLLIDERS, 0.25); rt.walkable = townWalkable; rt.height = heightAt; rt.bounds = TOWN_BOUNDS; rt.camera.distance = 5.8;}
     else {const h = view?.house ?? DEFAULT_HOUSE; rt.walkable = homeWalkable(view?.layout ?? [], h.size); rt.height = (x, z) => homeHeight(x, z, h.size, h.porch); rt.bounds = HOME_BOUNDS; rt.camera.distance = 10.5; rt.camera.pitch = 0.3;}
     rt.player.pos.y = rt.height(spawn.x, spawn.z);
-    rt.camera.focus.set(spawn.x, 1, spawn.z); rt.camera.yaw = 0; rt.camera.snap = true; rt.player.seat = null;
+    rt.camera.focus.set(spawn.x, 1, spawn.z); rt.camera.yaw = 0; rt.camera.snap = true; rt.player.seat = null; rt.player.locked = false;
     rt.targets.clear();
     rt.scene = next;
     ui.set({scene: next, decorating: false, prompt: null, panel: null});
@@ -307,7 +307,7 @@ function Game({variant, profile, setProfile, startScene, visit, quality, setQual
 
   // Renovating: the Interior tab zooms into the living room, the other tabs frame the whole cottage.
   const frameRenovate = useCallback((tab: RenovateTab) => {
-    rt.player.seat = null;
+    rt.player.seat = null; rt.player.locked = false;
     if (tab === 'inside') {
       const o = roomOrigin(liveHouse.size);
       rt.player.pos.set(o.x, FLOOR_Y, o.z + 0.2); rt.player.angle = Math.PI;
