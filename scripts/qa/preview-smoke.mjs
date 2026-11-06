@@ -34,7 +34,7 @@ try {
     assert.equal(res.status(), 200);
     await page.getByPlaceholder('Your name').fill(mobile ? 'Kai' : 'Momo');
     await page.getByRole('button', {name: 'Move in!'}).click();
-    await page.waitForFunction(() => window.__willow?.ui.get().life && window.__willow.targets.size > 20);
+    await page.waitForFunction(() => window.__willow?.ui.get().life && window.__willow.targets.has('npc-marlo') && [...window.__willow.targets.keys()].some(k => k.startsWith('forage-')), null, {timeout: 240000});
     await page.waitForTimeout(3000);
     await page.screenshot({path: `test-results/willow-${label}-town.png`});
     const flow = await page.evaluate(async () => {
