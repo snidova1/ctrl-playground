@@ -172,7 +172,7 @@ function WaterEdge({rt, where}: {rt: Runtime; where: 'town' | 'home'}) {
     const p = rt.player;
     const spot = where === 'town' ? fishableFrom(p.pos.x, p.pos.z, p.angle) : null;
     // The fishing prompt sits just in front of you, so facing the water wins over a neighbour standing beside you.
-    if (spot) rt.targets.set('water', {id: 'water', label: spot.water === 'sea' ? 'Fish in the sea' : spot.water === 'river' ? 'Fish in the river' : 'Fish in the pond', icon: '🎣', x: p.pos.x + Math.sin(p.angle) * 0.8, z: p.pos.z + Math.cos(p.angle) * 0.8, radius: 1.6, priority: -0.5, run: () => void startFishing(rt, where, spot.water, spot.target)});
+    if (spot) rt.targets.set('water', {id: 'water', label: spot.water === 'sea' ? 'Fish in the sea' : spot.water === 'river' ? 'Fish in the river' : 'Fish in the pond', icon: '🎣', x: p.pos.x + Math.sin(p.angle) * 0.8, z: p.pos.z + Math.cos(p.angle) * 0.8, radius: 1.6, priority: 0.15, run: () => void startFishing(rt, where, spot.water, spot.target)});
     else rt.targets.delete('water');
   });
   return null;
