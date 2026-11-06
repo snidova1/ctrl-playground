@@ -94,7 +94,7 @@ function Npc({npc, rt}: {npc: typeof NPCS[number]; rt: Runtime}) {
   const group = useRef<THREE.Group>(null);
   const motion = useRef<AvatarMotion>({anim: 'idle', speed: 2.4, tool: npc.id === 'marlo' ? 'rod' : 'none', actionAt: 0});
   useEffect(() => {
-    rt.targets.set(`npc-${npc.id}`, {id: `npc-${npc.id}`, label: `Talk to ${npc.name}`, icon: '💬', x: 0, z: 0, radius: 2.4, priority: 0.5, run: () => void talk(rt, npc.id)});
+    rt.targets.set(`npc-${npc.id}`, {id: `npc-${npc.id}`, label: `Talk to ${npc.name}`, icon: '💬', x: 0, z: 0, radius: 2.4, priority: 0.65, run: () => void talk(rt, npc.id)});
     return () => {rt.targets.delete(`npc-${npc.id}`);};
   }, [npc, rt]);
   useFrame(() => {

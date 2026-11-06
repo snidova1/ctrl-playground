@@ -55,7 +55,8 @@ async function use(match, opts = {}) {
     return {ok: true, label: t.label, picked, prompt: prompt?.label ?? null, panel: ui.panel, dialog: ui.dialog?.line?.slice(0, 50) ?? null, anim: rt.player.motion.current.anim, seated: !!rt.player.seat, toast: ui.toasts.at(-1)?.text ?? null, fishing: ui.fishing?.phase ?? null, card: ui.catchCard?.item ?? null};
   }, [match, opts]);
   // At the store and café doors the shopkeeper may win; their dialog opens the same panel.
-  const shopkeeper = (match === 'station-store' && /Juno/.test(r.prompt ?? '')) || (match === 'station-cafe' && /Tomo/.test(r.prompt ?? ''));
+  const shopkeeper = (match === 'station-store' && /Juno/.test(r.prompt ?? '')) || (match === 'station-cafe' && /Tomo/.test(r.prompt ?? ''))
+    || (match === 'npc-juno' && /General Store/.test(r.prompt ?? '')) || (match === 'npc-tomo' && /Café Tomo/.test(r.prompt ?? ''));
   if (r.ok && !r.picked && !shopkeeper) r.ok = false, r.why = `prompt showed "${r.prompt}" instead`;
   log(`use ${match}`, r);
   await shot(match);
